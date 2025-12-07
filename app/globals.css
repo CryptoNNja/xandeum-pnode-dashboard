@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@source "../**/*.{js,ts,jsx,tsx}";
+
+/* Hide scrollbar */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+* {
+  scrollbar-width: none;
+}
