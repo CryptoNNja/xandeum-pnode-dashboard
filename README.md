@@ -2,7 +2,7 @@
 
 > Real-time monitoring and analytics platform for Xandeum Provider Nodes
 
-**Built for [Superteam Earn Bounty](https://earn.superteam.fun/listing/develop-analytics-platform-for-xandeum-pnodes/) - $5,000 Prize**
+**Built for [Superteam Earn Bounty](https://earn.superteam.fun/listing/build-analytics-platform-for-xandeum-pnodes) - $5,000 Prize**
 
 ![Dashboard Preview](./screenshots/dashboard-main.png)
 
@@ -113,7 +113,7 @@ npm start
 
 - **Prize**: $5,000 (1st place), $1,500 (2nd), $1,000 (3rd)
 - **Deadline**: January 9, 2026
-- **Submission**: [Bounty Link](https://earn.superteam.fun/listing/develop-analytics-platform-for-xandeum-pnodes/)
+- **Submission**: [Bounty Link](https://earn.superteam.fun/listing/build-analytics-platform-for-xandeum-pnodes)
 
 ## 🔮 Roadmap
 
@@ -126,10 +126,10 @@ npm start
 
 ## 👨‍💻 Author
 
-**Ninja0x** - Freelance Web Developer & Crypto Enthusiast
+**Ninja0x** - Freelance Web Developer, Digital Solutions Builder & Crypto Enthusiast
 
-- 13 years in cryptocurrency
-- MBA in Marketing
+- 13 years in cryptocurrency 
+- MBA in Marketing & Management
 - Specialized in Next.js, React, and Web3 development
 
 ## 📝 License

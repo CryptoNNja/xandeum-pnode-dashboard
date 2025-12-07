@@ -15,6 +15,23 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+// Custom Tooltip Dark Style
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-[#1A1F3A] border border-[#00D4AA] rounded-lg p-3 shadow-xl">
+        <p className="text-white font-semibold mb-1">{label}</p>
+        {payload.map((entry: any, index: number) => (
+          <p key={index} className="text-sm" style={{ color: entry.color }}>
+            {entry.name}: {entry.value}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 type SortKey = "ip" | "cpu" | "ram" | "storage" | "uptime";
 type SortDirection = "asc" | "desc";
 
@@ -252,10 +269,7 @@ export default function Home() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#2D3454" />
                   <XAxis dataKey="range" stroke="#94A3B8" style={{ fontSize: '12px' }} />
                   <YAxis stroke="#94A3B8" />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1A1F3A', border: '1px solid #2D3454', borderRadius: '8px' }}
-                    labelStyle={{ color: '#fff' }}
-                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 212, 170, 0.1)' }} />
                   <Bar dataKey="count" radius={[8, 8, 0, 0]}>
                     {cpuDistribution.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -273,9 +287,7 @@ export default function Home() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#2D3454" />
                   <XAxis dataKey="range" stroke="#94A3B8" style={{ fontSize: '11px' }} angle={-15} textAnchor="end" height={60} />
                   <YAxis stroke="#94A3B8" />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1A1F3A', border: '1px solid #2D3454', borderRadius: '8px' }}
-                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(123, 63, 242, 0.1)' }} />
                   <Bar dataKey="count" fill="#7B3FF2" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -299,9 +311,7 @@ export default function Home() {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1A1F3A', border: '1px solid #2D3454', borderRadius: '8px' }}
-                  />
+                  <Tooltip content={<CustomTooltip />} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
