@@ -41,14 +41,15 @@ export default function Home() {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("ip");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [showAlerts, setShowAlerts] = useState(false);
 
   const loadData = async (isManual = false) => {
     if (isManual) setRefreshing(true);
-    
+
     try {
       const response = await fetch("/api/pnodes");
       const data = await response.json();
@@ -126,13 +127,13 @@ export default function Home() {
   };
 
   const filteredAndSortedPNodes = pnodes
-    .filter((pnode) => 
+    .filter((pnode) =>
       pnode.ip.toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
       const aValue = getSortValue(a, sortKey);
       const bValue = getSortValue(b, sortKey);
-      
+
       if (sortDirection === "asc") {
         return aValue > bValue ? 1 : -1;
       } else {
@@ -174,6 +175,59 @@ export default function Home() {
     return "Critical";
   };
 
+  // Alert system  
+  const getAlerts = () => {
+    const alerts: { type: string; message: string; ip: string; severity: 'critical' | 'warning' }[] = [];
+
+    filteredAndSortedPNodes.forEach((pnode) => {
+      const cpu = pnode.stats.cpu_percent;
+      const uptime = pnode.stats.uptime;
+      const hours = uptime / 3600;
+
+      // Critical alerts
+      if (cpu >= 5) {
+        alerts.push({
+          type: 'High CPU',
+          message: `CPU at ${cpu.toFixed(1)}% (Critical)`,
+          ip: pnode.ip,
+          severity: 'critical'
+        });
+      }
+
+      if (hours < 1) {
+        alerts.push({
+          type: 'Recently Restarted',
+          message: `Uptime only ${Math.floor(hours * 60)}m`,
+          ip: pnode.ip,
+          severity: 'critical'
+        });
+      }
+
+      // Warning alerts
+      if (cpu >= 2 && cpu < 5) {
+        alerts.push({
+          type: 'Elevated CPU',
+          message: `CPU at ${cpu.toFixed(1)}%`,
+          ip: pnode.ip,
+          severity: 'warning'
+        });
+      }
+
+      if (hours >= 1 && hours < 12) {
+        alerts.push({
+          type: 'Low Uptime',
+          message: `Uptime ${Math.floor(hours)}h`,
+          ip: pnode.ip,
+          severity: 'warning'
+        });
+      }
+    });
+
+    return alerts;
+  };
+  const alerts = getAlerts();
+  const criticalCount = alerts.filter(a => a.severity === 'critical').length;
+
   const healthDistribution = [
     { name: "Excellent", value: filteredAndSortedPNodes.filter(p => getHealthStatus(p) === "Excellent").length, color: "#10B981" },
     { name: "Good", value: filteredAndSortedPNodes.filter(p => getHealthStatus(p) === "Good").length, color: "#00D4AA" },
@@ -197,8 +251,72 @@ export default function Home() {
                 Real-time monitoring for Xandeum Provider Nodes
               </p>
             </div>
-            
-            <div className="text-right">
+
+            <div className="text-right flex items-center gap-4 justify-end">
+              {/* Alert Bell */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowAlerts(!showAlerts)}
+                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-lg transition-all border border-white/30 relative"
+                >
+                  <span className="text-2xl">🔔</span>
+                  {alerts.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {alerts.length}
+                    </span>
+                  )}
+                  {criticalCount > 0 && (
+                    <span className="absolute -bottom-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse">
+                      !
+                    </span>
+                  )}
+                </button>
+
+                {/* Alerts Panel */}
+                {showAlerts && (
+                  <div className="absolute right-0 top-full mt-2 w-96 bg-[#1A1F3A] border border-[#2D3454] rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto">
+                    <div className="p-4 border-b border-[#2D3454]">
+                      <h3 className="text-lg font-bold text-white">System Alerts</h3>
+                      <p className="text-sm text-gray-400">
+                        {alerts.length} alert{alerts.length !== 1 ? 's' : ''} detected
+                        {criticalCount > 0 && (
+                          <span className="ml-2 text-red-400 font-semibold">
+                            ({criticalCount} critical)
+                          </span>
+                        )}
+                      </p>
+                    </div>
+
+                    {alerts.length === 0 ? (
+                      <div className="p-6 text-center">
+                        <p className="text-green-400 text-lg font-semibold">✓ All Systems Healthy</p>
+                        <p className="text-gray-500 text-sm mt-2">No alerts to display</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-[#2D3454]">
+                        {alerts.map((alert, index) => (
+                          <div
+                            key={index}
+                            className={`p-4 hover:bg-[#0F1419] transition-colors cursor-pointer ${alert.severity === 'critical' ? 'border-l-4 border-red-500' : 'border-l-4 border-yellow-500'
+                              }`}
+                            onClick={() => window.location.href = `/pnode/${alert.ip}`}
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <span className={`text-xs font-bold px-2 py-1 rounded ${alert.severity === 'critical' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'
+                                }`}>
+                                {alert.type}
+                              </span>
+                              <span className="text-xs text-gray-500">{alert.ip}</span>
+                            </div>
+                            <p className="text-sm text-white">{alert.message}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={() => loadData(true)}
                 disabled={refreshing}
@@ -243,7 +361,7 @@ export default function Home() {
           <div className="bg-gradient-to-br from-[#1A1F3A] to-[#0F1419] p-6 rounded-xl border border-[#2D3454] hover:border-[#10B981] transition-all">
             <p className="text-gray-400 text-sm mb-1">Avg CPU</p>
             <p className="text-4xl font-bold text-[#10B981]">
-              {filteredAndSortedPNodes.length > 0 
+              {filteredAndSortedPNodes.length > 0
                 ? (filteredAndSortedPNodes.reduce((acc, p) => acc + (p.stats?.cpu_percent || 0), 0) / filteredAndSortedPNodes.length).toFixed(1)
                 : 0}%
             </p>
@@ -330,11 +448,10 @@ export default function Home() {
             <button
               key={key}
               onClick={() => handleSort(key)}
-              className={`px-4 py-2 rounded-lg transition-all font-medium ${
-                sortKey === key 
-                  ? "bg-gradient-to-r from-[#7B3FF2] to-[#00D4AA] text-white" 
-                  : "bg-[#1A1F3A] text-gray-300 hover:bg-[#2D3454] border border-[#2D3454]"
-              }`}
+              className={`px-4 py-2 rounded-lg transition-all font-medium ${sortKey === key
+                ? "bg-gradient-to-r from-[#7B3FF2] to-[#00D4AA] text-white"
+                : "bg-[#1A1F3A] text-gray-300 hover:bg-[#2D3454] border border-[#2D3454]"
+                }`}
             >
               {label}<SortIcon columnKey={key} />
             </button>
@@ -356,22 +473,29 @@ export default function Home() {
             {filteredAndSortedPNodes.map((pnode) => (
               <div
                 key={pnode.ip}
-                className={`bg-[#1A1F3A] p-6 rounded-xl border border-[#2D3454] hover:border-[#00D4AA] transition-all ${
-                  refreshing ? "opacity-50" : "opacity-100"
-                }`}
+                onClick={() => window.location.href = `/pnode/${pnode.ip}`}
+                className={`bg-[#1A1F3A] p-6 rounded-xl border border-[#2D3454] hover:border-[#00D4AA] transition-all cursor-pointer group hover:scale-[1.02] hover:shadow-xl hover:shadow-[#00D4AA]/20 ${refreshing ? "opacity-50" : "opacity-100"
+                  }`}
               >
                 <div className="flex justify-between items-start mb-4">
-                  <h2 className="text-2xl font-bold text-[#00D4AA]">
+                  <h2 className="text-2xl font-bold text-[#00D4AA] group-hover:text-[#00D4AA] transition-colors flex items-center gap-2">
                     {pnode.ip}
+                    <span className="text-sm text-gray-500 group-hover:text-[#00D4AA] transition-colors">
+                      Click for details
+                    </span>
                   </h2>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    getHealthStatus(pnode) === "Excellent" ? "bg-green-500/20 text-green-400" :
-                    getHealthStatus(pnode) === "Good" ? "bg-cyan-500/20 text-cyan-400" :
-                    getHealthStatus(pnode) === "Warning" ? "bg-yellow-500/20 text-yellow-400" :
-                    "bg-red-500/20 text-red-400"
-                  }`}>
-                    {getHealthStatus(pnode)}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getHealthStatus(pnode) === "Excellent" ? "bg-green-500/20 text-green-400" :
+                      getHealthStatus(pnode) === "Good" ? "bg-cyan-500/20 text-cyan-400" :
+                        getHealthStatus(pnode) === "Warning" ? "bg-yellow-500/20 text-yellow-400" :
+                          "bg-red-500/20 text-red-400"
+                      }`}>
+                      {getHealthStatus(pnode)}
+                    </span>
+                    <div className="w-8 h-8 flex items-center justify-center rounded-full bg-[#00D4AA]/10 group-hover:bg-[#00D4AA]/20 transition-colors">
+                      <span className="text-[#00D4AA] text-xl">→</span>
+                    </div>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
@@ -427,10 +551,10 @@ export default function Home() {
                 Powered by Xandeum pRPC & Gossip Protocol • Auto-discovery enabled
               </p>
             </div>
-            
+
             {/* Ninja Badge */}
             <div className="flex items-center gap-3 bg-[#1A1F3A]/50 px-4 py-2 rounded-full border border-[#2D3454]/50 backdrop-blur-sm">
-              <img 
+              <img
                 src="/avatar-ninja.png"
                 alt="Ninja0x"
                 className="w-8 h-8 rounded-full"
