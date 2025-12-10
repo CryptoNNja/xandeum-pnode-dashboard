@@ -1,8 +1,128 @@
 @import "tailwindcss";
 
+/* Chemin des fichiers à scanner par Tailwind */
 @source "../**/*.{js,ts,jsx,tsx}";
 
-/* Hide scrollbar */
+/* ============================= */
+/*   THEME TOKENS (CSS VARS)     */
+/* ============================= */
+
+/* 🎨 Palette par défaut = Xandeum LIGHT */
+:root {
+  --bg-app: #f5f5f7;
+  --bg-bg: #ffffff;
+  --bg-bg2: #f1f5f9;
+  --bg-card: #ffffff;
+
+  --border-app: #e2e8f0;
+  --border-app-soft: #e2e8f0;
+
+  --text-main: #0f172a;
+  --text-soft: #64748b;
+  --text-faint: #94a3b8;
+
+  --accent: #111827;
+  --accent-aqua: #00d4aa;
+
+  --kpi-excellent: #10b981; /* vert success */
+  --kpi-good: #2563eb;      /* bleu pour GOOD, bien distinct */
+  --kpi-warning: #f59e0b;
+  --kpi-critical: #ef4444;
+  --kpi-private: #64748b;
+}
+
+/* 🎨 Palette Xandeum DARK */
+:root[data-theme="xandeum-dark"],
+:root[data-theme="dark"] {
+  --bg-app: #0a0e27;
+  --bg-bg: #050816;
+  --bg-bg2: #0f172a;
+  --bg-card: #111827;
+
+  --border-app: #1f2937;
+  --border-app-soft: #2d3454;
+
+  --text-main: #e5e7eb;
+  --text-soft: #9ca3af;
+  --text-faint: #6b7280;
+
+  --accent: #7b3ff2;
+  --accent-aqua: #00d4aa;
+
+  --kpi-excellent: #22c55e;
+  --kpi-good: #38bdf8;      /* bleu clair pour GOOD */
+  --kpi-warning: #f59e0b;
+  --kpi-critical: #ef4444;
+  --kpi-private: #64748b;
+}
+
+/* Alias explicites si ton ThemeProvider utilise "xandeum-light" ou "light" */
+:root[data-theme="xandeum-light"],
+:root[data-theme="light"] {
+  --bg-app: #f5f5f7;
+  --bg-bg: #ffffff;
+  --bg-bg2: #f1f5f9;
+  --bg-card: #ffffff;
+
+  --border-app: #e2e8f0;
+  --border-app-soft: #e2e8f0;
+
+  --text-main: #0f172a;
+  --text-soft: #64748b;
+  --text-faint: #94a3b8;
+
+  --accent: #111827;
+  --accent-aqua: #00d4aa;
+
+  --kpi-excellent: #10b981;
+  --kpi-good: #2563eb;
+  --kpi-warning: #f59e0b;
+  --kpi-critical: #ef4444;
+  --kpi-private: #64748b;
+}
+
+/* ============================= */
+/*      BASE GLOBAL STYLES       */
+/* ============================= */
+
+body {
+  background-color: var(--bg-bg);
+  color: var(--text-main);
+}
+
+/* ============================= */
+/*   UTILITY CLASSES THÈME       */
+/* ============================= */
+
+/* Backgrounds */
+.bg-app { background-color: var(--bg-app); }
+.bg-bg { background-color: var(--bg-bg); }
+.bg-bg2 { background-color: var(--bg-bg2); }
+.bg-card { background-color: var(--bg-card); }
+
+/* Text */
+.text-app,
+.text-main { color: var(--text-main); }
+
+.text-soft { color: var(--text-soft); }
+.text-faint { color: var(--text-faint); }
+.text-primary { color: var(--accent-aqua); }
+
+/* Borders */
+.border-app { border-color: var(--border-app); }
+.border-app-soft { border-color: var(--border-app-soft); }
+
+/* Bordures “statut” pour les cards GRID */
+.border-soft { border-color: var(--border-app-soft); }
+.border-excellent { border-left-color: var(--kpi-excellent); }
+.border-good { border-left-color: var(--kpi-good); }
+.border-warning { border-left-color: var(--kpi-warning); }
+.border-critical { border-left-color: var(--kpi-critical); }
+
+/* ============================= */
+/*   SCROLLBAR HIDDEN            */
+/* ============================= */
+
 ::-webkit-scrollbar {
   width: 0px;
   background: transparent;
@@ -10,4 +130,22 @@
 
 * {
   scrollbar-width: none;
+}
+/* ============================= */
+/*   ANIMATED HERO           */
+/* ============================= */
+@keyframes aurora {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-aurora {
+  animation: aurora 15s ease infinite;
 }
