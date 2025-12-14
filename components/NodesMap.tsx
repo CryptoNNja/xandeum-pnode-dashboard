@@ -218,7 +218,7 @@ export default function NodesMap({ nodes }: { nodes: PNode[] }) {
 
   if (!mapReady || !geoJsonData) {
     return (
-      <div className={`w-full rounded-xl border flex items-center justify-center ${isLight ? 'bg-gray-100 border-gray-300' : 'bg-[#111827] border-[#2D3454]'}`} style={{ height: '600px' }}>
+      <div className={`w-full rounded-xl border flex items-center justify-center ${isLight ? 'bg-gray-100 border-gray-300' : 'bg-[#111827] border-[#2D3454]'}`} style={{ height: '750px' }}>
         <p className={`animate-pulse font-mono text-xs ${isLight ? 'text-[#EA580C]' : 'text-[#00D4AA]'}`}>
           LOADING CARTOGRAPHY...
         </p>
@@ -231,7 +231,7 @@ export default function NodesMap({ nodes }: { nodes: PNode[] }) {
       id="map-container-robust"
       className={`relative w-full rounded-xl overflow-hidden border shadow-2xl ${isLight ? 'bg-gray-100 border-gray-300' : 'bg-[#111827] border-[#2D3454]'}`}
       style={{
-        height: '600px',
+        height: '750px',
         minWidth: "300px",
         display: "block"
       }}
