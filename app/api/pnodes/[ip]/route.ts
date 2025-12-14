@@ -51,9 +51,9 @@ const MOCK_DB: PNode[] = Array.from({ length: 116 }, (_, i) => {
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { ip: string } }
+    { params }: { params: Promise<{ ip: string }> }
   ) {
-    const ip = params.ip;
+    const { ip } = await params;
   
     // --- SIMULATE DATABASE QUERY ---
     const node = MOCK_DB.find(p => p.ip === ip);

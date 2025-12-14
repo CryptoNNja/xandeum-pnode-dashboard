@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import dotenv from 'dotenv';
-import type { PNode, PNodeStats, PNodeStatus } from '../lib/types.js';
-import { EMPTY_STATS } from '../lib/types.js';
+import type { PNode, PNodeStats, PNodeStatus } from '../lib/types';
+import { EMPTY_STATS } from '../lib/types';
 import type { Database, Json } from '../types/supabase.mjs';
 
 // Load environment variables from .env.local
@@ -135,7 +135,7 @@ async function getPodsWithStats(ip: string): Promise<PodWithStats[]> {
     }
 }
 
-const main = async () => {
+export const main = async () => {
     console.log('🕷️ Starting network crawl...');
 
     const discovered = new Set<string>(BOOTSTRAP_NODES);

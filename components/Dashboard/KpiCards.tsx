@@ -52,37 +52,15 @@ export const KpiCards = ({
     STATUS_COLORS,
     hexToRgba
 }: KpiCardsProps) => {
-    // Simulation d'alerte critique pour test visuel
-    const alerts = [
-      { type: 'critical', message: 'Node 1 down' },
-      { type: 'critical', message: 'Node 2 down' },
-      { type: 'warning', message: 'Node 3 slow' }
-    ];
-    const criticalCount = 2;
-    const warningCount = 1;
-    // Network Health card en alerte
-    const networkHealthInsights = {
-      score: 32,
-      color: '#EF4444',
-      trendColor: '#EF4444',
-      trendIcon: '↓',
-      delta: -12,
-      svgWidth: 60,
-      svgHeight: 32,
-      sparklineFill: '#EF4444',
-      sparklineAreaPoints: '0,32 10,20 20,28 30,10 40,18 50,8 60,32',
-      sparklinePoints: '0,32 10,20 20,28 30,10 40,18 50,8 60,32',
-    };
-    // Storage, CPU, RAM simulés
-    const storageCapacityStats = {
-      formattedUsed: '9.8 TB',
-      formattedTotal: '10 TB',
-      percent: 98,
-      formattedAvailable: '200 GB',
-      availabilityLabel: 'free',
-    };
-    const avgCpuUsage = { percent: 97, nodeCount: 12 };
-    const avgRamUsage = { formattedUsed: '62 GB', formattedTotal: '64 GB', ratio: 97, nodeCount: 12 };
+    // Use real props instead of hardcoded test data
+    const alerts = _alerts;
+    const criticalCount = _criticalCount;
+    const warningCount = _warningCount;
+    const networkHealthInsights = _networkHealthInsights;
+    const storageCapacityStats = _storageCapacityStats;
+    const avgCpuUsage = _avgCpuUsage;
+    const avgRamUsage = _avgRamUsage;
+
     return (
         <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

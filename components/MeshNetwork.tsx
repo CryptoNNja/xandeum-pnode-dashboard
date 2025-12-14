@@ -19,7 +19,7 @@ interface Node {
 export default function MeshNetwork({ theme }: MeshNetworkProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const nodesRef = useRef<Node[]>([]);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | undefined>(undefined);
 
   const isDark = theme === "dark";
   

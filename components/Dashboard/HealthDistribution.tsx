@@ -9,7 +9,7 @@ import type { PNode } from "@/lib/types";
 type HealthDistributionProps = {
     isLight: boolean;
     isHealthMenuOpen: boolean;
-    setIsHealthMenuOpen: (isOpen: boolean) => void;
+    setIsHealthMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
     healthMenuRef: React.RefObject<HTMLDivElement>;
     healthFilter: "all" | "public" | "private";
     setHealthFilter: (filter: "all" | "public" | "private") => void;

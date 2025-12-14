@@ -32,11 +32,9 @@ const hexToRgba = (hex: string, alpha: number) => {
 };
 
 const EnhancedHero: React.FC<EnhancedHeroProps> = ({
-  criticalCount: _criticalCount,
+  criticalCount,
   onAlertsClick,
 }) => {
-  // Simulation d'une alerte critique pour test visuel
-  const criticalCount = 3;
   const { currentPreset, preset } = useHeroPreset();
   const { theme } = useTheme();
   const hasHydrated = useHydrated();

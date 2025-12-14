@@ -24,6 +24,7 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env
 
 # vercel
 .vercel
@@ -31,3 +32,76 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ============================================
+# AI Tools & Generated Files
+# ============================================
+# Claude Code settings (personal configuration)
+.claude/
+
+# AI-generated documentation (keep only README.md and CHANGELOG.md in version control)
+audit_*.md
+GEMINI.md
+DEVELOPER_GUIDE.md
+DEVELOPER_GUIDE.pdf
+*.ai.md
+
+# AI-generated PDFs
+*.pdf
+
+# ============================================
+# Development & Testing Files
+# ============================================
+# Test scripts and demo data
+test-env.js
+test_*.js
+*_test.js
+scripts/insert_*.js
+scripts/insert_*.ts
+
+# Backup files
+*.backup
+*.bak
+*.clean.tsx
+*.old
+*_backup.*
+
+# Temporary files
+*.tmp
+*.temp
+.temp/
+tmp/
+
+# ============================================
+# IDE & Editor Files
+# ============================================
+# VSCode
+.vscode/
+*.code-workspace
+
+# JetBrains IDEs
+.idea/
+*.iml
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ============================================
+# OS Files
+# ============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory

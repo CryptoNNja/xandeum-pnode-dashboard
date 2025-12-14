@@ -1,7 +1,3 @@
-// --- Simulation d'état critique pour les KPI Cards ---
-
-// --- Simulation d'état critique pour les KPI Cards ---
-// --- Simulation d'état critique pour les KPI Cards ---
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -368,67 +364,8 @@ export default function Page() {
   const { theme } = useTheme();
   const isLight = theme === "light";
 
-  // Simulation de données critiques pour test visuel
-  const [pnodes, setPnodes] = useState<PNode[]>([
-    {
-      ip: '192.168.1.1',
-      status: 'active',
-      version: 'v1.2.3',
-      stats: {
-        active_streams: 2,
-        cpu_percent: 99.9,
-        current_index: 1,
-        file_size: 9.8 * 1024 * 1024 * 1024 * 1024,
-        last_updated: Date.now(),
-        packets_received: 900_000,
-        packets_sent: 1_200_000,
-        ram_total: 64 * 1024 * 1024 * 1024,
-        ram_used: 62 * 1024 * 1024 * 1024,
-        total_bytes: 9.8 * 1024 * 1024 * 1024 * 1024,
-        total_pages: 100,
-        uptime: 3600,
-      },
-    },
-    {
-      ip: '192.168.1.2',
-      status: 'gossip_only',
-      version: 'v1.2.3',
-      stats: {
-        active_streams: 1,
-        cpu_percent: 85.2,
-        current_index: 2,
-        file_size: 8.2 * 1024 * 1024 * 1024 * 1024,
-        last_updated: Date.now(),
-        packets_received: 1_100_000,
-        packets_sent: 800_000,
-        ram_total: 64 * 1024 * 1024 * 1024,
-        ram_used: 50 * 1024 * 1024 * 1024,
-        total_bytes: 8.2 * 1024 * 1024 * 1024 * 1024,
-        total_pages: 80,
-        uptime: 7200,
-      },
-    },
-    {
-      ip: '192.168.1.3',
-      status: 'active',
-      version: 'v1.2.3',
-      stats: {
-        active_streams: 1,
-        cpu_percent: 42.1,
-        current_index: 3,
-        file_size: 7.1 * 1024 * 1024 * 1024 * 1024,
-        last_updated: Date.now(),
-        packets_received: 2_200_000,
-        packets_sent: 2_000_000,
-        ram_total: 64 * 1024 * 1024 * 1024,
-        ram_used: 24 * 1024 * 1024 * 1024,
-        total_bytes: 7.1 * 1024 * 1024 * 1024 * 1024,
-        total_pages: 60,
-        uptime: 14400,
-      },
-    },
-  ]);
-  const [loading, setLoading] = useState(false);
+  const [pnodes, setPnodes] = useState<PNode[]>([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const contentSectionRef = useRef<HTMLElement | null>(null);

@@ -39,25 +39,25 @@ type ToolbarProps = {
     nodeFilter: NodeFilter;
     setNodeFilter: (filter: NodeFilter) => void;
     filterMenuOpen: boolean;
-    setFilterMenuOpen: (isOpen: boolean) => void;
+    setFilterMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
 
     viewMode: ViewMode;
     setViewMode: (mode: ViewMode) => void;
     scrollToContent: () => void;
 
     exportMenuOpen: boolean;
-    setExportMenuOpen: (isOpen: boolean) => void;
+    setExportMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
     exportData: () => void;
     exportCsv: () => void;
     exportExcel: () => void;
 
     refreshing: boolean;
     refreshData: () => void;
-    
-    isSearchOpen: boolean;
-    setIsSearchOpen: (isOpen: boolean) => void;
 
-    setIsSettingsOpen: (isOpen: boolean) => void;
+    isSearchOpen: boolean;
+    setIsSearchOpen: React.Dispatch<React.SetStateAction<boolean>>;
+
+    setIsSettingsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 
     loading: boolean;
     getTimeAgo: () => string;

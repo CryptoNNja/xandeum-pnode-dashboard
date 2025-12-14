@@ -20,51 +20,6 @@ export default function PNodeTable({
   sortKey,
   sortDirection,
 }: PNodeTableProps) {
-  // Simulation de données critiques pour test visuel
-  data = [
-    {
-      ip: '192.168.1.1',
-      status: 'critical',
-      version: 'v1.2.3',
-      stats: {
-        cpu_percent: 99.9,
-        ram_used: 62 * 1024 * 1024 * 1024,
-        ram_total: 64 * 1024 * 1024 * 1024,
-        uptime: 3600,
-        packets_sent: 1_200_000,
-        packets_received: 900_000,
-        file_size: 9.8 * 1024 * 1024 * 1024 * 1024,
-      },
-    },
-    {
-      ip: '192.168.1.2',
-      status: 'warning',
-      version: 'v1.2.3',
-      stats: {
-        cpu_percent: 85.2,
-        ram_used: 50 * 1024 * 1024 * 1024,
-        ram_total: 64 * 1024 * 1024 * 1024,
-        uptime: 7200,
-        packets_sent: 800_000,
-        packets_received: 1_100_000,
-        file_size: 8.2 * 1024 * 1024 * 1024 * 1024,
-      },
-    },
-    {
-      ip: '192.168.1.3',
-      status: 'good',
-      version: 'v1.2.3',
-      stats: {
-        cpu_percent: 42.1,
-        ram_used: 24 * 1024 * 1024 * 1024,
-        ram_total: 64 * 1024 * 1024 * 1024,
-        uptime: 14400,
-        packets_sent: 2_000_000,
-        packets_received: 2_200_000,
-        file_size: 7.1 * 1024 * 1024 * 1024 * 1024,
-      },
-    },
-  ];
   const { theme, mounted: themeMounted } = useTheme();
   const isLight = themeMounted ? theme === "light" : false;
 
