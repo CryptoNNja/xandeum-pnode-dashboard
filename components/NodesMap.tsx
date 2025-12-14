@@ -1,14 +1,44 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { MapContainer, Marker, Popup, GeoJSON } from "react-leaflet";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MapContainer, Marker, Popup, GeoJSON, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
-import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import type { PNode } from "@/lib/types";
+import type { GeoJsonObject } from "geojson";
 import { useTheme } from "@/hooks/useTheme";
+import { getHealthStatus, type HealthStatus } from "@/lib/health";
+import type { PNode } from "@/lib/types";
 
-// --- STYLES & ICONS (From User Request) ---
+interface NodeLocation {
+  ip: string;
+  lat: number;
+  lng: number;
+  city: string;
+  country: string;
+  status: HealthStatus;
+}
+
+interface IpWhoResponse {
+  success: boolean;
+  latitude?: number;
+  longitude?: number;
+  city?: string;
+  country?: string;
+}
+
+const getMapStyles = (isLight: boolean) => `
+  .leaflet-container { background-color: ${isLight ? '#f5f5f7' : 'var(--map-bg)'} !important; font-family: 'Inter', sans-serif; }
+  .leaflet-control-attribution { display: none; }
+  path.leaflet-interactive { pointer-events: none !important; stroke-linejoin: round; will-change: transform; }
+  .tech-cluster { background: ${isLight ? '#ffffff' : 'var(--map-cluster-bg)'}; border: 2px solid ${isLight ? '#EA580C' : 'var(--accent-aqua)'}; color: ${isLight ? '#EA580C' : 'var(--accent-aqua)'}; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-family: monospace; font-weight: bold; font-size: 11px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); transition: transform 0.2s; }
+  .tech-cluster:hover { background: ${isLight ? '#EA580C' : 'var(--accent-aqua)'}; color: ${isLight ? '#ffffff' : 'var(--text-main)'}; transform: scale(1.1); }
+  .solid-marker { background: transparent; display: flex; justify-content: center; align-items: center; }
+  .solid-core { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 2px ${isLight ? '#1F2937' : 'var(--text-main)'}, 0 0 0 4px ${isLight ? '#f5f5f7' : 'var(--bg-bg)'}; transition: transform 0.1s; will-change: transform; }
+  .solid-marker:hover .solid-core { transform: scale(1.4); border: 3px solid ${isLight ? '#EA580C' : 'var(--accent-aqua)'}; z-index: 999; box-shadow: 0 0 12px ${isLight ? 'rgba(234, 88, 12, 0.6)' : 'rgba(0, 212, 170, 0.6)'}; }
+  .leaflet-popup-content-wrapper { background: ${isLight ? '#ffffff' : 'var(--map-popup-bg)'} !important; border: 2px solid ${isLight ? '#EA580C' : 'var(--accent-aqua)'} !important; color: ${isLight ? '#1F2937' : 'var(--text-main)'} !important; border-radius: 8px !important; padding: 0 !important; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+  .leaflet-popup-tip { background: ${isLight ? '#ffffff' : 'var(--map-popup-bg)'} !important; border: 2px solid ${isLight ? '#EA580C' : 'var(--accent-aqua)'}; border-top: none; }
+  .leaflet-popup-close-button { color: ${isLight ? '#1F2937' : 'var(--text-main)'} !important; }
+`;
 
 const createSolidIcon = (status: string) => {
   let color = "#64748B"; // Private
@@ -26,7 +56,9 @@ const createSolidIcon = (status: string) => {
   });
 };
 
-const createClusterIcon = (cluster: any) => {
+type ClusterLike = { getChildCount(): number };
+
+const createClusterIcon = (cluster: ClusterLike) => {
   return L.divIcon({
     html: `<span>${cluster.getChildCount()}</span>`,
     className: "tech-cluster",
@@ -35,170 +67,163 @@ const createClusterIcon = (cluster: any) => {
   });
 };
 
-// --- HELPER FUNCTIONS ---
-
-const getHealthStatus = (stats: any, statusStr?: string) => {
-  if (statusStr === "gossip_only" || !stats || stats.uptime === 0)
-    return "Private";
-  const cpu = stats.cpu_percent;
-  if (cpu >= 90) return "Critical";
-  if (cpu >= 70) return "Warning";
-  if (cpu < 20 && stats.uptime / 3600 >= 24) return "Excellent";
-  return "Good";
+const geoJsonStyle: L.PathOptions = {
+  fillColor: "#000",
+  fillOpacity: 0,
+  color: "#00D4AA",
+  weight: 0.8,
+  opacity: 0.5,
 };
 
-interface NodeLocation {
-  ip: string;
-  lat: number;
-  lng: number;
-  city: string;
-  country: string;
-  status: string;
+const getGeoJsonStyleForTheme = (isLight: boolean) => ({
+  ...geoJsonStyle,
+  fillColor: isLight ? "#FEF3E2" : "#0A0E1A",
+  fillOpacity: isLight ? 0.6 : 0.3,
+  color: isLight ? "#EA580C" : "#00D4AA",
+  weight: isLight ? 1.5 : 0.8,
+  opacity: isLight ? 0.8 : 0.5,
+});
+
+export interface NodesMapProps {
+  nodes: PNode[];
 }
 
-export default function NodesMap({ nodes }: { nodes: PNode[] }) {
-  const { theme } = useTheme();
-  const isLight = theme === "light";
-
-  const mapStyles = useMemo(() => `
-    .leaflet-container { background-color: ${isLight ? '#F3F4F6' : '#111827'} !important; font-family: 'Inter', sans-serif; }
-    .leaflet-control-attribution { display: none; }
-    path.leaflet-interactive { pointer-events: none !important; stroke-linejoin: round; will-change: transform; }
-    .tech-cluster { background: ${isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(5, 10, 20, 0.95)'}; border: 1px solid ${isLight ? '#EA580C' : '#00D4AA'}; color: ${isLight ? '#EA580C' : '#00D4AA'}; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-family: monospace; font-weight: bold; font-size: 11px; box-shadow: 0 0 0 4px ${isLight ? 'rgba(234, 88, 12, 0.15)' : 'rgba(0, 212, 170, 0.15)'}; transition: transform 0.2s; }
-    .tech-cluster:hover { background: ${isLight ? '#EA580C' : '#00D4AA'}; color: ${isLight ? '#FFF' : '#000'}; transform: scale(1.1); }
-    .solid-marker { background: transparent; display: flex; justify-content: center; align-items: center; }
-    .solid-core { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 1px ${isLight ? '#FFF' : '#000'}; transition: transform 0.1s; will-change: transform; }
-    .solid-marker:hover .solid-core { transform: scale(1.4); border: 2px solid white; z-index: 999; }
-    .leaflet-popup-content-wrapper { background: ${isLight ? '#FFFFFF' : '#0A0E27'} !important; border: 1px solid ${isLight ? '#EA580C' : '#00D4AA'} !important; color: ${isLight ? '#000' : '#fff'} !important; border-radius: 2px !important; padding: 0 !important; }
-    .leaflet-popup-tip { background: ${isLight ? '#EA580C' : '#00D4AA'} !important; }
-    .leaflet-popup-close-button { color: ${isLight ? '#000' : '#fff'} !important; }
-  `, [isLight]);
-
-  const geoJsonStyle = useMemo(() => ({
-    fillColor: isLight ? "#E5E7EB" : "#020204",
-    fillOpacity: 0.5,
-    color: isLight ? "#EA580C" : "#00D4AA",
-    weight: 0.8,
-    opacity: 0.5,
-  }), [isLight]);
-
+export default function NodesMap({ nodes }: NodesMapProps) {
+  const { theme, mounted: themeMounted } = useTheme();
+  const isLight = themeMounted && theme === "light";
   const [locations, setLocations] = useState<NodeLocation[]>([]);
-  const [geoJsonData, setGeoJsonData] = useState<any>(null);
+  const [geoJsonData, setGeoJsonData] = useState<GeoJsonObject | null>(null);
   const [mapReady, setMapReady] = useState(false);
-  const [map, setMap] = useState<L.Map | null>(null);
+  const [geoJsonError, setGeoJsonError] = useState<string | null>(null);
+  const [geoLocateErrorCount, setGeoLocateErrorCount] = useState(0);
+  const [mapKey, setMapKey] = useState(0);
+  const [containerReady, setContainerReady] = useState(true);
+  const mapRef = useRef<L.Map | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapDebugEnabled =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("mapdebug") === "1";
 
-  // 1. Fetch World Map GeoJSON
   useEffect(() => {
-    fetch(
-      "https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json"
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        setGeoJsonData(data);
-        setMapReady(true);
-      })
-      .catch((err) => console.error("Failed to load GeoJSON map", err));
-  }, []);
+    return () => {
+      const map = mapRef.current;
+      if (!map) return;
 
-  // 2. Fetch Locations (Robust + Local API)
-  useEffect(() => {
-    if (!nodes || nodes.length === 0) return;
-
-    const fetchLocations = async () => {
-      const cached = localStorage.getItem("pnode_locations_v2");
-      const knownLocations: NodeLocation[] = cached ? JSON.parse(cached) : [];
-      
-      // Identify missing
-      const missing = nodes.filter(n => !knownLocations.find(l => l.ip === n.ip));
-      
-      // Update state with known
-      const currentMapped = knownLocations.map(l => {
-        const n = nodes.find(node => node.ip === l.ip);
-        return {
-          ...l,
-          status: n ? getHealthStatus(n.stats, n.status) : "Private"
-        };
-      }).filter(l => nodes.find(n => n.ip === l.ip)); // Only keep current nodes
-      
-      setLocations(currentMapped);
-
-      // Fetch missing (Batch of 5)
-      if (missing.length > 0) {
-        const newLocations = [...knownLocations];
-        let updated = false;
-        const batch = missing.slice(0, 5); 
-
-        for (const node of batch) {
-          try {
-            // Use local API proxy instead of direct external call
-            const res = await fetch(`/api/geolocate/${node.ip}`);
-            if (res.ok) {
-              const data = await res.json();
-              if (data.success) {
-                newLocations.push({
-                  ip: node.ip,
-                  lat: data.latitude,
-                  lng: data.longitude,
-                  city: data.city,
-                  country: data.country,
-                  status: getHealthStatus(node.stats, node.status)
-                });
-                updated = true;
-              }
-            }
-          } catch (e) {
-            console.error("Geo error", e);
-          }
-          await new Promise(r => setTimeout(r, 200));
-        }
-
-        if (updated) {
-          localStorage.setItem("pnode_locations_v2", JSON.stringify(newLocations));
-          // Re-merge to update state
-          const finalMapped = newLocations.map(l => {
-            const n = nodes.find(node => node.ip === l.ip);
-            return {
-              ...l,
-              status: n ? getHealthStatus(n.stats, n.status) : "Private"
-            };
-          }).filter(l => nodes.find(n => n.ip === l.ip));
-          setLocations(finalMapped);
-        }
+      try {
+        map.off();
+        map.remove();
+      } catch (error) {
+        console.warn("Failed to dispose Leaflet map", error);
+      } finally {
+        mapRef.current = null;
       }
     };
+  }, []);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    fetch(
+      "https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json",
+      { signal: controller.signal }
+    )
+      .then((res) => res.json() as Promise<GeoJsonObject>)
+      .then((data) => {
+        setGeoJsonData(data);
+        setGeoJsonError(null);
+      })
+      .catch((err) => {
+        console.error("Failed to load geojson map", err);
+        setGeoJsonData(null);
+        setGeoJsonError(err instanceof Error ? err.message : String(err));
+      })
+      .finally(() => {
+        clearTimeout(timeoutId);
+        setMapReady(true);
+      });
+  }, []);
+
+  useEffect(() => {
+    const fetchLocations = async () => {
+      const cachedRaw = localStorage.getItem("pnode_locations_v2");
+      let cachedLocs: NodeLocation[] = [];
+      if (cachedRaw) {
+        try {
+          const parsed = JSON.parse(cachedRaw);
+          if (Array.isArray(parsed)) {
+            cachedLocs = parsed as NodeLocation[];
+          }
+        } catch (error) {
+          console.warn("Failed to parse cached node locations", error);
+        }
+      }
+      const newLocations = [...cachedLocs];
+      let updated = false;
+      const nodesToFetch = nodes.filter(
+        (n) => !newLocations.find((l) => l.ip === n.ip)
+      );
+
+      if (nodesToFetch.length === 0 && newLocations.length > 0) {
+        const merged = newLocations.map((loc) => {
+          const n = nodes.find((node) => node.ip === loc.ip);
+          const newStatus = n ? getHealthStatus(n) : "Private";
+          return { ...loc, status: newStatus };
+        });
+        setLocations(merged);
+        return;
+      }
+
+      for (const node of nodesToFetch) {
+        try {
+          await new Promise((r) => setTimeout(r, 200));
+          const res = await fetch(`/api/geolocate/${encodeURIComponent(node.ip)}`);
+          const data: IpWhoResponse = await res.json();
+          if (data.success && typeof data.latitude === "number" && typeof data.longitude === "number") {
+            newLocations.push({
+              ip: node.ip,
+              lat: data.latitude,
+              lng: data.longitude,
+              city: data.city ?? "Unknown",
+              country: data.country ?? "Unknown",
+              status: getHealthStatus(node),
+            });
+            updated = true;
+          }
+        } catch (error) {
+          console.error("Failed to geolocate", node.ip, error);
+          setGeoLocateErrorCount((c) => c + 1);
+        }
+      }
+
+      if (updated) {
+        localStorage.setItem(
+          "pnode_locations_v2",
+          JSON.stringify(newLocations)
+        );
+        const merged = newLocations.map((loc) => {
+          const n = nodes.find((node) => node.ip === loc.ip);
+          return {
+            ...loc,
+            status: n ? getHealthStatus(n) : "Private",
+          };
+        });
+        setLocations(merged);
+      }
+    };
     fetchLocations();
   }, [nodes]);
 
-  // 3. Resize Observer (Layout Fix)
-  useEffect(() => {
-    if (!map) return;
-    
-    map.invalidateSize();
-    const resizeObserver = new ResizeObserver(() => {
-      map.invalidateSize();
-    });
-
-    const container = document.getElementById("map-container-robust");
-    if (container) {
-      resizeObserver.observe(container);
-    }
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [map]);
-
   const markers = useMemo(() => {
-    return locations.map((loc, idx) => (
+    return locations.map((loc) => (
       <Marker
-        key={`${loc.ip}-${idx}`}
+        key={loc.ip}
         position={[loc.lat, loc.lng]}
         icon={createSolidIcon(loc.status)}
       >
         <Popup className="custom-popup">
           <div className="p-2 min-w-[120px] text-center">
-            <div className="text-xs font-bold text-white mb-1">
+            <div className={`text-xs font-bold mb-1 ${isLight ? 'text-gray-900' : 'text-white'}`}>
               {loc.city}
             </div>
             <div className="text-[10px] text-gray-400 mb-2">
@@ -206,7 +231,19 @@ export default function NodesMap({ nodes }: { nodes: PNode[] }) {
             </div>
             <a
               href={`/pnode/${loc.ip}`}
-              className="inline-block bg-[#00D4AA] hover:bg-white hover:text-black text-black text-[9px] font-bold py-1 px-2 rounded transition-colors"
+              className="inline-block text-[9px] font-bold py-1 px-2 rounded transition-colors"
+              style={{
+                backgroundColor: isLight ? '#EA580C' : '#00D4AA',
+                color: isLight ? '#ffffff' : '#000000',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#ffffff';
+                e.currentTarget.style.color = '#000000';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = isLight ? '#EA580C' : '#00D4AA';
+                e.currentTarget.style.color = isLight ? '#ffffff' : '#000000';
+              }}
             >
               ANALYZE
             </a>
@@ -214,33 +251,86 @@ export default function NodesMap({ nodes }: { nodes: PNode[] }) {
         </Popup>
       </Marker>
     ));
-  }, [locations]);
+  }, [locations, isLight]);
 
-  if (!mapReady || !geoJsonData) {
+  const InvalidateSizeOnMount = () => {
+    const map = useMap();
+
+    useEffect(() => {
+      // Force immediate size calculation
+
+      const forceResize = () => {
+        map.invalidateSize();
+      };
+
+      forceResize();
+      const t1 = setTimeout(forceResize, 100);
+      const t2 = setTimeout(forceResize, 300);
+      const t3 = setTimeout(forceResize, 500);
+
+      // Listen for window resize
+      const handleResize = () => forceResize();
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+        window.removeEventListener('resize', handleResize);
+      };
+    }, [map]);
+
+    return null;
+  };
+
+  useEffect(() => {
+
+    // Ne pas forcer la taille ici, laisser le parent gérer la hauteur/largeur
+  }, []);
+
+  useEffect(() => {
+    // Force re-render if map doesn't show properly
+    const timer = setTimeout(() => {
+      setMapKey(prev => prev + 1);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+
+  // Ne pas forcer la taille de la leaflet-container ici non plus
+
+  if (!mapReady || !themeMounted || !containerReady) {
     return (
-      <div className={`w-full rounded-xl border flex items-center justify-center ${isLight ? 'bg-gray-100 border-gray-300' : 'bg-[#111827] border-[#2D3454]'}`} style={{ height: '750px' }}>
-        <p className={`animate-pulse font-mono text-xs ${isLight ? 'text-[#EA580C]' : 'text-[#00D4AA]'}`}>
-          LOADING CARTOGRAPHY...
-        </p>
+      <div
+        className="relative w-full h-full rounded-xl overflow-hidden border shadow-2xl"
+        style={{
+          borderColor: isLight ? 'rgba(0, 0, 0, 0.12)' : '#2D3454',
+          background: isLight ? '#f5f5f7' : '#020204',
+        }}
+      >
+        <style>{getMapStyles(isLight)}</style>
+        {/* ...debug et légende comme avant... */}
       </div>
     );
   }
 
+  // Bloc principal : map prête
   return (
-    <div
-      id="map-container-robust"
-      className={`relative w-full rounded-xl overflow-hidden border shadow-2xl ${isLight ? 'bg-gray-100 border-gray-300' : 'bg-[#111827] border-[#2D3454]'}`}
+    <div className="relative w-full h-full rounded-xl overflow-hidden border shadow-2xl"
       style={{
-        height: '750px',
-        minWidth: "300px",
-        display: "block"
+        borderColor: isLight ? 'rgba(0, 0, 0, 0.12)' : '#2D3454',
+        background: isLight ? '#f5f5f7' : '#020204',
       }}
     >
-      <style>{mapStyles}</style>
-
-      {/* Legend Overlay */}
-      <div className={`absolute bottom-6 left-6 z-[400] px-4 py-3 rounded border text-[10px] font-mono pointer-events-none ${isLight ? 'bg-white/90 border-[#EA580C]/30 text-gray-600' : 'bg-black/80 border-[#00D4AA]/30 text-gray-400'}`}>
-        <div className={`mb-1 font-bold ${isLight ? 'text-[#EA580C]' : 'text-[#00D4AA]'}`}>
+      <style>{getMapStyles(isLight)}</style>
+      {/* Légende alignée avec le reste du dashboard */}
+      <div className="absolute bottom-6 left-6 z-400 px-4 py-3 rounded border text-[10px] font-mono pointer-events-none" style={{
+        background: isLight ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)',
+        borderColor: isLight ? 'rgba(234, 88, 12, 0.3)' : 'rgba(0, 212, 170, 0.3)',
+        color: isLight ? '#1F2937' : '#a3a3a3',
+      }}>
+        <div className="mb-1 font-bold" style={{ color: isLight ? '#EA580C' : '#00D4AA' }}>
           NODE HEALTH
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1">
@@ -266,36 +356,47 @@ export default function NodesMap({ nodes }: { nodes: PNode[] }) {
           </div>
         </div>
       </div>
-
-      <MapContainer
-        center={[20, 0]}
-        zoom={1.5}
-        minZoom={1}
-        maxZoom={18}
-        scrollWheelZoom={true}
-        style={{ height: "100%", width: "100%", background: "transparent" }}
-        ref={setMap}
-        maxBounds={[[-90, -180], [90, 180]]}
-        maxBoundsViscosity={0.5}
+      <div
+        ref={containerRef}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: "100%",
+          height: "100%"
+        }}
       >
-        {/* @ts-ignore */}
-        <GeoJSON
-          key="static-world-map"
-          data={geoJsonData}
-          style={geoJsonStyle}
-          interactive={false}
-        />
-
-        <MarkerClusterGroup
-          chunkedLoading
-          iconCreateFunction={createClusterIcon}
-          spiderfyOnMaxZoom={true}
-          showCoverageOnHover={false}
-          maxClusterRadius={40}
+        <MapContainer
+          key={mapKey}
+          center={[0, 0]}
+          zoom={0}
+          minZoom={2}
+          maxZoom={18}
+          scrollWheelZoom={true}
+          style={{ height: "100%", width: "100%", background: "transparent" }}
         >
-          {markers}
-        </MarkerClusterGroup>
-      </MapContainer>
+          <InvalidateSizeOnMount />
+          {geoJsonData ? (
+            <GeoJSON
+              key="static-world-map"
+              data={geoJsonData}
+              style={getGeoJsonStyleForTheme(isLight)}
+              interactive={false}
+            />
+          ) : null}
+          <MarkerClusterGroup
+            chunkedLoading
+            iconCreateFunction={createClusterIcon}
+            spiderfyOnMaxZoom={true}
+            showCoverageOnHover={false}
+            maxClusterRadius={40}
+          >
+            {markers}
+          </MarkerClusterGroup>
+        </MapContainer>
+      </div>
     </div>
   );
 }
