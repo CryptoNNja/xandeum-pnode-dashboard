@@ -146,7 +146,6 @@ export default function NodesMap({ nodes }: NodesMapProps) {
 
   useEffect(() => {
     const fetchLocations = async () => {
-      console.log("🗺️ [NodesMap] Starting fetchLocations, received", nodes.length, "nodes");
       const cachedRaw = localStorage.getItem("pnode_locations_v2");
       let cachedLocs: NodeLocation[] = [];
       if (cachedRaw) {
@@ -154,13 +153,10 @@ export default function NodesMap({ nodes }: NodesMapProps) {
           const parsed = JSON.parse(cachedRaw);
           if (Array.isArray(parsed)) {
             cachedLocs = parsed as NodeLocation[];
-            console.log("📦 [NodesMap] Found", cachedLocs.length, "cached locations");
           }
         } catch (error) {
           console.warn("Failed to parse cached node locations", error);
         }
-      } else {
-        console.log("📦 [NodesMap] No cache found, will fetch all locations");
       }
 
       const newLocations = [...cachedLocs];
@@ -175,21 +171,16 @@ export default function NodesMap({ nodes }: NodesMapProps) {
           const newStatus = n ? getHealthStatus(n) : "Private";
           return { ...loc, status: newStatus };
         });
-        console.log("✅ [NodesMap] Using", merged.length, "cached locations");
         setLocations(merged);
         return;
       }
 
-      console.log("🔍 [NodesMap] Need to fetch", nodesToFetch.length, "new locations");
       for (const node of nodesToFetch) {
         try {
           await new Promise((r) => setTimeout(r, 200));
-          console.log("📍 [NodesMap] Fetching geolocation for", node.ip);
           const res = await fetch(`/api/geolocate/${encodeURIComponent(node.ip)}`);
           const data: IpWhoResponse = await res.json();
-          console.log("📍 [NodesMap] Response for", node.ip, ":", data);
           if (data.success && typeof data.latitude === "number" && typeof data.longitude === "number") {
-            console.log("✅ [NodesMap] Successfully geolocated", node.ip, "->", data.city, data.country);
             newLocations.push({
               ip: node.ip,
               lat: data.latitude,
@@ -199,11 +190,9 @@ export default function NodesMap({ nodes }: NodesMapProps) {
               status: getHealthStatus(node),
             });
             updated = true;
-          } else {
-            console.warn("⚠️ [NodesMap] Invalid geolocation data for", node.ip, data);
           }
         } catch (error) {
-          console.error("❌ [NodesMap] Failed to geolocate", node.ip, error);
+          console.error("Failed to geolocate", node.ip, error);
           setGeoLocateErrorCount((c) => c + 1);
         }
       }
@@ -224,17 +213,13 @@ export default function NodesMap({ nodes }: NodesMapProps) {
             status: n ? getHealthStatus(n) : "Private",
           };
         });
-        console.log("💾 [NodesMap] Using", merged.length, "total locations", updated ? "(with new updates)" : "(cached only)");
         setLocations(merged);
-      } else {
-        console.log("⚠️ [NodesMap] No locations available at all");
       }
     };
     fetchLocations();
   }, [nodes]);
 
   const markers = useMemo(() => {
-    console.log("🗺️ [DEBUG] Rendering", locations.length, "markers on map");
     return locations.map((loc) => (
       <Marker
         key={loc.ip}
