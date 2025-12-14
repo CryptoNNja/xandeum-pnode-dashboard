@@ -1,23 +1,11 @@
 "use client";
 
 import React from "react";
-
-interface PNodeStats {
-  cpu_percent: number;
-  ram_used: number;
-  ram_total: number;
-  file_size: number;
-  uptime: number;
-  packets_received: number;
-  packets_sent: number;
-}
-
-interface PNode {
-  ip: string;
-  status: string;
-  stats: PNodeStats;
-  version?: string;
-}
+import clsx from "clsx";
+import { calculateNodeScore, getScoreColor } from "@/lib/scoring";
+import { useTheme } from "@/hooks/useTheme";
+import { getHealthStatus } from "@/lib/health";
+import type { PNode } from "@/lib/types";
 
 interface PNodeTableProps {
   data: PNode[];
@@ -32,10 +20,58 @@ export default function PNodeTable({
   sortKey,
   sortDirection,
 }: PNodeTableProps) {
+  // Simulation de données critiques pour test visuel
+  data = [
+    {
+      ip: '192.168.1.1',
+      status: 'critical',
+      version: 'v1.2.3',
+      stats: {
+        cpu_percent: 99.9,
+        ram_used: 62 * 1024 * 1024 * 1024,
+        ram_total: 64 * 1024 * 1024 * 1024,
+        uptime: 3600,
+        packets_sent: 1_200_000,
+        packets_received: 900_000,
+        file_size: 9.8 * 1024 * 1024 * 1024 * 1024,
+      },
+    },
+    {
+      ip: '192.168.1.2',
+      status: 'warning',
+      version: 'v1.2.3',
+      stats: {
+        cpu_percent: 85.2,
+        ram_used: 50 * 1024 * 1024 * 1024,
+        ram_total: 64 * 1024 * 1024 * 1024,
+        uptime: 7200,
+        packets_sent: 800_000,
+        packets_received: 1_100_000,
+        file_size: 8.2 * 1024 * 1024 * 1024 * 1024,
+      },
+    },
+    {
+      ip: '192.168.1.3',
+      status: 'good',
+      version: 'v1.2.3',
+      stats: {
+        cpu_percent: 42.1,
+        ram_used: 24 * 1024 * 1024 * 1024,
+        ram_total: 64 * 1024 * 1024 * 1024,
+        uptime: 14400,
+        packets_sent: 2_000_000,
+        packets_received: 2_200_000,
+        file_size: 7.1 * 1024 * 1024 * 1024 * 1024,
+      },
+    },
+  ];
+  const { theme, mounted: themeMounted } = useTheme();
+  const isLight = themeMounted ? theme === "light" : false;
+
   if (!data || !Array.isArray(data)) return null;
 
   const formatBytes = (bytes: number) =>
-    (bytes / 1_000_000_000).toFixed(0) + " GB";
+    `${Math.max(bytes, 0) / 1_000_000_000 < 0.1 ? (bytes / 1_000_000_000).toFixed(1) : (bytes / 1_000_000_000).toFixed(0)} GB`;
 
   const formatUptime = (seconds: number) => {
     if (seconds === 0) return "-";
@@ -43,41 +79,45 @@ export default function PNodeTable({
     return hours + " h";
   };
 
-  const formatPackets = (p: number) => {
-    if (!p || p <= 0) return "-";
-    return p.toLocaleString("en-US");
+  const formatPacketValue = (value: number) => {
+    if (!Number.isFinite(value) || value <= 0) return "0";
+    const absValue = Math.abs(value);
+    if (absValue >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
+    if (absValue >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+    if (absValue >= 1e3) return `${(value / 1e3).toFixed(1)}K`;
+    return value.toLocaleString("en-US");
   };
 
-  const getHealthStatus = (pnode: PNode) => {
-    if (pnode.status === "gossip_only" || pnode.stats.uptime === 0)
-      return "Private";
-
-    const cpu = pnode.stats.cpu_percent;
-    const hours = pnode.stats.uptime / 3600;
-
-    if (cpu >= 90) return "Critical";
-    if (hours < 1) return "Warning";
-    if (cpu >= 70) return "Warning";
-    if (cpu < 20 && hours >= 24) return "Excellent";
-    return "Good";
+  const getVersionLabel = (pnode: PNode, isPrivate: boolean) => {
+    const raw = pnode.version?.trim();
+    if (!raw || raw.toLowerCase() === "unknown") {
+      return isPrivate ? "Private" : "Unknown";
+    }
+    const match = raw.match(/(\d+\.\d+\.\d+)/);
+    if (match) {
+      return `v${match[1]}`;
+    }
+    const normalized = raw.replace(/^V/, "v");
+    return normalized.startsWith("v") ? normalized : `v${normalized}`;
   };
 
   const SortIcon = ({ columnKey }: { columnKey: string }) => {
     if (sortKey !== columnKey) {
       return (
-        <span className="text-gray-600 ml-1 opacity-0 group-hover:opacity-50 transition-opacity">
+        <span className="text-text-faint ml-1 opacity-0 group-hover:opacity-50 transition-opacity">
           ↕
         </span>
       );
     }
     return (
-      <span className="text-[#00D4AA] ml-1">
+      <span className="text-accent-aqua ml-1">
         {sortDirection === "asc" ? "↑" : "↓"}
       </span>
     );
   };
 
   const headers = [
+    { key: "score", label: "Score" },
     { key: "ip", label: "IP Address" },
     { key: "health", label: "Status" },
     { key: "version", label: "Version" },
@@ -89,15 +129,44 @@ export default function PNodeTable({
   ];
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-[#2D3454] bg-[#1A1F3A] shadow-xl">
+    <div
+      className={clsx(
+        "overflow-x-auto rounded-xl border shadow-xl transition-colors",
+        isLight
+          ? "border-black/10 bg-white/95"
+          : "border-border-app bg-bg-card"
+      )}
+    >
       <table className="w-full text-left border-collapse text-sm">
+        <colgroup>
+          <col style={{ width: '60px' }} />
+          <col style={{ width: '130px' }} />
+          <col style={{ width: '85px' }} />
+          <col style={{ width: '80px' }} />
+          <col style={{ width: '90px' }} />
+          <col style={{ width: '120px' }} />
+          <col style={{ width: '90px' }} />
+          <col style={{ width: '120px' }} />
+          <col style={{ width: '75px' }} />
+          <col style={{ width: '50px' }} />
+        </colgroup>
         <thead>
-          <tr className="bg-[#0F1419] border-b border-[#2D3454]">
+          <tr
+            className={clsx(
+              "border-b transition-colors",
+              isLight
+                ? "border-black/10 bg-black/5"
+                : "border-border-app bg-bg-bg2"
+            )}
+          >
             {headers.map((header) => (
               <th
                 key={header.key}
                 onClick={() => onSort(header.key)}
-                className="p-4 text-[11px] font-bold uppercase tracking-wider text-gray-400 cursor-pointer hover:text-white hover:bg-[#2D3454]/50 transition-colors select-none group whitespace-nowrap"
+                className={clsx(
+                  "p-4 text-[11px] font-bold uppercase tracking-wider cursor-pointer transition-colors select-none group whitespace-nowrap",
+                  isLight ? "text-black/60" : "text-text-soft"
+                )}
               >
                 <div className="flex items-center">
                   {header.label}
@@ -105,12 +174,17 @@ export default function PNodeTable({
                 </div>
               </th>
             ))}
-            <th className="p-4 text-[11px] font-bold uppercase tracking-wider text-gray-500 text-right">
+            <th className="p-4 text-[11px] font-bold uppercase tracking-wider text-text-faint text-right">
               Action
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-[#2D3454]">
+        <tbody
+          className={clsx(
+            "divide-y transition-colors",
+            isLight ? "divide-black/10" : "divide-border-app"
+          )}
+        >
           {data.map((pnode) => {
             const status = getHealthStatus(pnode);
 
@@ -128,126 +202,94 @@ export default function PNodeTable({
               badgeClass =
                 "bg-[#EF4444]/20 text-[#EF4444] border-[#EF4444]/30";
 
-            const isPrivate = status === "Private";
+            const isPrivate = pnode.status !== "active";
             const sent = pnode.stats.packets_sent;
             const recv = pnode.stats.packets_received;
             const totalPackets = sent + recv;
+            const versionLabel = getVersionLabel(pnode, isPrivate);
+            const ramUsed = Math.max(pnode.stats.ram_used ?? 0, 0);
+            const ramTotal = Math.max(pnode.stats.ram_total ?? 0, 0);
+            // API v0.7: stats.file_size = storage_committed
+            const committedBytes = Math.max(pnode.stats.file_size ?? 0, 0);
 
             return (
               <tr
                 key={pnode.ip}
                 onClick={() => (window.location.href = `/pnode/${pnode.ip}`)}
-                className="hover:bg-[#2D3454]/30 transition-colors cursor-pointer group"
+                className={clsx(
+                  "transition-colors cursor-pointer group",
+                  isLight
+                    ? "hover:bg-black/5"
+                    : "bg-bg-card hover:bg-table-hover"
+                )}
               >
-                <td className="p-4 font-mono text-white font-medium group-hover:text-[#00D4AA] transition-colors whitespace-nowrap">
+                <td className="p-4 text-center align-middle">
+                  <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm ${getScoreColor(calculateNodeScore(pnode))}`}>
+                    {calculateNodeScore(pnode)}
+                  </div>
+                </td>
+
+                <td className="p-4 font-mono text-text-main font-medium group-hover:text-accent-aqua transition-colors whitespace-nowrap align-middle">
                   {pnode.ip}
                 </td>
 
-                <td className="p-4">
+                <td className="p-4 align-middle">
                   <span
-                    className={`px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wide ${badgeClass}`}
+                    className={`px-4 py-2 rounded-full text-[10px] font-bold border uppercase tracking-wide ${badgeClass}`}
                   >
                     {status}
                   </span>
                 </td>
 
-                <td className="p-4 text-xs text-gray-400 font-mono whitespace-nowrap">
-                  {pnode.version || (isPrivate ? "Unknown" : "-")}
+                <td className="p-4 text-xs text-text-faint font-mono whitespace-nowrap align-middle">
+                  {versionLabel}
                 </td>
 
-                <td className="p-4">
-                  {!isPrivate ? (
-                    <div className="flex items-center gap-3">
-                      <div className="w-24 h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${
-                            pnode.stats.cpu_percent > 90
-                              ? "bg-[#EF4444]"
-                              : "bg-[#00D4AA]"
-                          }`}
-                          style={{
-                            width: `${Math.min(
-                              pnode.stats.cpu_percent,
-                              100
-                            )}%`,
-                          }}
-                        />
-                      </div>
-                      <span className="text-sm text-gray-300 w-12 text-right">
-                        {pnode.stats.cpu_percent.toFixed(1)}%
+                <td className="p-4 whitespace-nowrap align-middle">
+                  <span className="text-sm text-text-main font-mono">
+                    {Number.isFinite(pnode.stats.cpu_percent)
+                      ? `${pnode.stats.cpu_percent.toFixed(1)}%`
+                      : "—"}
+                  </span>
+                </td>
+
+                <td className="p-4 text-sm text-accent font-semibold whitespace-nowrap align-middle">
+                  {formatBytes(ramUsed)}{" "}
+                  <span className="text-text-faint text-xs">
+                    / {formatBytes(ramTotal)}
+                  </span>
+                </td>
+
+                <td className="p-4 text-sm text-[#7B3FF2] font-semibold whitespace-nowrap align-middle">
+                  {formatBytes(committedBytes)}
+                </td>
+
+                <td className="p-4 text-sm text-text-main font-mono whitespace-nowrap align-middle">
+                  <div className="flex flex-col">
+                    <span>
+                      {formatPacketValue(totalPackets)}
+                      <span className="text-[10px] text-text-faint ml-1">
+                        pkts
                       </span>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-gray-600 italic">
-                      Hidden
                     </span>
-                  )}
-                </td>
-
-                <td className="p-4 text-sm text-gray-300 whitespace-nowrap">
-                  {!isPrivate ? (
-                    <>
-                      {formatBytes(pnode.stats.ram_used)}{" "}
-                      <span className="text-gray-600 text-xs">
-                        / {formatBytes(pnode.stats.ram_total)}
+                    <span className="text-[10px] mt-2">
+                      <span className="text-[#00D4AA]">
+                        ↑ {formatPacketValue(sent)}
                       </span>
-                    </>
-                  ) : (
-                    <span className="text-gray-600 text-xs italic">
-                      Hidden
-                    </span>
-                  )}
-                </td>
-
-                <td className="p-4 text-sm text-[#7B3FF2] font-semibold whitespace-nowrap">
-                  {!isPrivate ? (
-                    formatBytes(pnode.stats.file_size)
-                  ) : (
-                    <span className="text-gray-600 text-xs italic font-normal">
-                      Hidden
-                    </span>
-                  )}
-                </td>
-
-                {/* TRAFFIC : total + IN/OUT colorés */}
-                <td className="p-4 text-sm text-gray-300 font-mono whitespace-nowrap">
-                  {!isPrivate ? (
-                    <div className="flex flex-col">
-                      <span>
-                        {formatPackets(totalPackets)}
-                        <span className="text-[10px] text-gray-500 ml-1">
-                          pkts
-                        </span>
+                      <span className="text-text-faint mx-1">•</span>
+                      <span className="text-[#e9c601]">
+                        ↓ {formatPacketValue(recv)}
                       </span>
-                      <span className="text-[10px] mt-0.5">
-                        <span className="text-[#00D4AA]">
-                          ↑ {formatPackets(sent)}
-                        </span>
-                        <span className="text-gray-500 mx-1">•</span>
-                        <span className="text-[#e9c601]">
-                          ↓ {formatPackets(recv)}
-                        </span>
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-gray-600 text-xs italic">
-                      Hidden
                     </span>
-                  )}
+                  </div>
                 </td>
 
-                <td className="p-4 text-sm text-gray-300 font-mono whitespace-nowrap">
-                  {!isPrivate ? (
-                    formatUptime(pnode.stats.uptime)
-                  ) : (
-                    <span className="text-gray-600 text-xs italic">
-                      Hidden
-                    </span>
-                  )}
+                <td className="p-4 text-sm text-text-main font-mono whitespace-nowrap align-middle">
+                  {formatUptime(pnode.stats.uptime)}
                 </td>
 
-                <td className="p-4 text-right">
-                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#2D3454] text-[#00D4AA] opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1">
+                <td className="p-4 text-right align-middle">
+                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-bg-bg2 text-accent-aqua opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1">
                     →
                   </span>
                 </td>

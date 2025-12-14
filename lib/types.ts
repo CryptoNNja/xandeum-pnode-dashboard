@@ -25,6 +25,10 @@ export interface PNode {
   status: PNodeStatus;
   stats: PNodeStats;
   version?: string;
+  lat?: number | null;
+  lng?: number | null;
+  city?: string | null;
+  country?: string | null;
 }
 
 // Stats vides par défaut pour éviter les `undefined` / `NaN`

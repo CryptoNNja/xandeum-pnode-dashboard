@@ -22,7 +22,8 @@ export default function ThemeBody({
 
   return (
     <body
-      className={`${geistSans.variable} ${geistMono.variable} antialiased ${themeId}`}
+      data-theme={themeId}
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
       {children}
     </body>
