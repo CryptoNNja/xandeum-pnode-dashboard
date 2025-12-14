@@ -213,6 +213,10 @@ export default function NodesMap({ nodes }: NodesMapProps) {
           "pnode_locations_v2",
           JSON.stringify(newLocations)
         );
+      }
+
+      // Always merge and set locations if we have any (even if no new ones were fetched)
+      if (newLocations.length > 0) {
         const merged = newLocations.map((loc) => {
           const n = nodes.find((node) => node.ip === loc.ip);
           return {
@@ -220,10 +224,10 @@ export default function NodesMap({ nodes }: NodesMapProps) {
             status: n ? getHealthStatus(n) : "Private",
           };
         });
-        console.log("💾 [NodesMap] Saved and using", merged.length, "total locations");
+        console.log("💾 [NodesMap] Using", merged.length, "total locations", updated ? "(with new updates)" : "(cached only)");
         setLocations(merged);
       } else {
-        console.log("⚠️ [NodesMap] No locations were updated");
+        console.log("⚠️ [NodesMap] No locations available at all");
       }
     };
     fetchLocations();
