@@ -35,7 +35,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import PNodeTable from "@/components/PNodeTable";
 import EnhancedHero from "@/components/EnhancedHero";
-import LoadingScreen, { type LoadingStatus } from "@/components/LoadingScreen";
+import SkeletonLoader from "@/components/SkeletonLoader";
 import TopPerformersChart from "@/components/TopPerformersChart";
 import { Toolbar } from "@/components/Dashboard/Toolbar";
 import ClientErrorBoundary from "@/components/ClientErrorBoundary";
@@ -385,20 +385,11 @@ export default function Page() {
   const healthMenuRef = useRef<HTMLDivElement | null>(null);
   const lastHealthSnapshot = useRef<{ filter: HealthFilter; percent: Record<HealthTrendKey, number> } | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [showLoadingOverlay, setShowLoadingOverlay] = useState(true);
-  const [loadingStatus, setLoadingStatus] = useState<LoadingStatus>("initializing");
-  const [loadingProgress, setLoadingProgress] = useState(8);
-  const [loadingVariant] = useState<"full" | "minimal">("full");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [networkHealthHistory, setNetworkHealthHistory] = useState<number[]>([]);
   const [healthDelta, setHealthDelta] = useState<Record<HealthTrendKey, number>>(createEmptyDistribution());
 
-  const handleSkipLoading = useCallback(() => {
-    setLoadingStatus("ready");
-    setLoadingProgress(100);
-    setShowLoadingOverlay(false);
-  }, []);
 
   const loadData = useCallback(
     async (isManual = false) => {
@@ -468,34 +459,6 @@ export default function Page() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isHealthMenuOpen]);
 
-  useEffect(() => {
-    if (!showLoadingOverlay) return;
-    let stage: LoadingStatus = "initializing";
-    setLoadingStatus(stage);
-    setLoadingProgress(8);
-    const interval = setInterval(() => {
-      setLoadingProgress((prev) => {
-        const next = Math.min(prev + Math.random() * 7 + 3, 94);
-        if (next > 35 && stage === "initializing") {
-          stage = "loading";
-          setLoadingStatus("loading");
-        } else if (next > 70 && stage === "loading") {
-          stage = "building";
-          setLoadingStatus("building");
-        }
-        return next;
-      });
-    }, 420);
-    return () => clearInterval(interval);
-  }, [showLoadingOverlay]);
-
-  useEffect(() => {
-    if (loading || !showLoadingOverlay) return;
-    setLoadingStatus("ready");
-    setLoadingProgress(100);
-    const timeout = setTimeout(() => setShowLoadingOverlay(false), 750);
-    return () => clearTimeout(timeout);
-  }, [loading, showLoadingOverlay]);
 
   const getTimeAgo = useCallback(() => {
     if (!lastUpdate) return "";
@@ -1059,31 +1022,13 @@ export default function Page() {
   /*                     RENDER                         */
   /* -------------------------------------------------- */
 
+  if (loading) {
+    return <SkeletonLoader />;
+  }
+
   return (
     <>
-      <AnimatePresence>
-        {showLoadingOverlay && (
-          <LoadingScreen
-            isLoading={showLoadingOverlay}
-            progress={Math.round(loadingProgress)}
-            status={loadingStatus}
-            variant={loadingVariant}
-            onSkip={handleSkipLoading}
-          />
-        )}
-      </AnimatePresence>
-
-      <motion.main
-        className="min-h-screen bg-bg-app text-text-main pb-20 theme-transition flex flex-col space-y-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{
-          opacity: showLoadingOverlay ? 0 : 1,
-          y: showLoadingOverlay ? 20 : 0,
-          filter: showLoadingOverlay ? "blur(8px)" : "blur(0px)",
-        }}
-        transition={{ duration: 0.5, delay: showLoadingOverlay ? 0 : 0.3, ease: "easeOut" }}
-        style={{ pointerEvents: showLoadingOverlay ? "none" : "auto" }}
-      >
+      <main className="min-h-screen bg-bg-app text-text-main pb-20 theme-transition flex flex-col space-y-8">
         <style>{TOOLTIP_STYLES}</style>
         {/* HERO */}
         <EnhancedHero
@@ -1816,7 +1761,7 @@ export default function Page() {
             </div>
           </div>
         </footer>
-      </motion.main>
+      </main>
 
       {/* SEARCH MODAL (hors motion.main pour éviter fixed/transform) */}
       {isSearchOpen && (
