@@ -218,7 +218,7 @@ export default function NodesMap({ nodes }: { nodes: PNode[] }) {
 
   if (!mapReady || !geoJsonData) {
     return (
-      <div className={`w-full rounded-xl border flex items-center justify-center ${isLight ? 'bg-gray-100 border-gray-300' : 'bg-[#111827] border-[#2D3454]'}`} style={{ aspectRatio: '16/9', minHeight: '400px' }}>
+      <div className={`w-full rounded-xl border flex items-center justify-center ${isLight ? 'bg-gray-100 border-gray-300' : 'bg-[#111827] border-[#2D3454]'}`} style={{ height: '600px' }}>
         <p className={`animate-pulse font-mono text-xs ${isLight ? 'text-[#EA580C]' : 'text-[#00D4AA]'}`}>
           LOADING CARTOGRAPHY...
         </p>
@@ -231,9 +231,7 @@ export default function NodesMap({ nodes }: { nodes: PNode[] }) {
       id="map-container-robust"
       className={`relative w-full rounded-xl overflow-hidden border shadow-2xl ${isLight ? 'bg-gray-100 border-gray-300' : 'bg-[#111827] border-[#2D3454]'}`}
       style={{
-        aspectRatio: '16/9',
-        minHeight: '400px',
-        maxHeight: '700px',
+        height: '600px',
         minWidth: "300px",
         display: "block"
       }}
@@ -271,12 +269,14 @@ export default function NodesMap({ nodes }: { nodes: PNode[] }) {
 
       <MapContainer
         center={[20, 0]}
-        zoom={2}
-        minZoom={2}
+        zoom={1.5}
+        minZoom={1}
         maxZoom={18}
         scrollWheelZoom={true}
         style={{ height: "100%", width: "100%", background: "transparent" }}
         ref={setMap}
+        maxBounds={[[-90, -180], [90, 180]]}
+        maxBoundsViscosity={0.5}
       >
         {/* @ts-ignore */}
         <GeoJSON
