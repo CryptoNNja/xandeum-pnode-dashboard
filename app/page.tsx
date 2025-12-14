@@ -1543,7 +1543,7 @@ export default function Page() {
         )}
 
         {/* CONTENT (TABLE / GRID / MAP) */}
-        <section ref={contentSectionRef} className={viewMode === "map" ? "w-full px-6 pb-24" : "max-w-7xl mx-auto px-6 pb-24"}>
+        <section ref={contentSectionRef} className={viewMode === "map" ? "max-w-[1600px] mx-auto px-6 pb-24" : "max-w-7xl mx-auto px-6 pb-24"}>
           {loading ? (
             <div className="text-center py-32">
               <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#00D4AA]" />
