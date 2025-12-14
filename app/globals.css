@@ -1,8 +1,212 @@
 @import "tailwindcss";
 
+/* Chemin des fichiers à scanner par Tailwind */
 @source "../**/*.{js,ts,jsx,tsx}";
 
-/* Hide scrollbar */
+/* ============================= */
+/*   THEME TOKENS (CSS VARS)     */
+/* ============================= */
+
+/* 🎨 Palette par défaut = Xandeum LIGHT */
+:root {
+  --bg-app: #f5f5f7;
+  --bg-bg: #f5f5f7;
+  --bg-bg2: #f9fafb;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f9fafb;
+
+  --border-default: #e5e7eb;
+  --border-hover: #d1d5db;
+  --border-app: var(--border-default);
+  --border-app-soft: var(--border-default);
+
+  --text-main: #0f172a;
+  --text-soft: #4b5563;
+  --text-faint: #6b7280;
+
+  --accent: #0f172a;
+  --accent-aqua: #14f195;
+
+  --kpi-excellent: #059669;
+  --kpi-good: #3b82f6;
+  --kpi-warning: #d97706;
+  --kpi-critical: #dc2626;
+  --kpi-private: #6b7280;
+
+  --accent-blue: #3b82f6;
+  --accent-orange: #ea580c;
+  --accent-ram: #3b82f6;
+  --accent-storage: #3b82f6;
+  --accent-alert-ok: #059669;
+
+  --hero-gradient-opacity: 0.015;
+
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --table-hover: #f9fafb;
+
+  --progress-track: #e5e7eb;
+  --progress-fill: linear-gradient(90deg, #14f195, #9945ff);
+  --progress-warning: #d97706;
+  --progress-critical: #dc2626;
+}
+
+/* 🎨 Palette Xandeum DARK */
+:root[data-theme="dark"] {
+  --bg-app: #0a0e27;
+  --bg-bg: #0a0e27;
+  --bg-bg2: #111827;
+  --bg-card: #1a1f3a;
+  --bg-card-hover: rgba(100, 116, 139, 0.08);
+
+  --border-default: rgba(100, 116, 139, 0.2);
+  --border-hover: rgba(100, 116, 139, 0.4);
+  --border-app: var(--border-default);
+  --border-app-soft: var(--border-default);
+
+  --text-main: #f8fafc;
+  --text-soft: #cbd5f5;
+  --text-faint: #94a3b8;
+
+  --accent: #7b3ff2;
+  --accent-aqua: #14f195;
+
+  --kpi-excellent: #10b981;
+  --kpi-good: #60a5fa;
+  --kpi-warning: #f59e0b;
+  --kpi-critical: #ef4444;
+  --kpi-private: #94a3b8;
+
+  --accent-blue: #60a5fa;
+  --accent-orange: #fb923c;
+  --accent-ram: #60a5fa;
+  --accent-storage: #60a5fa;
+  --accent-alert-ok: #10b981;
+
+  --hero-gradient-opacity: 0.03;
+
+  --card-shadow: 0 20px 45px -25px rgba(2, 4, 24, 0.65);
+  --table-hover: rgba(100, 116, 139, 0.08);
+
+  --progress-track: #374151;
+  --progress-fill: linear-gradient(90deg, #14f195, #9945ff);
+  --progress-warning: #f59e0b;
+  --progress-critical: #ef4444;
+}
+
+/* Alias explicites si ton ThemeProvider utilise "xandeum-light" ou "light" */
+:root[data-theme="xandeum-light"],
+:root[data-theme="light"] {
+  --bg-app: #f5f5f7;
+  --bg-bg: #f5f5f7;
+  --bg-bg2: #f9fafb;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f9fafb;
+
+  --border-default: #e5e7eb;
+  --border-hover: #d1d5db;
+  --border-app: var(--border-default);
+  --border-app-soft: var(--border-default);
+
+  --text-main: #0f172a;
+  --text-soft: #4b5563;
+  --text-faint: #6b7280;
+
+  --accent: #0f172a;
+  --accent-aqua: #14f195;
+
+  --kpi-excellent: #059669;
+  --kpi-good: #3b82f6;
+  --kpi-warning: #d97706;
+  --kpi-critical: #dc2626;
+  --kpi-private: #6b7280;
+
+  --accent-blue: #3b82f6;
+  --accent-orange: #ea580c;
+  --accent-ram: #3b82f6;
+  --accent-storage: #3b82f6;
+  --accent-alert-ok: #059669;
+
+  --hero-gradient-opacity: 0.015;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --table-hover: #f9fafb;
+  --progress-track: #e5e7eb;
+  --progress-fill: linear-gradient(90deg, #14f195, #9945ff);
+  --progress-warning: #d97706;
+  --progress-critical: #dc2626;
+}
+
+/* ============================= */
+/*      BASE GLOBAL STYLES       */
+/* ============================= */
+
+body {
+  background-color: var(--bg-bg);
+  color: var(--text-main);
+}
+
+/* Composants thématiques */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-app);
+  border-radius: 8px;
+  box-shadow: var(--card-shadow);
+}
+
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: 1rem;
+  box-shadow: var(--card-shadow);
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
+}
+
+.kpi-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.table-row-hover:hover {
+  background-color: var(--table-hover);
+}
+
+/* Animations et transitions */
+.theme-transition {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* ============================= */
+/*   UTILITY CLASSES THÈME       */
+/* ============================= */
+
+/* Backgrounds */
+.bg-app { background-color: var(--bg-app); }
+.bg-bg { background-color: var(--bg-bg); }
+.bg-bg2 { background-color: var(--bg-bg2); }
+.bg-card { background-color: var(--bg-card); }
+
+/* Text */
+.text-app,
+.text-main { color: var(--text-main); }
+
+.text-soft { color: var(--text-soft); }
+.text-faint { color: var(--text-faint); }
+.text-primary { color: var(--accent-aqua); }
+
+/* Borders */
+.border-app { border-color: var(--border-app); }
+.border-app-soft { border-color: var(--border-app-soft); }
+
+/* Bordures “statut” pour les cards GRID */
+.border-soft { border-color: var(--border-app-soft); }
+.border-excellent { border-left-color: var(--kpi-excellent); }
+.border-good { border-left-color: var(--kpi-good); }
+.border-warning { border-left-color: var(--kpi-warning); }
+.border-critical { border-left-color: var(--kpi-critical); }
+
+/* ============================= */
+/*   SCROLLBAR HIDDEN            */
+/* ============================= */
+
 ::-webkit-scrollbar {
   width: 0px;
   background: transparent;
@@ -10,4 +214,48 @@
 
 * {
   scrollbar-width: none;
+}
+/* ============================= */
+/*   ANIMATED HERO           */
+/* ============================= */
+@keyframes aurora {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-aurora {
+  animation: aurora 15s ease infinite;
+}
+
+/* ============================= */
+/*   LEAFLET MAP FIX             */
+/* ============================= */
+
+.leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 650px;
+  z-index: 1;
+}
+
+.leaflet-pane,
+.leaflet-map-pane,
+.leaflet-tile-pane,
+.leaflet-overlay-pane,
+.leaflet-shadow-pane,
+.leaflet-marker-pane,
+.leaflet-tooltip-pane,
+.leaflet-popup-pane {
+  z-index: auto;
+}
+
+.leaflet-tile-container {
+  z-index: 1;
 }

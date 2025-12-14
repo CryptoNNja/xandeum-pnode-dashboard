@@ -6,14 +6,25 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest",
+    "backfill": "node scripts/backfill.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.30.0",
+    "@types/leaflet": "^1.9.21",
     "axios": "^1.13.2",
+    "dotenv": "^17.2.3",
+    "framer-motion": "^12.23.26",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.559.0",
     "next": "16.0.7",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "recharts": "^3.5.1"
+    "react-leaflet": "^5.0.0",
+    "react-leaflet-cluster": "^4.0.0",
+    "recharts": "^3.5.1",
+    "use-debounce": "^10.0.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -23,6 +34,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.7",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^1.6.1"
   }
 }

@@ -1,19 +1,5 @@
 import axios from "axios";
-
-export interface PNodeStats {
-  active_streams: number;
-  cpu_percent: number;
-  current_index: number;
-  file_size: number;
-  last_updated: number;
-  packets_received: number;
-  packets_sent: number;
-  ram_total: number;
-  ram_used: number;
-  total_bytes: number;
-  total_pages: number;
-  uptime: number;
-}
+import { PNodeStats } from "./types";
 
 export interface PNodeResponse {
   error: null | string;
@@ -33,9 +19,11 @@ export interface GossipPNode {
 // Fonction pour récupérer la liste des pNodes depuis le gossip
 export async function getGossipPNodes(): Promise<string[]> {
   try {
-    const response = await axios.get("http://159.69.221.189:5000/gossip");
-    const pnodes: GossipPNode[] = response.data.pnodes;
-    return pnodes.map(p => p.ip);
+    const response = await axios.get("http://159.69.221.189:5000/gossip", {
+      timeout: 5000,
+    });
+    const pnodes: GossipPNode[] = response.data.pnodes ?? [];
+    return pnodes.map((p) => p.ip);
   } catch (error) {
     console.error("Gossip error:", error);
     // Fallback sur quelques IPs hardcodées
@@ -56,31 +44,46 @@ export async function getGossipPNodes(): Promise<string[]> {
 // Fonction pour récupérer les stats d'un pNode
 export async function getPNodeStats(ip: string): Promise<PNodeStats | null> {
   try {
-    const url = "http://" + ip + ":6000/rpc";
-    const response = await axios.post(url, {
-      jsonrpc: "2.0",
-      method: "get-stats",
-      id: 1,
-    }, {
-      timeout: 5000, // Timeout de 5 secondes
-    });
+    const url = `http://${ip}:6000/rpc`;
+    const response = await axios.post<PNodeResponse>(
+      url,
+      {
+        jsonrpc: "2.0",
+        method: "get-stats",
+        id: 1,
+      },
+      {
+        timeout: 5000, // Timeout de 5 secondes
+      }
+    );
 
-    return response.data.result;
+    if (response.data && response.data.result) {
+      return response.data.result;
+    }
+
+    return null;
   } catch (error) {
-    console.error("Erreur pour " + ip + ":", error);
+    console.error(`Erreur pour ${ip}:`, error);
     return null;
   }
 }
 
 // Fonction pour récupérer les stats de TOUS les pNodes
-export async function getAllPNodesStats() {
+export async function getAllPNodesStats(): Promise<
+  { ip: string; stats: PNodeStats }[]
+> {
   // D'abord, récupère la liste des IPs depuis le gossip
   const ips = await getGossipPNodes();
-  
-  const promises = ips.map((ip) => 
-    getPNodeStats(ip).then((stats) => ({ ip, stats }))
-  );
-  
+
+  const promises = ips.map(async (ip) => {
+    const stats = await getPNodeStats(ip);
+    return { ip, stats };
+  });
+
   const results = await Promise.all(promises);
-  return results.filter((r) => r.stats !== null);
+
+  // Type guard pour garantir que `stats` n'est plus null dans le retour
+  return results.filter(
+    (r): r is { ip: string; stats: PNodeStats } => r.stats !== null
+  );
 }

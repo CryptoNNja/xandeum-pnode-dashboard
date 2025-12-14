@@ -1,497 +1,237 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import {
-  LineChart,
-  Line,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
+import { useEffect, useState, useMemo } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import ThemeToggle from '@/components/ThemeToggle';
+import HistoryChart from '@/components/HistoryChart';
+import ScoreDisplay from '@/components/ScoreDisplay';
+import { getHealthStatus } from '@/lib/health';
+import type { PNode } from '@/lib/types';
 
-interface PNodeStats {
-  cpu_percent: number;
-  ram_used: number;
-  ram_total: number;
-  file_size: number;
-  uptime: number;
-  packets_sent: number;
-  packets_received: number;
-}
+const STATUS_COLORS: Record<string, string> = {
+  Excellent: '#10B981',
+  Good: '#3B82F6',
+  Warning: '#F59E0B',
+  Critical: '#EF4444',
+  Private: '#64748B',
+};
 
-interface PNodeData {
-  ip: string;
-  stats: PNodeStats;
-}
-export default function PNodeDetail() {
+const hexToRgba = (hex: string, alpha: number) => {
+    const sanitized = hex.replace('#', '');
+    const isShort = sanitized.length === 3;
+    const full = isShort
+      ? sanitized
+        .split('')
+        .map((char) => char + char)
+        .join('')
+      : sanitized.padEnd(6, '0');
+    const r = parseInt(full.substring(0, 2), 16) || 0;
+    const g = parseInt(full.substring(2, 4), 16) || 0;
+    const b = parseInt(full.substring(4, 6), 16) || 0;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+  
+const getStatusStyles = (status: string) => {
+    const base = STATUS_COLORS[status] || STATUS_COLORS.Private;
+    return {
+      color: base,
+      backgroundColor: hexToRgba(base, 0.15),
+      border: `1px solid ${hexToRgba(base, 0.35)}`,
+      boxShadow: `0 8px 18px ${hexToRgba(base, 0.18)}`,
+    };
+};
+
+const formatBytes = (bytes: number) =>
+    bytes > 0 ? (bytes / 1_000_000_000).toFixed(2) + ' GB' : '-';
+
+const formatUptime = (seconds: number) => {
+    if (seconds <= 0) return '-';
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    return `${days}d ${hours}h`;
+};
+
+export default function PNodeDetailPage() {
   const params = useParams();
   const router = useRouter();
   const ip = params.ip as string;
 
-  const [pnodeData, setPnodeData] = useState<PNodeData | null>(null);
-  const [allPNodes, setAllPNodes] = useState<PNodeData[]>([]);
+  const [pnode, setPNode] = useState<PNode | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Générer des données historiques simulées (pour la démo)
-  const generateHistoricalData = (currentCPU: number) => {
-    const data = [];
-    const now = Date.now();
-
-    // Valeurs de base pour les packets (simulation réaliste)
-    const basePacketsSent = pnodeData?.stats.packets_sent || 3000;
-    const basePacketsReceived = pnodeData?.stats.packets_received || 3000;
-
-    for (let i = 23; i >= 0; i--) {
-      const time = new Date(now - i * 60 * 60 * 1000);
-      const hour = time.getHours();
-
-      // Simulation: variation aléatoire autour de la valeur actuelle
-      const variation = (Math.random() - 0.5) * 2;
-      const cpu = Math.max(0, Math.min(100, currentCPU + variation));
-
-      // Simulation packets avec variation horaire
-      const hourVariation = Math.sin((hour / 24) * Math.PI * 2) * 500; // Variation journalière
-      const randomVariation = (Math.random() - 0.5) * 200;
-
-      data.push({
-        time: `${hour}h`,
-        cpu: parseFloat(cpu.toFixed(2)),
-        ram: parseFloat((Math.random() * 20 + 60).toFixed(1)), // RAM entre 60-80%
-        packetsSent: Math.floor(
-          basePacketsSent / 24 + hourVariation + randomVariation
-        ),
-        packetsReceived: Math.floor(
-          basePacketsReceived / 24 + hourVariation + (Math.random() - 0.5) * 200
-        ),
-      });
-    }
-
-    return data;
-  };
-
-  // Charger les données
   useEffect(() => {
-    const loadData = async () => {
+    const fetchNodeData = async () => {
+      if (!ip) return;
+
+      setLoading(true);
+      setError(null);
+
       try {
-        const response = await fetch("/api/pnodes");
-        const data: PNodeData[] = await response.json();
-
-        setAllPNodes(data);
-
-        // Trouver le pNode spécifique
-        const currentPNode = data.find((p) => p.ip === ip);
-        setPnodeData(currentPNode || null);
-      } catch (error) {
-        console.error("Error loading pNode data:", error);
+        const res = await fetch(`/api/pnodes/${ip}`);
+        if (!res.ok) {
+          throw new Error(`Node not found (${res.status})`);
+        }
+        const node: PNode = await res.json();
+        setPNode(node);
+      } catch (e: any) {
+        setError(e.message || 'Failed to fetch node data');
+        console.error(e);
       } finally {
         setLoading(false);
       }
     };
 
-    loadData();
+    fetchNodeData();
   }, [ip]);
 
-  // Fonctions utilitaires
-  const formatBytes = (bytes: number) => {
-    return (bytes / 1_000_000_000).toFixed(2) + " GB";
-  };
+  const health = useMemo(() => pnode ? getHealthStatus(pnode) : 'Private', [pnode]);
+  
+  const ramPercent = useMemo(() => {
+    if (!pnode || !pnode.stats.ram_total || pnode.stats.ram_total === 0) return 0;
+    return Math.round((pnode.stats.ram_used / pnode.stats.ram_total) * 100);
+  }, [pnode]);
 
-  const formatUptime = (seconds: number) => {
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    return `${days}d ${hours}h`;
-  };
-
-  const getHealthStatus = (cpu: number, uptime: number) => {
-    const hours = uptime / 3600;
-    if (cpu < 1 && hours >= 24)
-      return {
-        status: "Excellent",
-        color: "text-green-400",
-        bg: "bg-green-500/20",
-      };
-    if (cpu < 2 && hours >= 12)
-      return { status: "Good", color: "text-cyan-400", bg: "bg-cyan-500/20" };
-    if (cpu < 5 && hours >= 1)
-      return {
-        status: "Warning",
-        color: "text-yellow-400",
-        bg: "bg-yellow-500/20",
-      };
-    return { status: "Critical", color: "text-red-400", bg: "bg-red-500/20" };
-  };
-
-  // Calculer les moyennes du réseau
-  const networkAvg = {
-    cpu:
-      allPNodes.length > 0
-        ? allPNodes.reduce((acc, p) => acc + p.stats.cpu_percent, 0) /
-          allPNodes.length
-        : 0,
-    ram:
-      allPNodes.length > 0
-        ? allPNodes.reduce(
-            (acc, p) => acc + (p.stats.ram_used / p.stats.ram_total) * 100,
-            0
-          ) / allPNodes.length
-        : 0,
-    uptime:
-      allPNodes.length > 0
-        ? allPNodes.reduce((acc, p) => acc + p.stats.uptime, 0) /
-          allPNodes.length
-        : 0,
-  };
-
-  // États de chargement et erreur
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#0A0E27] text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#00D4AA]"></div>
-          <p className="text-gray-400 mt-6 text-lg">Loading pNode data...</p>
-        </div>
+      <main className="min-h-screen bg-bg-app text-text-main flex items-center justify-center">
+        <Loader2
+          className="w-12 h-12 animate-spin"
+          style={{ color: 'var(--accent-aqua)' }}
+        />
       </main>
     );
   }
 
-  if (!pnodeData) {
+  if (error || !pnode) {
     return (
-      <main className="min-h-screen bg-[#0A0E27] text-white flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-red-400 mb-4">
-            pNode Not Found
-          </h1>
-          <p className="text-gray-400 mb-8">
-            IP {ip} is not responding or doesn't exist
+      <main className="min-h-screen bg-bg-app text-text-main p-6">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-sm font-semibold transition-colors hover:opacity-80"
+          style={{ color: 'var(--accent-aqua)' }}
+        >
+          <ArrowLeft className="w-4 h-4" /> Back
+        </button>
+        <div
+          className="max-w-7xl mx-auto mt-8 rounded-xl p-8 text-center border theme-transition shadow-xl"
+          style={{ background: 'var(--bg-card)', borderColor: 'var(--border-app)' }}
+        >
+          <AlertCircle
+            className="w-12 h-12 mx-auto mb-4"
+            style={{ color: 'var(--kpi-critical)' }}
+          />
+          <p className="text-xl" style={{ color: 'var(--text-soft)' }}>
+            {error || "Node data could not be loaded."}
           </p>
-          <button
-            onClick={() => router.push("/")}
-            className="bg-gradient-to-r from-[#7B3FF2] to-[#00D4AA] px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition"
-          >
-            ← Back to Dashboard
-          </button>
         </div>
       </main>
     );
   }
-
-  const health = getHealthStatus(
-    pnodeData.stats.cpu_percent,
-    pnodeData.stats.uptime
-  );
-  const historicalData = generateHistoricalData(pnodeData.stats.cpu_percent);
-  const ramPercent = (
-    (pnodeData.stats.ram_used / pnodeData.stats.ram_total) *
-    100
-  ).toFixed(1);
 
   return (
-    <main className="min-h-screen bg-[#0A0E27] text-white pb-20">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-[#7B3FF2] to-[#00D4AA] py-6">
-        <div className="max-w-7xl mx-auto px-8">
-          <button
-            onClick={() => router.push("/")}
-            className="mb-4 text-white/80 hover:text-white transition flex items-center gap-2"
-          >
-            ← Back to Dashboard
-          </button>
+    <main className="min-h-screen bg-bg-app text-text-main pb-20">
+      <div className="border-b border-border-app bg-bg2">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex justify-between items-center mb-4">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center gap-2 text-sm font-semibold transition-opacity hover:opacity-80"
+              style={{ color: 'var(--accent-aqua)' }}
+            >
+              <ArrowLeft className="w-4 h-4" /> Back
+            </button>
+            <div className="flex items-center gap-4">
+              <ThemeToggle />
+            </div>
+          </div>
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-4xl font-bold mb-1 flex items-center gap-3">
-                <span className="text-white">pNode</span>
-                <span className="text-[#00D4AA]">{ip}</span>
-              </h1>
-              <p className="text-white/80 text-sm">
-                Detailed analytics and performance metrics
+              <h1 className="text-3xl font-bold font-mono">{ip}</h1>
+              <p className="text-sm" style={{ color: 'var(--text-soft)' }}>
+                pNode Details & Analytics
               </p>
             </div>
-            <div
-              className={`px-6 py-3 rounded-full ${health.bg} ${health.color} font-bold text-lg`}
+            <span
+              className="px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wide theme-transition"
+              style={getStatusStyles(health)}
             >
-              {health.status}
-            </div>
+              {health}
+            </span>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-8 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-gradient-to-br from-[#1A1F3A] to-[#0F1419] p-6 rounded-xl border border-[#2D3454]">
-            <p className="text-gray-400 text-sm mb-1">CPU Usage</p>
-            <p className="text-3xl font-bold text-[#00D4AA]">
-              {pnodeData.stats.cpu_percent.toFixed(2)}%
-            </p>
-            <p className="text-xs text-gray-500 mt-2">
-              Network avg: {networkAvg.cpu.toFixed(2)}%
-            </p>
-          </div>
-
-          <div className="bg-gradient-to-br from-[#1A1F3A] to-[#0F1419] p-6 rounded-xl border border-[#2D3454]">
-            <p className="text-gray-400 text-sm mb-1">RAM Usage</p>
-            <p className="text-3xl font-bold text-[#7B3FF2] mb-3">
-              {ramPercent}%
-            </p>
-            {/* Barre de progression */}
-            <div className="w-full bg-[#0F1419] rounded-full h-2 mb-2">
-              <div
-                className="bg-gradient-to-r from-[#7B3FF2] to-[#9D5FFF] h-2 rounded-full transition-all duration-500"
-                style={{ width: `${ramPercent}%` }}
-              ></div>
+      <div className="max-w-7xl mx-auto px-6 mt-6 space-y-6">
+        <div className="bg-bg-card border border-border-app rounded-xl p-6">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h2 className="text-sm font-semibold mb-4 uppercase">Node Status</h2>
             </div>
-            <p className="text-xs text-gray-500">
-              {formatBytes(pnodeData.stats.ram_used)} /{" "}
-              {formatBytes(pnodeData.stats.ram_total)}
-            </p>
+            <ScoreDisplay pnode={pnode} size="md" />
           </div>
-
-          <div className="bg-gradient-to-br from-[#1A1F3A] to-[#0F1419] p-6 rounded-xl border border-[#2D3454]">
-            <p className="text-gray-400 text-sm mb-1">Storage</p>
-            <p className="text-3xl font-bold text-[#10B981] mb-3">
-              {formatBytes(pnodeData.stats.file_size)}
-            </p>
-            {/* Barre de progression (simulée sur 500GB max) */}
-            <div className="w-full bg-[#0F1419] rounded-full h-2 mb-2">
-              <div
-                className="bg-gradient-to-r from-[#10B981] to-[#34D399] h-2 rounded-full transition-all duration-500"
-                style={{
-                  width: `${Math.min(
-                    (pnodeData.stats.file_size / 500_000_000_000) * 100,
-                    100
-                  )}%`,
-                }}
-              ></div>
-            </div>
-            <p className="text-xs text-gray-500">Max: 500 GB</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-[#1A1F3A] to-[#0F1419] p-6 rounded-xl border border-[#2D3454]">
-            <p className="text-gray-400 text-sm mb-1">Uptime</p>
-            <p className="text-3xl font-bold text-[#F59E0B]">
-              {formatUptime(pnodeData.stats.uptime)}
-            </p>
-            <p className="text-xs text-gray-500 mt-2">
-              Network avg: {formatUptime(networkAvg.uptime)}
-            </p>
-          </div>
-        </div>
-
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* CPU History */}
-          <div className="bg-[#1A1F3A] p-6 rounded-xl border border-[#2D3454]">
-            <h3 className="text-xl font-bold mb-4 text-[#00D4AA]">
-              CPU Usage - Last 24h
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={historicalData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2D3454" />
-                <XAxis
-                  dataKey="time"
-                  stroke="#94A3B8"
-                  style={{ fontSize: "12px" }}
-                />
-                <YAxis stroke="#94A3B8" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1A1F3A",
-                    border: "1px solid #00D4AA",
-                    borderRadius: "8px",
-                  }}
-                  labelStyle={{ color: "#fff" }}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="cpu"
-                  stroke="#00D4AA"
-                  strokeWidth={2}
-                  dot={false}
-                  name="CPU %"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* RAM History */}
-          <div className="bg-[#1A1F3A] p-6 rounded-xl border border-[#2D3454]">
-            <h3 className="text-xl font-bold mb-4 text-[#7B3FF2]">
-              RAM Usage - Last 24h
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={historicalData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2D3454" />
-                <XAxis
-                  dataKey="time"
-                  stroke="#94A3B8"
-                  style={{ fontSize: "12px" }}
-                />
-                <YAxis stroke="#94A3B8" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1A1F3A",
-                    border: "1px solid #7B3FF2",
-                    borderRadius: "8px",
-                  }}
-                  labelStyle={{ color: "#fff" }}
-                />
-                <Legend />
-                <Area
-                  type="monotone"
-                  dataKey="ram"
-                  stroke="#7B3FF2"
-                  fill="#7B3FF2"
-                  fillOpacity={0.3}
-                  name="RAM %"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Network Activity */}
-        {/* Network Activity */}
-        <div className="bg-[#1A1F3A] p-6 rounded-xl border border-[#2D3454]">
-          <h3 className="text-xl font-bold mb-4 text-[#10B981]">
-            Network Activity - Last 24h
-          </h3>
-
-          {/* Stats actuelles */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div className="bg-[#0F1419] p-4 rounded-lg">
-              <p className="text-gray-400 text-sm mb-1">Total Packets Sent</p>
-              <p className="text-3xl font-bold text-[#00D4AA]">
-                {pnodeData.stats.packets_sent.toLocaleString()}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-bg2 p-4 rounded-lg theme-transition">
+              <p className="text-text-soft text-xs uppercase mb-1">Status</p>
+              <p className="text-lg font-bold" style={{ color: 'var(--accent-aqua)' }}>
+                {pnode.status.replace('_', ' ')}
               </p>
             </div>
-            <div className="bg-[#0F1419] p-4 rounded-lg">
-              <p className="text-gray-400 text-sm mb-1">
-                Total Packets Received
-              </p>
-              <p className="text-3xl font-bold text-[#7B3FF2]">
-                {pnodeData.stats.packets_received.toLocaleString()}
-              </p>
+            <div className="bg-bg2 p-4 rounded-lg theme-transition">
+              <p className="text-text-soft text-xs uppercase mb-1">Version</p>
+              <p className="text-lg font-bold">{pnode.version || 'Unknown'}</p>
             </div>
-          </div>
-
-          {/* Graphique */}
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={historicalData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2D3454" />
-              <XAxis
-                dataKey="time"
-                stroke="#94A3B8"
-                style={{ fontSize: "12px" }}
-              />
-              <YAxis stroke="#94A3B8" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1A1F3A",
-                  border: "1px solid #10B981",
-                  borderRadius: "8px",
-                }}
-                labelStyle={{ color: "#fff" }}
-              />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="packetsSent"
-                stroke="#00D4AA"
-                strokeWidth={2}
-                dot={false}
-                name="Packets Sent"
-              />
-              <Line
-                type="monotone"
-                dataKey="packetsReceived"
-                stroke="#7B3FF2"
-                strokeWidth={2}
-                dot={false}
-                name="Packets Received"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Comparison with Network */}
-        <div className="mt-8 bg-[#1A1F3A] p-6 rounded-xl border border-[#2D3454]">
-          <h3 className="text-xl font-bold mb-4 text-white">
-            Comparison with Network Average
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center">
-              <p className="text-gray-400 text-sm mb-2">CPU Performance</p>
-              <p
-                className={`text-2xl font-bold ${
-                  pnodeData.stats.cpu_percent < networkAvg.cpu
-                    ? "text-green-400"
-                    : "text-yellow-400"
-                }`}
-              >
-                {pnodeData.stats.cpu_percent < networkAvg.cpu
-                  ? "↓ Better"
-                  : "↑ Higher"}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {Math.abs(pnodeData.stats.cpu_percent - networkAvg.cpu).toFixed(
-                  2
-                )}
-                %{" "}
-                {pnodeData.stats.cpu_percent < networkAvg.cpu
-                  ? "below"
-                  : "above"}{" "}
-                average
-              </p>
+            <div className="bg-bg2 p-4 rounded-lg theme-transition">
+              <p className="text-text-soft text-xs uppercase mb-1">Uptime</p>
+              <p className="text-lg font-bold">{formatUptime(pnode.stats.uptime)}</p>
             </div>
-            <div className="text-center">
-              <p className="text-gray-400 text-sm mb-2">RAM Usage</p>
-              <p
-                className={`text-2xl font-bold ${
-                  parseFloat(ramPercent) < networkAvg.ram
-                    ? "text-green-400"
-                    : "text-yellow-400"
-                }`}
-              >
-                {parseFloat(ramPercent) < networkAvg.ram
-                  ? "↓ Lower"
-                  : "↑ Higher"}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {Math.abs(parseFloat(ramPercent) - networkAvg.ram).toFixed(1)}%{" "}
-                {parseFloat(ramPercent) < networkAvg.ram ? "below" : "above"}{" "}
-                average
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-gray-400 text-sm mb-2">Uptime</p>
-              <p
-                className={`text-2xl font-bold ${
-                  pnodeData.stats.uptime > networkAvg.uptime
-                    ? "text-green-400"
-                    : "text-yellow-400"
-                }`}
-              >
-                {pnodeData.stats.uptime > networkAvg.uptime
-                  ? "↑ Better"
-                  : "↓ Lower"}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {formatUptime(
-                  Math.abs(pnodeData.stats.uptime - networkAvg.uptime)
-                )}{" "}
-                {pnodeData.stats.uptime > networkAvg.uptime ? "above" : "below"}{" "}
-                average
-              </p>
+            <div className="bg-bg2 p-4 rounded-lg theme-transition">
+              <p className="text-text-soft text-xs uppercase mb-1">Updated</p>
+              <p className="text-lg font-bold">{pnode.stats.last_updated > 0 ? new Date(pnode.stats.last_updated * 1000).toLocaleTimeString() : '-'}</p>
             </div>
           </div>
         </div>
+
+        <div className="bg-bg-card border border-border-app rounded-xl p-6">
+          <h2 className="text-sm font-semibold mb-4 uppercase">Metrics</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="bg-bg2 p-4 rounded-lg theme-transition">
+              <p className="text-text-soft text-xs uppercase mb-2">CPU</p>
+              <p className="text-2xl font-bold text-kpi-good">{pnode.stats.cpu_percent.toFixed(1)}%</p>
+              <div className="w-full bg-bg-app rounded-full h-2 mt-3">
+                <div className="h-full bg-kpi-good rounded-full" style={{ width: `${Math.min(pnode.stats.cpu_percent, 100)}%` }} />
+              </div>
+            </div>
+            <div className="bg-bg2 p-4 rounded-lg theme-transition">
+              <p className="text-text-soft text-xs uppercase mb-2">RAM</p>
+              <p className="text-2xl font-bold text-kpi-good">{ramPercent}%</p>
+              <p className="text-xs text-text-faint mt-1">{formatBytes(pnode.stats.ram_used)} / {formatBytes(pnode.stats.ram_total)}</p>
+            </div>
+            <div className="bg-bg2 p-4 rounded-lg theme-transition">
+              <p className="text-text-soft text-xs uppercase mb-2">Storage</p>
+              <p className="text-2xl font-bold text-accent">{formatBytes(pnode.stats.file_size)}</p>
+            </div>
+            <div className="bg-bg2 p-4 rounded-lg theme-transition">
+              <p className="text-text-soft text-xs uppercase mb-2">Sent</p>
+              <p className="text-2xl font-bold text-accent-aqua">{(pnode.stats.packets_sent ?? 0).toLocaleString()}</p>
+            </div>
+            <div className="bg-bg2 p-4 rounded-lg theme-transition">
+              <p className="text-text-soft text-xs uppercase mb-2">Received</p>
+              <p className="text-2xl font-bold text-kpi-warning">{(pnode.stats.packets_received ?? 0).toLocaleString()}</p>
+            </div>
+            <div className="bg-bg2 p-4 rounded-lg theme-transition">
+              <p className="text-text-soft text-xs uppercase mb-2">Streams</p>
+              <p className="text-2xl font-bold">{pnode.stats.active_streams}</p>
+            </div>
+          </div>
+        </div>
+
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-bg-card border border-border-app rounded-xl p-6">
+          <h2 className="text-sm font-semibold mb-4 uppercase">24h History</h2>
+          <HistoryChart ip={ip} />
+        </motion.div>
       </div>
     </main>
   );

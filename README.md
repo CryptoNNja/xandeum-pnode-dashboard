@@ -1,68 +1,47 @@
-# 🚀 Xandeum pNode Analytics Dashboard
+# 🚀 Xandeum pNode Analytics Dashboard -MVP-
 
 > Real-time monitoring and analytics platform for Xandeum Provider Nodes
 
 **Built for [Superteam Earn Bounty](https://earn.superteam.fun/listing/build-analytics-platform-for-xandeum-pnodes) - $5,000 Prize**
 
-![Dashboard Preview](./screenshots/dashboard-main.png)
+![Dashboard Preview](https://github.com/CryptoNNja/xandeum-pnode-dashboard/blob/main/screenshots/dashboard-main.png?raw=true)
 
-## ✨ Features
+## ✨ Key Features
 
-### 📊 Network Overview
-- **Real-time Stats**: Live monitoring of all active pNodes
-- **Auto-discovery**: Dynamic pNode detection via Gossip Protocol (93 nodes discovered)
-- **Global Metrics**: Total storage, average CPU, average uptime across the network
+### 🎨 Advanced UI/UX
+- **Animated Aurora Gradient Hero** - Smooth 15s violet/cyan animation
+- **Multiple View Modes**: Table, Grid, and Interactive Map
+- **KPI Cards with Glow Effects** - Lucide React icons + hover animations
+- **Alert System** - Modal panel with severity-based notifications
+- **Donut Charts** - Modern visualizations with centered metrics
 
-### 📈 Advanced Analytics
-- **CPU Load Distribution**: Histogram showing network resource usage
-- **Storage Distribution**: Visual breakdown of storage allocation
-- **Network Health**: Pie chart with health status (Excellent/Good/Warning/Critical)
+### 📊 Real-Time Analytics
+- **116 Nodes Tracked** (19 Public + 97 Private)
+- **4 Distribution Charts**: CPU Load, Storage, Client Versions, Health Status
+- **Health Distribution Bars** - Excellent/Good/Warning/Critical breakdown
+- **Live Metrics**: CPU, RAM, Storage, Uptime, Network Traffic
 
 ### 🔍 Interactive Features
-- **Search**: Filter pNodes by IP address
-- **Multi-sort**: Sort by IP, CPU, RAM, Storage, or Uptime
-- **Auto-refresh**: 30-second intervals with manual refresh option
-- **Health Badges**: Color-coded status indicators per pNode
+- **Advanced Search** - Filter pNodes by IP
+- **Multi-Sort** - Sort by IP, CPU, RAM, Storage, Uptime, Health, Packets
+- **Public/Private Toggle** - Filter node visibility
+- **Auto-Refresh** - 30-second intervals + manual refresh
+- **pNode Detail Pages** - Dedicated analytics per node
 
-### 📱 Modern UI/UX
-- Responsive design (mobile + desktop)
-- Dark theme optimized for readability
-- Xandeum brand colors (#7B3FF2 violet, #00D4AA cyan)
-- Smooth animations and transitions
+### 🗺️ Map View
+- **Global Visualization** - Interactive world map with node markers
+- **Geolocation** - Precise node positioning
+- **Cluster Support** - Grouped markers for dense regions
 
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js 15 (App Router), React 19, TypeScript
 - **Styling**: Tailwind CSS v4
 - **Charts**: Recharts
-- **API**: Axios, Custom Next.js API Routes
-- **Deployment**: Vercel (coming soon)
-
-## 🏗️ Architecture
-```
-Browser → Next.js API Route → Gossip API (VPS) → pNode pRPC endpoints
-                            ↓
-                      Filter & aggregate
-                            ↓
-                    Return JSON to frontend
-```
-
-### Key Components
-
-1. **Gossip API** (`/root/gossip-api.js` on VPS)
-   - Discovers all pNodes via `pod --gossip` command
-   - Returns list of 93 active nodes
-   - Port: 5000
-
-2. **Next.js API Route** (`/api/pnodes`)
-   - Fetches pNode list from Gossip API
-   - Calls each pNode's pRPC endpoint (port 6000)
-   - Aggregates stats and returns to client
-
-3. **Frontend** (`app/page.tsx`)
-   - Displays real-time data
-   - Interactive charts with Recharts
-   - Search/sort functionality
+- **Icons**: Lucide React
+- **Maps**: Leaflet (dynamic import, SSR-safe)
+- **API**: Custom Next.js API Routes
+- **Performance**: useMemo optimizations for 100+ nodes
 
 ## 📦 Installation
 ```bash
@@ -77,70 +56,89 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000)
 
-## 🚀 Usage
-
-### Local Development
-```bash
-npm run dev
+## 🏗️ Project Structure
+```
+xandeum-dashboard/
+├── app/
+│   ├── page.tsx              # Main dashboard
+│   ├── pnode/[ip]/page.tsx   # pNode detail page
+│   ├── api/pnodes/route.ts   # API endpoint
+│   └── globals.css           # Global styles + Aurora animation
+├── components/
+│   ├── NodesMap.tsx          # Map view component
+│   └── PNodeTable.tsx        # Table view component
+├── lib/
+│   ├── api.ts                # API utilities
+│   ├── types.ts              # TypeScript types
+│   └── theme.tsx             # Theme management
+└── public/
+    └── avatar-ninja.png      # Author avatar
 ```
 
-### Production Build
-```bash
-npm run build
-npm start
-```
+## 🎯 Performance
 
-## 📊 Data Sources
+- **Optimized Rendering**: All distributions memoized with useMemo
+- **No Unnecessary Recalculations**: filteredAndSortedPNodes cached
+- **Smooth 60fps**: Even with 100+ nodes displayed
+- **Parallel API Calls**: Fast data fetching
 
-- **Gossip Protocol**: Auto-discovers pNodes on the network
-- **pRPC API**: Fetches real-time stats from each pNode
-  - CPU usage (%)
-  - RAM used/total (GB)
-  - Storage (GB)
-  - Uptime (hours)
-  - Packets sent/received
+## 🎨 Design System
 
-## 🎯 Project Stats
+### Colors
+- **Primary Violet**: `#7B3FF2` (Xandeum brand)
+- **Primary Cyan**: `#00D4AA` (Xandeum accent)
+- **Blue (Good)**: `#3B82F6`
+- **Green (Excellent)**: `#10B981`
+- **Red (Critical/Private)**: `#EF4444`
+- **Orange (Warning)**: `#F59E0B`
 
-- **pNodes Discovered**: 93 (via Gossip)
-- **pNodes Responding**: 15 (pRPC enabled)
-- **Auto-refresh**: Every 30 seconds
-- **Response Time**: ~5 seconds (parallel API calls)
+### Typography
+- **Font**: System fonts optimized for readability
+- **Headers**: Uppercase tracking for technical aesthetic
 
-## 🏆 Superteam Bounty Details
+## 🏆 Superteam Bounty
 
-- **Prize**: $5,000 (1st place), $1,500 (2nd), $1,000 (3rd)
+- **Prize Pool**: $5,000 (1st), $1,500 (2nd), $1,000 (3rd)
 - **Deadline**: January 9, 2026
-- **Submission**: [Bounty Link](https://earn.superteam.fun/listing/build-analytics-platform-for-xandeum-pnodes)
+- **Status**: In Development (19 days remaining)
 
 ## 🔮 Roadmap
 
+- [x] Table/Grid/Map views
+- [x] Alert system
+- [x] pNode detail pages
+- [x] Performance optimizations
 - [ ] Deploy to Vercel
-- [ ] Add historical data tracking
-- [ ] Individual pNode detail pages
-- [ ] Export to CSV functionality
-- [ ] Email/Discord alerts for critical nodes
-- [ ] Dark/Light mode toggle
+- [ ] Historical data tracking
+- [ ] Export to CSV
+- [ ] Dark/Light mode (in progress)
+- [ ] Demo video
 
 ## 👨‍💻 Author
 
-**Ninja0x** - Freelance Web Developer, Digital Solutions Builder & Crypto Enthusiast
+**Ludovic Diore** (aka `Ninja0x`)
+*Freelance Full Stack Developer & Web3 Architect*
 
-- 13 years in cryptocurrency 
-- MBA in Marketing & Management
-- Specialized in Next.js, React, and Web3 development
+Combining 13+ years of crypto experience with solid business acumen.
+
+*   🚀 **Full Stack Specialist:** Expert in Next.js, React, and Tailwind CSS.
+*   ⛓️ **Blockchain Veteran:** Active in the crypto space for over a decade.
+*   🎓 **Business Oriented:** MBA in Marketing & Management — I code products that make sense - Focus on ROI.
+*   🧠 **Self-Made Engineer:** Driven by curiosity and continuous learning.
+
+---
 
 ## 📝 License
 
-MIT License - See LICENSE file for details
+MIT License
 
 ## 🙏 Acknowledgments
 
-- [Xandeum](https://xandeum.network) - For the innovative pNode network
-- [Superteam](https://superteam.fun) - For organizing the bounty
-- Xandeum Discord community - For technical support
+- [Xandeum](https://xandeum.network) - Innovative pNode network
+- [Superteam](https://superteam.fun) - Bounty organizers
+
 
 ---
 

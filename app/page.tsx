@@ -1,574 +1,2103 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import clsx from "clsx";
+import dynamic from "next/dynamic";
+import Image from "next/image";
 import {
-  BarChart,
+  Radio,
+  Search,
+  Eye,
+  List,
+  LayoutGrid,
+  MapPin,
+  Download,
+  RefreshCw,
+  Settings,
+  Loader2,
+  CheckCircle,
+  ShieldCheck,
+  Network,
+  Cpu,
+  MemoryStick,
+  Package,
+  AlertCircle,
+  HardDrive, // Added for Resource Metrics
+  HeartPulse, // Added for Health Distribution
+  Check,
+  Zap,
+  AlertTriangle,
+  Lightbulb,
+  ChevronDown,
+  type LucideIcon,
+} from "lucide-react";
+
+import { motion, AnimatePresence } from "framer-motion";
+import PNodeTable from "@/components/PNodeTable";
+import EnhancedHero from "@/components/EnhancedHero";
+import LoadingScreen, { type LoadingStatus } from "@/components/LoadingScreen";
+import TopPerformersChart from "@/components/TopPerformersChart";
+import { Toolbar } from "@/components/Dashboard/Toolbar";
+import ClientErrorBoundary from "@/components/ClientErrorBoundary";
+import { KpiCards } from "@/components/Dashboard/KpiCards";
+
+
+
+
+
+const NodesMap = dynamic(() => import("@/components/NodesMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[650px] w-full rounded-xl border border-border-app bg-bg-card flex flex-col items-center justify-center gap-4 text-text-soft theme-transition">
+      <div className="w-12 h-12 border-4 border-accent-aqua border-t-transparent rounded-full animate-spin" />
+      <p className="text-xs uppercase tracking-[0.35em]">Loading map</p>
+    </div>
+  ),
+});
+import { calculateNodeScore, getScoreColor } from "@/lib/scoring";
+import { useTheme } from "@/hooks/useTheme";
+import { computeVersionOverview } from "@/lib/kpi";
+import { getHealthStatus, type HealthStatus } from "@/lib/health";
+import type { PNode } from "@/lib/types";
+import {
   Bar,
   PieChart,
   Pie,
   Cell,
+  ResponsiveContainer,
+  Tooltip,
+  CartesianGrid,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
+  BarChart,
 } from "recharts";
 
-// Custom Tooltip Dark Style
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
+// Wrapper to prevent Recharts width/height -1 warnings during initial render
+const SafeResponsiveContainer = ({
+  children,
+  ...props
+}: React.ComponentProps<typeof ResponsiveContainer>) => {
+  const [ready, setReady] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Wait for next frame to ensure container has dimensions
+    const raf = requestAnimationFrame(() => {
+      setReady(true);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  if (!ready) {
     return (
-      <div className="bg-[#1A1F3A] border border-[#00D4AA] rounded-lg p-3 shadow-xl">
-        <p className="text-white font-semibold mb-1">{label}</p>
-        {payload.map((entry: any, index: number) => (
-          <p key={index} className="text-sm" style={{ color: entry.color }}>
-            {entry.name}: {entry.value}
-          </p>
-        ))}
-      </div>
+      <div
+        ref={containerRef}
+        style={{ width: "100%", height: "100%", minHeight: 100 }}
+      />
     );
   }
-  return null;
+
+  return (
+    <ResponsiveContainer {...props} debounce={100}>
+      {children}
+    </ResponsiveContainer>
+  );
 };
 
-type SortKey = "ip" | "cpu" | "ram" | "storage" | "uptime";
+type ViewMode = "table" | "grid" | "map";
+type SortKey = "ip" | "cpu" | "ram" | "storage" | "uptime" | "health" | "packets";
 type SortDirection = "asc" | "desc";
+type NodeFilter = "all" | "public" | "private";
+type HealthFilter = "all" | "public" | "private";
+type AlertSeverity = "critical" | "warning";
 
-export default function Home() {
-  const [pnodes, setPnodes] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [currentTime, setCurrentTime] = useState(Date.now());
+type AutoRefreshOption = "off" | "30s" | "1m" | "5m";
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("ip");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-  const [showAlerts, setShowAlerts] = useState(false);
+const GB_IN_BYTES = 1024 ** 3;
+const TB_IN_BYTES = 1024 ** 4;
 
-  const loadData = async (isManual = false) => {
-    if (isManual) setRefreshing(true);
+const KPI_COLORS = {
+  public: "#06B6D4",
+  private: "#94A3B8",
+  total: "#6366F1",
+  cpu: "#10B981",
+  ram: "#F472B6",
+  alerts: "#FB7185",
+  alertOk: "#22C55E",
+} as const;
 
-    try {
-      const response = await fetch("/api/pnodes");
-      const data = await response.json();
-      setPnodes(data);
-      setLastUpdate(new Date());
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+const STATUS_COLORS = {
+  excellent: "#10B981",
+  good: "#3B82F6",
+  warning: "#F59E0B",
+  critical: "#EF4444",
+  private: "#94A3B8",
+} as const;
+
+type HealthTrendKey = "excellent" | "good" | "warning" | "critical";
+const createEmptyDistribution = (): Record<HealthTrendKey, number> => ({
+  excellent: 0,
+  good: 0,
+  warning: 0,
+  critical: 0,
+});
+
+const CPU_BUCKETS = [
+  { label: "Idle", min: 0, max: 25, color: "#10B981" },
+  { label: "Normal", min: 25, max: 75, color: "#0EA5E9" },
+  { label: "Load", min: 75, max: 101, color: "#F97316" },
+] as const;
+
+const STORAGE_BUCKETS = [
+  { label: "< 250 GB", min: 0, max: 250 * GB_IN_BYTES },
+  { label: "250-500 GB", min: 250 * GB_IN_BYTES, max: 500 * GB_IN_BYTES },
+  { label: "500 GB - 1 TB", min: 500 * GB_IN_BYTES, max: 1 * TB_IN_BYTES },
+  { label: "1 - 1.5 TB", min: 1 * TB_IN_BYTES, max: 1.5 * TB_IN_BYTES },
+  { label: "≥ 1.5 TB", min: 1.5 * TB_IN_BYTES, max: Number.POSITIVE_INFINITY },
+] as const;
+
+const TOOLTIP_STYLES = `
+  .custom-tooltip {
+    background: var(--bg-card);
+    border: 1px solid var(--border-app);
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: 0 20px 40px rgba(5,9,20,0.35);
+    color: var(--text-main);
+  }
+  .custom-tooltip p {
+    margin: 0;
+  }
+  .recharts-tooltip-wrapper {
+    outline: none;
+  }
+`;
+
+const ToolbarTooltip = ({ label }: { label: string }) => (
+  <span
+    className="pointer-events-none absolute left-1/2 top-full mt-2 w-max max-w-[260px] -translate-x-1/2 whitespace-nowrap rounded-lg border border-border-app bg-bg-card px-3 py-2 text-[11px] text-text-main opacity-0 shadow-2xl translate-y-1 scale-[0.98] transition duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100 group-focus-within:opacity-100 group-focus-within:translate-y-0 group-focus-within:scale-100"
+    role="tooltip"
+  >
+    {label}
+  </span>
+);
+
+const TOOLBAR_BUTTON_BASE =
+  "relative group p-2 rounded-lg hover:bg-white/5 transition-colors";
+
+const hexToRgba = (hex: string, alpha: number) => {
+  const sanitized = hex.replace("#", "");
+  const expanded =
+    sanitized.length === 3
+      ? sanitized
+        .split("")
+        .map((char) => char + char)
+        .join("")
+      : sanitized;
+  const bigint = Number.parseInt(expanded, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+const formatBytes = (bytes: number) => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "-";
+  const units = ["B", "KB", "MB", "GB", "TB", "PB"];
+  let value = bytes;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  const precision = value >= 10 || unitIndex < 2 ? 0 : 1;
+  return `${value.toFixed(precision)} ${units[unitIndex]}`;
+};
+
+const formatBytesToTB = (bytes: number) => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 TB";
+  const tbValue = bytes / TB_IN_BYTES;
+  return tbValue >= 10 ? `${tbValue.toFixed(0)} TB` : `${tbValue.toFixed(1)} TB`;
+};
+
+const formatUptime = (seconds: number) => {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "—";
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+};
+
+const getStorageBarColors = (percent: number) => {
+  if (percent >= 90) {
+    return { fill: "linear-gradient(90deg, #F97316, #EF4444)", accent: "#EF4444" };
+  }
+  if (percent >= 70) {
+    return { fill: "linear-gradient(90deg, #FACC15, #F97316)", accent: "#F59E0B" };
+  }
+  if (percent >= 40) {
+    return { fill: "linear-gradient(90deg, #22D3EE, #3B82F6)", accent: "#0EA5E9" };
+  }
+  return { fill: "linear-gradient(90deg, #34D399, #10B981)", accent: "#10B981" };
+};
+
+const getNetworkHealthColor = (score: number) => {
+  if (score >= 85) return "#10B981";
+  if (score >= 70) return "#22D3EE";
+  if (score >= 50) return "#F59E0B";
+  return "#EF4444";
+};
+
+const getNetworkUptimeVisuals = (
+  percent: number
+): { badge: string; color: string; Icon: LucideIcon } => {
+  if (percent >= 97) {
+    return { badge: "Mission ready", color: KPI_COLORS.public, Icon: ShieldCheck };
+  }
+  if (percent >= 90) {
+    return { badge: "Stable mesh", color: "#3B82F6", Icon: Radio };
+  }
+  if (percent >= 80) {
+    return { badge: "Monitor closely", color: "#F59E0B", Icon: AlertCircle };
+  }
+  return { badge: "Critical uptime", color: "#EF4444", Icon: Zap };
+};
+
+const statusBadge = (status: HealthStatus) => {
+  switch (status) {
+    case "Excellent":
+      return "bg-kpi-excellent/10 text-kpi-excellent border border-kpi-excellent/30";
+    case "Good":
+      return "bg-accent-aqua/10 text-accent-aqua border border-accent-aqua/30";
+    case "Warning":
+      return "bg-kpi-warning/10 text-kpi-warning border border-kpi-warning/30";
+    case "Critical":
+      return "bg-kpi-critical/10 text-kpi-critical border border-kpi-critical/40";
+    default:
+      return "bg-bg-bg2 text-text-soft border border-border-app";
+  }
+};
+
+const getHealthBadgeStyles = (percentage: number) => {
+  if (percentage >= 85) {
+    return "bg-kpi-excellent/15 text-kpi-excellent border border-kpi-excellent/30";
+  }
+  if (percentage >= 60) {
+    return "bg-accent-aqua/15 text-accent-aqua border border-accent-aqua/30";
+  }
+  if (percentage >= 40) {
+    return "bg-kpi-warning/15 text-kpi-warning border border-kpi-warning/30";
+  }
+  return "bg-kpi-critical/15 text-kpi-critical border border-kpi-critical/40";
+};
+
+const getHealthLabel = (percentage: number) => {
+  if (percentage >= 85) return "Healthy";
+  if (percentage >= 60) return "Stable";
+  if (percentage >= 40) return "Warning";
+  return "Critical";
+};
+
+const getSortValue = (pnode: PNode, key: SortKey) => {
+  switch (key) {
+    case "ip":
+      return pnode.ip;
+    case "cpu":
+      return pnode.stats?.cpu_percent ?? 0;
+    case "ram":
+      return pnode.stats?.ram_used ?? 0;
+    case "storage":
+      return pnode.stats?.file_size ?? 0;
+    case "uptime":
+      return pnode.stats?.uptime ?? 0;
+    case "packets":
+      return (pnode.stats?.packets_sent ?? 0) + (pnode.stats?.packets_received ?? 0);
+    case "health": {
+      const status = getHealthStatus(pnode);
+      const ordering: Record<HealthStatus, number> = {
+        Critical: 0,
+        Warning: 1,
+        Private: 2,
+        Good: 3,
+        Excellent: 4,
+      };
+      return ordering[status];
     }
-  };
+    default:
+      return 0;
+  }
+};
+
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ name?: string; value?: unknown; color?: string; fill?: string }>;
+  label?: unknown;
+}) => {
+  if (!active || !payload || payload.length === 0) {
+    return null;
+  }
+  return (
+    <div className="custom-tooltip text-sm">
+      <p className="text-[10px] uppercase tracking-[0.35em] text-text-faint mb-2">
+        {String(label ?? payload[0]?.name ?? "")}
+      </p>
+      {payload.map((entry, idx) => (
+        <div key={idx} className="flex items-center gap-2 text-text-main">
+          <span
+            className="w-2.5 h-2.5 rounded-full inline-flex"
+            style={{ backgroundColor: entry.color || entry.fill }}
+          />
+          <span className="font-mono font-semibold">{String(entry.value ?? "")}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default function Page() {
+  const { theme } = useTheme();
+  const isLight = theme === "light";
+
+  const [pnodes, setPnodes] = useState<PNode[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const contentSectionRef = useRef<HTMLElement | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("health");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [nodeFilter, setNodeFilter] = useState<NodeFilter>("all");
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [autoRefreshOption, setAutoRefreshOption] = useState<AutoRefreshOption>("1m");
+  const [defaultView, setDefaultView] = useState<ViewMode>("table");
+  const [healthFilter, setHealthFilter] = useState<HealthFilter>("all");
+  const [isHealthMenuOpen, setIsHealthMenuOpen] = useState(false);
+  const healthMenuRef = useRef<HTMLDivElement | null>(null);
+  const lastHealthSnapshot = useRef<{ filter: HealthFilter; percent: Record<HealthTrendKey, number> } | null>(null);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [showLoadingOverlay, setShowLoadingOverlay] = useState(true);
+  const [loadingStatus, setLoadingStatus] = useState<LoadingStatus>("initializing");
+  const [loadingProgress, setLoadingProgress] = useState(8);
+  const [loadingVariant] = useState<"full" | "minimal">("full");
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  const [networkHealthHistory, setNetworkHealthHistory] = useState<number[]>([]);
+  const [healthDelta, setHealthDelta] = useState<Record<HealthTrendKey, number>>(createEmptyDistribution());
+
+  const handleSkipLoading = useCallback(() => {
+    setLoadingStatus("ready");
+    setLoadingProgress(100);
+    setShowLoadingOverlay(false);
+  }, []);
+
+  const loadData = useCallback(
+    async (isManual = false) => {
+      if (isManual) setRefreshing(true);
+      try {
+        const response = await fetch("/api/pnodes?limit=200", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch pnodes (${response.status})`);
+        }
+        const payload = await response.json();
+        if (payload.data && Array.isArray(payload.data)) {
+          setPnodes(payload.data);
+          setLastUpdate(new Date());
+        }
+      } catch (error) {
+        console.error("Error loading pnodes:", error);
+      } finally {
+        setLoading(false);
+        if (isManual) {
+          setRefreshing(false);
+        }
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    const ms =
+      autoRefreshOption === "off"
+        ? 0
+        : autoRefreshOption === "30s"
+          ? 30_000
+          : autoRefreshOption === "1m"
+            ? 60_000
+            : 300_000;
+    if (ms <= 0) return;
+    const interval = setInterval(() => loadData(), ms);
+    return () => clearInterval(interval);
+  }, [autoRefreshOption, loadData]);
+
+  useEffect(() => {
+    if (!isSearchOpen) return;
+    const timeout = setTimeout(() => searchInputRef.current?.focus(), 0);
+    return () => clearTimeout(timeout);
+  }, [isSearchOpen]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      loadData();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isHealthMenuOpen &&
+        healthMenuRef.current &&
+        !healthMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsHealthMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isHealthMenuOpen]);
 
   useEffect(() => {
+    if (!showLoadingOverlay) return;
+    let stage: LoadingStatus = "initializing";
+    setLoadingStatus(stage);
+    setLoadingProgress(8);
     const interval = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 1000);
-
+      setLoadingProgress((prev) => {
+        const next = Math.min(prev + Math.random() * 7 + 3, 94);
+        if (next > 35 && stage === "initializing") {
+          stage = "loading";
+          setLoadingStatus("loading");
+        } else if (next > 70 && stage === "loading") {
+          stage = "building";
+          setLoadingStatus("building");
+        }
+        return next;
+      });
+    }, 420);
     return () => clearInterval(interval);
-  }, []);
+  }, [showLoadingOverlay]);
 
-  const getTimeAgo = () => {
+  useEffect(() => {
+    if (loading || !showLoadingOverlay) return;
+    setLoadingStatus("ready");
+    setLoadingProgress(100);
+    const timeout = setTimeout(() => setShowLoadingOverlay(false), 750);
+    return () => clearTimeout(timeout);
+  }, [loading, showLoadingOverlay]);
+
+  const getTimeAgo = useCallback(() => {
     if (!lastUpdate) return "";
     const seconds = Math.floor((currentTime - lastUpdate.getTime()) / 1000);
     if (seconds < 60) return `${seconds}s ago`;
     const minutes = Math.floor(seconds / 60);
-    return `${minutes}m ago`;
-  };
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
+  }, [currentTime, lastUpdate]);
 
-  const formatBytes = (bytes: number) => {
-    return (bytes / 1_000_000_000).toFixed(0) + " GB";
-  };
+  const activeNodes = useMemo(
+    () => pnodes.filter((pnode) => pnode.status === "active"),
+    [pnodes]
+  );
+  const publicCount = activeNodes.length;
+  const privateCount = useMemo(
+    () => pnodes.filter((pnode) => pnode.status === "gossip_only").length,
+    [pnodes]
+  );
 
-  const formatUptime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    return hours + " h";
-  };
+  const filteredAndSortedPNodes = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    const filtered = pnodes.filter((pnode) => {
+      if (query.length === 0) {
+        const matchesFilter =
+          nodeFilter === "all"
+            ? true
+            : nodeFilter === "public"
+              ? pnode.status === "active"
+              : pnode.status === "gossip_only";
+        return matchesFilter;
+      }
 
-  const handleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortKey(key);
-      setSortDirection("asc");
-    }
-  };
+      const healthLabel = getHealthStatus(pnode).toLowerCase();
+      const versionLabel = (pnode.version ?? "").toLowerCase();
+      const rawStatusLabel = (pnode.status ?? "").toLowerCase();
+      const matchesSearch =
+        pnode.ip.toLowerCase().includes(query) ||
+        versionLabel.includes(query) ||
+        healthLabel.includes(query) ||
+        rawStatusLabel.includes(query);
+      const matchesFilter =
+        nodeFilter === "all"
+          ? true
+          : nodeFilter === "public"
+            ? pnode.status === "active"
+            : pnode.status === "gossip_only";
+      return matchesSearch && matchesFilter;
+    });
 
-  const getSortValue = (pnode: any, key: SortKey) => {
-    switch (key) {
-      case "ip":
-        return pnode.ip;
-      case "cpu":
-        return pnode.stats.cpu_percent;
-      case "ram":
-        return pnode.stats.ram_used;
-      case "storage":
-        return pnode.stats.file_size;
-      case "uptime":
-        return pnode.stats.uptime;
-      default:
-        return pnode.ip;
-    }
-  };
-
-  const filteredAndSortedPNodes = pnodes
-    .filter((pnode) =>
-      pnode.ip.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
+    const sorted = [...filtered].sort((a, b) => {
       const aValue = getSortValue(a, sortKey);
       const bValue = getSortValue(b, sortKey);
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        const comparison = aValue.localeCompare(bValue);
+        return sortDirection === "asc" ? comparison : -comparison;
+      }
+      const diff = Number(aValue) - Number(bValue);
+      return sortDirection === "asc" ? diff : -diff;
+    });
 
-      if (sortDirection === "asc") {
-        return aValue > bValue ? 1 : -1;
+    return sorted;
+  }, [pnodes, searchTerm, nodeFilter, sortKey, sortDirection]);
+
+  const handleSort = useCallback(
+    (key: SortKey | string) => {
+      if (sortKey === key) {
+        setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
       } else {
-        return aValue < bValue ? 1 : -1;
+        setSortKey(key as SortKey);
+        setSortDirection("asc");
+      }
+    },
+    [sortKey]
+  );
+
+  const alerts = useMemo(() => {
+    const generated: { type: string; message: string; ip: string; severity: AlertSeverity }[] = [];
+    const pushAlert = (
+      ip: string,
+      severity: AlertSeverity,
+      type: string,
+      message: string
+    ) => {
+      generated.push({ type, message, ip, severity });
+    };
+
+    pnodes.forEach((pnode) => {
+      // Les nœuds "gossip_only" ont des stats de fallback non fiables (et peuvent créer des faux "critical").
+      // Les alertes doivent refléter uniquement les nœuds actifs.
+      if (pnode.status !== "active") return;
+
+      const stats = pnode.stats;
+      if (!stats) return;
+
+      const cpuPercent = Number.isFinite(stats.cpu_percent) ? stats.cpu_percent : 0;
+      if (cpuPercent >= 90) {
+        pushAlert(pnode.ip, "critical", "CPU Overload", `Load at ${cpuPercent.toFixed(1)}%`);
+      } else if (cpuPercent >= 75) {
+        pushAlert(pnode.ip, "warning", "CPU Pressure", `Load at ${cpuPercent.toFixed(1)}%`);
+      }
+
+      const ramTotal = Number.isFinite(stats.ram_total) ? stats.ram_total : 0;
+      const ramUsed = Number.isFinite(stats.ram_used) ? stats.ram_used : 0;
+      if (ramTotal > 0) {
+        const ramPercent = (ramUsed / ramTotal) * 100;
+        if (ramPercent >= 90) {
+          pushAlert(pnode.ip, "critical", "RAM Saturation", `${ramPercent.toFixed(1)}% utilized`);
+        } else if (ramPercent >= 75) {
+          pushAlert(pnode.ip, "warning", "RAM Pressure", `${ramPercent.toFixed(1)}% utilized`);
+        }
+      }
+
+      // API v0.7 mapping:
+      // - storage_committed => stats.file_size
+      // - storage_used => stats.total_bytes
+      const committedBytes = Number.isFinite(stats.file_size) ? (stats.file_size ?? 0) : 0;
+      const usedBytes = Number.isFinite(stats.total_bytes) ? (stats.total_bytes ?? 0) : 0;
+      if (committedBytes > 0) {
+        const storagePercent = (usedBytes / committedBytes) * 100;
+        if (storagePercent >= 95) {
+          pushAlert(pnode.ip, "critical", "Storage Full", `${storagePercent.toFixed(1)}% utilized`);
+        } else if (storagePercent >= 80) {
+          pushAlert(pnode.ip, "warning", "Storage High", `${storagePercent.toFixed(1)}% utilized`);
+        }
+      }
+
+      const performanceScore = calculateNodeScore(pnode);
+      if (performanceScore > 0) {
+        if (performanceScore < 50) {
+          pushAlert(pnode.ip, "critical", "Low Performance Score", `Score ${performanceScore}/100`);
+        } else if (performanceScore < 70) {
+          pushAlert(pnode.ip, "warning", "Degraded Performance", `Score ${performanceScore}/100`);
+        }
       }
     });
 
-  const SortIcon = ({ columnKey }: { columnKey: SortKey }) => {
-    if (sortKey !== columnKey) return null;
-    return sortDirection === "asc" ? " ↑" : " ↓";
-  };
+    return generated;
+  }, [pnodes]);
 
-  // Distribution CPU (histogramme)
-  const cpuDistribution = [
-    { range: "0-1%", count: filteredAndSortedPNodes.filter(p => p.stats.cpu_percent < 1).length, color: "#10B981" },
-    { range: "1-2%", count: filteredAndSortedPNodes.filter(p => p.stats.cpu_percent >= 1 && p.stats.cpu_percent < 2).length, color: "#00D4AA" },
-    { range: "2-5%", count: filteredAndSortedPNodes.filter(p => p.stats.cpu_percent >= 2 && p.stats.cpu_percent < 5).length, color: "#F59E0B" },
-    { range: ">5%", count: filteredAndSortedPNodes.filter(p => p.stats.cpu_percent >= 5).length, color: "#EF4444" },
-  ];
+  const criticalCount = useMemo(
+    () => new Set(alerts.filter((alert) => alert.severity === "critical").map((alert) => alert.ip)).size,
+    [alerts]
+  );
+  const warningCount = useMemo(
+    () => new Set(alerts.filter((alert) => alert.severity === "warning").map((alert) => alert.ip)).size,
+    [alerts]
+  );
 
-  // Distribution Storage (histogramme)
-  const storageDistribution = [
-    { range: "0-50 GB", count: filteredAndSortedPNodes.filter(p => p.stats.file_size < 50_000_000_000).length },
-    { range: "50-100 GB", count: filteredAndSortedPNodes.filter(p => p.stats.file_size >= 50_000_000_000 && p.stats.file_size < 100_000_000_000).length },
-    { range: "100-200 GB", count: filteredAndSortedPNodes.filter(p => p.stats.file_size >= 100_000_000_000 && p.stats.file_size < 200_000_000_000).length },
-    { range: "200-500 GB", count: filteredAndSortedPNodes.filter(p => p.stats.file_size >= 200_000_000_000 && p.stats.file_size < 500_000_000_000).length },
-    { range: ">500 GB", count: filteredAndSortedPNodes.filter(p => p.stats.file_size >= 500_000_000_000).length },
-  ];
+  const networkHealthScore = useMemo(() => {
+    if (activeNodes.length === 0) return 0;
+    const totalScore = activeNodes.reduce((sum, p) => sum + calculateNodeScore(p), 0);
+    return Math.round(totalScore / activeNodes.length);
+  }, [activeNodes]);
+  const lastUpdateEpoch = lastUpdate?.getTime() ?? 0;
 
-  // Health Score
-  const getHealthStatus = (pnode: any) => {
-    const cpu = pnode.stats.cpu_percent;
-    const uptime = pnode.stats.uptime;
-    const hours = uptime / 3600;
+  useEffect(() => {
+    if (activeNodes.length === 0) {
+      setNetworkHealthHistory([]);
+      return;
+    }
+    if (lastUpdateEpoch === 0) return;
+    setNetworkHealthHistory((prev) => {
+      const next = [...prev, networkHealthScore];
+      return next.slice(-24);
+    });
+  }, [activeNodes.length, lastUpdateEpoch, networkHealthScore]);
 
-    if (cpu < 1 && hours >= 24) return "Excellent";
-    if (cpu < 2 && hours >= 12) return "Good";
-    if (cpu < 5 && hours >= 1) return "Warning";
-    return "Critical";
-  };
+  const networkHealthInsights = useMemo(() => {
+    const score = networkHealthScore;
+    const sparklineValues = networkHealthHistory.length > 0 ? networkHealthHistory : [score];
+    const delta = sparklineValues.length >= 2
+      ? sparklineValues[sparklineValues.length - 1] - sparklineValues[sparklineValues.length - 2]
+      : 0;
+    const color = getNetworkHealthColor(score);
+    const trendIcon = delta > 0 ? "▲" : delta < 0 ? "▼" : "→";
+    const trendColor = delta > 0 ? "text-green-400" : delta < 0 ? "text-red-400" : "text-text-soft";
+    const svgWidth = 120;
+    const svgHeight = 36;
+    const sampleCount = Math.max(1, sparklineValues.length);
+    const points = sparklineValues
+      .map((value, index) => {
+        const x = sampleCount === 1 ? svgWidth / 2 : (index / (sampleCount - 1)) * svgWidth;
+        const y = svgHeight - (value / 100) * svgHeight;
+        return `${x.toFixed(2)},${y.toFixed(2)}`;
+      })
+      .join(" ");
+    const areaPoints = `${points} ${svgWidth},${svgHeight} 0,${svgHeight}`;
 
-  // Alert system  
-  const getAlerts = () => {
-    const alerts: { type: string; message: string; ip: string; severity: 'critical' | 'warning' }[] = [];
+    return {
+      score,
+      delta,
+      color,
+      trendIcon,
+      trendColor,
+      svgWidth,
+      svgHeight,
+      sparklinePoints: points,
+      sparklineAreaPoints: areaPoints,
+      sparklineFill: hexToRgba(color, 0.15),
+    };
+  }, [networkHealthScore, networkHealthHistory]);
 
-    filteredAndSortedPNodes.forEach((pnode) => {
-      const cpu = pnode.stats.cpu_percent;
-      const uptime = pnode.stats.uptime;
-      const hours = uptime / 3600;
+  const storageCapacityStats = useMemo(() => {
+    let totalCommitted = 0;
+    let totalUsed = 0;
 
-      // Critical alerts
-      if (cpu >= 5) {
-        alerts.push({
-          type: 'High CPU',
-          message: `CPU at ${cpu.toFixed(1)}% (Critical)`,
-          ip: pnode.ip,
-          severity: 'critical'
-        });
-      }
-
-      if (hours < 1) {
-        alerts.push({
-          type: 'Recently Restarted',
-          message: `Uptime only ${Math.floor(hours * 60)}m`,
-          ip: pnode.ip,
-          severity: 'critical'
-        });
-      }
-
-      // Warning alerts
-      if (cpu >= 2 && cpu < 5) {
-        alerts.push({
-          type: 'Elevated CPU',
-          message: `CPU at ${cpu.toFixed(1)}%`,
-          ip: pnode.ip,
-          severity: 'warning'
-        });
-      }
-
-      if (hours >= 1 && hours < 12) {
-        alerts.push({
-          type: 'Low Uptime',
-          message: `Uptime ${Math.floor(hours)}h`,
-          ip: pnode.ip,
-          severity: 'warning'
-        });
-      }
+    pnodes.forEach((pnode) => {
+      if (pnode.status !== "active") return;
+      const committed = pnode.stats?.file_size ?? 0;
+      const used = pnode.stats?.total_bytes ?? 0;
+      totalCommitted += Number.isFinite(committed) ? committed : 0;
+      totalUsed += Number.isFinite(used) ? used : 0;
     });
 
-    return alerts;
-  };
-  const alerts = getAlerts();
-  const criticalCount = alerts.filter(a => a.severity === 'critical').length;
+    totalCommitted = Math.max(totalCommitted, 0);
+    totalUsed = Math.max(Math.min(totalUsed, totalCommitted || totalUsed), 0);
+    const available = Math.max(totalCommitted - totalUsed, 0);
+    const percent = totalCommitted > 0 ? (totalUsed / totalCommitted) * 100 : 0;
+    const percentClamped = Math.min(100, percent);
 
-  const healthDistribution = [
-    { name: "Excellent", value: filteredAndSortedPNodes.filter(p => getHealthStatus(p) === "Excellent").length, color: "#10B981" },
-    { name: "Good", value: filteredAndSortedPNodes.filter(p => getHealthStatus(p) === "Good").length, color: "#00D4AA" },
-    { name: "Warning", value: filteredAndSortedPNodes.filter(p => getHealthStatus(p) === "Warning").length, color: "#F59E0B" },
-    { name: "Critical", value: filteredAndSortedPNodes.filter(p => getHealthStatus(p) === "Critical").length, color: "#EF4444" },
-  ].filter(item => item.value > 0);
+    return {
+      totalCommitted,
+      totalUsed,
+      available,
+      percent: percentClamped,
+      formattedUsed: formatBytesToTB(totalUsed),
+      formattedTotal: formatBytesToTB(totalCommitted),
+      formattedAvailable: formatBytesToTB(available),
+      availabilityLabel: percentClamped > 80 ? "remaining" : "available",
+    };
+  }, [pnodes]);
+
+  const storageBarColors = useMemo(
+    () => getStorageBarColors(storageCapacityStats.percent),
+    [storageCapacityStats.percent]
+  );
+
+  const avgCpuUsage = useMemo(() => {
+    const activeCpuNodes = pnodes.filter((pnode) => pnode.status === "active");
+    if (activeCpuNodes.length === 0) {
+      return { percent: 0, nodeCount: 0 };
+    }
+
+    const totalPercent = activeCpuNodes.reduce((sum, pnode) => {
+      const cpuPercent = pnode.stats?.cpu_percent ?? 0;
+      const safeValue = Number.isFinite(cpuPercent) ? cpuPercent : 0;
+      return sum + Math.max(0, safeValue);
+    }, 0);
+
+    const percent = Math.min(100, totalPercent / activeCpuNodes.length);
+    return {
+      percent,
+      nodeCount: activeCpuNodes.length,
+    };
+  }, [pnodes]);
+
+  const avgRamUsage = useMemo(() => {
+    const activeRamNodes = pnodes.filter((pnode) => {
+      const totalRam = pnode.stats?.ram_total ?? 0;
+      return pnode.status === "active" && Number.isFinite(totalRam) && totalRam > 0;
+    });
+
+    if (activeRamNodes.length === 0) {
+      return {
+        usedAvg: 0,
+        totalAvg: 0,
+        ratio: 0,
+        nodeCount: 0,
+        formattedUsed: "-",
+        formattedTotal: "-",
+      };
+    }
+
+    const usedAvg =
+      activeRamNodes.reduce(
+        (sum, pnode) => sum + Math.max(0, pnode.stats?.ram_used ?? 0),
+        0
+      ) /
+      activeRamNodes.length;
+    const totalAvg =
+      activeRamNodes.reduce(
+        (sum, pnode) => sum + Math.max(0, pnode.stats?.ram_total ?? 0),
+        0
+      ) /
+      activeRamNodes.length;
+    const ratio = totalAvg > 0 ? Math.min(100, (usedAvg / totalAvg) * 100) : 0;
+
+    return {
+      usedAvg,
+      totalAvg,
+      ratio,
+      nodeCount: activeRamNodes.length,
+      formattedUsed: formatBytes(usedAvg),
+      formattedTotal: formatBytes(totalAvg),
+    };
+  }, [pnodes]);
+
+  const networkUptimeStats = useMemo(() => {
+    const publicOnline = pnodes.filter(
+      (pnode) => getHealthStatus(pnode) !== "Private" && pnode.status === "active"
+    ).length;
+    const publicTotal = publicCount || 0;
+    const percentRaw = publicTotal > 0 ? (publicOnline / publicTotal) * 100 : 0;
+    const percent = Number(percentRaw.toFixed(1));
+    const visuals = getNetworkUptimeVisuals(percent);
+    return {
+      percent,
+      publicOnline,
+      publicTotal,
+      ...visuals,
+    };
+  }, [pnodes, publicCount]);
+
+  const UptimeIcon = networkUptimeStats.Icon;
+
+  const storageDistribution = useMemo(
+    () =>
+      STORAGE_BUCKETS.map((bucket) => {
+        const count = activeNodes.filter((pnode) => {
+          const committed = pnode.stats?.file_size ?? 0;
+          return committed >= bucket.min && committed < bucket.max;
+        }).length;
+        return { range: bucket.label, count };
+      }),
+    [activeNodes]
+  );
+
+  const cpuDistribution = useMemo(
+    () =>
+      CPU_BUCKETS.map((bucket) => ({
+        range: bucket.label,
+        count: activeNodes.filter((pnode) => {
+          const cpuPercent = pnode.stats?.cpu_percent ?? 0;
+          const safeValue = Number.isFinite(cpuPercent) ? cpuPercent : 0;
+          return safeValue >= bucket.min && safeValue < bucket.max;
+        }).length,
+        color: bucket.color,
+      })),
+    [activeNodes]
+  );
+
+  const filteredHealthNodes = useMemo(() => {
+    if (healthFilter === "all") return pnodes;
+    if (healthFilter === "public") {
+      return pnodes.filter((p) => p.status === "active");
+    }
+    return pnodes.filter((p) => p.status === "gossip_only");
+  }, [pnodes, healthFilter]);
+
+  const healthCounts = useMemo(() => {
+    return filteredHealthNodes.reduce(
+      (acc, pnode) => {
+        const status = getHealthStatus(pnode);
+        switch (status) {
+          case "Excellent":
+            acc.excellent += 1;
+            acc.total += 1;
+            break;
+          case "Good":
+            acc.good += 1;
+            acc.total += 1;
+            break;
+          case "Warning":
+            acc.warning += 1;
+            acc.total += 1;
+            break;
+          case "Critical":
+            acc.critical += 1;
+            acc.total += 1;
+            break;
+          default:
+            break;
+        }
+        return acc;
+      },
+      { excellent: 0, good: 0, warning: 0, critical: 0, total: 0 }
+    );
+  }, [filteredHealthNodes]);
+
+  const healthPercent = useMemo(() => {
+    const totalActive =
+      healthCounts.excellent +
+      healthCounts.good +
+      healthCounts.warning +
+      healthCounts.critical;
+
+    const toPercent = (value: number) =>
+      totalActive > 0 ? Math.round((value / totalActive) * 100) : 0;
+
+    return {
+      excellent: toPercent(healthCounts.excellent),
+      good: toPercent(healthCounts.good),
+      warning: toPercent(healthCounts.warning),
+      critical: toPercent(healthCounts.critical),
+    };
+  }, [healthCounts]);
+
+  useEffect(() => {
+    const currentPercent: Record<HealthTrendKey, number> = {
+      excellent: healthPercent.excellent ?? 0,
+      good: healthPercent.good ?? 0,
+      warning: healthPercent.warning ?? 0,
+      critical: healthPercent.critical ?? 0,
+    };
+
+    const previous = lastHealthSnapshot.current;
+    if (!previous || previous.filter !== healthFilter) {
+      setHealthDelta(createEmptyDistribution());
+    } else {
+      setHealthDelta({
+        excellent: currentPercent.excellent - previous.percent.excellent,
+        good: currentPercent.good - previous.percent.good,
+        warning: currentPercent.warning - previous.percent.warning,
+        critical: currentPercent.critical - previous.percent.critical,
+      });
+    }
+
+    lastHealthSnapshot.current = {
+      filter: healthFilter,
+      percent: currentPercent,
+    };
+  }, [healthFilter, healthPercent]);
+
+  const healthTrendData = useMemo(
+    () =>
+      [
+        { key: "excellent", label: "EXCELLENT", color: STATUS_COLORS.excellent },
+        { key: "good", label: "GOOD", color: STATUS_COLORS.good },
+        { key: "warning", label: "WARNING", color: STATUS_COLORS.warning },
+        { key: "critical", label: "CRITICAL", color: STATUS_COLORS.critical },
+      ].map((item) => ({
+        ...item,
+        percentage: healthPercent[item.key as keyof typeof healthPercent] ?? 0,
+        count: healthCounts[item.key as keyof typeof healthCounts] ?? 0,
+        delta: healthDelta[item.key as HealthTrendKey] ?? 0,
+      })),
+    [healthCounts, healthPercent, healthDelta]
+  );
+
+  const healthInsight = useMemo(() => {
+    const denominator = Math.max(healthCounts.total, 1);
+    const excellentRatio = Math.round((healthCounts.excellent / denominator) * 100);
+    if (healthFilter === "public") {
+      return { label: "public p-nodes", percent: excellentRatio };
+    }
+    if (healthFilter === "private") {
+      return { label: "private p-nodes", percent: excellentRatio };
+    }
+    return { label: "all p-nodes", percent: excellentRatio };
+  }, [healthCounts, healthFilter]);
+
+  const versionOverview = useMemo(() => computeVersionOverview(pnodes), [pnodes]);
+  const latestVersionPercentage = versionOverview.latestPercentage;
+
+  const versionChart = useMemo(
+    () => ({
+      entries: versionOverview.buckets.map((bucket) => ({
+        id: bucket.id,
+        label: bucket.shortLabel ?? bucket.label,
+        count: bucket.count,
+        percentage: bucket.percentage,
+        color: bucket.color,
+      })),
+      latestPercentLabel: versionOverview.latestPercentage.toFixed(0),
+      message: versionOverview.health.description,
+    }),
+    [versionOverview]
+  );
+
+  const refreshData = useCallback(() => loadData(true), [loadData]);
+
+  const scrollToContent = useCallback(() => {
+    if (typeof window === "undefined") return;
+    window.requestAnimationFrame(() => {
+      contentSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
+
+  const downloadBlob = useCallback((blob: Blob, filename: string) => {
+    if (typeof window === "undefined") return;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  const exportRows = useMemo(() => {
+    return pnodes.map((pnode) => {
+      const stats = pnode.stats ?? ({} as PNode["stats"]);
+      return {
+        ip: pnode.ip,
+        visibility: pnode.status,
+        health: getHealthStatus(pnode),
+        version: pnode.version ?? "",
+        cpu_percent: stats.cpu_percent ?? null,
+        ram_used: stats.ram_used ?? null,
+        ram_total: stats.ram_total ?? null,
+        file_size: stats.file_size ?? null,
+        total_bytes: stats.total_bytes ?? null,
+        uptime: stats.uptime ?? null,
+        packets_sent: stats.packets_sent ?? null,
+        packets_received: stats.packets_received ?? null,
+      };
+    });
+  }, [pnodes]);
+
+  const exportData = useCallback(() => {
+    if (typeof window === "undefined" || pnodes.length === 0) return;
+    const payload = JSON.stringify(pnodes, null, 2);
+    const blob = new Blob([payload], { type: "application/json" });
+    downloadBlob(blob, `xandeum-pnodes-${new Date().toISOString()}.json`);
+  }, [downloadBlob, pnodes]);
+
+  const exportCsv = useCallback(() => {
+    if (typeof window === "undefined" || exportRows.length === 0) return;
+    const headers = Object.keys(exportRows[0] ?? {});
+    const escape = (value: unknown) => {
+      const raw = value == null ? "" : String(value);
+      const needsQuotes = /[\n\r,"]/.test(raw);
+      const escaped = raw.replace(/"/g, '""');
+      return needsQuotes ? `"${escaped}"` : escaped;
+    };
+    const lines = [headers.join(",")].concat(
+      exportRows.map((row) => headers.map((h) => escape((row as Record<string, unknown>)[h])).join(","))
+    );
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    downloadBlob(blob, `xandeum-pnodes-${new Date().toISOString()}.csv`);
+  }, [downloadBlob, exportRows]);
+
+  const exportExcel = useCallback(() => {
+    if (typeof window === "undefined" || exportRows.length === 0) return;
+    const headers = Object.keys(exportRows[0] ?? {});
+    const escapeHtml = (value: unknown) => {
+      const raw = value == null ? "" : String(value);
+      return raw
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;");
+    };
+    const thead = `<tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr>`;
+    const tbody = exportRows
+      .map((row) => {
+        const cells = headers
+          .map((h) => `<td>${escapeHtml((row as Record<string, unknown>)[h])}</td>`)
+          .join("");
+        return `<tr>${cells}</tr>`;
+      })
+      .join("");
+    const html = `<!doctype html><html><head><meta charset="utf-8" /></head><body><table>${thead}${tbody}</table></body></html>`;
+    const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+    downloadBlob(blob, `xandeum-pnodes-${new Date().toISOString()}.xls`);
+  }, [downloadBlob, exportRows]);
+  /* -------------------------------------------------- */
+  /*                     RENDER                         */
+  /* -------------------------------------------------- */
 
   return (
-    <main className="min-h-screen bg-[#0A0E27] text-white pb-20">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-[#7B3FF2] to-[#00D4AA] py-6">
-        <div className="max-w-7xl mx-auto px-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-4xl font-bold mb-1 flex items-center gap-3">
-                <span className="text-white">Xandeum</span>
-                <span className="text-[#00D4AA]">pNode</span>
-                <span className="text-white">Analytics</span>
-              </h1>
-              <p className="text-white/80 text-sm">
-                Real-time monitoring for Xandeum Provider Nodes
+    <>
+      <AnimatePresence>
+        {showLoadingOverlay && (
+          <LoadingScreen
+            isLoading={showLoadingOverlay}
+            progress={Math.round(loadingProgress)}
+            status={loadingStatus}
+            variant={loadingVariant}
+            onSkip={handleSkipLoading}
+          />
+        )}
+      </AnimatePresence>
+
+      <motion.main
+        className="min-h-screen bg-bg-app text-text-main pb-20 theme-transition flex flex-col space-y-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{
+          opacity: showLoadingOverlay ? 0 : 1,
+          y: showLoadingOverlay ? 20 : 0,
+          filter: showLoadingOverlay ? "blur(8px)" : "blur(0px)",
+        }}
+        transition={{ duration: 0.5, delay: showLoadingOverlay ? 0 : 0.3, ease: "easeOut" }}
+        style={{ pointerEvents: showLoadingOverlay ? "none" : "auto" }}
+      >
+        <style>{TOOLTIP_STYLES}</style>
+        {/* HERO */}
+        <EnhancedHero
+          criticalCount={criticalCount}
+          onAlertsClick={() => setIsAlertOpen(true)}
+        />
+
+        {/* KPI + HEALTH + CHARTS */}
+        <section className="max-w-7xl mx-auto px-6 space-y-6">
+          {/* KPI CARDS */}
+          <KpiCards
+            publicCount={publicCount}
+            privateCount={privateCount}
+            totalNodes={pnodes.length}
+            networkHealthInsights={networkHealthInsights}
+            UptimeIcon={ShieldCheck}
+            networkUptimeStats={networkUptimeStats}
+            storageCapacityStats={storageCapacityStats}
+            storageBarColors={storageBarColors}
+            avgCpuUsage={avgCpuUsage}
+            avgRamUsage={avgRamUsage}
+            alerts={alerts}
+            criticalCount={criticalCount}
+            warningCount={warningCount}
+            KPI_COLORS={KPI_COLORS}
+            STATUS_COLORS={STATUS_COLORS}
+            hexToRgba={hexToRgba}
+          />
+          {/* HEALTH DISTRIBUTION */}
+          <div className="bg-bg-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-sm font-semibold text-text-main">
+                Health Distribution
+              </h2>
+              <div className="relative" ref={healthMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsHealthMenuOpen((prev) => !prev)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border-app text-sm text-text-main shadow-[0_10px_30px_rgba(5,9,20,0.35)] theme-transition"
+                  style={{
+                    backgroundColor: isLight ? "rgba(247,249,255,0.98)" : "rgba(5,9,24,0.97)",
+                    borderColor: isLight ? "rgba(15,23,42,0.12)" : "rgba(226,232,240,0.08)",
+                  }}
+                >
+                  <span>
+                    {healthFilter === "all"
+                      ? `All p-nodes (${pnodes.length})`
+                      : healthFilter === "public"
+                        ? `Public only (${publicCount})`
+                        : `Private only (${privateCount})`}
+                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-text-soft transition-transform ${isHealthMenuOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {isHealthMenuOpen && (
+                  <div
+                    className="absolute right-0 mt-2 w-60 rounded-xl border border-border-app shadow-[0_30px_60px_rgba(2,6,23,0.65)] z-30 overflow-hidden"
+                    style={{
+                      backgroundColor: isLight ? "rgba(247,249,255,0.99)" : "rgba(4,8,22,0.99)",
+                      borderColor: isLight ? "rgba(15,23,42,0.12)" : "rgba(226,232,240,0.08)",
+                    }}
+                  >
+                    {(
+                      [
+                        { key: "all", label: "All p-nodes", count: pnodes.length },
+                        { key: "public", label: "Public only", count: publicCount },
+                        { key: "private", label: "Private only", count: privateCount },
+                      ] as const
+                    ).map((option) => {
+                      const active = option.key === healthFilter;
+                      return (
+                        <button
+                          key={option.key}
+                          type="button"
+                          onClick={() => {
+                            setHealthFilter(option.key);
+                            setIsHealthMenuOpen(false);
+                          }}
+                          className={clsx(
+                            "w-full px-4 py-4 text-sm flex items-center justify-between",
+                            active
+                              ? "bg-accent-aqua/15 text-accent-aqua"
+                              : "text-text-main hover:bg-bg-bg2"
+                          )}
+                        >
+                          <span>{`${option.label} (${option.count})`}</span>
+                          {active && <Check className="w-4 h-4" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+            <style>{`
+              .recharts-tooltip {
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+                outline: none !important;
+              }
+              .recharts-default-tooltip {
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+              }
+            `}</style>
+            <div className="space-y-4">
+              {healthTrendData.map((item) => {
+                const isPositive = item.delta > 0;
+                const isNegative = item.delta < 0;
+                const trendIcon = isPositive ? "▲" : isNegative ? "▼" : "→";
+                const trendLabel = item.delta !== 0 ? `${Math.abs(item.delta)}%` : "stable";
+
+                return (
+                  <div key={item.key}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-text-soft uppercase tracking-wider">
+                        {item.label}
+                      </span>
+                      <div className="flex items-center gap-4 text-xs">
+                        <span className="text-text-main font-mono">
+                          {item.count} ({item.percentage}%)
+                        </span>
+                        <span
+                          className={clsx(
+                            "flex items-center gap-2 font-semibold",
+                            isPositive
+                              ? "text-green-400"
+                              : isNegative
+                                ? "text-red-400"
+                                : "text-text-faint"
+                          )}
+                        >
+                          <span>{trendIcon}</span>
+                          <span>{trendLabel}</span>
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-bg-bg2 rounded-full overflow-hidden h-2 border border-border-app">
+                      <div
+                        className="h-full transition-all"
+                        style={{ width: `${item.percentage}%`, backgroundColor: item.color }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-text-faint">
+              <Lightbulb className="w-4 h-4" />
+              <span>
+                {healthInsight.percent}% of {healthInsight.label} in excellent health
+              </span>
+            </div>
+          </div>
+
+          {/* CHARTS ROW 1x4 */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+            {/* CPU LOAD */}
+            <div className="bg-bg-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
+              <div className="flex items-center gap-2 mb-4">
+                <Cpu className="w-4 h-4 text-[#10B981]" strokeWidth={2.5} />
+                <h3 className="text-xs font-semibold text-[#10B981]">CPU Load</h3>
+              </div>
+              <div className="h-[260px] w-full min-w-0">
+                <SafeResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                  <BarChart data={cpuDistribution} margin={{ top: 20, right: 10, left: -20, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-app)" />
+                    <XAxis dataKey="range" stroke="var(--text-soft)" fontSize={11} />
+                    <YAxis stroke="var(--text-soft)" fontSize={11} />
+                    <Tooltip
+                      content={<CustomTooltip />}
+                      cursor={{ fill: isLight ? "rgba(15,23,42,0.04)" : "rgba(255,255,255,0.08)" }}
+                    />
+                    <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                      {cpuDistribution.map((item, idx) => (
+                        <Cell key={idx} fill={item.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </SafeResponsiveContainer>
+              </div>
+            </div>
+
+            {/* STORAGE DISTRIBUTION */}
+            <div className="bg-bg-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
+              <div className="flex items-center gap-2 mb-4">
+                <Package className="w-4 h-4 text-[#7B3FF2]" strokeWidth={2.5} />
+                <h3 className="text-xs font-semibold text-[#7B3FF2]">Storage</h3>
+              </div>
+              <div className="h-[260px] w-full min-w-0">
+                <SafeResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                  <BarChart
+                    margin={{ top: 20, right: 10, left: -20, bottom: 20 }}
+                    data={storageDistribution}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-app)" />
+                    <XAxis
+                      dataKey="range"
+                      stroke="var(--text-soft)"
+                      fontSize={11}
+                      label={{ value: "Storage Capacity", position: "insideBottom", offset: -10 }}
+                    />
+                    <YAxis
+                      stroke="var(--text-soft)"
+                      fontSize={11}
+                      label={{ value: "Nodes", angle: -90, position: "insideLeft" }}
+                    />
+                    <Tooltip
+                      content={<CustomTooltip />}
+                      cursor={{ fill: isLight ? "rgba(15,23,42,0.04)" : "rgba(255,255,255,0.08)" }}
+                    />
+                    <Bar dataKey="count" fill="#7B3FF2" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </SafeResponsiveContainer>
+              </div>
+            </div>
+
+            {/* NETWORK VERSIONS */}
+            <div className="bg-bg-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Radio className="w-4 h-4 text-[#F97316]" strokeWidth={2.5} />
+                  <h3 className="text-xs font-semibold text-[#F97316]">Network Versions</h3>
+                </div>
+                <div className={`px-4 py-2 rounded-full text-[10px] font-semibold uppercase tracking-wide ${getHealthBadgeStyles(latestVersionPercentage)}`}>
+                  {getHealthLabel(latestVersionPercentage)}
+                </div>
+              </div>
+              <div className="h-[180px] w-full min-w-0 relative mb-4">
+                <SafeResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                  <PieChart>
+                    <Pie
+                      data={versionChart.entries}
+                      dataKey="count"
+                      nameKey="label"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={85}
+                      paddingAngle={2}
+                      startAngle={90}
+                      endAngle={-270}
+                    >
+                      {versionChart.entries.map((entry) => (
+                        <Cell
+                          key={entry.id}
+                          fill={entry.color}
+                          stroke="var(--bg-bg)"
+                          strokeWidth={2}
+                        />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </SafeResponsiveContainer>
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-text-main">{versionChart.latestPercentLabel}%</p>
+                    <p className="text-[10px] text-text-faint uppercase tracking-wider">Latest</p>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {versionChart.entries.map((entry) => (
+                  <div key={entry.id} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: entry.color }}
+                      />
+                      <span className="text-text-soft">{entry.label}</span>
+                    </div>
+                    <span className="font-mono font-bold text-text-main">
+                      {entry.count} | {entry.percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] text-text-soft text-center mt-4 tracking-wide uppercase">
+                {versionChart.message}
               </p>
             </div>
 
-            <div className="text-right flex items-center gap-4 justify-end">
-              {/* Alert Bell */}
+            {/* TOP PERFORMERS */}
+            <TopPerformersChart nodes={pnodes} />
+          </div>
+        </section>
+
+        {/* TOOLBAR */}
+        <section className="max-w-7xl mx-auto px-6">
+          <div className="w-full bg-bg-card border border-border-app rounded-xl px-6 py-4 flex flex-col md:flex-row gap-4 md:items-center md:justify-between theme-transition">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Search */}
+              <button
+                type="button"
+                onClick={() => setIsSearchOpen(true)}
+                className={TOOLBAR_BUTTON_BASE}
+                aria-label="Search"
+              >
+                <Search className="w-5 h-5 text-text-soft" />
+                <ToolbarTooltip label="Search nodes (IP, version, status)" />
+              </button>
+
+              {/* Filter */}
               <div className="relative">
                 <button
-                  onClick={() => setShowAlerts(!showAlerts)}
-                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-lg transition-all border border-white/30 relative"
+                  type="button"
+                  onClick={() => setFilterMenuOpen((prev) => !prev)}
+                  className={clsx(TOOLBAR_BUTTON_BASE, "flex items-center gap-1")}
+                  aria-label="Filter"
                 >
-                  <span className="text-2xl">🔔</span>
-                  {alerts.length > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                      {alerts.length}
-                    </span>
-                  )}
-                  {criticalCount > 0 && (
-                    <span className="absolute -bottom-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse">
-                      !
-                    </span>
-                  )}
+                  <Eye className="w-5 h-5 text-text-soft" />
+                  <ChevronDown className={clsx("w-4 h-4 text-text-soft transition-transform", filterMenuOpen ? "rotate-180" : "rotate-0")} />
+                  <ToolbarTooltip label="Filter nodes by visibility" />
                 </button>
 
-                {/* Alerts Panel */}
-                {showAlerts && (
-                  <div className="absolute right-0 top-full mt-2 w-96 bg-[#1A1F3A] border border-[#2D3454] rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto">
-                    <div className="p-4 border-b border-[#2D3454]">
-                      <h3 className="text-lg font-bold text-white">System Alerts</h3>
-                      <p className="text-sm text-gray-400">
-                        {alerts.length} alert{alerts.length !== 1 ? 's' : ''} detected
-                        {criticalCount > 0 && (
-                          <span className="ml-2 text-red-400 font-semibold">
-                            ({criticalCount} critical)
-                          </span>
-                        )}
-                      </p>
-                    </div>
-
-                    {alerts.length === 0 ? (
-                      <div className="p-6 text-center">
-                        <p className="text-green-400 text-lg font-semibold">✓ All Systems Healthy</p>
-                        <p className="text-gray-500 text-sm mt-2">No alerts to display</p>
-                      </div>
-                    ) : (
-                      <div className="divide-y divide-[#2D3454]">
-                        {alerts.map((alert, index) => (
-                          <div
-                            key={index}
-                            className={`p-4 hover:bg-[#0F1419] transition-colors cursor-pointer ${alert.severity === 'critical' ? 'border-l-4 border-red-500' : 'border-l-4 border-yellow-500'
-                              }`}
-                            onClick={() => window.location.href = `/pnode/${alert.ip}`}
-                          >
-                            <div className="flex justify-between items-start mb-2">
-                              <span className={`text-xs font-bold px-2 py-1 rounded ${alert.severity === 'critical' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'
-                                }`}>
-                                {alert.type}
-                              </span>
-                              <span className="text-xs text-gray-500">{alert.ip}</span>
-                            </div>
-                            <p className="text-sm text-white">{alert.message}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                {filterMenuOpen && (
+                  <div className="absolute left-0 mt-3 w-56 rounded-xl border border-border-app bg-bg-card shadow-2xl z-40 overflow-hidden">
+                    {(
+                      [
+                        { key: "all" as const, label: `All (${pnodes.length})` },
+                        { key: "public" as const, label: `Public (${publicCount})` },
+                        { key: "private" as const, label: `Private (${privateCount})` },
+                      ] satisfies Array<{ key: NodeFilter; label: string }>
+                    ).map((option) => {
+                      const isActive = option.key === nodeFilter;
+                      return (
+                        <button
+                          key={option.key}
+                          type="button"
+                          onClick={() => {
+                            setNodeFilter(option.key);
+                            setFilterMenuOpen(false);
+                          }}
+                          className={clsx(
+                            "w-full px-4 py-3 text-sm flex items-center justify-between transition-colors",
+                            isActive
+                              ? "bg-accent-aqua/15 text-accent-aqua"
+                              : "text-text-main hover:bg-bg-bg2"
+                          )}
+                        >
+                          <span>{option.label}</span>
+                          {isActive && <Check className="w-4 h-4" />}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
 
+              {/* View modes */}
               <button
-                onClick={() => loadData(true)}
-                disabled={refreshing}
-                className="bg-white/20 hover:bg-white/30 disabled:bg-white/10 backdrop-blur-sm px-6 py-2 rounded-lg transition-all font-semibold border border-white/30"
+                type="button"
+                onClick={() => {
+                  setFilterMenuOpen(false);
+                  setExportMenuOpen(false);
+                  setViewMode("table");
+                  scrollToContent();
+                }}
+                className={clsx(
+                  TOOLBAR_BUTTON_BASE,
+                  viewMode === "table" ? "bg-cyan-500/20 text-cyan-400" : "text-text-soft"
+                )}
+                aria-label="Table View"
+                aria-pressed={viewMode === "table"}
               >
-                {refreshing ? "Refreshing..." : "Refresh Now"}
+                <List className="w-5 h-5" />
+                <ToolbarTooltip label="Table View" />
               </button>
-              {lastUpdate && (
-                <p className="text-sm text-white/70 mt-2">
-                  Last updated: {getTimeAgo()}
-                </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setFilterMenuOpen(false);
+                  setExportMenuOpen(false);
+                  setViewMode("grid");
+                  scrollToContent();
+                }}
+                className={clsx(
+                  TOOLBAR_BUTTON_BASE,
+                  viewMode === "grid" ? "bg-cyan-500/20 text-cyan-400" : "text-text-soft"
+                )}
+                aria-label="Grid View"
+                aria-pressed={viewMode === "grid"}
+              >
+                <LayoutGrid className="w-5 h-5" />
+                <ToolbarTooltip label="Grid View" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFilterMenuOpen(false);
+                  setExportMenuOpen(false);
+                  setViewMode("map");
+                  scrollToContent();
+                }}
+                className={clsx(
+                  TOOLBAR_BUTTON_BASE,
+                  viewMode === "map" ? "bg-cyan-500/20 text-cyan-400" : "text-text-soft"
+                )}
+                aria-label="Map View"
+                aria-pressed={viewMode === "map"}
+              >
+                <MapPin className="w-5 h-5" />
+                <ToolbarTooltip label="Map View" />
+              </button>
+
+              <div className="h-6 w-px bg-border-app mx-1" />
+
+              {/* Export */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setExportMenuOpen((prev) => !prev)}
+                  className={clsx(TOOLBAR_BUTTON_BASE, "flex items-center gap-1", pnodes.length === 0 && "opacity-50 pointer-events-none")}
+                  aria-label="Export"
+                >
+                  <Download className="w-5 h-5 text-text-soft" />
+                  <ChevronDown className={clsx("w-4 h-4 text-text-soft transition-transform", exportMenuOpen ? "rotate-180" : "rotate-0")} />
+                  <ToolbarTooltip label="Export data" />
+                </button>
+                {exportMenuOpen && (
+                  <div className="absolute left-0 mt-3 w-48 rounded-xl border border-border-app bg-bg-card shadow-2xl z-40 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        exportData();
+                        setExportMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-3 text-sm text-text-main hover:bg-bg-bg2 transition-colors"
+                    >
+                      JSON
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        exportCsv();
+                        setExportMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-3 text-sm text-text-main hover:bg-bg-bg2 transition-colors"
+                    >
+                      CSV
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        exportExcel();
+                        setExportMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-3 text-sm text-text-main hover:bg-bg-bg2 transition-colors"
+                    >
+                      Excel
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Refresh */}
+              <button
+                type="button"
+                onClick={refreshData}
+                className={TOOLBAR_BUTTON_BASE}
+                aria-label="Refresh"
+              >
+                <RefreshCw className={clsx("w-5 h-5 text-text-soft", refreshing ? "animate-spin" : "")} />
+                <ToolbarTooltip label="Refresh data" />
+              </button>
+
+              {/* Settings */}
+              <button
+                type="button"
+                onClick={() => {
+                  setFilterMenuOpen(false);
+                  setExportMenuOpen(false);
+                  setIsSettingsOpen(true);
+                }}
+                className={TOOLBAR_BUTTON_BASE}
+                aria-label="Settings"
+              >
+                <Settings className="w-5 h-5 text-text-soft" />
+                <ToolbarTooltip label="Dashboard settings" />
+              </button>
+            </div>
+
+            {/* Live status */}
+            <div className="flex items-center gap-2">
+              {loading || refreshing ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin text-text-soft" />
+                  <span className="text-xs text-text-soft font-mono">Updating...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                  <span className="text-xs text-text-soft font-mono">{getTimeAgo() || "—"}</span>
+                </>
               )}
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <div className="max-w-7xl mx-auto px-8 py-8">
-        {/* Search Bar */}
-        <div className="mb-6">
-          <input
-            type="text"
-            placeholder="🔍 Search by IP address..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#1A1F3A] text-white px-6 py-4 rounded-xl border border-[#2D3454] focus:border-[#00D4AA] focus:outline-none transition-colors placeholder:text-gray-500"
+        {(filterMenuOpen || exportMenuOpen) && (
+          <div
+            className="fixed inset-0 z-30 bg-[#050914]"
+            onClick={() => {
+              setFilterMenuOpen(false);
+              setExportMenuOpen(false);
+            }}
           />
-        </div>
-
-        {/* Stats Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-gradient-to-br from-[#1A1F3A] to-[#0F1419] p-6 rounded-xl border border-[#2D3454] hover:border-[#00D4AA] transition-all">
-            <p className="text-gray-400 text-sm mb-1">Total pNodes</p>
-            <p className="text-4xl font-bold text-[#00D4AA]">{filteredAndSortedPNodes.length}</p>
-          </div>
-          <div className="bg-gradient-to-br from-[#1A1F3A] to-[#0F1419] p-6 rounded-xl border border-[#2D3454] hover:border-[#7B3FF2] transition-all">
-            <p className="text-gray-400 text-sm mb-1">Total Storage</p>
-            <p className="text-4xl font-bold text-[#7B3FF2]">
-              {filteredAndSortedPNodes.reduce((acc, p) => acc + (p.stats?.file_size || 0), 0) / 1_000_000_000 | 0} GB
-            </p>
-          </div>
-          <div className="bg-gradient-to-br from-[#1A1F3A] to-[#0F1419] p-6 rounded-xl border border-[#2D3454] hover:border-[#10B981] transition-all">
-            <p className="text-gray-400 text-sm mb-1">Avg CPU</p>
-            <p className="text-4xl font-bold text-[#10B981]">
-              {filteredAndSortedPNodes.length > 0
-                ? (filteredAndSortedPNodes.reduce((acc, p) => acc + (p.stats?.cpu_percent || 0), 0) / filteredAndSortedPNodes.length).toFixed(1)
-                : 0}%
-            </p>
-          </div>
-          <div className="bg-gradient-to-br from-[#1A1F3A] to-[#0F1419] p-6 rounded-xl border border-[#2D3454] hover:border-[#F59E0B] transition-all">
-            <p className="text-gray-400 text-sm mb-1">Avg Uptime</p>
-            <p className="text-4xl font-bold text-[#F59E0B]">
-              {filteredAndSortedPNodes.length > 0
-                ? Math.floor(filteredAndSortedPNodes.reduce((acc, p) => acc + (p.stats?.uptime || 0), 0) / filteredAndSortedPNodes.length / 3600)
-                : 0} h
-            </p>
-          </div>
-        </div>
-
-        {/* Network Analytics Charts */}
-        {!loading && filteredAndSortedPNodes.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* CPU Distribution */}
-            <div className="bg-[#1A1F3A] p-6 rounded-xl border border-[#2D3454]">
-              <h3 className="text-xl font-bold mb-4 text-[#00D4AA]">CPU Load Distribution</h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={cpuDistribution} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2D3454" />
-                  <XAxis dataKey="range" stroke="#94A3B8" style={{ fontSize: '12px' }} />
-                  <YAxis stroke="#94A3B8" />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 212, 170, 0.1)' }} />
-                  <Bar dataKey="count" radius={[8, 8, 0, 0]}>
-                    {cpuDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Storage Distribution */}
-            <div className="bg-[#1A1F3A] p-6 rounded-xl border border-[#2D3454]">
-              <h3 className="text-xl font-bold mb-4 text-[#7B3FF2]">Storage Distribution</h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={storageDistribution} margin={{ top: 5, right: 5, left: -20, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2D3454" />
-                  <XAxis dataKey="range" stroke="#94A3B8" style={{ fontSize: '11px' }} angle={-15} textAnchor="end" height={60} />
-                  <YAxis stroke="#94A3B8" />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(123, 63, 242, 0.1)' }} />
-                  <Bar dataKey="count" fill="#7B3FF2" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Network Health */}
-            <div className="bg-[#1A1F3A] p-6 rounded-xl border border-[#2D3454]">
-              <h3 className="text-xl font-bold mb-4 text-[#10B981]">Network Health</h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={healthDistribution}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${value}`}
-                    outerRadius={80}
-                    dataKey="value"
-                  >
-                    {healthDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
         )}
 
-        {/* Sort Buttons */}
-        <div className="mb-6 flex gap-2 flex-wrap">
-          {[
-            { key: "ip" as SortKey, label: "IP Address" },
-            { key: "cpu" as SortKey, label: "CPU Usage" },
-            { key: "ram" as SortKey, label: "RAM Used" },
-            { key: "storage" as SortKey, label: "Storage" },
-            { key: "uptime" as SortKey, label: "Uptime" },
-          ].map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => handleSort(key)}
-              className={`px-4 py-2 rounded-lg transition-all font-medium ${sortKey === key
-                ? "bg-gradient-to-r from-[#7B3FF2] to-[#00D4AA] text-white"
-                : "bg-[#1A1F3A] text-gray-300 hover:bg-[#2D3454] border border-[#2D3454]"
-                }`}
-            >
-              {label}<SortIcon columnKey={key} />
-            </button>
-          ))}
-        </div>
-
-        {/* pNodes List */}
-        {loading ? (
-          <div className="text-center py-20">
-            <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#00D4AA]"></div>
-            <p className="text-gray-400 mt-6 text-lg">Discovering pNodes...</p>
-          </div>
-        ) : filteredAndSortedPNodes.length === 0 ? (
-          <div className="text-center py-20 bg-[#1A1F3A] rounded-xl border border-[#2D3454]">
-            <p className="text-gray-400 text-lg">No pNodes found matching "{searchTerm}"</p>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {filteredAndSortedPNodes.map((pnode) => (
-              <div
-                key={pnode.ip}
-                onClick={() => window.location.href = `/pnode/${pnode.ip}`}
-                className={`bg-[#1A1F3A] p-6 rounded-xl border border-[#2D3454] hover:border-[#00D4AA] transition-all cursor-pointer group hover:scale-[1.02] hover:shadow-xl hover:shadow-[#00D4AA]/20 ${refreshing ? "opacity-50" : "opacity-100"
-                  }`}
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <h2 className="text-2xl font-bold text-[#00D4AA] group-hover:text-[#00D4AA] transition-colors flex items-center gap-2">
-                    {pnode.ip}
-                    <span className="text-sm text-gray-500 group-hover:text-[#00D4AA] transition-colors">
-                      Click for details
-                    </span>
-                  </h2>
-                  <div className="flex items-center gap-3">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getHealthStatus(pnode) === "Excellent" ? "bg-green-500/20 text-green-400" :
-                      getHealthStatus(pnode) === "Good" ? "bg-cyan-500/20 text-cyan-400" :
-                        getHealthStatus(pnode) === "Warning" ? "bg-yellow-500/20 text-yellow-400" :
-                          "bg-red-500/20 text-red-400"
-                      }`}>
-                      {getHealthStatus(pnode)}
-                    </span>
-                    <div className="w-8 h-8 flex items-center justify-center rounded-full bg-[#00D4AA]/10 group-hover:bg-[#00D4AA]/20 transition-colors">
-                      <span className="text-[#00D4AA] text-xl">→</span>
+        {/* CONTENT (TABLE / GRID / MAP) */}
+        <section ref={contentSectionRef} className="max-w-7xl mx-auto px-6 pb-24">
+          {loading ? (
+            <div className="text-center py-32">
+              <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#00D4AA]" />
+              <p className="text-gray-400 mt-6 text-lg animate-pulse">
+                Scanning Xandeum Network...
+              </p>
+            </div>
+          ) : filteredAndSortedPNodes.length === 0 ? (
+            <div className="text-center py-20 bg-bg-card rounded-xl border border-border-app">
+              <p className="text-text-main">No pNodes match your filters.</p>
+            </div>
+          ) : (
+            <>
+              {viewMode === "map" && (
+                <ClientErrorBoundary
+                  fallback={({ error, reset }) => (
+                    <div className="h-[650px] w-full rounded-xl border border-border-app bg-bg-card flex flex-col items-center justify-center gap-3 text-text-soft theme-transition">
+                      <p className="text-xs uppercase tracking-[0.35em]">Map failed to render</p>
+                      <p className="text-[11px] font-mono text-text-faint max-w-[820px] px-6 text-center wrap-break-word">
+                        {error.message}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={reset}
+                        className="mt-2 px-4 py-2 rounded-lg border border-border-app bg-bg-bg text-text-main hover:bg-bg-bg2 transition-colors theme-transition text-xs uppercase tracking-[0.25em]"
+                      >
+                        Retry
+                      </button>
                     </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-400">CPU Usage</p>
-                    <p className="text-xl font-semibold text-white">
-                      {pnode.stats.cpu_percent.toFixed(1)}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400">RAM Used</p>
-                    <p className="text-xl font-semibold text-white">
-                      {formatBytes(pnode.stats.ram_used)} / {formatBytes(pnode.stats.ram_total)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400">Storage</p>
-                    <p className="text-xl font-semibold text-white">
-                      {formatBytes(pnode.stats.file_size)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400">Uptime</p>
-                    <p className="text-xl font-semibold text-white">
-                      {formatUptime(pnode.stats.uptime)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400">Packets Sent</p>
-                    <p className="text-xl font-semibold text-white">
-                      {pnode.stats.packets_sent.toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400">Packets Received</p>
-                    <p className="text-xl font-semibold text-white">
-                      {pnode.stats.packets_received.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+                  )}
+                >
+                  <NodesMap nodes={filteredAndSortedPNodes} />
+                </ClientErrorBoundary>
+              )}
 
-        {/* Footer */}
-        <footer className="mt-16 pt-8 border-t border-[#2D3454]">
-          <div className="flex justify-between items-center">
-            <div className="text-center flex-1">
-              <p className="text-gray-400 text-sm mb-2">
-                Built for <span className="text-[#7B3FF2] font-semibold">Xandeum</span> • Superteam Earn Bounty
+              {viewMode === "table" && (
+                <PNodeTable
+                  data={filteredAndSortedPNodes}
+                  sortKey={sortKey}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+              )}
+
+              {viewMode === "grid" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredAndSortedPNodes.map((pnode) => {
+                    const status = getHealthStatus(pnode);
+                    const statusBorderClass =
+                      status === "Excellent"
+                        ? "border-excellent"
+                        : status === "Good"
+                          ? "border-good"
+                          : status === "Warning"
+                            ? "border-warning"
+                            : status === "Critical"
+                              ? "border-critical"
+                              : "border-soft";
+                    const cpuPercentValue = pnode.stats?.cpu_percent;
+                    const cpuDisplay =
+                      typeof cpuPercentValue === "number" && Number.isFinite(cpuPercentValue)
+                        ? `${cpuPercentValue.toFixed(1)}%`
+                        : "—";
+                    const ramDisplay = formatBytes(pnode.stats?.ram_used ?? 0);
+                    const diskDisplay = formatBytes(pnode.stats?.file_size ?? 0);
+                    const uptimeDisplay = formatUptime(pnode.stats?.uptime ?? 0);
+
+                    return (
+                      <div
+                        key={pnode.ip}
+                        onClick={() =>
+                          (window.location.href = `/pnode/${pnode.ip}`)
+                        }
+                        className={clsx(
+                          "p-6 rounded-xl border border-l-4 cursor-pointer transition-all hover:-translate-y-1 theme-transition group",
+                          isLight
+                            ? "bg-white border-black/10 hover:shadow-[0_20px_35px_-15px_rgba(15,23,42,0.25)]"
+                            : "bg-bg-card border-border-app hover:shadow-[0_25px_45px_-20px_rgba(20,28,58,0.55)]",
+                          statusBorderClass
+                        )}
+                      >
+                        <div className="flex justify-between items-start mb-4">
+                          <h2
+                            className={clsx(
+                              "font-mono font-bold text-lg transition-colors",
+                              isLight ? "text-text-main" : "text-white"
+                            )}
+                          >
+                            {pnode.ip}
+                          </h2>
+                          <div className="flex gap-2 items-center">
+                            <div
+                              className={clsx(
+                                "flex items-center justify-center w-8 h-8 rounded-full font-bold text-xs border border-current/40",
+                                getScoreColor(calculateNodeScore(pnode)),
+                                isLight ? "bg-white/80" : "bg-black/40"
+                              )}
+                            >
+                              {calculateNodeScore(pnode)}
+                            </div>
+                            <span
+                              className={`px-2 py-2 rounded-full text-[10px] font-bold uppercase border ${statusBadge(
+                                status
+                              )}`}
+                            >
+                              {status}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div
+                            className={clsx(
+                              "p-3 rounded-lg border theme-transition",
+                              isLight
+                                ? "bg-black/5 border-black/10"
+                                : "bg-bg-bg2 border-border-app"
+                            )}
+                          >
+                            <p className="text-text-soft text-[11px] uppercase tracking-wide">
+                              CPU
+                            </p>
+                            <p className="font-bold text-text-main">
+                              {cpuDisplay}
+                            </p>
+                          </div>
+
+                          <div
+                            className={clsx(
+                              "p-3 rounded-lg border theme-transition",
+                              isLight
+                                ? "bg-black/5 border-black/10"
+                                : "bg-bg-bg2 border-border-app"
+                            )}
+                          >
+                            <p className="text-text-soft text-[11px] uppercase tracking-wide">
+                              RAM
+                            </p>
+                            <p className="font-bold text-text-main">
+                              {ramDisplay}
+                            </p>
+                          </div>
+
+                          <div
+                            className={clsx(
+                              "p-3 rounded-lg border theme-transition",
+                              isLight
+                                ? "bg-black/5 border-black/10"
+                                : "bg-bg-bg2 border-border-app"
+                            )}
+                          >
+                            <p className="text-text-soft text-[11px] uppercase tracking-wide">
+                              Disk
+                            </p>
+                            <p className="font-bold text-accent">
+                              {diskDisplay}
+                            </p>
+                          </div>
+
+                          <div
+                            className={clsx(
+                              "p-3 rounded-lg border theme-transition",
+                              isLight
+                                ? "bg-black/5 border-black/10"
+                                : "bg-bg-bg2 border-border-app"
+                            )}
+                          >
+                            <p className="text-text-soft text-[11px] uppercase tracking-wide">
+                              Uptime
+                            </p>
+                            <p className="font-bold text-text-main">
+                              {uptimeDisplay}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+        </section>
+
+        {/* FOOTER */}
+        <footer className="border-t border-border-app bg-bg-bg p-8 mt-auto w-full theme-transition">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+              <p className="text-text-faint text-sm mb-2">
+                Built for{" "}
+                <span className="text-accent-aqua font-semibold">Xandeum</span> •
+                Superteam Earn Bounty
               </p>
-              <p className="text-gray-500 text-xs">
-                Powered by Xandeum pRPC & Gossip Protocol • Auto-discovery enabled
-              </p>
+              <p className="text-text-soft text-xs">Powered by pRPC</p>
             </div>
 
-            {/* Ninja Badge */}
-            <div className="flex items-center gap-3 bg-[#1A1F3A]/50 px-4 py-2 rounded-full border border-[#2D3454]/50 backdrop-blur-sm">
-              <img
+            <div
+              className="flex items-center gap-4 px-4 py-2 rounded-full border theme-transition"
+              style={{
+                background: "var(--bg-card)",
+                borderColor: "var(--border-app)",
+              }}
+            >
+              <Image
                 src="/avatar-ninja.png"
                 alt="Ninja0x"
+                width={32}
+                height={32}
                 className="w-8 h-8 rounded-full"
-                onError={(e) => {
-                  e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%237B3FF2'/%3E%3Ctext x='16' y='22' text-anchor='middle' fill='white' font-size='16'%3EN%3C/text%3E%3C/svg%3E";
-                }}
               />
-              <p className="text-gray-400 text-xs">
-                Coded with <span className="text-red-400">❤️</span> by <span className="text-[#00D4AA] font-semibold">Ninja0x</span>
+              <p className="text-xs" style={{ color: "var(--text-soft)" }}>
+                Coded with <span className="text-red-400">❤️</span> by{" "}
+                <span className="font-semibold" style={{ color: "var(--accent-aqua)" }}>Ninja0x</span>
               </p>
             </div>
           </div>
         </footer>
-      </div>
-    </main>
+      </motion.main>
+
+      {/* SEARCH MODAL (hors motion.main pour éviter fixed/transform) */}
+      {isSearchOpen && (
+        <div
+          className="fixed inset-0 bg-[#050914] z-50 flex items-center justify-center p-4"
+          onClick={() => setIsSearchOpen(false)}
+        >
+          <div
+            className="bg-bg-app border border-border-app rounded-xl max-w-xl w-full overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="border-b border-border-app p-6 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-text-main">Search</h3>
+                <p className="text-sm text-text-faint mt-2">Search nodes (IP, version, status)</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSearchOpen(false)}
+                className="text-text-faint hover:text-text-main transition-colors"
+                aria-label="Close"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center gap-3 rounded-lg border border-border-app bg-bg-bg px-3 py-2">
+                <Search className="w-5 h-5 text-text-soft" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search by IP, version, status..."
+                  className="w-full bg-transparent outline-none text-sm text-text-main"
+                />
+              </div>
+            </div>
+            <div className="border-t border-border-app p-4 bg-bg-bg">
+              <button
+                type="button"
+                onClick={() => setIsSearchOpen(false)}
+                className="w-full px-4 py-2 bg-bg-bg2 hover:bg-bg-card border border-border-app rounded-lg text-sm font-semibold text-text-main transition-colors theme-transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SETTINGS MODAL (hors motion.main pour éviter fixed/transform) */}
+      {isSettingsOpen && (
+        <div
+          className="fixed inset-0 bg-[#050914] z-50 flex items-center justify-center p-4"
+          onClick={() => setIsSettingsOpen(false)}
+        >
+          <div
+            className="bg-bg-app border border-border-app rounded-xl max-w-xl w-full overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="border-b border-border-app p-6 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-text-main">Dashboard settings</h3>
+                <p className="text-sm text-text-faint mt-2">Auto-refresh and default view</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSettingsOpen(false)}
+                className="text-text-faint hover:text-text-main transition-colors"
+                aria-label="Close"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Auto-refresh</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {(
+                    [
+                      { key: "off" as const, label: "Off" },
+                      { key: "30s" as const, label: "30s" },
+                      { key: "1m" as const, label: "1m" },
+                      { key: "5m" as const, label: "5m" },
+                    ] satisfies Array<{ key: AutoRefreshOption; label: string }>
+                  ).map((opt) => {
+                    const active = autoRefreshOption === opt.key;
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => setAutoRefreshOption(opt.key)}
+                        className={clsx(
+                          "px-3 py-2 rounded-lg border text-sm font-semibold transition-colors",
+                          active
+                            ? "bg-accent-aqua/15 text-accent-aqua border-accent-aqua/30"
+                            : "bg-bg-bg text-text-main border-border-app hover:bg-bg-bg2"
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Default View</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {(
+                    [
+                      { key: "table" as const, label: "Table" },
+                      { key: "grid" as const, label: "Grid" },
+                      { key: "map" as const, label: "Map" },
+                    ] satisfies Array<{ key: ViewMode; label: string }>
+                  ).map((opt) => {
+                    const active = defaultView === opt.key;
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => {
+                          setDefaultView(opt.key);
+                          setViewMode(opt.key);
+                        }}
+                        className={clsx(
+                          "px-3 py-2 rounded-lg border text-sm font-semibold transition-colors",
+                          active
+                            ? "bg-accent-aqua/15 text-accent-aqua border-accent-aqua/30"
+                            : "bg-bg-bg text-text-main border-border-app hover:bg-bg-bg2"
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-border-app p-4 bg-bg-bg">
+              <button
+                type="button"
+                onClick={() => setIsSettingsOpen(false)}
+                className="w-full px-4 py-2 bg-bg-bg2 hover:bg-bg-card border border-border-app rounded-lg text-sm font-semibold text-text-main transition-colors theme-transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ALERT PANEL MODAL (hors motion.main pour éviter fixed/transform) */}
+      {isAlertOpen && (
+        <div
+          className="fixed inset-0 bg-[#050914] z-50 flex items-center justify-center p-4"
+          onClick={() => setIsAlertOpen(false)}
+        >
+          <div
+            className="bg-bg-app border border-border-app rounded-xl max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="border-b border-border-app p-6 flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-bold text-text-main">System Alerts</h3>
+                <p className="text-sm text-text-faint mt-2">
+                  {alerts.length} alert{alerts.length !== 1 ? "s" : ""} detected
+                  {criticalCount > 0 && (
+                    <span className="ml-2 text-kpi-critical font-semibold">
+                      ({criticalCount} critical node{criticalCount !== 1 ? "s" : ""})
+                    </span>
+                  )}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsAlertOpen(false)}
+                className="text-text-faint hover:text-text-main transition-colors"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="overflow-y-auto max-h-[calc(80vh-120px)]">
+              {alerts.length === 0 ? (
+                <div className="p-12 text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-kpi-excellent/10 mb-4">
+                    <svg
+                      className="w-8 h-8 text-kpi-excellent"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-kpi-excellent text-lg font-semibold">
+                    ✓ All Systems Healthy
+                  </p>
+                  <p className="text-text-faint text-sm mt-2">
+                    No alerts to display
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border-app">
+                  {alerts.map((alert, index) => (
+                    <div
+                      key={index}
+                      className={`p-4 hover:bg-bg-bg2 transition-colors cursor-pointer theme-transition ${alert.severity === "critical"
+                        ? "border-l-4 border-kpi-critical"
+                        : alert.severity === "warning"
+                          ? "border-l-4 border-kpi-warning"
+                          : "border-l-4 border-kpi-good"
+                        }`}
+                      onClick={() => {
+                        setIsAlertOpen(false);
+                        window.location.href = `/pnode/${alert.ip}`;
+                      }}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-2 rounded uppercase ${alert.severity === "critical"
+                            ? "bg-kpi-critical/10 text-kpi-critical border border-kpi-critical/20"
+                            : alert.severity === "warning"
+                              ? "bg-kpi-warning/10 text-kpi-warning border border-kpi-warning/20"
+                              : "bg-kpi-good/10 text-kpi-good border border-kpi-good/20"
+                            }`}
+                        >
+                          {alert.type}
+                        </span>
+                        <span className="text-xs text-text-faint font-mono">
+                          {alert.ip}
+                        </span>
+                      </div>
+                      <p className="text-sm text-text-main">{alert.message}</p>
+                      <p className="text-xs text-text-soft mt-2">
+                        Click to view node details →
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-border-app p-4 bg-bg-bg">
+              <button
+                onClick={() => setIsAlertOpen(false)}
+                className="w-full px-4 py-2 bg-bg-bg2 hover:bg-bg-card border border-border-app rounded-lg text-sm font-semibold text-text-main transition-colors theme-transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
