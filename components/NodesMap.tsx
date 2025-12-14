@@ -218,7 +218,7 @@ export default function NodesMap({ nodes }: { nodes: PNode[] }) {
 
   if (!mapReady || !geoJsonData) {
     return (
-      <div className={`h-[650px] w-full rounded-xl border flex items-center justify-center ${isLight ? 'bg-gray-100 border-gray-300' : 'bg-[#111827] border-[#2D3454]'}`}>
+      <div className={`w-full rounded-xl border flex items-center justify-center ${isLight ? 'bg-gray-100 border-gray-300' : 'bg-[#111827] border-[#2D3454]'}`} style={{ aspectRatio: '16/9', minHeight: '400px' }}>
         <p className={`animate-pulse font-mono text-xs ${isLight ? 'text-[#EA580C]' : 'text-[#00D4AA]'}`}>
           LOADING CARTOGRAPHY...
         </p>
@@ -227,11 +227,13 @@ export default function NodesMap({ nodes }: { nodes: PNode[] }) {
   }
 
   return (
-    <div 
+    <div
       id="map-container-robust"
-      className={`relative h-[650px] w-full rounded-xl overflow-hidden border shadow-2xl ${isLight ? 'bg-gray-100 border-gray-300' : 'bg-[#111827] border-[#2D3454]'}`}
+      className={`relative w-full rounded-xl overflow-hidden border shadow-2xl ${isLight ? 'bg-gray-100 border-gray-300' : 'bg-[#111827] border-[#2D3454]'}`}
       style={{
-        /* FIX: Min-width to prevent collapse */
+        aspectRatio: '16/9',
+        minHeight: '400px',
+        maxHeight: '700px',
         minWidth: "300px",
         display: "block"
       }}
