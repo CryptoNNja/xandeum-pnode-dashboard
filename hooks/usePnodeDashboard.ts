@@ -99,9 +99,15 @@ export const usePnodeDashboard = (theme?: string) => {
         // Pre-calculate scores once per load to optimize filtering/sorting performance
         const pnodesWithScores = payload.data.map((p: PNode) => {
           const score = calculateNodeScore(p);
-          const healthStatus = p.status === "gossip_only" 
-            ? "Private" 
-            : score >= 90 ? "Excellent" : score >= 70 ? "Good" : score >= 40 ? "Warning" : "Critical";
+          let healthStatus = "Private";
+          
+          if (p.status === "active") {
+            if (score >= 90) healthStatus = "Excellent";
+            else if (score >= 70) healthStatus = "Good";
+            else if (score >= 40) healthStatus = "Warning";
+            else healthStatus = "Critical";
+          }
+          
           return {
             ...p,
             _score: score,
@@ -608,10 +614,25 @@ export const usePnodeDashboard = (theme?: string) => {
     cpuDistribution,
     versionChart,
     healthDistribution: {
-      excellent: allPnodes.filter(p => p._healthStatus === "Excellent").length,
-      good: allPnodes.filter(p => p._healthStatus === "Good").length,
-      warning: allPnodes.filter(p => p._healthStatus === "Warning").length,
-      critical: allPnodes.filter(p => p._healthStatus === "Critical").length,
+      excellent: allPnodes.filter(p => {
+        const isTarget = nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
+        return isTarget && p._healthStatus === "Excellent";
+      }).length,
+      good: allPnodes.filter(p => {
+        const isTarget = nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
+        return isTarget && p._healthStatus === "Good";
+      }).length,
+      warning: allPnodes.filter(p => {
+        const isTarget = nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
+        return isTarget && p._healthStatus === "Warning";
+      }).length,
+      critical: allPnodes.filter(p => {
+        const isTarget = nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
+        return isTarget && p._healthStatus === "Critical";
+      }).length,
+      total: allPnodes.filter(p => {
+        return nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
+      }).length,
     },
     exportData,
     exportCsv,

@@ -139,11 +139,6 @@ export default function Page() {
           networkUptimeStats={networkUptimeStats}
         />
 
-        <HealthDistribution
-          healthDistribution={healthDistribution}
-          totalNodes={pnodes.length}
-        />
-
         {/* DETAILED KPI CARDS */}
         <KpiCards
           publicCount={publicCount}
@@ -162,6 +157,13 @@ export default function Page() {
           KPI_COLORS={kpiColors}
           STATUS_COLORS={statusColors}
           hexToRgba={hexToRgba}
+        />
+
+        <HealthDistribution
+          healthDistribution={healthDistribution}
+          totalNodes={pnodes.length}
+          nodeFilter={nodeFilter}
+          setNodeFilter={setNodeFilter}
         />
 
         {/* CHARTS SECTION */}
