@@ -153,7 +153,6 @@ export const KpiCards = ({
                     </span>
                   </span>
                   <span>vs yesterday</span>
-                  <span>vs last refresh</span>
                 </div>
               </div>
               <svg

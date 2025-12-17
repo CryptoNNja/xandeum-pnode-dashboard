@@ -389,6 +389,7 @@ export default function Page() {
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [networkHealthHistory, setNetworkHealthHistory] = useState<number[]>([]);
   const [healthDelta, setHealthDelta] = useState<Record<HealthTrendKey, number>>(createEmptyDistribution());
+  const [yesterdayScore, setYesterdayScore] = useState<number | null>(null);
 
 
   const loadData = useCallback(
@@ -416,9 +417,26 @@ export default function Page() {
     []
   );
 
+  const loadYesterdayScore = useCallback(async () => {
+    try {
+      const response = await fetch("/api/network-health/yesterday", { cache: "no-store" });
+      if (!response.ok) {
+        console.warn("Failed to fetch yesterday's network health score");
+        return;
+      }
+      const payload = await response.json();
+      if (payload.networkHealthScore !== null && payload.networkHealthScore !== undefined) {
+        setYesterdayScore(payload.networkHealthScore);
+      }
+    } catch (error) {
+      console.error("Error loading yesterday's network health score:", error);
+    }
+  }, []);
+
   useEffect(() => {
     loadData();
-  }, [loadData]);
+    loadYesterdayScore();
+  }, [loadData, loadYesterdayScore]);
 
   useEffect(() => {
     const ms =
@@ -623,6 +641,10 @@ export default function Page() {
     }
     if (lastUpdateEpoch === 0) return;
     setNetworkHealthHistory((prev) => {
+      // Pre-fill history on first data point for immediate graph visibility
+      if (prev.length === 0) {
+        return Array(8).fill(networkHealthScore);
+      }
       const next = [...prev, networkHealthScore];
       return next.slice(-24);
     });
@@ -631,9 +653,14 @@ export default function Page() {
   const networkHealthInsights = useMemo(() => {
     const score = networkHealthScore;
     const sparklineValues = networkHealthHistory.length > 0 ? networkHealthHistory : [score];
-    const delta = sparklineValues.length >= 2
-      ? sparklineValues[sparklineValues.length - 1] - sparklineValues[sparklineValues.length - 2]
-      : 0;
+
+    // Calculate delta: use yesterdayScore if available, otherwise fall back to last refresh comparison
+    const delta = yesterdayScore !== null
+      ? score - yesterdayScore
+      : (sparklineValues.length >= 2
+          ? sparklineValues[sparklineValues.length - 1] - sparklineValues[sparklineValues.length - 2]
+          : 0);
+
     const color = getNetworkHealthColor(score);
     const trendIcon = delta > 0 ? "▲" : delta < 0 ? "▼" : "→";
     const trendColor = delta > 0 ? "text-green-400" : delta < 0 ? "text-red-400" : "text-text-soft";
@@ -661,7 +688,7 @@ export default function Page() {
       sparklineAreaPoints: areaPoints,
       sparklineFill: hexToRgba(color, 0.15),
     };
-  }, [networkHealthScore, networkHealthHistory]);
+  }, [networkHealthScore, networkHealthHistory, yesterdayScore]);
 
   const storageCapacityStats = useMemo(() => {
     let totalCommitted = 0;
