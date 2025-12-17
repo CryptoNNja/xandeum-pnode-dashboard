@@ -22,7 +22,7 @@ type AdvancedFiltersProps = {
   resultsCount: number;
 };
 
-const HEALTH_STATUSES = ["Excellent", "Good", "Warning", "Critical"];
+const HEALTH_STATUSES = ["Excellent", "Good", "Warning", "Critical", "Private"];
 
 export const AdvancedFilters = ({
   isOpen,
@@ -196,11 +196,11 @@ export const AdvancedFilters = ({
                     max={100}
                     step={5}
                   >
-                    <Slider.Track className="bg-white/10 relative grow rounded-full h-[6px] overflow-hidden">
+                    <Slider.Track className="bg-text-main/10 relative grow rounded-full h-[6px] overflow-hidden">
                       <Slider.Range className="absolute bg-gradient-to-r from-accent-aqua to-accent-blue rounded-full h-full" />
                     </Slider.Track>
                     <Slider.Thumb
-                      className="block w-5 h-5 bg-white border-2 border-accent-aqua shadow-[0_0_15px_rgba(0,212,170,0.4)] rounded-full hover:scale-125 transition-transform focus:outline-none focus:ring-4 focus:ring-accent-aqua/20"
+                      className="block w-5 h-5 bg-bg-card border-2 border-accent-aqua shadow-lg rounded-full hover:scale-125 transition-transform focus:outline-none focus:ring-4 focus:ring-accent-aqua/20"
                       aria-label="Min CPU"
                     />
                   </Slider.Root>
@@ -230,11 +230,11 @@ export const AdvancedFilters = ({
                     max={10}
                     step={0.5}
                   >
-                    <Slider.Track className="bg-white/10 relative grow rounded-full h-[6px] overflow-hidden">
+                    <Slider.Track className="bg-text-main/10 relative grow rounded-full h-[6px] overflow-hidden">
                       <Slider.Range className="absolute bg-gradient-to-r from-accent-purple to-pink-500 rounded-full h-full" />
                     </Slider.Track>
                     <Slider.Thumb
-                      className="block w-5 h-5 bg-white border-2 border-accent-purple shadow-[0_0_15px_rgba(123,63,242,0.4)] rounded-full hover:scale-125 transition-transform focus:outline-none focus:ring-4 focus:ring-accent-purple/20"
+                      className="block w-5 h-5 bg-bg-card border-2 border-accent-purple shadow-lg rounded-full hover:scale-125 transition-transform focus:outline-none focus:ring-4 focus:ring-accent-purple/20"
                       aria-label="Min Storage"
                     />
                   </Slider.Root>

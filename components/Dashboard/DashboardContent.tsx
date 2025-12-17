@@ -1,5 +1,6 @@
 "use client";
 
+import React, { memo } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import PNodeTable from "@/components/PNodeTable";
@@ -29,7 +30,7 @@ type DashboardContentProps = {
   isLight: boolean;
 };
 
-export const DashboardContent = ({
+const DashboardContentComponent = ({
   viewMode,
   filteredAndSortedPNodes,
   sortKey,
@@ -123,3 +124,6 @@ export const DashboardContent = ({
     </section>
   );
 };
+
+export const DashboardContent = memo(DashboardContentComponent);
+DashboardContent.displayName = "DashboardContent";

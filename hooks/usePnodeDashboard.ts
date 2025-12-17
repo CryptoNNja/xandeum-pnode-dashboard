@@ -47,7 +47,7 @@ export type Alert = {
 
 export const usePnodeDashboard = (theme?: string) => {
   const toast = useToast();
-  const [allPnodes, setAllPnodes] = useState<PNode[]>([]);
+  const [allPnodes, setAllPnodes] = useState<(PNode & { _score: number; _healthStatus: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
@@ -63,6 +63,10 @@ export const usePnodeDashboard = (theme?: string) => {
   const [selectedHealthStatuses, setSelectedHealthStatuses] = useState<string[]>([]);
   const [minCpu, setMinCpu] = useState<number>(0);
   const [minStorage, setMinStorage] = useState<number>(0); // in TB
+
+  // Debounce resource filters to keep UI responsive
+  const [debouncedMinCpu] = useDebounce(minCpu, 150);
+  const [debouncedMinStorage] = useDebounce(minStorage, 150);
 
   // Sorting
   const [sortKey, setSortKey] = useState<SortKey>("health");
@@ -92,7 +96,20 @@ export const usePnodeDashboard = (theme?: string) => {
       const payload = await response.json();
       
       if (payload.data && Array.isArray(payload.data)) {
-        setAllPnodes(payload.data);
+        // Pre-calculate scores once per load to optimize filtering/sorting performance
+        const pnodesWithScores = payload.data.map((p: PNode) => {
+          const score = calculateNodeScore(p);
+          const healthStatus = p.status === "gossip_only" 
+            ? "Private" 
+            : score >= 90 ? "Excellent" : score >= 70 ? "Good" : score >= 40 ? "Warning" : "Critical";
+          return {
+            ...p,
+            _score: score,
+            _healthStatus: healthStatus
+          };
+        });
+        
+        setAllPnodes(pnodesWithScores);
         setLastUpdate(new Date());
         if (isManual) {
           toast.success(`Loaded ${payload.data.length} nodes`);
@@ -175,6 +192,26 @@ export const usePnodeDashboard = (theme?: string) => {
     });
     return Array.from(versions).sort((a, b) => b.localeCompare(a));
   }, [allPnodes]);
+
+  // Fast count for immediate UI feedback in the filters panel
+  const quickResultsCount = useMemo(() => {
+    let count = 0;
+    allPnodes.forEach(p => {
+      // Basic visibility
+      if (nodeFilter !== "all" && (nodeFilter === "public" ? p.status !== "active" : p.status !== "gossip_only")) return;
+      // Versions
+      if (selectedVersions.length > 0 && (!p.version || !selectedVersions.includes(p.version))) return;
+      // Health
+      if (selectedHealthStatuses.length > 0 && !selectedHealthStatuses.includes(p._healthStatus)) return;
+      // CPU (instant feedback)
+      if (minCpu > 0 && (p.stats?.cpu_percent ?? 0) < minCpu) return;
+      // Storage (instant feedback)
+      if (minStorage > 0 && (p.stats?.file_size ?? 0) < minStorage * TB_IN_BYTES) return;
+      
+      count++;
+    });
+    return count;
+  }, [allPnodes, nodeFilter, selectedVersions, selectedHealthStatuses, minCpu, minStorage]);
   
   // Filtering and Sorting logic (Frontend)
   const filteredAndSortedPNodes = useMemo(() => {
@@ -205,21 +242,17 @@ export const usePnodeDashboard = (theme?: string) => {
 
     // Advanced: Health Status
     if (selectedHealthStatuses.length > 0) {
-      result = result.filter(p => {
-        const score = calculateNodeScore(p);
-        const status = score >= 90 ? "Excellent" : score >= 70 ? "Good" : score >= 40 ? "Warning" : "Critical";
-        return selectedHealthStatuses.includes(status);
-      });
+      result = result.filter(p => selectedHealthStatuses.includes(p._healthStatus));
     }
 
     // Advanced: Min CPU
-    if (minCpu > 0) {
-      result = result.filter(p => (p.stats?.cpu_percent ?? 0) >= minCpu);
+    if (debouncedMinCpu > 0) {
+      result = result.filter(p => (p.stats?.cpu_percent ?? 0) >= debouncedMinCpu);
     }
 
     // Advanced: Min Storage (TB)
-    if (minStorage > 0) {
-      result = result.filter(p => (p.stats?.file_size ?? 0) >= minStorage * TB_IN_BYTES);
+    if (debouncedMinStorage > 0) {
+      result = result.filter(p => (p.stats?.file_size ?? 0) >= debouncedMinStorage * TB_IN_BYTES);
     }
 
     // Sort
@@ -238,8 +271,8 @@ export const usePnodeDashboard = (theme?: string) => {
           valB = (b.stats?.packets_sent ?? 0) + (b.stats?.packets_received ?? 0);
           break;
         case "health": 
-          valA = calculateNodeScore(a);
-          valB = calculateNodeScore(b);
+          valA = a._score;
+          valB = b._score;
           break;
         default: valA = a.ip; valB = b.ip;
       }
@@ -250,7 +283,7 @@ export const usePnodeDashboard = (theme?: string) => {
     });
 
     return result;
-  }, [allPnodes, debouncedSearchTerm, nodeFilter, sortKey, sortDirection]);
+  }, [allPnodes, debouncedSearchTerm, nodeFilter, selectedVersions, selectedHealthStatuses, debouncedMinCpu, debouncedMinStorage, sortKey, sortDirection]);
 
   // Derived global states (always based on allPnodes)
   const activeNodes = useMemo(() => allPnodes.filter((pnode) => pnode.status === "active"), [allPnodes]);
@@ -559,6 +592,7 @@ export const usePnodeDashboard = (theme?: string) => {
     publicCount,
     privateCount,
     filteredAndSortedPNodes,
+    quickResultsCount,
     alerts,
     criticalCount,
     warningCount,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, memo } from "react";
 import Link from "next/link";
 import { MapContainer, Marker, Popup, GeoJSON, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
@@ -101,7 +101,7 @@ export interface NodesMapProps {
   nodes: PNode[];
 }
 
-export default function NodesMap({ nodes }: NodesMapProps) {
+const NodesMap = memo(({ nodes }: NodesMapProps) => {
   const { theme, mounted: themeMounted } = useTheme();
   const isLight = themeMounted && theme === "light";
   const [locations, setLocations] = useState<NodeLocation[]>([]);
@@ -469,4 +469,8 @@ export default function NodesMap({ nodes }: NodesMapProps) {
       </MapContainer>
     </div>
   );
-}
+})
+
+NodesMap.displayName = "NodesMap";
+
+export default NodesMap;

@@ -78,6 +78,7 @@ export default function Page() {
     publicCount,
     privateCount,
     filteredAndSortedPNodes,
+    quickResultsCount,
     exportData,
     exportCsv,
     exportExcel
@@ -207,7 +208,7 @@ export default function Page() {
             minStorage={minStorage}
             setMinStorage={setMinStorage}
             onReset={resetFilters}
-            resultsCount={filteredAndSortedPNodes.length}
+            resultsCount={quickResultsCount}
           />
         </div>
 

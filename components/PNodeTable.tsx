@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { memo } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { calculateNodeScore, getScoreColor } from "@/lib/scoring";
@@ -15,12 +15,12 @@ interface PNodeTableProps {
   sortDirection: "asc" | "desc";
 }
 
-export default function PNodeTable({
+const PNodeTableComponent = ({
   data = [],
   onSort,
   sortKey,
   sortDirection,
-}: PNodeTableProps) {
+}: PNodeTableProps) => {
   const { theme, mounted: themeMounted } = useTheme();
   const router = useRouter();
   const isLight = themeMounted ? theme === "light" : false;
@@ -143,7 +143,7 @@ export default function PNodeTable({
           )}
         >
           {data.map((pnode) => {
-            const status = getHealthStatus(pnode);
+            const status = (pnode as any)._healthStatus || "Private";
 
             // Helper to get CSS variable value
             const getCssVar = (varName: string, fallback: string): string => {
@@ -203,8 +203,8 @@ export default function PNodeTable({
                 )}
               >
                 <td className="p-4 text-center align-middle">
-                  <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm ${getScoreColor(calculateNodeScore(pnode))}`}>
-                    {calculateNodeScore(pnode)}
+                  <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm ${getScoreColor((pnode as any)._score)}`}>
+                    {(pnode as any)._score}
                   </div>
                 </td>
 
@@ -280,4 +280,9 @@ export default function PNodeTable({
       </table>
     </div>
   );
-}
+};
+
+export const PNodeTable = memo(PNodeTableComponent);
+PNodeTable.displayName = "PNodeTable";
+
+export default PNodeTable;

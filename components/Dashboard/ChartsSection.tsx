@@ -1,5 +1,6 @@
 "use client"
 
+import React, { memo } from "react";
 import {
     Cpu,
     Package,
@@ -33,7 +34,7 @@ type ChartsSectionProps = {
     pnodes: PNode[];
 };
 
-export const ChartsSection = ({
+const ChartsSectionComponent = ({
     cpuDistribution,
     storageDistribution,
     versionChart,
@@ -187,3 +188,6 @@ export const ChartsSection = ({
       </div>
     )
 }
+
+export const ChartsSection = memo(ChartsSectionComponent);
+ChartsSection.displayName = "ChartsSection";
