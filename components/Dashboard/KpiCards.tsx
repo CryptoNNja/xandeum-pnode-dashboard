@@ -61,6 +61,15 @@ export const KpiCards = ({
     const avgCpuUsage = _avgCpuUsage;
     const avgRamUsage = _avgRamUsage;
 
+    const formatUtilizationPercent = (percent: number) => {
+      if (!Number.isFinite(percent) || percent <= 0) return "0%";
+      if (percent < 0.01) return `${percent.toFixed(4)}%`;
+      if (percent < 1) return `${percent.toFixed(2)}%`;
+      if (percent < 10) return `${percent.toFixed(2)}%`;
+      if (percent < 100) return `${percent.toFixed(1)}%`;
+      return "100%";
+    };
+
     return (
         <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -231,7 +240,7 @@ export const KpiCards = ({
                 />
               </div>
               <div className="flex items-center justify-between text-xs text-text-soft mt-2">
-                <span>{storageCapacityStats.percent.toFixed(0)}% utilized</span>
+                <span>{formatUtilizationPercent(storageCapacityStats.percent)} utilized</span>
                 <span>
                   {storageCapacityStats.formattedAvailable} {storageCapacityStats.availabilityLabel}
                 </span>
