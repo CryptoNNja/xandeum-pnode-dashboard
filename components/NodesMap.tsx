@@ -162,8 +162,8 @@ export default function NodesMap({ nodes }: NodesMapProps) {
     const calculateWidth = () => {
       if (typeof window === "undefined") return;
       
-      // Calculate based on max-w-[1600px] with px-6 (24px padding each side)
-      const maxWidth = 1600;
+      // Calculate based on max-w-7xl (1280px) with px-6 (24px padding each side)
+      const maxWidth = 1280; // max-w-7xl = 80rem = 1280px
       const padding = 48; // 24px * 2
       const windowWidth = window.innerWidth;
       const availableWidth = Math.min(windowWidth - padding, maxWidth - padding);
