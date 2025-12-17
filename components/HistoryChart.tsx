@@ -108,13 +108,20 @@ export default function HistoryChart({ ip }: { ip: string }) {
             return;
           }
 
-          const formatted = points.map((p) => ({
-            ts: new Date(p.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            cpu: p.cpu_percent != null ? Number.parseFloat(p.cpu_percent.toFixed(1)) : 0,
-            ram: p.ram_used != null ? Math.round(p.ram_used / 1_000_000_000) : 0,
-            sent: p.packets_sent ?? 0,
-            received: p.packets_received ?? 0,
-          }));
+          const formatted = points.map((p) => {
+            // Use ts (Unix timestamp) if available, otherwise fall back to created_at
+            const timestamp = (p as any).ts 
+              ? new Date((p as any).ts * 1000) 
+              : new Date(p.created_at);
+            
+            return {
+              ts: timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              cpu: p.cpu_percent != null ? Number.parseFloat(p.cpu_percent.toFixed(1)) : 0,
+              ram: p.ram_used != null ? Math.round(p.ram_used / 1_000_000_000) : 0,
+              sent: p.packets_sent ?? 0,
+              received: p.packets_received ?? 0,
+            };
+          });
 
           setData(formatted);
         }
@@ -151,6 +158,10 @@ export default function HistoryChart({ ip }: { ip: string }) {
       </div>
     );
   }
+
+  // Check if we have enough data points for a meaningful chart
+  // If crawler runs 1x/day, 24h view will only have 1-2 points (flat line)
+  const hasEnoughData = data.length >= 3;
 
   return (
     <div className="space-y-4">
@@ -268,6 +279,18 @@ export default function HistoryChart({ ip }: { ip: string }) {
       </div>
 
       {/* Chart */}
+      {!hasEnoughData && (
+        <div className="mb-4 p-3 rounded-lg border" style={{ 
+          backgroundColor: 'var(--bg-bg2)', 
+          borderColor: 'var(--border-app)',
+          color: 'var(--text-soft)'
+        }}>
+          <p className="text-xs">
+            ⚠️ Limited data: Only {data.length} point{data.length > 1 ? 's' : ''} in the last {timeRange === '24h' ? '24 hours' : timeRange === '7d' ? '7 days' : timeRange}. 
+            The crawler runs once per day, so you'll see more variation over longer periods (7d, 30d).
+          </p>
+        </div>
+      )}
       <div style={{ width: '100%', height: '400px' }}>
         <SafeResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
           <LineChart data={data} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
