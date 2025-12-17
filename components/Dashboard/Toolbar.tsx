@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Check,
   SlidersHorizontal,
+  RotateCcw,
 } from "lucide-react";
 import clsx from "clsx";
 import type { PNode } from "@/lib/types";
@@ -66,9 +67,25 @@ export const Toolbar = ({
   publicCount,
   privateCount,
   loading,
-}: ToolbarProps) => {
+  resetFilters,
+  selectedVersions,
+  selectedHealthStatuses,
+  minCpu,
+  minStorage,
+}: ToolbarProps & { 
+  resetFilters?: () => void;
+  selectedVersions?: string[];
+  selectedHealthStatuses?: string[];
+  minCpu?: number;
+  minStorage?: number;
+}) => {
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+
+  const activeFiltersCount = (selectedVersions?.length || 0) + 
+                             (selectedHealthStatuses?.length || 0) + 
+                             (minCpu ? 1 : 0) + 
+                             (minStorage ? 1 : 0);
 
   return (
     <section className="w-full">
@@ -238,17 +255,32 @@ export const Toolbar = ({
               onClick={() => setIsAdvancedFilterOpen(!isAdvancedFilterOpen)}
               className={clsx(
                 TOOLBAR_BUTTON_BASE,
-                isAdvancedFilterOpen ? "text-accent-aqua" : "text-text-soft"
+                isAdvancedFilterOpen || activeFiltersCount > 0 ? "text-accent-aqua bg-accent-aqua/10" : "text-text-soft"
               )}
-              style={isAdvancedFilterOpen ? { backgroundColor: 'var(--accent-aqua)' + '22' } : undefined}
               aria-label="Advanced Filters"
             >
               <div className="relative">
                 <SlidersHorizontal className="w-5 h-5" />
-                {/* Visual indicator when active could be added here if we want */}
+                {activeFiltersCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-accent-aqua text-bg-app text-[9px] font-black rounded-full flex items-center justify-center border-2 border-bg-card">
+                    {activeFiltersCount}
+                  </span>
+                )}
               </div>
             </button>
           </Tooltip>
+
+          {activeFiltersCount > 0 && resetFilters && (
+            <button
+              onClick={resetFilters}
+              className="px-3 py-1.5 text-[10px] font-bold text-accent-aqua hover:bg-accent-aqua/10 rounded-lg flex items-center gap-1.5 transition-all animate-in fade-in zoom-in duration-300"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Clear
+            </button>
+          )}
+
+          <div className="h-6 w-px bg-border-app mx-1 hidden md:block" />
 
           {/* Refresh */}
           <Tooltip content="Refresh data">

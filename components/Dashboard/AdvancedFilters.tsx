@@ -2,7 +2,7 @@
 
 import React from "react";
 import * as Slider from "@radix-ui/react-slider";
-import { X, RotateCcw, Filter, Check } from "lucide-react";
+import { X, RotateCcw, Filter, Check, Cpu, HardDrive, Activity, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getStatusColors } from "@/lib/utils";
 
@@ -42,19 +42,19 @@ export const AdvancedFilters = ({
   const statusColors = getStatusColors();
 
   const toggleVersion = (version: string) => {
-    if (selectedVersions.includes(version)) {
-      setSelectedVersions(selectedVersions.filter((v) => v !== version));
-    } else {
-      setSelectedVersions([...selectedVersions, version]);
-    }
+    setSelectedVersions(
+      selectedVersions.includes(version)
+        ? selectedVersions.filter((v) => v !== version)
+        : [...selectedVersions, version]
+    );
   };
 
   const toggleHealth = (status: string) => {
-    if (selectedHealthStatuses.includes(status)) {
-      setSelectedHealthStatuses(selectedHealthStatuses.filter((s) => s !== status));
-    } else {
-      setSelectedHealthStatuses([...selectedHealthStatuses, status]);
-    }
+    setSelectedHealthStatuses(
+      selectedHealthStatuses.includes(status)
+        ? selectedHealthStatuses.filter((s) => s !== status)
+        : [...selectedHealthStatuses, status]
+    );
   };
 
   const getStatusColor = (status: string) => {
@@ -71,43 +71,56 @@ export const AdvancedFilters = ({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
+          initial={{ height: 0, opacity: 0, y: -10 }}
+          animate={{ height: "auto", opacity: 1, y: 0 }}
+          exit={{ height: 0, opacity: 0, y: -10 }}
+          transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
           className="overflow-hidden"
         >
-          <div className="bg-bg-card border border-border-app rounded-xl p-6 mb-6 shadow-xl theme-transition">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-accent-aqua" />
-                <h3 className="text-sm font-bold uppercase tracking-wider text-text-main">Advanced Filters</h3>
-                <span className="ml-2 px-2 py-0.5 bg-accent-aqua/10 text-accent-aqua text-[10px] font-bold rounded-full">
-                  {resultsCount} results
-                </span>
-              </div>
+          <div className="bg-bg-card/80 backdrop-blur-xl border border-border-app rounded-2xl p-6 mb-8 shadow-2xl relative">
+            {/* Decorative background glow */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-accent-aqua/5 blur-[100px] pointer-events-none rounded-full" />
+            
+            <div className="flex items-center justify-between mb-8 border-b border-border-app/50 pb-4">
               <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-accent-aqua/10 flex items-center justify-center">
+                  <Filter className="w-4 h-4 text-accent-aqua" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-text-main">Precision Filters</h3>
+                  <p className="text-[10px] text-text-faint font-medium">Refine your node analysis with specific criteria</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="px-3 py-1 bg-bg-bg rounded-full border border-border-app flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent-aqua animate-pulse" />
+                  <span className="text-[11px] font-bold text-text-main">{resultsCount} nodes matching</span>
+                </div>
                 <button
                   onClick={onReset}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-text-soft hover:text-text-main transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold text-text-soft hover:text-accent-aqua hover:bg-accent-aqua/5 rounded-lg transition-all"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   Reset
                 </button>
                 <button
                   onClick={onClose}
-                  className="p-1.5 hover:bg-white/5 rounded-lg text-text-soft hover:text-text-main transition-colors"
+                  className="p-2 hover:bg-white/5 rounded-full text-text-faint hover:text-text-main transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
               {/* Health Status */}
-              <div className="space-y-4">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-text-faint font-bold">Health Status</p>
-                <div className="flex flex-wrap gap-2">
+              <div className="space-y-5">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-3.5 h-3.5 text-text-faint" />
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-text-faint font-bold">Health State</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                   {HEALTH_STATUSES.map((status) => {
                     const isSelected = selectedHealthStatuses.includes(status);
                     const color = getStatusColor(status);
@@ -116,21 +129,19 @@ export const AdvancedFilters = ({
                         key={status}
                         onClick={() => toggleHealth(status)}
                         className={`
-                          px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border
+                          px-3 py-2 rounded-xl text-[11px] font-bold transition-all border text-left flex items-center justify-between
                           ${isSelected 
-                            ? "bg-opacity-20 border-opacity-50" 
+                            ? "border-opacity-100 shadow-lg scale-[1.02]" 
                             : "bg-transparent border-border-app text-text-soft hover:border-text-faint"}
                         `}
                         style={{ 
-                          backgroundColor: isSelected ? `${color}33` : undefined,
+                          backgroundColor: isSelected ? `${color}15` : undefined,
                           borderColor: isSelected ? color : undefined,
-                          color: isSelected ? color : undefined
+                          color: isSelected ? color : "var(--text-soft)"
                         }}
                       >
-                        <div className="flex items-center gap-1.5">
-                          {isSelected && <Check className="w-3 h-3" />}
-                          {status}
-                        </div>
+                        {status}
+                        {isSelected && <Check className="w-3 h-3" />}
                       </button>
                     );
                   })}
@@ -138,80 +149,99 @@ export const AdvancedFilters = ({
               </div>
 
               {/* Network Versions */}
-              <div className="space-y-4">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-text-faint font-bold">Versions</p>
-                <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto pr-2 custom-scrollbar">
-                  {availableVersions.map((version) => {
+              <div className="space-y-5">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-3.5 h-3.5 text-text-faint" />
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-text-faint font-bold">Client Versions</p>
+                </div>
+                <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
+                  {availableVersions.length > 0 ? availableVersions.map((version) => {
                     const isSelected = selectedVersions.includes(version);
                     return (
                       <button
                         key={version}
                         onClick={() => toggleVersion(version)}
                         className={`
-                          px-2.5 py-1.5 rounded-lg text-[11px] font-mono font-bold transition-all border
+                          px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold transition-all border
                           ${isSelected 
-                            ? "bg-accent-aqua/20 border-accent-aqua text-accent-aqua" 
-                            : "bg-transparent border-border-app text-text-soft hover:border-text-faint"}
+                            ? "bg-accent-aqua/20 border-accent-aqua text-accent-aqua shadow-sm" 
+                            : "bg-bg-bg border-border-app text-text-soft hover:border-accent-aqua/50"}
                         `}
                       >
                         {version}
                       </button>
                     );
-                  })}
+                  }) : (
+                    <p className="text-[10px] text-text-faint italic">No versions detected</p>
+                  )}
                 </div>
               </div>
 
               {/* CPU Usage Slider */}
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="flex justify-between items-center">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-text-faint font-bold">Min CPU Load</p>
-                  <span className="text-xs font-mono font-bold text-accent-aqua">{minCpu}%</span>
+                  <div className="flex items-center gap-2">
+                    <Cpu className="w-3.5 h-3.5 text-text-faint" />
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-text-faint font-bold">Minimum CPU</p>
+                  </div>
+                  <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md ${minCpu > 70 ? 'bg-red-500/10 text-red-400' : 'bg-accent-aqua/10 text-accent-aqua'}`}>
+                    {minCpu}%
+                  </span>
                 </div>
-                <Slider.Root
-                  className="relative flex items-center select-none touch-none w-full h-5"
-                  value={[minCpu]}
-                  onValueChange={([val]) => setMinCpu(val)}
-                  max={100}
-                  step={5}
-                >
-                  <Slider.Track className="bg-border-app relative grow rounded-full h-[4px]">
-                    <Slider.Range className="absolute bg-accent-aqua rounded-full h-full" />
-                  </Slider.Track>
-                  <Slider.Thumb
-                    className="block w-4 h-4 bg-white shadow-xl rounded-full hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-accent-aqua cursor-grab active:cursor-grabbing"
-                    aria-label="Min CPU"
-                  />
-                </Slider.Root>
-                <div className="flex justify-between text-[10px] text-text-faint font-mono">
-                  <span>0%</span>
-                  <span>100%</span>
+                <div className="px-2">
+                  <Slider.Root
+                    className="relative flex items-center select-none touch-none w-full h-5 cursor-pointer"
+                    value={[minCpu]}
+                    onValueChange={([val]) => setMinCpu(val)}
+                    max={100}
+                    step={5}
+                  >
+                    <Slider.Track className="bg-white/10 relative grow rounded-full h-[6px] overflow-hidden">
+                      <Slider.Range className="absolute bg-gradient-to-r from-accent-aqua to-accent-blue rounded-full h-full" />
+                    </Slider.Track>
+                    <Slider.Thumb
+                      className="block w-5 h-5 bg-white border-2 border-accent-aqua shadow-[0_0_15px_rgba(0,212,170,0.4)] rounded-full hover:scale-125 transition-transform focus:outline-none focus:ring-4 focus:ring-accent-aqua/20"
+                      aria-label="Min CPU"
+                    />
+                  </Slider.Root>
+                  <div className="flex justify-between mt-3 text-[9px] text-text-faint font-mono uppercase tracking-tighter">
+                    <span>Idle (0%)</span>
+                    <span>Load (100%)</span>
+                  </div>
                 </div>
               </div>
 
               {/* Storage Slider */}
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="flex justify-between items-center">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-text-faint font-bold">Min Storage</p>
-                  <span className="text-xs font-mono font-bold text-accent-purple">{minStorage} TB</span>
+                  <div className="flex items-center gap-2">
+                    <HardDrive className="w-3.5 h-3.5 text-text-faint" />
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-text-faint font-bold">Min Storage</p>
+                  </div>
+                  <span className="text-xs font-mono font-bold bg-accent-purple/10 text-accent-purple px-2 py-0.5 rounded-md">
+                    {minStorage} TB
+                  </span>
                 </div>
-                <Slider.Root
-                  className="relative flex items-center select-none touch-none w-full h-5"
-                  value={[minStorage]}
-                  onValueChange={([val]) => setMinStorage(val)}
-                  max={10}
-                  step={0.5}
-                >
-                  <Slider.Track className="bg-border-app relative grow rounded-full h-[4px]">
-                    <Slider.Range className="absolute bg-accent-purple rounded-full h-full" />
-                  </Slider.Track>
-                  <Slider.Thumb
-                    className="block w-4 h-4 bg-white shadow-xl rounded-full hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-accent-purple cursor-grab active:cursor-grabbing"
-                    aria-label="Min Storage"
-                  />
-                </Slider.Root>
-                <div className="flex justify-between text-[10px] text-text-faint font-mono">
-                  <span>0 TB</span>
-                  <span>10 TB</span>
+                <div className="px-2">
+                  <Slider.Root
+                    className="relative flex items-center select-none touch-none w-full h-5 cursor-pointer"
+                    value={[minStorage]}
+                    onValueChange={([val]) => setMinStorage(val)}
+                    max={10}
+                    step={0.5}
+                  >
+                    <Slider.Track className="bg-white/10 relative grow rounded-full h-[6px] overflow-hidden">
+                      <Slider.Range className="absolute bg-gradient-to-r from-accent-purple to-pink-500 rounded-full h-full" />
+                    </Slider.Track>
+                    <Slider.Thumb
+                      className="block w-5 h-5 bg-white border-2 border-accent-purple shadow-[0_0_15px_rgba(123,63,242,0.4)] rounded-full hover:scale-125 transition-transform focus:outline-none focus:ring-4 focus:ring-accent-purple/20"
+                      aria-label="Min Storage"
+                    />
+                  </Slider.Root>
+                  <div className="flex justify-between mt-3 text-[9px] text-text-faint font-mono uppercase tracking-tighter">
+                    <span>Low (0 TB)</span>
+                    <span>High (10 TB)</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -221,4 +251,3 @@ export const AdvancedFilters = ({
     </AnimatePresence>
   );
 };
-

@@ -187,6 +187,11 @@ export default function Page() {
             pnodesCount={pnodes.length}
             publicCount={publicCount}
             privateCount={privateCount}
+            resetFilters={resetFilters}
+            selectedVersions={selectedVersions}
+            selectedHealthStatuses={selectedHealthStatuses}
+            minCpu={minCpu}
+            minStorage={minStorage}
           />
 
           <AdvancedFilters
