@@ -498,6 +498,28 @@ export default function Page() {
     [pnodes]
   );
 
+  // Data integrity validation
+  const dataIntegrity = useMemo(() => {
+    const totalNodes = pnodes.length;
+    const sumCounts = publicCount + privateCount;
+    const isValid = sumCounts === totalNodes;
+
+    // Find nodes with unexpected status
+    const unexpectedNodes = pnodes.filter(
+      (node) => node.status !== "active" && node.status !== "gossip_only"
+    );
+
+    return {
+      isValid,
+      totalNodes,
+      publicCount,
+      privateCount,
+      sumCounts,
+      discrepancy: totalNodes - sumCounts,
+      unexpectedNodes,
+    };
+  }, [pnodes, publicCount, privateCount]);
+
   const filteredAndSortedPNodes = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     const filtered = pnodes.filter((pnode) => {
@@ -1084,6 +1106,48 @@ export default function Page() {
             STATUS_COLORS={STATUS_COLORS}
             hexToRgba={hexToRgba}
           />
+
+          {/* DATA INTEGRITY WARNING */}
+          {!dataIntegrity.isValid && (
+            <div className="bg-gradient-to-r from-orange-500/10 via-red-500/10 to-orange-500/10 border-2 border-orange-500/30 rounded-xl p-4 shadow-lg">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+                <div className="flex-1">
+                  <h3 className="text-sm font-bold text-orange-500 mb-1">
+                    ⚠️ Data Integrity Warning
+                  </h3>
+                  <p className="text-xs text-text-main mb-2">
+                    Node count mismatch detected: <span className="font-mono font-semibold text-orange-400">
+                      Public ({dataIntegrity.publicCount}) + Private ({dataIntegrity.privateCount}) = {dataIntegrity.sumCounts}
+                    </span> but total is <span className="font-mono font-semibold text-orange-400">{dataIntegrity.totalNodes}</span>
+                    {dataIntegrity.discrepancy !== 0 && (
+                      <span className="text-orange-400"> (discrepancy: {dataIntegrity.discrepancy > 0 ? '+' : ''}{dataIntegrity.discrepancy})</span>
+                    )}
+                  </p>
+                  {dataIntegrity.unexpectedNodes.length > 0 && (
+                    <details className="text-xs text-text-soft">
+                      <summary className="cursor-pointer hover:text-text-main transition-colors">
+                        Found {dataIntegrity.unexpectedNodes.length} node(s) with unexpected status
+                      </summary>
+                      <ul className="mt-2 space-y-1 ml-4 font-mono">
+                        {dataIntegrity.unexpectedNodes.slice(0, 5).map((node) => (
+                          <li key={node.ip}>
+                            {node.ip} → status: &quot;{node.status}&quot;
+                          </li>
+                        ))}
+                        {dataIntegrity.unexpectedNodes.length > 5 && (
+                          <li className="text-text-faint">
+                            ... and {dataIntegrity.unexpectedNodes.length - 5} more
+                          </li>
+                        )}
+                      </ul>
+                    </details>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* HEALTH DISTRIBUTION */}
           <div className="bg-bg-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
             <div className="flex justify-between items-center mb-4">
