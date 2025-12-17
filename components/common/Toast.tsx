@@ -159,17 +159,17 @@ export const ToastContainer = ({ toasts, onRemove }: ToastContainerProps) => {
 let toastIdCounter = 0;
 const toastListeners = new Set<(toast: Toast) => void>();
 
-export const useToast = () => {
-  const showToast = (type: ToastType, message: string, duration?: number) => {
-    const toast: Toast = {
-      id: `toast-${Date.now()}-${toastIdCounter++}`,
-      type,
-      message,
-      duration,
-    };
-    toastListeners.forEach((listener) => listener(toast));
+const showToast = (type: ToastType, message: string, duration?: number) => {
+  const toast: Toast = {
+    id: `toast-${Date.now()}-${toastIdCounter++}`,
+    type,
+    message,
+    duration,
   };
+  toastListeners.forEach((listener) => listener(toast));
+};
 
+export const useToast = () => {
   return {
     success: (message: string, duration?: number) => showToast('success', message, duration),
     error: (message: string, duration?: number) => showToast('error', message, duration),

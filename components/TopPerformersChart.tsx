@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
 import { Trophy, ArrowRight, HardDrive, Zap, Star, ChevronDown } from "lucide-react";
@@ -227,6 +228,7 @@ const formatStartDate = (uptime?: number, lastSeen?: number) => {
 
 export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformersChartProps) {
     const { theme, mounted } = useTheme();
+    const router = useRouter();
     const isLight = mounted ? theme === "light" : false;
     const [isSmallScreen, setIsSmallScreen] = useState(false);
     const [showFullLeaderboard, setShowFullLeaderboard] = useState(false);
@@ -313,7 +315,7 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
         if (onSelectNode) {
             onSelectNode(ip);
         } else if (typeof window !== "undefined") {
-            window.location.assign(`/pnode/${ip}`);
+            router.push(`/pnode/${ip}`);
         }
         if (closeModal) {
             setShowFullLeaderboard(false);

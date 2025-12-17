@@ -1,4 +1,3 @@
-
 "use client"
 
 import {
@@ -44,7 +43,7 @@ export const ChartsSection = ({
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
         {/* CPU LOAD */}
-        <div className="bg-bg-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
+        <div className="kpi-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
           <div className="flex items-center gap-2 mb-4">
             <Cpu className="w-4 h-4 text-[#10B981]" strokeWidth={2.5} />
             <h3 className="text-xs font-semibold text-[#10B981]">CPU Load</h3>
@@ -70,7 +69,7 @@ export const ChartsSection = ({
         </div>
 
         {/* STORAGE DISTRIBUTION */}
-        <div className="bg-bg-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
+        <div className="kpi-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
           <div className="flex items-center gap-2 mb-4">
             <Package className="w-4 h-4 text-[#7B3FF2]" strokeWidth={2.5} />
             <h3 className="text-xs font-semibold text-[#7B3FF2]">Storage</h3>
@@ -104,7 +103,7 @@ export const ChartsSection = ({
         </div>
 
         {/* NETWORK VERSIONS */}
-        <div className="bg-bg-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
+        <div className="kpi-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Radio className="w-4 h-4 text-[#F97316]" strokeWidth={2.5} />
@@ -115,31 +114,37 @@ export const ChartsSection = ({
             </div>
           </div>
           <div className="h-[180px] w-full min-w-0 relative mb-4">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-              <PieChart>
-                <Pie
-                  data={versionChart.entries}
-                  dataKey="count"
-                  nameKey="label"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={85}
-                  paddingAngle={2}
-                  startAngle={90}
-                  endAngle={-270}
-                >
-                  {versionChart.entries.map((entry: any) => (
-                    <Cell
-                      key={entry.id}
-                      fill={entry.color}
-                      stroke="var(--bg-bg)"
-                      strokeWidth={2}
-                    />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
+            {versionChart.entries.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                <PieChart>
+                    <Pie
+                    data={versionChart.entries}
+                    dataKey="count"
+                    nameKey="label"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={85}
+                    paddingAngle={2}
+                    startAngle={90}
+                    endAngle={-270}
+                    >
+                    {versionChart.entries.map((entry: any) => (
+                        <Cell
+                        key={entry.id}
+                        fill={entry.color}
+                        stroke="var(--bg-bg)"
+                        strokeWidth={2}
+                        />
+                    ))}
+                    </Pie>
+                </PieChart>
+                </ResponsiveContainer>
+            ) : (
+                <div className="h-full flex items-center justify-center">
+                    <p className="text-xs text-text-soft">No version data available</p>
+                </div>
+            )}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="text-center">
                 <p className="text-3xl font-bold text-text-main">{versionChart.latestPercentLabel}%</p>

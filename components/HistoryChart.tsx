@@ -146,7 +146,7 @@ export default function HistoryChart({ ip }: { ip: string }) {
     if (ip) {
       fetchHistory();
     }
-  }, [ip, timeRange, toast]);
+  }, [ip, timeRange]);
 
   if (loading) {
     return (

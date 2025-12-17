@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { calculateNodeScore, getScoreColor } from "@/lib/scoring";
 import { useTheme } from "@/hooks/useTheme";
@@ -21,6 +22,7 @@ export default function PNodeTable({
   sortDirection,
 }: PNodeTableProps) {
   const { theme, mounted: themeMounted } = useTheme();
+  const router = useRouter();
   const isLight = themeMounted ? theme === "light" : false;
 
   if (!data || !Array.isArray(data)) return null;
@@ -192,7 +194,7 @@ export default function PNodeTable({
             return (
               <tr
                 key={pnode.ip}
-                onClick={() => (window.location.href = `/pnode/${pnode.ip}`)}
+                onClick={() => router.push(`/pnode/${pnode.ip}`)}
                 className={clsx(
                   "transition-colors cursor-pointer group",
                   isLight

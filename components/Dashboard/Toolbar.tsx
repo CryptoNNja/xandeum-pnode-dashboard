@@ -1,6 +1,6 @@
-
 "use client";
 
+import { useState } from "react";
 import {
   Search,
   Eye,
@@ -17,89 +17,80 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import type { PNode } from "@/lib/types";
-import { ViewMode, NodeFilter, AutoRefreshOption } from "@/hooks/usePnodeDashboard";
+import { ViewMode, NodeFilter } from "@/hooks/usePnodeDashboard";
 
 const TOOLBAR_BUTTON_BASE =
   "relative group p-2 rounded-lg hover:bg-white/5 transition-colors";
 
 const ToolbarTooltip = ({ label }: { label: string }) => (
   <span
-    className="pointer-events-none absolute left-1/2 top-full mt-2 w-max max-w-[260px] -translate-x-1/2 whitespace-nowrap rounded-lg border border-border-app bg-bg-card px-3 py-2 text-[11px] text-text-main opacity-0 shadow-2xl translate-y-1 scale-[0.98] transition duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100 group-focus-within:opacity-100 group-focus-within:translate-y-0 group-focus-within:scale-100"
+    className="pointer-events-none absolute left-1/2 top-full mt-2 w-max max-w-[260px] -translate-x-1/2 whitespace-nowrap rounded-lg border border-border-app bg-bg-card px-3 py-2 text-[11px] text-text-main opacity-0 shadow-2xl translate-y-1 scale-[0.98] transition duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100 group-focus-within:opacity-100 group-focus-within:translate-y-0 group-focus-within:scale-100 z-50"
     role="tooltip"
   >
     {label}
   </span>
 );
 
-
 type ToolbarProps = {
-    pnodes: PNode[];
-    publicCount: number;
-    privateCount: number;
-    nodeFilter: NodeFilter;
-    setNodeFilter: (filter: NodeFilter) => void;
-    filterMenuOpen: boolean;
-    setFilterMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
-
-    viewMode: ViewMode;
-    setViewMode: (mode: ViewMode) => void;
-    scrollToContent: () => void;
-
-    exportMenuOpen: boolean;
-    setExportMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
-    exportData: () => void;
-    exportCsv: () => void;
-    exportExcel: () => void;
-
-    refreshing: boolean;
-    refreshData: () => void;
-
-    isSearchOpen: boolean;
-    setIsSearchOpen: React.Dispatch<React.SetStateAction<boolean>>;
-
-    setIsSettingsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-
-    loading: boolean;
-    getTimeAgo: () => string;
+  searchTerm: string;
+  setSearchTerm: (val: string) => void;
+  viewMode: ViewMode;
+  setViewMode: (mode: ViewMode) => void;
+  nodeFilter: NodeFilter;
+  setNodeFilter: (filter: NodeFilter) => void;
+  onRefresh: () => void;
+  refreshing: boolean;
+  onSettingsClick: () => void;
+  onExportData: () => void;
+  onExportCsv: () => void;
+  onExportExcel: () => void;
+  lastUpdateText: string;
+  pnodesCount: number;
+  publicCount: number;
+  privateCount: number;
+  loading?: boolean;
 };
 
 export const Toolbar = ({
-    pnodes,
-    publicCount,
-    privateCount,
-    nodeFilter,
-    setNodeFilter,
-    filterMenuOpen,
-    setFilterMenuOpen,
-    viewMode,
-    setViewMode,
-    scrollToContent,
-    exportMenuOpen,
-    setExportMenuOpen,
-    exportData,
-    exportCsv,
-    exportExcel,
-    refreshing,
-    refreshData,
-    setIsSearchOpen,
-    setIsSettingsOpen,
-    loading,
-    getTimeAgo
+  searchTerm,
+  setSearchTerm,
+  viewMode,
+  setViewMode,
+  nodeFilter,
+  setNodeFilter,
+  onRefresh,
+  refreshing,
+  onSettingsClick,
+  onExportData,
+  onExportCsv,
+  onExportExcel,
+  lastUpdateText,
+  pnodesCount,
+  publicCount,
+  privateCount,
+  loading,
 }: ToolbarProps) => {
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+
   return (
-    <section className="max-w-7xl mx-auto px-6">
+    <section className="w-full">
       <div className="w-full bg-bg-card border border-border-app rounded-xl px-6 py-4 flex flex-col md:flex-row gap-4 md:items-center md:justify-between theme-transition">
         <div className="flex flex-wrap items-center gap-2">
-          {/* Search */}
-          <button
-            type="button"
-            onClick={() => setIsSearchOpen(true)}
-            className={TOOLBAR_BUTTON_BASE}
-            aria-label="Search"
-          >
-            <Search className="w-5 h-5 text-text-soft" />
-            <ToolbarTooltip label="Search nodes (IP, version, status)" />
-          </button>
+          {/* Search Button/Input - simplified as just a button that might open a modal in Page, 
+              but let's keep the logic consistent with what Page passed */}
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-soft" />
+            <input
+              type="text"
+              placeholder="Search nodes..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 pr-4 py-2 bg-bg-bg border border-border-app rounded-lg text-xs text-text-main outline-none focus:border-accent-aqua transition-colors w-40 md:w-64"
+            />
+          </div>
+
+          <div className="h-6 w-px bg-border-app mx-1 hidden md:block" />
 
           {/* Filter */}
           <div className="relative">
@@ -115,13 +106,13 @@ export const Toolbar = ({
             </button>
 
             {filterMenuOpen && (
-              <div className="absolute left-0 mt-3 w-56 rounded-xl border border-border-app bg-bg-card shadow-2xl z-40 overflow-hidden">
+              <div className="absolute left-0 mt-3 w-56 rounded-xl border border-border-app bg-bg-card shadow-2xl z-[60] overflow-hidden">
                 {(
                   [
-                    { key: "all" as const, label: `All (${pnodes.length})` },
+                    { key: "all" as const, label: `All (${pnodesCount})` },
                     { key: "public" as const, label: `Public (${publicCount})` },
                     { key: "private" as const, label: `Private (${privateCount})` },
-                  ] satisfies Array<{ key: NodeFilter; label: string }>
+                  ] as const
                 ).map((option) => {
                   const isActive = option.key === nodeFilter;
                   return (
@@ -151,57 +142,36 @@ export const Toolbar = ({
           {/* View modes */}
           <button
             type="button"
-            onClick={() => {
-              setFilterMenuOpen(false);
-              setExportMenuOpen(false);
-              setViewMode("table");
-              scrollToContent();
-            }}
+            onClick={() => setViewMode("table")}
             className={clsx(
               TOOLBAR_BUTTON_BASE,
               viewMode === "table" ? "text-accent-aqua" : "text-text-soft"
             )}
-            style={viewMode === "table" ? { backgroundColor: 'var(--accent-aqua)' + '33' } : undefined}
-            aria-label="Table View"
-            aria-pressed={viewMode === "table"}
+            style={viewMode === "table" ? { backgroundColor: 'var(--accent-aqua)' + '22' } : undefined}
           >
             <List className="w-5 h-5" />
             <ToolbarTooltip label="Table View" />
           </button>
           <button
             type="button"
-            onClick={() => {
-              setFilterMenuOpen(false);
-              setExportMenuOpen(false);
-              setViewMode("grid");
-              scrollToContent();
-            }}
+            onClick={() => setViewMode("grid")}
             className={clsx(
               TOOLBAR_BUTTON_BASE,
               viewMode === "grid" ? "text-accent-aqua" : "text-text-soft"
             )}
-            style={viewMode === "grid" ? { backgroundColor: 'var(--accent-aqua)' + '33' } : undefined}
-            aria-label="Grid View"
-            aria-pressed={viewMode === "grid"}
+            style={viewMode === "grid" ? { backgroundColor: 'var(--accent-aqua)' + '22' } : undefined}
           >
             <LayoutGrid className="w-5 h-5" />
             <ToolbarTooltip label="Grid View" />
           </button>
           <button
             type="button"
-            onClick={() => {
-              setFilterMenuOpen(false);
-              setExportMenuOpen(false);
-              setViewMode("map");
-              scrollToContent();
-            }}
+            onClick={() => setViewMode("map")}
             className={clsx(
               TOOLBAR_BUTTON_BASE,
               viewMode === "map" ? "text-accent-aqua" : "text-text-soft"
             )}
-            style={viewMode === "map" ? { backgroundColor: 'var(--accent-aqua)' + '33' } : undefined}
-            aria-label="Map View"
-            aria-pressed={viewMode === "map"}
+            style={viewMode === "map" ? { backgroundColor: 'var(--accent-aqua)' + '22' } : undefined}
           >
             <MapPin className="w-5 h-5" />
             <ToolbarTooltip label="Map View" />
@@ -214,7 +184,7 @@ export const Toolbar = ({
             <button
               type="button"
               onClick={() => setExportMenuOpen((prev) => !prev)}
-              className={clsx(TOOLBAR_BUTTON_BASE, "flex items-center gap-1", pnodes.length === 0 && "opacity-50 pointer-events-none")}
+              className={clsx(TOOLBAR_BUTTON_BASE, "flex items-center gap-1", pnodesCount === 0 && "opacity-50 pointer-events-none")}
               aria-label="Export"
             >
               <Download className="w-5 h-5 text-text-soft" />
@@ -222,11 +192,11 @@ export const Toolbar = ({
               <ToolbarTooltip label="Export data" />
             </button>
             {exportMenuOpen && (
-              <div className="absolute left-0 mt-3 w-48 rounded-xl border border-border-app bg-bg-card shadow-2xl z-40 overflow-hidden">
+              <div className="absolute left-0 mt-3 w-48 rounded-xl border border-border-app bg-bg-card shadow-2xl z-[60] overflow-hidden">
                 <button
                   type="button"
                   onClick={() => {
-                    exportData();
+                    onExportData();
                     setExportMenuOpen(false);
                   }}
                   className="w-full px-4 py-3 text-sm text-text-main hover:bg-bg-bg2 transition-colors"
@@ -236,7 +206,7 @@ export const Toolbar = ({
                 <button
                   type="button"
                   onClick={() => {
-                    exportCsv();
+                    onExportCsv();
                     setExportMenuOpen(false);
                   }}
                   className="w-full px-4 py-3 text-sm text-text-main hover:bg-bg-bg2 transition-colors"
@@ -246,7 +216,7 @@ export const Toolbar = ({
                 <button
                   type="button"
                   onClick={() => {
-                    exportExcel();
+                    onExportExcel();
                     setExportMenuOpen(false);
                   }}
                   className="w-full px-4 py-3 text-sm text-text-main hover:bg-bg-bg2 transition-colors"
@@ -260,7 +230,7 @@ export const Toolbar = ({
           {/* Refresh */}
           <button
             type="button"
-            onClick={refreshData}
+            onClick={onRefresh}
             className={TOOLBAR_BUTTON_BASE}
             aria-label="Refresh"
           >
@@ -271,11 +241,7 @@ export const Toolbar = ({
           {/* Settings */}
           <button
             type="button"
-            onClick={() => {
-              setFilterMenuOpen(false);
-              setExportMenuOpen(false);
-              setIsSettingsOpen(true);
-            }}
+            onClick={onSettingsClick}
             className={TOOLBAR_BUTTON_BASE}
             aria-label="Settings"
           >
@@ -288,13 +254,13 @@ export const Toolbar = ({
         <div className="flex items-center gap-2">
           {loading || refreshing ? (
             <>
-              <Loader2 className="w-5 h-5 animate-spin text-text-soft" />
-              <span className="text-xs text-text-soft font-mono">Updating...</span>
+              <Loader2 className="w-4 h-4 animate-spin text-text-soft" />
+              <span className="text-[11px] text-text-soft font-mono">Updating...</span>
             </>
           ) : (
             <>
-              <CheckCircle className="w-5 h-5" style={{ color: 'var(--kpi-excellent)' }} />
-              <span className="text-xs text-text-soft font-mono">{getTimeAgo() || "—"}</span>
+              <CheckCircle className="w-4 h-4 text-green-400" />
+              <span className="text-[11px] text-text-soft font-mono">{lastUpdateText || "—"}</span>
             </>
           )}
         </div>

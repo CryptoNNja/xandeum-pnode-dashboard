@@ -100,7 +100,7 @@ export default function PNodeDetailPage() {
     };
 
     fetchNodeData();
-  }, [ip, toast]);
+  }, [ip]);
 
   const health = useMemo(() => pnode ? getHealthStatus(pnode) : 'Private', [pnode]);
   

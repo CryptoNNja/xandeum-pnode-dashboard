@@ -1,123 +1,116 @@
-
 "use client";
 
-import { Check, AlertCircle, AlertTriangle } from "lucide-react";
-import type { AlertSeverity } from "@/hooks/usePnodeDashboard";
+import { X, AlertCircle, AlertTriangle, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import clsx from "clsx";
+import type { Alert } from "@/hooks/usePnodeDashboard";
 
 type AlertsModalProps = {
-  isAlertOpen: boolean;
-  setIsAlertOpen: (isOpen: boolean) => void;
-  alerts: { type: string; message: string; ip: string; severity: AlertSeverity }[];
-  criticalCount: number;
+  isOpen: boolean;
+  onClose: () => void;
+  alerts: Alert[];
+  isLight: boolean;
 };
 
 export const AlertsModal = ({
-  isAlertOpen,
-  setIsAlertOpen,
+  isOpen,
+  onClose,
   alerts,
-  criticalCount,
+  isLight,
 }: AlertsModalProps) => {
-  if (!isAlertOpen) return null;
+  const router = useRouter();
+
+  if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-[#050914] z-50 flex items-center justify-center p-4"
-      onClick={() => setIsAlertOpen(false)}
-    >
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6">
       <div
-        className="bg-bg-app border border-border-app rounded-xl max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div
+        className="relative w-full max-w-2xl max-h-[80vh] overflow-hidden rounded-2xl border border-border-app shadow-2xl flex flex-col theme-transition"
+        style={{
+          backgroundColor: isLight ? "rgba(247,249,255,0.98)" : "rgba(5,9,24,0.98)",
+        }}
       >
-        {/* Header */}
-        <div className="border-b border-border-app p-6 flex justify-between items-center">
-          <div>
-            <h3 className="text-xl font-bold text-text-main">System Alerts</h3>
-            <p className="text-sm text-text-faint mt-2">
-              {alerts.length} alert{alerts.length !== 1 ? "s" : ""} detected
-              {criticalCount > 0 && (
-                <span className="ml-2 text-kpi-critical font-semibold">
-                  ({criticalCount} critical node{criticalCount !== 1 ? "s" : ""})
-                </span>
-              )}
-            </p>
+        <div className="p-6 border-b border-border-app flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+              <AlertCircle className="w-5 h-5 text-red-500" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-text-main">
+                System Alerts
+              </h2>
+              <p className="text-sm text-text-soft">
+                {alerts.length} active issues detected
+              </p>
+            </div>
           </div>
           <button
-            onClick={() => setIsAlertOpen(false)}
-            className="text-text-faint hover:text-text-main transition-colors"
+            onClick={onClose}
+            className="p-2 hover:bg-white/5 rounded-lg text-text-faint hover:text-text-main theme-transition"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(80vh-120px)]">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {alerts.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-kpi-excellent/10 mb-4">
-                <svg className="w-8 h-8 text-kpi-excellent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <p className="text-kpi-excellent text-lg font-semibold">
-                ✓ All Systems Healthy
-              </p>
-              <p className="text-text-faint text-sm mt-2">
-                No alerts to display
-              </p>
+            <div className="py-12 text-center">
+              <p className="text-text-soft">No active alerts. All systems operational.</p>
             </div>
           ) : (
-            <div className="divide-y divide-border-app">
-              {alerts.map((alert, index) => (
-                <div
-                  key={index}
-                  className={`p-4 hover:bg-bg-bg2 transition-colors cursor-pointer theme-transition ${
-                    alert.severity === "critical"
-                      ? "border-l-4 border-kpi-critical"
-                      : alert.severity === "warning"
-                      ? "border-l-4 border-kpi-warning"
-                      : "border-l-4 border-kpi-good"
-                  }`}
-                  onClick={() => {
-                    setIsAlertOpen(false);
-                    window.location.href = `/pnode/${alert.ip}`;
-                  }}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span
-                      className={`text-[10px] font-bold px-2 py-2 rounded uppercase ${
-                        alert.severity === "critical"
-                          ? "bg-kpi-critical/10 text-kpi-critical border border-kpi-critical/20"
-                          : alert.severity === "warning"
-                          ? "bg-kpi-warning/10 text-kpi-warning border border-kpi-warning/20"
-                          : "bg-kpi-good/10 text-kpi-good border border-kpi-good/20"
-                      }`}
-                    >
-                      {alert.type}
-                    </span>
-                    <span className="text-xs text-text-faint font-mono">
-                      {alert.ip}
-                    </span>
+            alerts.map((alert, idx) => (
+              <div
+                key={`${alert.ip}-${idx}`}
+                onClick={() => {
+                  router.push(`/pnode/${alert.ip}`);
+                  onClose();
+                }}
+                className={clsx(
+                  "p-4 rounded-xl border cursor-pointer group theme-transition",
+                  alert.severity === "critical"
+                    ? "bg-red-500/5 border-red-500/20 hover:border-red-500/40"
+                    : "bg-orange-500/5 border-orange-500/20 hover:border-orange-500/40"
+                )}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    {alert.severity === "critical" ? (
+                      <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                    )}
+                    <div>
+                      <p className="text-sm font-bold text-text-main group-hover:text-accent theme-transition">
+                        {alert.type}
+                      </p>
+                      <p className="text-xs text-text-soft mt-0.5">
+                        Node: <span className="font-mono">{alert.ip}</span>
+                      </p>
+                      <p className="text-xs text-text-main mt-2">
+                        {alert.message}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-sm text-text-main">{alert.message}</p>
-                  <p className="text-xs text-text-soft mt-2">
-                    Click to view node details →
-                  </p>
+                  <div className="text-right flex flex-col items-end gap-2">
+                    <span className="text-xs font-mono font-bold text-text-main px-2 py-1 rounded bg-black/20">
+                      {alert.value}
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-text-faint group-hover:text-text-main theme-transition translate-x-0 group-hover:translate-x-1" />
+                  </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))
           )}
         </div>
 
-        {/* Footer */}
-        <div className="border-t border-border-app p-4 bg-bg-bg">
-          <button
-            onClick={() => setIsAlertOpen(false)}
-            className="w-full px-4 py-2 bg-bg-bg2 hover:bg-bg-card border border-border-app rounded-lg text-sm font-semibold text-text-main transition-colors theme-transition"
-          >
-            Close
-          </button>
+        <div className="p-4 border-t border-border-app bg-black/20">
+          <p className="text-[10px] text-center text-text-faint uppercase tracking-widest">
+            Alerts are updated every cycle
+          </p>
         </div>
       </div>
     </div>

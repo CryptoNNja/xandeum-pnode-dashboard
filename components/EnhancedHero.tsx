@@ -3,6 +3,7 @@
 
 import { useMemo } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { AlertCircle } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
@@ -138,7 +139,7 @@ const EnhancedHero: React.FC<EnhancedHeroProps> = ({
       <div className="relative z-10">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between gap-8">
-            <div className="flex items-center gap-6">
+            <Link href="/" className="flex items-center gap-6 group hover:opacity-90 transition-opacity">
               <Image
                 src={logoSrc}
                 alt="Xandeum Logo"
@@ -157,7 +158,7 @@ const EnhancedHero: React.FC<EnhancedHeroProps> = ({
                 </h1>
                 <p className="text-sm text-gray-400 mt-1">Real-time Network Monitoring</p>
               </div>
-            </div>
+            </Link>
             <div className="flex items-center gap-3">
               <motion.button
                 type="button"

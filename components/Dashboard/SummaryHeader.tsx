@@ -1,14 +1,7 @@
-
 "use client";
 
-import {
-  Radio,
-  ShieldCheck,
-  Network,
-  AlertCircle,
-  type LucideIcon,
-} from "lucide-react";
-import { hexToRgba, KPI_COLORS } from "@/lib/utils"; // Assuming KPI_COLORS and hexToRgba are in lib/utils
+import { Radio, ShieldCheck, Network, LucideIcon } from "lucide-react";
+import { hexToRgba, getKpiColors } from "@/lib/utils";
 
 type SummaryHeaderProps = {
   publicCount: number;
@@ -16,7 +9,8 @@ type SummaryHeaderProps = {
   totalNodes: number;
   networkHealthInsights: {
     score: number;
-    delta: number;
+    deltaYesterday: number | null;
+    deltaLastWeek: number | null;
     color: string;
     trendIcon: string;
     trendColor: string;
@@ -44,6 +38,7 @@ export const SummaryHeader = ({
   networkUptimeStats,
 }: SummaryHeaderProps) => {
   const UptimeIcon = networkUptimeStats.Icon;
+  const kpiColors = getKpiColors();
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -61,12 +56,12 @@ export const SummaryHeader = ({
           </div>
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: hexToRgba(KPI_COLORS.public, 0.12) }}
+            style={{ background: hexToRgba(kpiColors.public, 0.12) }}
           >
             <Radio
               className="w-5 h-5"
               strokeWidth={2.2}
-              style={{ color: KPI_COLORS.public }}
+              style={{ color: kpiColors.public }}
             />
           </div>
         </div>
@@ -86,12 +81,12 @@ export const SummaryHeader = ({
           </div>
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: hexToRgba(KPI_COLORS.private, 0.12) }}
+            style={{ background: hexToRgba(kpiColors.private, 0.12) }}
           >
             <ShieldCheck
               className="w-5 h-5"
               strokeWidth={2.2}
-              style={{ color: KPI_COLORS.private }}
+              style={{ color: kpiColors.private }}
             />
           </div>
         </div>
@@ -111,12 +106,12 @@ export const SummaryHeader = ({
           </div>
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: hexToRgba(KPI_COLORS.total, 0.12) }}
+            style={{ background: hexToRgba(kpiColors.total, 0.12) }}
           >
             <Network
               className="w-5 h-5"
               strokeWidth={2.2}
-              style={{ color: KPI_COLORS.total }}
+              style={{ color: kpiColors.total }}
             />
           </div>
         </div>
@@ -153,20 +148,38 @@ export const SummaryHeader = ({
               </p>
               <span className="text-lg text-text-soft font-semibold">/100</span>
             </div>
-            <div className="mt-4 flex items-center gap-4 text-xs uppercase tracking-widest text-text-soft">
-              <span
-                className="flex items-center gap-2 font-semibold"
-                style={{ color: networkHealthInsights.trendColor }}
-              >
-                <span>{networkHealthInsights.trendIcon}</span>
-                <span className="font-mono">
-                  {networkHealthInsights.delta > 0
-                    ? `+${networkHealthInsights.delta}`
-                    : networkHealthInsights.delta}
+            <div className="mt-4 flex flex-col gap-1">
+               <div className="flex items-center gap-4 text-xs uppercase tracking-widest text-text-soft">
+                <span
+                  className="flex items-center gap-2 font-semibold"
+                  style={{ color: networkHealthInsights.trendColor }}
+                >
+                  <span>{networkHealthInsights.trendIcon}</span>
+                  <span className="font-mono">
+                    {networkHealthInsights.deltaYesterday !== null
+                      ? (networkHealthInsights.deltaYesterday > 0
+                        ? `+${networkHealthInsights.deltaYesterday}`
+                        : networkHealthInsights.deltaYesterday)
+                      : "—"}
+                  </span>
                 </span>
-              </span>
-              <span>vs yesterday</span>
-              <span>vs last refresh</span>
+                <span>vs yesterday</span>
+              </div>
+              <div className="flex items-center gap-4 text-xs uppercase tracking-widest text-text-soft">
+                <span
+                  className="flex items-center gap-2 font-semibold"
+                  style={{ color: networkHealthInsights.trendColor }}
+                >
+                  <span className="font-mono">
+                    {networkHealthInsights.deltaLastWeek !== null
+                      ? (networkHealthInsights.deltaLastWeek > 0
+                        ? `+${networkHealthInsights.deltaLastWeek}`
+                        : networkHealthInsights.deltaLastWeek)
+                      : "—"}
+                  </span>
+                </span>
+                <span>vs last week</span>
+              </div>
             </div>
           </div>
           <svg

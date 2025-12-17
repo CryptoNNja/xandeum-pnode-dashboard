@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { MapContainer, Marker, Popup, GeoJSON, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
@@ -269,7 +270,7 @@ export default function NodesMap({ nodes }: NodesMapProps) {
             <div className="text-[10px] text-gray-400 mb-2">
               {loc.country}
             </div>
-            <a
+            <Link
               href={`/pnode/${loc.ip}`}
               className="inline-block text-[9px] font-bold py-1 px-2 rounded transition-colors"
               style={{
@@ -286,7 +287,7 @@ export default function NodesMap({ nodes }: NodesMapProps) {
               }}
             >
               ANALYZE
-            </a>
+            </Link>
           </div>
         </Popup>
       </Marker>

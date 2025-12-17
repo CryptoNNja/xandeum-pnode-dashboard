@@ -37,6 +37,37 @@ export const STORAGE_BUCKETS = [
     { label: "≥ 1.5 TB", min: 1.5 * TB_IN_BYTES, max: Number.POSITIVE_INFINITY },
 ] as const;
 
+// Helper to get CSS variable value at runtime
+export const getCssVar = (varName: string, fallback: string = "#000000"): string => {
+  if (typeof window === "undefined") return fallback;
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback;
+};
+
+export const getKpiColors = () => ({
+    public: getCssVar("--accent-aqua", "#06B6D4"),
+    private: getCssVar("--kpi-private", "#94A3B8"),
+    total: getCssVar("--accent", "#6366F1"),
+    cpu: getCssVar("--kpi-excellent", "#10B981"),
+    ram: getCssVar("--accent-ram", "#3B82F6"),
+    alerts: "#FB7185",
+    alertOk: getCssVar("--kpi-excellent", "#22C55E"),
+});
+
+export const getStatusColors = () => ({
+    excellent: getCssVar("--kpi-excellent", "#10B981"),
+    good: getCssVar("--kpi-good", "#3B82F6"),
+    warning: getCssVar("--kpi-warning", "#F59E0B"),
+    critical: getCssVar("--kpi-critical", "#EF4444"),
+    private: getCssVar("--kpi-private", "#94A3B8"),
+});
+
+// CPU buckets with dynamic colors
+export const getCpuBuckets = () => [
+  { label: "Idle", min: 0, max: 25, color: getCssVar("--kpi-excellent", "#10B981") },
+  { label: "Normal", min: 25, max: 75, color: getCssVar("--kpi-good", "#0EA5E9") },
+  { label: "Load", min: 75, max: 101, color: getCssVar("--kpi-warning", "#F97316") },
+];
+
 export const hexToRgba = (hex: string, alpha: number) => {
     const sanitized = hex.replace("#", "");
     const expanded =
@@ -70,6 +101,32 @@ export const formatBytesToTB = (bytes: number) => {
     if (!Number.isFinite(bytes) || bytes <= 0) return "0 TB";
     const tbValue = bytes / TB_IN_BYTES;
     return tbValue >= 10 ? `${tbValue.toFixed(0)} TB` : `${tbValue.toFixed(1)} TB`;
+};
+
+// Adaptive formatter: chooses best unit automatically (MB, GB, or TB)
+export const formatBytesAdaptive = (bytes: number) => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+
+  const MB_IN_BYTES = 1024 ** 2;
+
+  if (bytes >= TB_IN_BYTES) {
+    const tbValue = bytes / TB_IN_BYTES;
+    return tbValue >= 10 ? `${tbValue.toFixed(0)} TB` : `${tbValue.toFixed(1)} TB`;
+  }
+
+  if (bytes >= GB_IN_BYTES) {
+    const gbValue = bytes / GB_IN_BYTES;
+    return gbValue >= 10 ? `${gbValue.toFixed(0)} GB` : `${gbValue.toFixed(1)} GB`;
+  }
+
+  if (bytes >= MB_IN_BYTES) {
+    const mbValue = bytes / MB_IN_BYTES;
+    return mbValue >= 10 ? `${mbValue.toFixed(0)} MB` : `${mbValue.toFixed(1)} MB`;
+  }
+
+  // Less than 1 MB - show in KB
+  const kbValue = bytes / 1024;
+  return kbValue >= 10 ? `${kbValue.toFixed(0)} KB` : `${kbValue.toFixed(1)} KB`;
 };
 
 export const formatUptime = (seconds: number) => {

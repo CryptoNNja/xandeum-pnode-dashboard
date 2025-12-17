@@ -1,118 +1,115 @@
-
 "use client";
 
-import { useEffect } from "react";
+import { X, RefreshCw, LayoutGrid, List, Check } from "lucide-react";
 import clsx from "clsx";
-import type { AutoRefreshOption, ViewMode } from "@/hooks/usePnodeDashboard";
+
+type AutoRefreshOption = "off" | "30s" | "1m" | "5m";
+type ViewMode = "table" | "grid" | "map";
 
 type SettingsModalProps = {
-  isSettingsOpen: boolean;
-  setIsSettingsOpen: (isOpen: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
   autoRefreshOption: AutoRefreshOption;
-  setAutoRefreshOption: (option: AutoRefreshOption) => void;
-  defaultView: ViewMode;
-  setDefaultView: (view: ViewMode) => void;
-  setViewMode: (view: ViewMode) => void;
+  setAutoRefreshOption: (opt: AutoRefreshOption) => void;
+  viewMode: ViewMode;
+  setViewMode: (mode: ViewMode) => void;
   isLight: boolean;
 };
 
 export const SettingsModal = ({
-  isSettingsOpen,
-  setIsSettingsOpen,
+  isOpen,
+  onClose,
   autoRefreshOption,
   setAutoRefreshOption,
-  defaultView,
-  setDefaultView,
+  viewMode,
   setViewMode,
   isLight,
 }: SettingsModalProps) => {
-  if (!isSettingsOpen) return null;
+  if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-[#050914] z-50 flex items-center justify-center p-4"
-      onClick={() => setIsSettingsOpen(false)}
-    >
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div
-        className="bg-bg-app border border-border-app rounded-xl max-w-xl w-full overflow-hidden shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div
+        className="relative w-full max-w-md rounded-2xl border border-border-app shadow-2xl overflow-hidden theme-transition"
+        style={{
+          backgroundColor: isLight ? "rgba(247,249,255,0.98)" : "rgba(5,9,24,0.98)",
+        }}
       >
-        <div className="border-b border-border-app p-6 flex items-center justify-between">
-          <div>
-            <h3 className="text-xl font-bold text-text-main">Dashboard settings</h3>
-            <p className="text-sm text-text-faint mt-2">Auto-refresh and default view</p>
-          </div>
+        <div className="p-6 border-b border-border-app flex items-center justify-between">
+          <h2 className="text-lg font-bold text-text-main">Dashboard Settings</h2>
           <button
-            type="button"
-            onClick={() => setIsSettingsOpen(false)}
-            className="text-text-faint hover:text-text-main transition-colors"
-            aria-label="Close"
+            onClick={onClose}
+            className="p-2 hover:bg-white/5 rounded-lg text-text-faint hover:text-text-main theme-transition"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
-          <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Auto-refresh</p>
-            <div className="grid grid-cols-2 gap-2">
-              {(
-                [
-                  { key: "off" as const, label: "Off" },
-                  { key: "30s" as const, label: "30s" },
-                  { key: "1m" as const, label: "1m" },
-                  { key: "5m" as const, label: "5m" },
-                ]
-              ).map((opt) => {
-                const active = autoRefreshOption === opt.key;
-                return (
-                  <button
-                    key={opt.key}
-                    type="button"
-                    onClick={() => setAutoRefreshOption(opt.key)}
-                    className={clsx(
-                      "px-3 py-2 rounded-lg border text-sm font-semibold transition-colors",
-                      active
-                        ? "bg-accent-aqua/15 text-accent-aqua border-accent-aqua/30"
-                        : "bg-bg-bg text-text-main border-border-app hover:bg-bg-bg2"
-                    )}
-                  >
-                    {opt.label}
-                  </button>
-                );
-              })}
+        <div className="p-6 space-y-8">
+          {/* Auto Refresh */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <RefreshCw className="w-4 h-4 text-accent" />
+              <h3 className="text-sm font-semibold text-text-main">
+                Auto-Refresh Interval
+              </h3>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {(["off", "30s", "1m", "5m"] as const).map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => setAutoRefreshOption(opt)}
+                  className={clsx(
+                    "px-4 py-3 rounded-xl border text-sm font-medium flex items-center justify-between theme-transition",
+                    autoRefreshOption === opt
+                      ? "bg-accent/10 border-accent text-accent"
+                      : "bg-white/5 border-border-app text-text-soft hover:border-text-faint"
+                  )}
+                >
+                  <span>{opt === "off" ? "Manual Only" : opt}</span>
+                  {autoRefreshOption === opt && <Check className="w-4 h-4" />}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Default View</p>
-            <div className="grid grid-cols-3 gap-2">
+          {/* Default View */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <LayoutGrid className="w-4 h-4 text-accent" />
+              <h3 className="text-sm font-semibold text-text-main">
+                Default View Mode
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
               {(
                 [
-                  { key: "table" as const, label: "Table" },
-                  { key: "grid" as const, label: "Grid" },
-                  { key: "map" as const, label: "Map" },
-                ]
+                  { id: "table", label: "Compact Table", icon: List },
+                  { id: "grid", label: "Performance Grid", icon: LayoutGrid },
+                  { id: "map", label: "Global Node Map", icon: RefreshCw },
+                ] as const
               ).map((opt) => {
-                const active = defaultView === opt.key;
+                const Icon = opt.icon;
                 return (
                   <button
-                    key={opt.key}
-                    type="button"
-                    onClick={() => {
-                      setDefaultView(opt.key);
-                      setViewMode(opt.key);
-                    }}
+                    key={opt.id}
+                    onClick={() => setViewMode(opt.id)}
                     className={clsx(
-                      "px-3 py-2 rounded-lg border text-sm font-semibold transition-colors",
-                      active
-                        ? "bg-accent-aqua/15 text-accent-aqua border-accent-aqua/30"
-                        : "bg-bg-bg text-text-main border-border-app hover:bg-bg-bg2"
+                      "px-4 py-4 rounded-xl border text-sm font-medium flex items-center justify-between theme-transition",
+                      viewMode === opt.id
+                        ? "bg-accent/10 border-accent text-accent"
+                        : "bg-white/5 border-border-app text-text-soft hover:border-text-faint"
                     )}
                   >
-                    {opt.label}
+                    <div className="flex items-center gap-3">
+                      <Icon className="w-4 h-4" />
+                      <span>{opt.label}</span>
+                    </div>
+                    {viewMode === opt.id && <Check className="w-4 h-4" />}
                   </button>
                 );
               })}
@@ -120,14 +117,10 @@ export const SettingsModal = ({
           </div>
         </div>
 
-        <div className="border-t border-border-app p-4 bg-bg-bg">
-          <button
-            type="button"
-            onClick={() => setIsSettingsOpen(false)}
-            className="w-full px-4 py-2 bg-bg-bg2 hover:bg-bg-card border border-border-app rounded-lg text-sm font-semibold text-text-main transition-colors theme-transition"
-          >
-            Close
-          </button>
+        <div className="p-6 bg-black/20 text-center">
+          <p className="text-xs text-text-faint">
+            Settings are saved to your browser session
+          </p>
         </div>
       </div>
     </div>
