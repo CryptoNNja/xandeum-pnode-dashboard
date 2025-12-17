@@ -45,26 +45,47 @@ type LeaderboardMeta = {
     tooltip: string;
 };
 
+// Helper to get CSS variable value
+const getCssVar = (varName: string, fallback: string): string => {
+    if (typeof window === "undefined") return fallback;
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback;
+};
+
+const hexToRgba = (hex: string, alpha: number) => {
+    const sanitized = hex.replace("#", "");
+    const isShort = sanitized.length === 3;
+    const full = isShort
+        ? sanitized
+            .split("")
+            .map((char) => char + char)
+            .join("")
+        : sanitized.padEnd(6, "0");
+    const r = parseInt(full.substring(0, 2), 16) || 0;
+    const g = parseInt(full.substring(2, 4), 16) || 0;
+    const b = parseInt(full.substring(4, 6), 16) || 0;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 const TAB_META: Record<LeaderboardTab, LeaderboardMeta> = {
     performance: {
         label: "Performance",
         icon: Trophy,
-        accentBg: "rgba(255,215,0,0.15)",
-        accentText: "#FFD700",
+        accentBg: "rgba(255,215,0,0.15)", // Keep gold for performance
+        accentText: "#FFD700", // Keep gold for performance
         tooltip: "Composite score combining CPU, RAM, uptime and packet stability.",
     },
     storage: {
         label: "Storage",
         icon: HardDrive,
-        accentBg: "rgba(124,58,237,0.15)",
-        accentText: "#C084FC",
+        accentBg: hexToRgba(getCssVar("--accent", "#7B3FF2"), 0.15),
+        accentText: getCssVar("--accent", "#7B3FF2"),
         tooltip: "Nodes with the largest committed capacity and efficient utilization.",
     },
     uptime: {
         label: "Uptime",
         icon: Zap,
-        accentBg: "rgba(16,185,129,0.15)",
-        accentText: "#34D399",
+        accentBg: hexToRgba(getCssVar("--kpi-excellent", "#10B981"), 0.15),
+        accentText: getCssVar("--kpi-excellent", "#10B981"),
         tooltip: "Longest-running nodes measured by reported uptime and last seen timestamp.",
     },
 };
@@ -82,8 +103,8 @@ function LeaderboardDropdown({ activeTab, onChange, isLightMode = false }: Leade
     const dropdownRef = useRef<HTMLDivElement>(null);
     const activeMeta = TAB_META[activeTab];
     const ActiveIcon = activeMeta.icon;
-    const panelBg = isLightMode ? "#ffffff" : "#050816";
-    const optionActiveBg = isLightMode ? "#f1f5f9" : "#101734";
+    const panelBg = isLightMode ? getCssVar("--bg-card", "#ffffff") : getCssVar("--bg-bg2", "#050816");
+    const optionActiveBg = isLightMode ? getCssVar("--bg-bg2", "#f1f5f9") : getCssVar("--bg-card", "#101734");
 
     useEffect(() => {
         const handleClick = (event: MouseEvent) => {
@@ -309,10 +330,12 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
 
     const statusIndicator = (status: PNode["status"]) => (
         <span
-            className={clsx(
-                "w-2 h-2 rounded-full inline-flex",
-                status === "active" ? "bg-emerald-400" : "bg-blue-400"
-            )}
+            className="w-2 h-2 rounded-full inline-flex"
+            style={{
+                backgroundColor: status === "active" 
+                    ? 'var(--kpi-excellent)' 
+                    : 'var(--kpi-good)'
+            }}
             aria-label={status === "active" ? "Public node" : "Private node"}
         />
     );
@@ -398,7 +421,7 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
                     <p className="text-xs text-text-soft">{entry.node.status === "active" ? "Public" : "Private"} node</p>
                 </div>
                 <div className="flex flex-col items-end gap-1 text-right">
-                    <span className="text-lg font-bold text-[#5EEAD4] leading-none">
+                    <span className="text-lg font-bold leading-none" style={{ color: 'var(--accent-aqua)' }}>
                         {formatStorage(entry.committed)}
                     </span>
                     <div className="flex items-center gap-2 text-xs text-text-soft">
@@ -440,7 +463,7 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
                 <p className="text-xs text-text-soft">Online since {formatStartDate(entry.uptime, entry.lastSeen)}</p>
             </div>
             <div className="flex flex-col items-end gap-1 text-right">
-                <span className="text-lg font-bold text-emerald-400 leading-none">
+                <span className="text-lg font-bold leading-none" style={{ color: 'var(--kpi-excellent)' }}>
                     {formatUptimeValue(entry.uptime)}
                 </span>
                 <div className="flex items-center gap-2 text-xs text-text-soft">
@@ -473,8 +496,8 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
     return (
         <div className="kpi-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
             <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-[rgba(255,215,0,0.15)] flex items-center justify-center">
-                    <Trophy className="w-5 h-5 text-[#FFD700]" strokeWidth={2.3} />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255,215,0,0.15)' }}>
+                    <Trophy className="w-5 h-5" style={{ color: '#FFD700' }} strokeWidth={2.3} />
                 </div>
                 <h3 className="text-lg font-semibold text-text-main">Network Leaderboard</h3>
             </div>

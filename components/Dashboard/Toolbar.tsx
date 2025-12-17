@@ -159,8 +159,9 @@ export const Toolbar = ({
             }}
             className={clsx(
               TOOLBAR_BUTTON_BASE,
-              viewMode === "table" ? "bg-cyan-500/20 text-cyan-400" : "text-text-soft"
+              viewMode === "table" ? "text-accent-aqua" : "text-text-soft"
             )}
+            style={viewMode === "table" ? { backgroundColor: 'var(--accent-aqua)' + '33' } : undefined}
             aria-label="Table View"
             aria-pressed={viewMode === "table"}
           >
@@ -177,8 +178,9 @@ export const Toolbar = ({
             }}
             className={clsx(
               TOOLBAR_BUTTON_BASE,
-              viewMode === "grid" ? "bg-cyan-500/20 text-cyan-400" : "text-text-soft"
+              viewMode === "grid" ? "text-accent-aqua" : "text-text-soft"
             )}
+            style={viewMode === "grid" ? { backgroundColor: 'var(--accent-aqua)' + '33' } : undefined}
             aria-label="Grid View"
             aria-pressed={viewMode === "grid"}
           >
@@ -195,8 +197,9 @@ export const Toolbar = ({
             }}
             className={clsx(
               TOOLBAR_BUTTON_BASE,
-              viewMode === "map" ? "bg-cyan-500/20 text-cyan-400" : "text-text-soft"
+              viewMode === "map" ? "text-accent-aqua" : "text-text-soft"
             )}
+            style={viewMode === "map" ? { backgroundColor: 'var(--accent-aqua)' + '33' } : undefined}
             aria-label="Map View"
             aria-pressed={viewMode === "map"}
           >
@@ -290,7 +293,7 @@ export const Toolbar = ({
             </>
           ) : (
             <>
-              <CheckCircle className="w-5 h-5 text-green-400" />
+              <CheckCircle className="w-5 h-5" style={{ color: 'var(--kpi-excellent)' }} />
               <span className="text-xs text-text-soft font-mono">{getTimeAgo() || "—"}</span>
             </>
           )}

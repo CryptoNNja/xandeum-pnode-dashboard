@@ -143,19 +143,41 @@ export default function PNodeTable({
           {data.map((pnode) => {
             const status = getHealthStatus(pnode);
 
-            let badgeClass = "bg-[#64748B]/20 text-[#64748B] border-[#64748B]/30"; // Private
-            if (status === "Excellent")
-              badgeClass =
-                "bg-[#10B981]/20 text-[#10B981] border-[#10B981]/30";
-            else if (status === "Good")
-              badgeClass =
-                "bg-[#38BDF8]/20 text-[#38BDF8] border-[#38BDF8]/30";
-            else if (status === "Warning")
-              badgeClass =
-                "bg-[#F59E0B]/20 text-[#F59E0B] border-[#F59E0B]/30";
-            else if (status === "Critical")
-              badgeClass =
-                "bg-[#EF4444]/20 text-[#EF4444] border-[#EF4444]/30";
+            // Helper to get CSS variable value
+            const getCssVar = (varName: string, fallback: string): string => {
+              if (typeof window === "undefined") return fallback;
+              return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback;
+            };
+
+            const hexToRgba = (hex: string, alpha: number) => {
+              const sanitized = hex.replace("#", "");
+              const isShort = sanitized.length === 3;
+              const full = isShort
+                ? sanitized
+                  .split("")
+                  .map((char) => char + char)
+                  .join("")
+                : sanitized.padEnd(6, "0");
+              const r = parseInt(full.substring(0, 2), 16) || 0;
+              const g = parseInt(full.substring(2, 4), 16) || 0;
+              const b = parseInt(full.substring(4, 6), 16) || 0;
+              return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            };
+
+            const getStatusColor = (status: string) => {
+              if (status === "Excellent") return getCssVar("--kpi-excellent", "#10B981");
+              if (status === "Good") return getCssVar("--kpi-good", "#3B82F6");
+              if (status === "Warning") return getCssVar("--kpi-warning", "#F59E0B");
+              if (status === "Critical") return getCssVar("--kpi-critical", "#EF4444");
+              return getCssVar("--kpi-private", "#64748B"); // Private
+            };
+
+            const statusColor = getStatusColor(status);
+            const badgeStyle = {
+              backgroundColor: hexToRgba(statusColor, 0.2),
+              color: statusColor,
+              borderColor: hexToRgba(statusColor, 0.3),
+            };
 
             const isPrivate = pnode.status !== "active";
             const sent = pnode.stats.packets_sent;
@@ -190,7 +212,8 @@ export default function PNodeTable({
 
                 <td className="p-4 align-middle">
                   <span
-                    className={`px-4 py-2 rounded-full text-[10px] font-bold border uppercase tracking-wide ${badgeClass}`}
+                    className="px-4 py-2 rounded-full text-[10px] font-bold border uppercase tracking-wide"
+                    style={badgeStyle}
                   >
                     {status}
                   </span>
@@ -215,7 +238,7 @@ export default function PNodeTable({
                   </span>
                 </td>
 
-                <td className="p-4 text-sm text-[#7B3FF2] font-semibold whitespace-nowrap align-middle">
+                <td className="p-4 text-sm font-semibold whitespace-nowrap align-middle" style={{ color: 'var(--accent)' }}>
                   {formatBytes(committedBytes)}
                 </td>
 
@@ -228,11 +251,11 @@ export default function PNodeTable({
                       </span>
                     </span>
                     <span className="text-[10px] mt-2">
-                      <span className="text-[#00D4AA]">
+                      <span style={{ color: 'var(--accent-aqua)' }}>
                         ↑ {formatPacketValue(sent)}
                       </span>
                       <span className="text-text-faint mx-1">•</span>
-                      <span className="text-[#e9c601]">
+                      <span style={{ color: isLight ? '#d97706' : '#fbbf24' }}>
                         ↓ {formatPacketValue(recv)}
                       </span>
                     </span>

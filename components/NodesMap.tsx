@@ -410,23 +410,23 @@ export default function NodesMap({ nodes }: NodesMapProps) {
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1">
           <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#10B981]"></span>
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--kpi-excellent)' }}></span>
             EXCELLENT
           </div>
           <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#38BDF8]"></span>
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--kpi-good)' }}></span>
             GOOD
           </div>
           <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#F59E0B]"></span>
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--kpi-warning)' }}></span>
             WARNING
           </div>
           <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#EF4444]"></span>
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--kpi-critical)' }}></span>
             CRITICAL
           </div>
           <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#64748B]"></span>
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--kpi-private)' }}></span>
             PRIVATE
           </div>
         </div>
