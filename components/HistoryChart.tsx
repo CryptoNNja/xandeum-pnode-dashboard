@@ -12,6 +12,7 @@ import {
   Legend,
 } from 'recharts';
 import { useTheme } from '@/hooks/useTheme';
+import { useToast } from '@/components/common/Toast';
 
 // Wrapper to prevent Recharts width/height -1 warnings during initial render
 const SafeResponsiveContainer = ({
@@ -78,6 +79,7 @@ const TIME_RANGE_OPTIONS: TimeRangeOption[] = [
 export default function HistoryChart({ ip }: { ip: string }) {
   const [data, setData] = useState<HistoryChartDatum[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
   const [visibleMetrics, setVisibleMetrics] = useState({
     cpu: true,
@@ -87,15 +89,21 @@ export default function HistoryChart({ ip }: { ip: string }) {
   });
   const { theme, mounted: themeMounted } = useTheme();
   const isLight = themeMounted ? theme === 'light' : false;
+  const toast = useToast();
 
   useEffect(() => {
     const fetchHistory = async () => {
       setLoading(true);
+      setError(null);
       try {
         const selectedOption = TIME_RANGE_OPTIONS.find((opt) => opt.key === timeRange);
         const hours = selectedOption?.hours || 24;
 
         const res = await fetch(`/api/pnodes/${ip}/history?hours=${hours}`);
+        if (!res.ok) {
+          throw new Error(`Failed to load history (${res.status})`);
+        }
+
         const json: unknown = await res.json();
 
         if (
@@ -126,7 +134,10 @@ export default function HistoryChart({ ip }: { ip: string }) {
           setData(formatted);
         }
       } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : 'Failed to fetch history';
+        setError(errorMessage);
         console.error('Failed to fetch history:', e);
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -135,15 +146,28 @@ export default function HistoryChart({ ip }: { ip: string }) {
     if (ip) {
       fetchHistory();
     }
-  }, [ip, timeRange]);
+  }, [ip, timeRange, toast]);
 
   if (loading) {
     return (
       <div
-        className="h-[300px] flex items-center justify-center text-sm theme-transition"
+        className="h-[300px] flex flex-col items-center justify-center gap-3 text-sm theme-transition"
         style={{ color: 'var(--text-soft)' }}
       >
-        Loading historical data...
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: 'var(--accent-aqua)' }} />
+        <p>Loading historical data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        className="h-[300px] flex flex-col items-center justify-center gap-3 text-sm theme-transition"
+        style={{ color: 'var(--text-soft)' }}
+      >
+        <p className="text-kpi-critical">Failed to load history</p>
+        <p className="text-xs">{error}</p>
       </div>
     );
   }

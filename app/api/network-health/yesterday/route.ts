@@ -9,10 +9,15 @@ export async function GET() {
     const now = Math.floor(Date.now() / 1000);
     const twentyFourHoursAgo = now - 86400;
 
-    // Query pnode_history for records from approximately 24 hours ago
-    // We'll look for records within a 30-minute window around 24h ago
-    const windowStart = twentyFourHoursAgo - 900; // 15 minutes before
-    const windowEnd = twentyFourHoursAgo + 900;   // 15 minutes after
+    // Query pnode_history for records around 24 hours ago
+    // NOTE: The crawler typically runs once every 24h at a fixed time.
+    // If we only look at a tiny ±15min window, we'll often miss the snapshot
+    // unless the user opens the dashboard exactly at the crawl time.
+    //
+    // Instead, we look in a broader window [now - 36h ; now - 12h] and,
+    // for each IP, pick the record whose timestamp is closest to exactly 24h ago.
+    const windowStart = now - 36 * 3600; // 36 hours ago
+    const windowEnd = now - 12 * 3600;   // 12 hours ago
 
     const { data: historyRecords, error } = await supabase
       .from("pnode_history")
@@ -25,7 +30,7 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // If no historical data found, return null
+    // If no historical data found in the broader window, return null
     if (!historyRecords || historyRecords.length === 0) {
       return NextResponse.json({
         networkHealthScore: null,
@@ -33,11 +38,19 @@ export async function GET() {
       });
     }
 
-    // Group records by IP and take the most recent one for each node
+    // Group records by IP and, for each node, pick the record closest to 24h ago
     const nodesByIp = new Map<string, typeof historyRecords[0]>();
     for (const record of historyRecords) {
       const existing = nodesByIp.get(record.ip);
-      if (!existing || record.ts > existing.ts) {
+      if (!existing) {
+        nodesByIp.set(record.ip, record);
+        continue;
+      }
+
+      const existingDiff = Math.abs((existing.ts as number) - twentyFourHoursAgo);
+      const candidateDiff = Math.abs((record.ts as number) - twentyFourHoursAgo);
+
+      if (candidateDiff < existingDiff) {
         nodesByIp.set(record.ip, record);
       }
     }

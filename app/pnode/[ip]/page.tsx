@@ -9,6 +9,7 @@ import HistoryChart from '@/components/HistoryChart';
 import ScoreDisplay from '@/components/ScoreDisplay';
 import { getHealthStatus } from '@/lib/health';
 import type { PNode } from '@/lib/types';
+import { useToast } from '@/components/common/Toast';
 
 const STATUS_COLORS: Record<string, string> = {
   Excellent: '#10B981',
@@ -57,6 +58,7 @@ export default function PNodeDetailPage() {
   const params = useParams();
   const router = useRouter();
   const ip = params.ip as string;
+  const toast = useToast();
 
   const [pnode, setPNode] = useState<PNode | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,20 +74,26 @@ export default function PNodeDetailPage() {
       try {
         const res = await fetch(`/api/pnodes/${ip}`);
         if (!res.ok) {
-          throw new Error(`Node not found (${res.status})`);
+          if (res.status === 404) {
+            throw new Error(`Node ${ip} not found`);
+          }
+          throw new Error(`Failed to load node data (${res.status})`);
         }
         const node: PNode = await res.json();
         setPNode(node);
+        toast.success(`Node ${ip} loaded successfully`);
       } catch (e: any) {
-        setError(e.message || 'Failed to fetch node data');
+        const errorMessage = e.message || 'Failed to fetch node data';
+        setError(errorMessage);
         console.error(e);
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }
     };
 
     fetchNodeData();
-  }, [ip]);
+  }, [ip, toast]);
 
   const health = useMemo(() => pnode ? getHealthStatus(pnode) : 'Private', [pnode]);
   

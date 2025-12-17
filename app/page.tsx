@@ -59,6 +59,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { computeVersionOverview } from "@/lib/kpi";
 import { getHealthStatus, type HealthStatus } from "@/lib/health";
 import type { PNode } from "@/lib/types";
+import { useToast } from "@/components/common/Toast";
 import {
   Bar,
   PieChart,
@@ -389,6 +390,7 @@ const CustomTooltip = ({
 
 export default function Page() {
   const { theme } = useTheme();
+  const toast = useToast();
   const isLight = theme === "light";
 
   const [pnodes, setPnodes] = useState<PNode[]>([]);
@@ -426,15 +428,25 @@ export default function Page() {
       try {
         const response = await fetch("/api/pnodes?limit=200", { cache: "no-store" });
         if (!response.ok) {
-          throw new Error(`Failed to fetch pnodes (${response.status})`);
+          const errorText = response.status === 500
+            ? "Server error. Please try again later."
+            : `Failed to fetch nodes (${response.status})`;
+          throw new Error(errorText);
         }
         const payload = await response.json();
         if (payload.data && Array.isArray(payload.data)) {
           setPnodes(payload.data);
           setLastUpdate(new Date());
+          if (isManual) {
+            toast.success(`Loaded ${payload.data.length} nodes`);
+          }
+        } else {
+          throw new Error("Invalid response format");
         }
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to load nodes";
         console.error("Error loading pnodes:", error);
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
         if (isManual) {
@@ -442,13 +454,14 @@ export default function Page() {
         }
       }
     },
-    []
+    [toast]
   );
 
   const loadYesterdayScore = useCallback(async () => {
     try {
       const response = await fetch("/api/network-health/yesterday", { cache: "no-store" });
       if (!response.ok) {
+        // Silent failure for historical data - not critical
         console.warn("Failed to fetch yesterday's network health score");
         return;
       }
@@ -460,6 +473,7 @@ export default function Page() {
         console.log("[Network Health] No yesterday score available (null)");
       }
     } catch (error) {
+      // Silent failure for historical data - not critical
       console.error("Error loading yesterday's network health score:", error);
     }
   }, []);
@@ -468,6 +482,7 @@ export default function Page() {
     try {
       const response = await fetch("/api/network-health/last-week", { cache: "no-store" });
       if (!response.ok) {
+        // Silent failure for historical data - not critical
         console.warn("Failed to fetch last week's network health score");
         return;
       }
@@ -479,6 +494,7 @@ export default function Page() {
         console.log("[Network Health] No last week score available (null)");
       }
     } catch (error) {
+      // Silent failure for historical data - not critical
       console.error("Error loading last week's network health score:", error);
     }
   }, []);
