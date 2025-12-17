@@ -314,14 +314,22 @@ export const usePnodeDashboard = (theme?: string) => {
     const percent = totalCommitted > 0 ? (totalUsed / totalCommitted) * 100 : 0;
     const percentClamped = Math.min(100, percent);
 
+    const MB_IN_BYTES = 1024 * 1024;
+    const formatAdaptive = (bytes: number) => {
+      if (bytes >= TB_IN_BYTES) return `${(bytes / TB_IN_BYTES).toFixed(2)} TB`;
+      if (bytes >= GB_IN_BYTES) return `${(bytes / GB_IN_BYTES).toFixed(2)} GB`;
+      if (bytes >= MB_IN_BYTES) return `${(bytes / MB_IN_BYTES).toFixed(1)} MB`;
+      return `${(bytes / 1024).toFixed(0)} KB`;
+    };
+
     return {
       totalCommitted,
       totalUsed,
       available,
       percent: percentClamped,
-      formattedUsed: totalUsed >= TB_IN_BYTES ? `${(totalUsed / TB_IN_BYTES).toFixed(2)} TB` : `${(totalUsed / GB_IN_BYTES).toFixed(1)} GB`,
+      formattedUsed: formatAdaptive(totalUsed),
       formattedTotal: `${(totalCommitted / TB_IN_BYTES).toFixed(1)} TB`,
-      formattedAvailable: available >= TB_IN_BYTES ? `${(available / TB_IN_BYTES).toFixed(2)} TB` : `${(available / GB_IN_BYTES).toFixed(1)} GB`,
+      formattedAvailable: formatAdaptive(available),
       availabilityLabel: percentClamped > 80 ? "remaining" : "available",
     };
   }, [allPnodes]);
