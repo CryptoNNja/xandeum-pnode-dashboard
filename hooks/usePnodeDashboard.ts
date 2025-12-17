@@ -319,6 +319,9 @@ export const usePnodeDashboard = (theme?: string) => {
       totalUsed,
       available,
       percent: percentClamped,
+      formattedUsed: totalUsed >= TB_IN_BYTES ? `${(totalUsed / TB_IN_BYTES).toFixed(2)} TB` : `${(totalUsed / GB_IN_BYTES).toFixed(1)} GB`,
+      formattedTotal: `${(totalCommitted / TB_IN_BYTES).toFixed(1)} TB`,
+      formattedAvailable: available >= TB_IN_BYTES ? `${(available / TB_IN_BYTES).toFixed(2)} TB` : `${(available / GB_IN_BYTES).toFixed(1)} GB`,
       availabilityLabel: percentClamped > 80 ? "remaining" : "available",
     };
   }, [allPnodes]);
@@ -340,7 +343,14 @@ export const usePnodeDashboard = (theme?: string) => {
     if (activeRamNodes.length === 0) return { usedAvg: 0, totalAvg: 0, ratio: 0, nodeCount: 0 };
     const usedAvg = activeRamNodes.reduce((sum, pnode) => sum + Math.max(0, pnode.stats?.ram_used ?? 0), 0) / activeRamNodes.length;
     const totalAvg = activeRamNodes.reduce((sum, pnode) => sum + Math.max(0, pnode.stats?.ram_total ?? 0), 0) / activeRamNodes.length;
-    return { usedAvg, totalAvg, ratio: Math.min(100, (usedAvg / totalAvg) * 100), nodeCount: activeRamNodes.length };
+    return { 
+      usedAvg, 
+      totalAvg, 
+      ratio: Math.min(100, (usedAvg / totalAvg) * 100), 
+      nodeCount: activeRamNodes.length,
+      formattedUsed: `${(usedAvg / GB_IN_BYTES).toFixed(1)} GB`,
+      formattedTotal: `${(totalAvg / GB_IN_BYTES).toFixed(1)} GB`
+    };
   }, [allPnodes]);
 
   const networkUptimeStats = useMemo(() => {
