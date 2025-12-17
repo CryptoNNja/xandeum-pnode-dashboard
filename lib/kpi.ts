@@ -12,55 +12,6 @@ interface VersionBucketDefinition {
   severity: Severity;
 }
 
-const VERSION_BUCKET_DEFINITIONS: VersionBucketDefinition[] = [
-  {
-    id: "v0.7",
-    label: "v0.7 Heidelberg",
-    shortLabel: "v0.7",
-    subtitle: "Latest release",
-    color: "#10B981",
-    severity: "latest",
-  },
-  {
-    id: "v0.6",
-    label: "v0.6 Stuttgart",
-    shortLabel: "v0.6",
-    subtitle: "Update recommended",
-    color: "#F59E0B",
-    severity: "warning",
-  },
-  {
-    id: "v0.5",
-    label: "v0.5 Ingolstadt",
-    shortLabel: "v0.5",
-    subtitle: "Critical – upgrade now",
-    color: "#EF4444",
-    severity: "critical",
-  },
-  {
-    id: "v0.4",
-    label: "v0.4 Herrenberg",
-    shortLabel: "v0.4",
-    subtitle: "End of support",
-    color: "#EF4444",
-    severity: "critical",
-  },
-  {
-    id: "other",
-    label: "Other / Unknown",
-    shortLabel: "Other",
-    subtitle: "Private or unverified",
-    color: "#6B7280",
-    severity: "other",
-  },
-];
-
-const KNOWN_MAJOR_IDS = new Set(
-  VERSION_BUCKET_DEFINITIONS.filter((def) => def.id !== "other").map(
-    (def) => def.id
-  )
-);
-
 export interface VersionBucketDetail {
   label: string;
   count: number;
@@ -90,9 +41,25 @@ export interface VersionOverview {
 
 const extractMajorVersion = (normalized?: string | null): string | null => {
   if (!normalized) return null;
-  const match = normalized.match(/^v\d+\.\d+/i);
+  const match = normalized.match(/^v(\d+)\.(\d+)/i);
   if (!match) return null;
-  return match[0].toLowerCase();
+  return `v${match[1]}.${match[2]}`;
+};
+
+// Parse version string to comparable number (e.g., "v0.8" -> 0.8)
+const parseVersionNumber = (version: string): number => {
+  const match = version.match(/^v(\d+)\.(\d+)/i);
+  if (!match) return 0;
+  return parseFloat(`${match[1]}.${match[2]}`);
+};
+
+// Version name mapping
+const VERSION_NAMES: Record<string, string> = {
+  "v0.4": "Herrenberg",
+  "v0.5": "Ingolstadt",
+  "v0.6": "Stuttgart",
+  "v0.7": "Heidelberg",
+  "v0.8": "Quantum", // New version
 };
 
 const formatHealth = (
@@ -152,10 +119,11 @@ export function computeVersionOverview(pnodes: PNode[]): VersionOverview {
     map.set(label, (map.get(label) ?? 0) + 1);
   };
 
+  // First pass: collect all versions
   pnodes.forEach((node) => {
     const normalized = normalizeVersionLabel(node.version);
     const major = extractMajorVersion(normalized);
-    const bucketId = major && KNOWN_MAJOR_IDS.has(major) ? major : "other";
+    const bucketId = major || "other";
 
     const detailLabel =
       bucketId === "other"
@@ -170,8 +138,67 @@ export function computeVersionOverview(pnodes: PNode[]): VersionOverview {
     registerDetail(bucketId, detailLabel);
   });
 
-  const buckets: VersionBucketSummary[] = VERSION_BUCKET_DEFINITIONS.map(
-    (definition) => {
+  // Get all detected versions (excluding "other")
+  const detectedVersions = Array.from(bucketCounts.keys())
+    .filter((id) => id !== "other")
+    .sort((a, b) => {
+      // Sort by version number descending (newest first)
+      return parseVersionNumber(b) - parseVersionNumber(a);
+    });
+
+  // Create bucket definitions dynamically
+  const versionBucketDefs: VersionBucketDefinition[] = detectedVersions.map((versionId, index) => {
+    const versionName = VERSION_NAMES[versionId] || "";
+    const shortLabel = versionId;
+    const label = versionName ? `${versionId} ${versionName}` : versionId;
+
+    // Determine severity and color based on position
+    let severity: Severity;
+    let color: string;
+    let subtitle: string;
+
+    if (index === 0) {
+      // Latest version
+      severity = "latest";
+      color = "#10B981"; // Green
+      subtitle = "Latest release";
+    } else if (index === 1) {
+      // One version behind
+      severity = "warning";
+      color = "#F59E0B"; // Orange
+      subtitle = "Update recommended";
+    } else {
+      // Older versions
+      severity = "critical";
+      color = "#EF4444"; // Red
+      subtitle = index === 2 ? "Critical – upgrade now" : "End of support";
+    }
+
+    return {
+      id: versionId,
+      label,
+      shortLabel,
+      subtitle,
+      color,
+      severity,
+    };
+  });
+
+  // Add "other" bucket if it has nodes
+  if (bucketCounts.has("other") && (bucketCounts.get("other") ?? 0) > 0) {
+    versionBucketDefs.push({
+      id: "other",
+      label: "Other / Unknown",
+      shortLabel: "Other",
+      subtitle: "Private or unverified",
+      color: "#6B7280",
+      severity: "other",
+    });
+  }
+
+  // Build bucket summaries - ONLY for versions with count > 0
+  const buckets: VersionBucketSummary[] = versionBucketDefs
+    .map((definition) => {
       const count = bucketCounts.get(definition.id) ?? 0;
       const percentage = total === 0 ? 0 : (count / total) * 100;
       const detailEntries = bucketDetails.get(definition.id);
@@ -191,19 +218,18 @@ export function computeVersionOverview(pnodes: PNode[]): VersionOverview {
         percentage,
         details,
       };
-    }
-  );
+    })
+    .filter((bucket) => bucket.count > 0); // Filter out empty versions
 
-  const latestBucketId = VERSION_BUCKET_DEFINITIONS[0].id;
-  const latestBucket = buckets.find((bucket) => bucket.id === latestBucketId);
+  // Find latest bucket (first non-other bucket with count > 0)
+  const latestBucket = buckets.find((bucket) => bucket.severity === "latest");
   const latestPercentage = latestBucket?.percentage ?? 0;
   const health = formatHealth(
     latestPercentage,
     latestBucket?.shortLabel ?? "latest"
   );
 
-  const defaultBucketId =
-    buckets.find((bucket) => bucket.count > 0)?.id ?? latestBucketId;
+  const defaultBucketId = buckets[0]?.id ?? "other";
 
   return {
     total,
