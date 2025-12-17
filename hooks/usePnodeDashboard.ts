@@ -57,6 +57,13 @@ export const usePnodeDashboard = (theme?: string) => {
   const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
   const [nodeFilter, setNodeFilter] = useState<NodeFilter>("all");
   
+  // Advanced Filters
+  const [isAdvancedFilterOpen, setIsAdvancedFilterOpen] = useState(false);
+  const [selectedVersions, setSelectedVersions] = useState<string[]>([]);
+  const [selectedHealthStatuses, setSelectedHealthStatuses] = useState<string[]>([]);
+  const [minCpu, setMinCpu] = useState<number>(0);
+  const [minStorage, setMinStorage] = useState<number>(0); // in TB
+
   // Sorting
   const [sortKey, setSortKey] = useState<SortKey>("health");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -151,6 +158,23 @@ export const usePnodeDashboard = (theme?: string) => {
     },
     [sortKey]
   );
+
+  const resetFilters = useCallback(() => {
+    setSearchTerm("");
+    setNodeFilter("all");
+    setSelectedVersions([]);
+    setSelectedHealthStatuses([]);
+    setMinCpu(0);
+    setMinStorage(0);
+  }, []);
+
+  const availableVersions = useMemo(() => {
+    const versions = new Set<string>();
+    allPnodes.forEach(p => {
+      if (p.version) versions.add(p.version);
+    });
+    return Array.from(versions).sort((a, b) => b.localeCompare(a));
+  }, [allPnodes]);
   
   // Filtering and Sorting logic (Frontend)
   const filteredAndSortedPNodes = useMemo(() => {
@@ -172,6 +196,30 @@ export const usePnodeDashboard = (theme?: string) => {
       result = result.filter(p => 
         nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only"
       );
+    }
+
+    // Advanced: Versions
+    if (selectedVersions.length > 0) {
+      result = result.filter(p => p.version && selectedVersions.includes(p.version));
+    }
+
+    // Advanced: Health Status
+    if (selectedHealthStatuses.length > 0) {
+      result = result.filter(p => {
+        const score = calculateNodeScore(p);
+        const status = score >= 90 ? "Excellent" : score >= 70 ? "Good" : score >= 40 ? "Warning" : "Critical";
+        return selectedHealthStatuses.includes(status);
+      });
+    }
+
+    // Advanced: Min CPU
+    if (minCpu > 0) {
+      result = result.filter(p => (p.stats?.cpu_percent ?? 0) >= minCpu);
+    }
+
+    // Advanced: Min Storage (TB)
+    if (minStorage > 0) {
+      result = result.filter(p => (p.stats?.file_size ?? 0) >= minStorage * TB_IN_BYTES);
     }
 
     // Sort
@@ -486,6 +534,18 @@ export const usePnodeDashboard = (theme?: string) => {
     setSortDirection,
     nodeFilter,
     setNodeFilter,
+    isAdvancedFilterOpen,
+    setIsAdvancedFilterOpen,
+    selectedVersions,
+    setSelectedVersions,
+    selectedHealthStatuses,
+    setSelectedHealthStatuses,
+    minCpu,
+    setMinCpu,
+    minStorage,
+    setMinStorage,
+    resetFilters,
+    availableVersions,
     autoRefreshOption,
     setAutoRefreshOption,
     lastUpdate,

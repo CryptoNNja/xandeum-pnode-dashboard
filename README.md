@@ -9,6 +9,7 @@
 ## ✨ Key Features
 
 ### 🎨 Advanced UI/UX
+
 - **Animated Aurora Gradient Hero** - Smooth 15s violet/cyan animation
 - **Multiple View Modes**: Table, Grid, and Interactive Map
 - **KPI Cards with Glow Effects** - Lucide React icons + hover animations
@@ -16,19 +17,23 @@
 - **Donut Charts** - Modern visualizations with centered metrics
 
 ### 📊 Real-Time Analytics
+
 - **116 Nodes Tracked** (19 Public + 97 Private)
 - **4 Distribution Charts**: CPU Load, Storage, Client Versions, Health Status
 - **Health Distribution Bars** - Excellent/Good/Warning/Critical breakdown
 - **Live Metrics**: CPU, RAM, Storage, Uptime, Network Traffic
 
 ### 🔍 Interactive Features
+
 - **Advanced Search** - Filter pNodes by IP
+- **Advanced Filters** - Multi-select by Health, Version, CPU Load and Storage
 - **Multi-Sort** - Sort by IP, CPU, RAM, Storage, Uptime, Health, Packets
 - **Public/Private Toggle** - Filter node visibility
 - **Auto-Refresh** - 30-second intervals + manual refresh
 - **pNode Detail Pages** - Dedicated analytics per node
 
 ### 🗺️ Map View
+
 - **Global Visualization** - Interactive world map with node markers
 - **Geolocation** - Precise node positioning
 - **Cluster Support** - Grouped markers for dense regions
@@ -44,6 +49,7 @@
 - **Performance**: useMemo optimizations for 100+ nodes
 
 ## 📦 Installation
+
 ```bash
 # Clone the repository
 git clone https://github.com/CryptoNNja/xandeum-pnode-dashboard.git
@@ -59,6 +65,7 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000)
 
 ## 🏗️ Project Structure
+
 ```
 xandeum-dashboard/
 ├── app/
@@ -87,6 +94,7 @@ xandeum-dashboard/
 ## 🎨 Design System
 
 ### Colors
+
 - **Primary Violet**: `#7B3FF2` (Xandeum brand)
 - **Primary Cyan**: `#00D4AA` (Xandeum accent)
 - **Blue (Good)**: `#3B82F6`
@@ -95,6 +103,7 @@ xandeum-dashboard/
 - **Orange (Warning)**: `#F59E0B`
 
 ### Typography
+
 - **Font**: System fonts optimized for readability
 - **Headers**: Uppercase tracking for technical aesthetic
 
@@ -110,23 +119,24 @@ xandeum-dashboard/
 - [x] Alert system
 - [x] pNode detail pages
 - [x] Performance optimizations
+- [x] Advanced Filters (Health, Version, Resources)
+- [x] Dark/Light mode (completed)
+- [x] Export to CSV/Excel (completed)
 - [ ] Deploy to Vercel
 - [ ] Historical data tracking
-- [ ] Export to CSV
-- [ ] Dark/Light mode (in progress)
 - [ ] Demo video
 
 ## 👨‍💻 Author
 
 **Ludovic Diore** (aka `Ninja0x`)
-*Freelance Full Stack Developer & Web3 Architect*
+_Freelance Full Stack Developer & Web3 Architect_
 
 Combining 13+ years of crypto experience with solid business acumen.
 
-*   🚀 **Full Stack Specialist:** Expert in Next.js, React, and Tailwind CSS.
-*   ⛓️ **Blockchain Veteran:** Active in the crypto space for over a decade.
-*   🎓 **Business Oriented:** MBA in Marketing & Management — I code products that make sense - Focus on ROI.
-*   🧠 **Self-Made Engineer:** Driven by curiosity and continuous learning.
+- 🚀 **Full Stack Specialist:** Expert in Next.js, React, and Tailwind CSS.
+- ⛓️ **Blockchain Veteran:** Active in the crypto space for over a decade.
+- 🎓 **Business Oriented:** MBA in Marketing & Management — I code products that make sense - Focus on ROI.
+- 🧠 **Self-Made Engineer:** Driven by curiosity and continuous learning.
 
 ---
 
@@ -138,7 +148,6 @@ MIT License
 
 - [Xandeum](https://xandeum.network) - Innovative pNode network
 - [Superteam](https://superteam.fun) - Bounty organizers
-
 
 ---
 

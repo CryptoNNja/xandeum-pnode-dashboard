@@ -14,6 +14,7 @@ import {
   CheckCircle,
   ChevronDown,
   Check,
+  SlidersHorizontal,
 } from "lucide-react";
 import clsx from "clsx";
 import type { PNode } from "@/lib/types";
@@ -36,6 +37,8 @@ type ToolbarProps = {
   onExportData: () => void;
   onExportCsv: () => void;
   onExportExcel: () => void;
+  isAdvancedFilterOpen: boolean;
+  setIsAdvancedFilterOpen: (open: boolean) => void;
   lastUpdateText: string;
   pnodesCount: number;
   publicCount: number;
@@ -56,6 +59,8 @@ export const Toolbar = ({
   onExportData,
   onExportCsv,
   onExportExcel,
+  isAdvancedFilterOpen,
+  setIsAdvancedFilterOpen,
   lastUpdateText,
   pnodesCount,
   publicCount,
@@ -225,6 +230,25 @@ export const Toolbar = ({
               </div>
             )}
           </div>
+
+          {/* Advanced Filters Toggle */}
+          <Tooltip content={isAdvancedFilterOpen ? "Hide Advanced Filters" : "Show Advanced Filters"}>
+            <button
+              type="button"
+              onClick={() => setIsAdvancedFilterOpen(!isAdvancedFilterOpen)}
+              className={clsx(
+                TOOLBAR_BUTTON_BASE,
+                isAdvancedFilterOpen ? "text-accent-aqua" : "text-text-soft"
+              )}
+              style={isAdvancedFilterOpen ? { backgroundColor: 'var(--accent-aqua)' + '22' } : undefined}
+              aria-label="Advanced Filters"
+            >
+              <div className="relative">
+                <SlidersHorizontal className="w-5 h-5" />
+                {/* Visual indicator when active could be added here if we want */}
+              </div>
+            </button>
+          </Tooltip>
 
           {/* Refresh */}
           <Tooltip content="Refresh data">

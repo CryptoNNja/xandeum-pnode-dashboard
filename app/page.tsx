@@ -14,6 +14,7 @@ import { AlertsModal } from "@/components/Dashboard/AlertsModal";
 import { SettingsModal } from "@/components/Dashboard/SettingsModal";
 import { KpiCards } from "@/components/Dashboard/KpiCards";
 import { Toolbar } from "@/components/Dashboard/Toolbar";
+import { AdvancedFilters } from "@/components/Dashboard/AdvancedFilters";
 import { hexToRgba, getKpiColors, getStatusColors } from "@/lib/utils";
 
 const TOOLTIP_STYLES = `
@@ -43,6 +44,18 @@ export default function Page() {
     sortDirection,
     nodeFilter,
     setNodeFilter,
+    isAdvancedFilterOpen,
+    setIsAdvancedFilterOpen,
+    selectedVersions,
+    setSelectedVersions,
+    selectedHealthStatuses,
+    setSelectedHealthStatuses,
+    minCpu,
+    setMinCpu,
+    minStorage,
+    setMinStorage,
+    resetFilters,
+    availableVersions,
     autoRefreshOption,
     setAutoRefreshOption,
     lastUpdate,
@@ -154,24 +167,44 @@ export default function Page() {
         />
 
         {/* TOOLBAR */}
-        <Toolbar
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          nodeFilter={nodeFilter}
-          setNodeFilter={setNodeFilter}
-          onRefresh={refreshData}
-          refreshing={refreshing}
-          onSettingsClick={() => setIsSettingsOpen(true)}
-          onExportData={exportData}
-          onExportCsv={exportCsv}
-          onExportExcel={exportExcel}
-          lastUpdateText={getTimeAgo()}
-          pnodesCount={pnodes.length}
-          publicCount={publicCount}
-          privateCount={privateCount}
-        />
+        <div className="space-y-4">
+          <Toolbar
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            nodeFilter={nodeFilter}
+            setNodeFilter={setNodeFilter}
+            onRefresh={refreshData}
+            refreshing={refreshing}
+            onSettingsClick={() => setIsSettingsOpen(true)}
+            onExportData={exportData}
+            onExportCsv={exportCsv}
+            onExportExcel={exportExcel}
+            isAdvancedFilterOpen={isAdvancedFilterOpen}
+            setIsAdvancedFilterOpen={setIsAdvancedFilterOpen}
+            lastUpdateText={getTimeAgo()}
+            pnodesCount={pnodes.length}
+            publicCount={publicCount}
+            privateCount={privateCount}
+          />
+
+          <AdvancedFilters
+            isOpen={isAdvancedFilterOpen}
+            onClose={() => setIsAdvancedFilterOpen(false)}
+            availableVersions={availableVersions}
+            selectedVersions={selectedVersions}
+            setSelectedVersions={setSelectedVersions}
+            selectedHealthStatuses={selectedHealthStatuses}
+            setSelectedHealthStatuses={setSelectedHealthStatuses}
+            minCpu={minCpu}
+            setMinCpu={setMinCpu}
+            minStorage={minStorage}
+            setMinStorage={setMinStorage}
+            onReset={resetFilters}
+            resultsCount={filteredAndSortedPNodes.length}
+          />
+        </div>
 
         {/* MAIN CONTENT */}
         <DashboardContent
