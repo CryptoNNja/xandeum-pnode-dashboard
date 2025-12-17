@@ -160,10 +160,7 @@ body {
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
 }
 
-.kpi-card:hover {
-  border-color: var(--border-hover);
-  background: var(--bg-card-hover);
-}
+/* Removed hover effect - cards are not clickable */
 
 .table-row-hover:hover {
   background-color: var(--table-hover);
@@ -241,8 +238,10 @@ body {
 .leaflet-container {
   width: 100% !important;
   height: 100% !important;
-  min-height: 650px;
+  min-width: 100% !important;
   z-index: 1;
+  position: relative !important;
+  box-sizing: border-box !important;
 }
 
 .leaflet-pane,

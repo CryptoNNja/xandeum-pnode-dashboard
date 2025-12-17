@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, Popup, GeoJSON, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
@@ -27,7 +27,13 @@ interface IpWhoResponse {
 }
 
 const getMapStyles = (isLight: boolean) => `
-  .leaflet-container { background-color: ${isLight ? '#f5f5f7' : 'var(--map-bg)'} !important; font-family: 'Inter', sans-serif; }
+  .leaflet-container { 
+    background-color: ${isLight ? '#f5f5f7' : 'var(--map-bg)'} !important; 
+    font-family: 'Inter', sans-serif; 
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 100% !important;
+  }
   .leaflet-control-attribution { display: none; }
   path.leaflet-interactive { pointer-events: none !important; stroke-linejoin: round; will-change: transform; }
   .tech-cluster { background: ${isLight ? '#ffffff' : 'var(--map-cluster-bg)'}; border: 2px solid ${isLight ? '#EA580C' : 'var(--accent-aqua)'}; color: ${isLight ? '#EA580C' : 'var(--accent-aqua)'}; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-family: monospace; font-weight: bold; font-size: 11px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); transition: transform 0.2s; }
@@ -40,12 +46,18 @@ const getMapStyles = (isLight: boolean) => `
   .leaflet-popup-close-button { color: ${isLight ? '#1F2937' : 'var(--text-main)'} !important; }
 `;
 
-const createSolidIcon = (status: string) => {
-  let color = "#64748B"; // Private
-  if (status === "Excellent") color = "#10B981";
-  if (status === "Good") color = "#38BDF8"; // GOOD = bleu
-  if (status === "Warning") color = "#F59E0B";
-  if (status === "Critical") color = "#EF4444";
+const createSolidIcon = (status: string, isLight: boolean) => {
+  // Helper to get CSS variable value
+  const getCssVar = (varName: string, fallback: string): string => {
+    if (typeof window === "undefined") return fallback;
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback;
+  };
+
+  let color = getCssVar("--kpi-private", "#64748B"); // Private
+  if (status === "Excellent") color = getCssVar("--kpi-excellent", "#10B981");
+  if (status === "Good") color = getCssVar("--kpi-good", "#60A5FA");
+  if (status === "Warning") color = getCssVar("--kpi-warning", "#F59E0B");
+  if (status === "Critical") color = getCssVar("--kpi-critical", "#EF4444");
 
   return L.divIcon({
     className: "solid-marker",
@@ -97,9 +109,9 @@ export default function NodesMap({ nodes }: NodesMapProps) {
   const [geoJsonError, setGeoJsonError] = useState<string | null>(null);
   const [geoLocateErrorCount, setGeoLocateErrorCount] = useState(0);
   const [mapKey, setMapKey] = useState(0);
-  const [containerReady, setContainerReady] = useState(true);
+  const [calculatedWidth, setCalculatedWidth] = useState<number | null>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const mapDebugEnabled =
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("mapdebug") === "1";
@@ -143,6 +155,29 @@ export default function NodesMap({ nodes }: NodesMapProps) {
         setMapReady(true);
       });
   }, []);
+
+
+  // Calculate width from window size (accounting for max-width and padding)
+  useEffect(() => {
+    const calculateWidth = () => {
+      if (typeof window === "undefined") return;
+      
+      // Calculate based on max-w-[1600px] with px-6 (24px padding each side)
+      const maxWidth = 1600;
+      const padding = 48; // 24px * 2
+      const windowWidth = window.innerWidth;
+      const availableWidth = Math.min(windowWidth - padding, maxWidth - padding);
+      
+      setCalculatedWidth(availableWidth);
+      if (mapDebugEnabled) {
+        console.log('[Map Debug] Calculated width:', availableWidth, 'px (window:', windowWidth, 'px)');
+      }
+    };
+
+    calculateWidth();
+    window.addEventListener('resize', calculateWidth);
+    return () => window.removeEventListener('resize', calculateWidth);
+  }, [mapDebugEnabled]);
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -224,7 +259,7 @@ export default function NodesMap({ nodes }: NodesMapProps) {
       <Marker
         key={loc.ip}
         position={[loc.lat, loc.lng]}
-        icon={createSolidIcon(loc.status)}
+        icon={createSolidIcon(loc.status, isLight)}
       >
         <Popup className="custom-popup">
           <div className="p-2 min-w-[120px] text-center">
@@ -262,75 +297,110 @@ export default function NodesMap({ nodes }: NodesMapProps) {
     const map = useMap();
 
     useEffect(() => {
-      // Force immediate size calculation
-
-      const forceResize = () => {
-        map.invalidateSize();
+      let invalidateCount = 0;
+      const MAX_INVALIDATES = 10; // Limit to prevent infinite loops
+      
+      const invalidate = () => {
+        if (invalidateCount >= MAX_INVALIDATES) return;
+        invalidateCount++;
+        
+        try {
+          if (!map || !map.getContainer()) return;
+          
+          const container = map.getContainer();
+          const rect = container.getBoundingClientRect();
+          const parent = container.parentElement;
+          const parentRect = parent?.getBoundingClientRect();
+          
+          // Only log once to avoid spam
+          if (mapDebugEnabled && invalidateCount === 1) {
+            console.log('[Map Debug] Leaflet container dimensions:', {
+              container: { width: rect.width, height: rect.height },
+              parent: parentRect ? { width: parentRect.width, height: parentRect.height } : null,
+              computed: {
+                width: window.getComputedStyle(container).width,
+                height: window.getComputedStyle(container).height,
+              }
+            });
+          }
+          
+          // If width is zero or very small, force it from parent
+          if (rect.width < 100 && parentRect && parentRect.width > 100) {
+            container.style.width = `${parentRect.width}px`;
+            container.style.height = `${parentRect.height}px`;
+            if (mapDebugEnabled && invalidateCount === 1) {
+              console.log('[Map Debug] Forced dimensions:', {
+                width: parentRect.width,
+                height: parentRect.height
+              });
+            }
+          }
+          
+          map.invalidateSize();
+        } catch (e) {
+          if (mapDebugEnabled && invalidateCount === 1) {
+            console.warn('[Map Debug] Error invalidating size:', e);
+          }
+        }
       };
 
-      forceResize();
-      const t1 = setTimeout(forceResize, 100);
-      const t2 = setTimeout(forceResize, 300);
-      const t3 = setTimeout(forceResize, 500);
+      // Immediate invalidate
+      invalidate();
+      
+      // Limited delayed invalidates
+      const timeouts = [
+        setTimeout(invalidate, 100),
+        setTimeout(invalidate, 300),
+        setTimeout(invalidate, 500),
+      ];
 
       // Listen for window resize
-      const handleResize = () => forceResize();
+      const handleResize = () => {
+        invalidateCount = 0; // Reset counter on resize
+        invalidate();
+      };
       window.addEventListener('resize', handleResize);
 
       return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
+        timeouts.forEach(clearTimeout);
         window.removeEventListener('resize', handleResize);
       };
-    }, [map]);
+    }, [map, mapDebugEnabled]);
 
     return null;
   };
 
-  useEffect(() => {
-
-    // Ne pas forcer la taille ici, laisser le parent gérer la hauteur/largeur
-  }, []);
-
-  useEffect(() => {
-    // Force re-render if map doesn't show properly
-    const timer = setTimeout(() => {
-      setMapKey(prev => prev + 1);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-
-  // Ne pas forcer la taille de la leaflet-container ici non plus
-
-  if (!mapReady || !themeMounted || !containerReady) {
+  // Only wait for theme to be mounted
+  if (!themeMounted) {
     return (
-      <div
-        className="relative w-full h-full rounded-xl overflow-hidden border shadow-2xl"
-        style={{
-          borderColor: isLight ? 'rgba(0, 0, 0, 0.12)' : '#2D3454',
-          background: isLight ? '#f5f5f7' : '#020204',
-        }}
-      >
-        <style>{getMapStyles(isLight)}</style>
-        {/* ...debug et légende comme avant... */}
+      <div className="h-[650px] w-full rounded-xl border border-border-app bg-bg-card flex flex-col items-center justify-center gap-4 text-text-soft theme-transition">
+        <div className="w-12 h-12 border-4 border-accent-aqua border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs uppercase tracking-[0.35em]">Loading map</p>
       </div>
     );
   }
 
   // Bloc principal : map prête
   return (
-    <div className="relative w-full h-full rounded-xl overflow-hidden border shadow-2xl"
+    <div 
+      ref={wrapperRef}
+      className="relative w-full rounded-xl border shadow-2xl"
       style={{
+        height: '650px',
+        width: calculatedWidth ? `${calculatedWidth}px` : '100%',
+        minWidth: calculatedWidth ? `${calculatedWidth}px` : '100%',
+        maxWidth: '100%',
+        display: 'block',
+        boxSizing: 'border-box',
         borderColor: isLight ? 'rgba(0, 0, 0, 0.12)' : '#2D3454',
         background: isLight ? '#f5f5f7' : '#020204',
+        overflow: 'hidden',
+        position: 'relative',
       }}
     >
       <style>{getMapStyles(isLight)}</style>
       {/* Légende alignée avec le reste du dashboard */}
-      <div className="absolute bottom-6 left-6 z-400 px-4 py-3 rounded border text-[10px] font-mono pointer-events-none" style={{
+      <div className="absolute bottom-6 left-6 z-[1000] px-4 py-3 rounded border text-[10px] font-mono pointer-events-none" style={{
         background: isLight ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)',
         borderColor: isLight ? 'rgba(234, 88, 12, 0.3)' : 'rgba(0, 212, 170, 0.3)',
         color: isLight ? '#1F2937' : '#a3a3a3',
@@ -361,49 +431,41 @@ export default function NodesMap({ nodes }: NodesMapProps) {
           </div>
         </div>
       </div>
-      <div
-        ref={containerRef}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: "100%",
-          height: "100%"
+      <MapContainer
+        key={mapKey}
+        center={[20, 0]}
+        zoom={1.5}
+        minZoom={1}
+        maxZoom={18}
+        scrollWheelZoom={true}
+        style={{ 
+          height: "650px", 
+          width: calculatedWidth ? `${calculatedWidth}px` : "100%",
+          minWidth: calculatedWidth ? `${calculatedWidth}px` : "100%",
+          background: "transparent"
         }}
+        maxBounds={[[-90, -180], [90, 180]]}
+        maxBoundsViscosity={0.5}
       >
-        <MapContainer
-          key={mapKey}
-          center={[20, 0]}
-          zoom={1.5}
-          minZoom={1}
-          maxZoom={18}
-          scrollWheelZoom={true}
-          style={{ height: "100%", width: "100%", background: "transparent" }}
-          maxBounds={[[-90, -180], [90, 180]]}
-          maxBoundsViscosity={0.5}
+        <InvalidateSizeOnMount />
+        {geoJsonData ? (
+          <GeoJSON
+            key="static-world-map"
+            data={geoJsonData}
+            style={getGeoJsonStyleForTheme(isLight)}
+            interactive={false}
+          />
+        ) : null}
+        <MarkerClusterGroup
+          chunkedLoading
+          iconCreateFunction={createClusterIcon}
+          spiderfyOnMaxZoom={true}
+          showCoverageOnHover={false}
+          maxClusterRadius={40}
         >
-          <InvalidateSizeOnMount />
-          {geoJsonData ? (
-            <GeoJSON
-              key="static-world-map"
-              data={geoJsonData}
-              style={getGeoJsonStyleForTheme(isLight)}
-              interactive={false}
-            />
-          ) : null}
-          <MarkerClusterGroup
-            chunkedLoading
-            iconCreateFunction={createClusterIcon}
-            spiderfyOnMaxZoom={true}
-            showCoverageOnHover={false}
-            maxClusterRadius={40}
-          >
-            {markers}
-          </MarkerClusterGroup>
-        </MapContainer>
-      </div>
+          {markers}
+        </MarkerClusterGroup>
+      </MapContainer>
     </div>
   );
 }

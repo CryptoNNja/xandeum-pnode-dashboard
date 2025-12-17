@@ -117,23 +117,31 @@ type AutoRefreshOption = "off" | "30s" | "1m" | "5m";
 const GB_IN_BYTES = 1024 ** 3;
 const TB_IN_BYTES = 1024 ** 4;
 
-const KPI_COLORS = {
-  public: "#06B6D4",
-  private: "#94A3B8",
-  total: "#6366F1",
-  cpu: "#10B981",
-  ram: "#F472B6",
-  alerts: "#FB7185",
-  alertOk: "#22C55E",
-} as const;
+// Helper to get CSS variable value at runtime
+const getCssVar = (varName: string, fallback: string = "#000000"): string => {
+  if (typeof window === "undefined") return fallback;
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback;
+};
 
-const STATUS_COLORS = {
-  excellent: "#10B981",
-  good: "#3B82F6",
-  warning: "#F59E0B",
-  critical: "#EF4444",
-  private: "#94A3B8",
-} as const;
+// KPI colors using CSS variables
+const getKpiColors = () => ({
+  public: getCssVar("--accent-aqua", "#06B6D4"),
+  private: getCssVar("--kpi-private", "#94A3B8"),
+  total: getCssVar("--accent", "#6366F1"),
+  cpu: getCssVar("--kpi-excellent", "#10B981"),
+  ram: getCssVar("--accent-ram", "#3B82F6"),
+  alerts: "#FB7185", // Keep as is, not in CSS vars
+  alertOk: getCssVar("--kpi-excellent", "#22C55E"),
+});
+
+// Status colors using CSS variables
+const getStatusColors = () => ({
+  excellent: getCssVar("--kpi-excellent", "#10B981"),
+  good: getCssVar("--kpi-good", "#3B82F6"),
+  warning: getCssVar("--kpi-warning", "#F59E0B"),
+  critical: getCssVar("--kpi-critical", "#EF4444"),
+  private: getCssVar("--kpi-private", "#94A3B8"),
+});
 
 type HealthTrendKey = "excellent" | "good" | "warning" | "critical";
 const createEmptyDistribution = (): Record<HealthTrendKey, number> => ({
@@ -143,11 +151,12 @@ const createEmptyDistribution = (): Record<HealthTrendKey, number> => ({
   critical: 0,
 });
 
-const CPU_BUCKETS = [
-  { label: "Idle", min: 0, max: 25, color: "#10B981" },
-  { label: "Normal", min: 25, max: 75, color: "#0EA5E9" },
-  { label: "Load", min: 75, max: 101, color: "#F97316" },
-] as const;
+// CPU buckets with dynamic colors
+const getCpuBuckets = () => [
+  { label: "Idle", min: 0, max: 25, color: getCssVar("--kpi-excellent", "#10B981") },
+  { label: "Normal", min: 25, max: 75, color: getCssVar("--kpi-good", "#0EA5E9") },
+  { label: "Load", min: 75, max: 101, color: getCssVar("--kpi-warning", "#F97316") },
+];
 
 const STORAGE_BUCKETS = [
   { label: "< 250 GB", min: 0, max: 250 * GB_IN_BYTES },
@@ -259,38 +268,46 @@ const formatUptime = (seconds: number) => {
 };
 
 const getStorageBarColors = (percent: number) => {
+  const warning = getCssVar("--kpi-warning", "#F97316");
+  const critical = getCssVar("--kpi-critical", "#EF4444");
+  const good = getCssVar("--kpi-good", "#3B82F6");
+  const excellent = getCssVar("--kpi-excellent", "#10B981");
+
   if (percent >= 90) {
-    return { fill: "linear-gradient(90deg, #F97316, #EF4444)", accent: "#EF4444" };
+    return { fill: `linear-gradient(90deg, ${warning}, ${critical})`, accent: critical };
   }
   if (percent >= 70) {
-    return { fill: "linear-gradient(90deg, #FACC15, #F97316)", accent: "#F59E0B" };
+    return { fill: `linear-gradient(90deg, #FACC15, ${warning})`, accent: warning };
   }
   if (percent >= 40) {
-    return { fill: "linear-gradient(90deg, #22D3EE, #3B82F6)", accent: "#0EA5E9" };
+    return { fill: `linear-gradient(90deg, #22D3EE, ${good})`, accent: good };
   }
-  return { fill: "linear-gradient(90deg, #34D399, #10B981)", accent: "#10B981" };
+  return { fill: `linear-gradient(90deg, #34D399, ${excellent})`, accent: excellent };
 };
 
 const getNetworkHealthColor = (score: number) => {
-  if (score >= 85) return "#10B981";
-  if (score >= 70) return "#22D3EE";
-  if (score >= 50) return "#F59E0B";
-  return "#EF4444";
+  if (score >= 85) return getCssVar("--kpi-excellent", "#10B981");
+  if (score >= 70) return getCssVar("--kpi-good", "#22D3EE");
+  if (score >= 50) return getCssVar("--kpi-warning", "#F59E0B");
+  return getCssVar("--kpi-critical", "#EF4444");
 };
 
 const getNetworkUptimeVisuals = (
   percent: number
 ): { badge: string; color: string; Icon: LucideIcon } => {
+  const kpiColors = getKpiColors();
+  const statusColors = getStatusColors();
+
   if (percent >= 97) {
-    return { badge: "Mission ready", color: KPI_COLORS.public, Icon: ShieldCheck };
+    return { badge: "Mission ready", color: kpiColors.public, Icon: ShieldCheck };
   }
   if (percent >= 90) {
-    return { badge: "Stable mesh", color: "#3B82F6", Icon: Radio };
+    return { badge: "Stable mesh", color: statusColors.good, Icon: Radio };
   }
   if (percent >= 80) {
-    return { badge: "Monitor closely", color: "#F59E0B", Icon: AlertCircle };
+    return { badge: "Monitor closely", color: statusColors.warning, Icon: AlertCircle };
   }
-  return { badge: "Critical uptime", color: "#EF4444", Icon: Zap };
+  return { badge: "Critical uptime", color: statusColors.critical, Icon: Zap };
 };
 
 const statusBadge = (status: HealthStatus) => {
@@ -454,7 +471,9 @@ export default function Page() {
         }
       }
     },
-    [toast]
+    // toast est stable, pas besoin de le mettre dans les dépendances
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   const loadYesterdayScore = useCallback(async () => {
@@ -792,7 +811,7 @@ export default function Page() {
       sparklineAreaPoints: areaPoints,
       sparklineFill: hexToRgba(color, 0.15),
     };
-  }, [networkHealthScore, networkHealthHistory, yesterdayScore, lastWeekScore]);
+  }, [networkHealthScore, networkHealthHistory, yesterdayScore, lastWeekScore, theme]); // Add theme dependency
 
   const storageCapacityStats = useMemo(() => {
     let totalCommitted = 0;
@@ -826,7 +845,7 @@ export default function Page() {
 
   const storageBarColors = useMemo(
     () => getStorageBarColors(storageCapacityStats.percent),
-    [storageCapacityStats.percent]
+    [storageCapacityStats.percent, theme] // Add theme dependency
   );
 
   const avgCpuUsage = useMemo(() => {
@@ -903,9 +922,13 @@ export default function Page() {
       publicTotal,
       ...visuals,
     };
-  }, [pnodes, publicCount]);
+  }, [pnodes, publicCount, theme]); // Add theme dependency
 
   const UptimeIcon = networkUptimeStats.Icon;
+
+  // Memoize colors to update when theme changes
+  const kpiColorsMemo = useMemo(() => getKpiColors(), [theme]);
+  const statusColorsMemo = useMemo(() => getStatusColors(), [theme]);
 
   const storageDistribution = useMemo(
     () =>
@@ -920,8 +943,9 @@ export default function Page() {
   );
 
   const cpuDistribution = useMemo(
-    () =>
-      CPU_BUCKETS.map((bucket) => ({
+    () => {
+      const buckets = getCpuBuckets();
+      return buckets.map((bucket) => ({
         range: bucket.label,
         count: activeNodes.filter((pnode) => {
           const cpuPercent = pnode.stats?.cpu_percent ?? 0;
@@ -929,8 +953,9 @@ export default function Page() {
           return safeValue >= bucket.min && safeValue < bucket.max;
         }).length,
         color: bucket.color,
-      })),
-    [activeNodes]
+      }));
+    },
+    [activeNodes, theme] // Add theme dependency to recalculate colors on theme change
   );
 
   const filteredHealthNodes = useMemo(() => {
@@ -1016,19 +1041,21 @@ export default function Page() {
   }, [healthFilter, healthPercent]);
 
   const healthTrendData = useMemo(
-    () =>
-      [
-        { key: "excellent", label: "EXCELLENT", color: STATUS_COLORS.excellent },
-        { key: "good", label: "GOOD", color: STATUS_COLORS.good },
-        { key: "warning", label: "WARNING", color: STATUS_COLORS.warning },
-        { key: "critical", label: "CRITICAL", color: STATUS_COLORS.critical },
+    () => {
+      const statusColors = getStatusColors();
+      return [
+        { key: "excellent", label: "EXCELLENT", color: statusColors.excellent },
+        { key: "good", label: "GOOD", color: statusColors.good },
+        { key: "warning", label: "WARNING", color: statusColors.warning },
+        { key: "critical", label: "CRITICAL", color: statusColors.critical },
       ].map((item) => ({
         ...item,
         percentage: healthPercent[item.key as keyof typeof healthPercent] ?? 0,
         count: healthCounts[item.key as keyof typeof healthCounts] ?? 0,
         delta: healthDelta[item.key as HealthTrendKey] ?? 0,
-      })),
-    [healthCounts, healthPercent, healthDelta]
+      }));
+    },
+    [healthCounts, healthPercent, healthDelta, theme] // Add theme dependency
   );
 
   const healthInsight = useMemo(() => {
@@ -1184,8 +1211,8 @@ export default function Page() {
             alerts={alerts}
             criticalCount={criticalCount}
             warningCount={warningCount}
-            KPI_COLORS={KPI_COLORS}
-            STATUS_COLORS={STATUS_COLORS}
+            KPI_COLORS={kpiColorsMemo}
+            STATUS_COLORS={statusColorsMemo}
             hexToRgba={hexToRgba}
           />
 
@@ -1231,7 +1258,7 @@ export default function Page() {
           )}
 
           {/* HEALTH DISTRIBUTION */}
-          <div className="bg-bg-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
+          <div className="kpi-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-sm font-semibold text-text-main">
                 Health Distribution
@@ -1364,10 +1391,10 @@ export default function Page() {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
             {/* CPU LOAD */}
-            <div className="bg-bg-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
+            <div className="kpi-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
               <div className="flex items-center gap-2 mb-4">
-                <Cpu className="w-4 h-4 text-[#10B981]" strokeWidth={2.5} />
-                <h3 className="text-xs font-semibold text-[#10B981]">CPU Load</h3>
+                <Cpu className="w-4 h-4" style={{ color: 'var(--kpi-excellent)' }} strokeWidth={2.5} />
+                <h3 className="text-xs font-semibold" style={{ color: 'var(--kpi-excellent)' }}>CPU Load</h3>
               </div>
               <div className="h-[260px] w-full min-w-0">
                 <SafeResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
@@ -1390,10 +1417,10 @@ export default function Page() {
             </div>
 
             {/* STORAGE DISTRIBUTION */}
-            <div className="bg-bg-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
+            <div className="kpi-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
               <div className="flex items-center gap-2 mb-4">
-                <Package className="w-4 h-4 text-[#7B3FF2]" strokeWidth={2.5} />
-                <h3 className="text-xs font-semibold text-[#7B3FF2]">Storage</h3>
+                <Package className="w-4 h-4" style={{ color: 'var(--accent)' }} strokeWidth={2.5} />
+                <h3 className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>Storage</h3>
               </div>
               <div className="h-[260px] w-full min-w-0">
                 <SafeResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
@@ -1417,49 +1444,55 @@ export default function Page() {
                       content={<CustomTooltip />}
                       cursor={{ fill: isLight ? "rgba(15,23,42,0.04)" : "rgba(255,255,255,0.08)" }}
                     />
-                    <Bar dataKey="count" fill="#7B3FF2" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="count" fill="var(--accent)" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </SafeResponsiveContainer>
               </div>
             </div>
 
             {/* NETWORK VERSIONS */}
-            <div className="bg-bg-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
+            <div className="kpi-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <Radio className="w-4 h-4 text-[#F97316]" strokeWidth={2.5} />
-                  <h3 className="text-xs font-semibold text-[#F97316]">Network Versions</h3>
+                  <Radio className="w-4 h-4" style={{ color: 'var(--kpi-warning)' }} strokeWidth={2.5} />
+                  <h3 className="text-xs font-semibold" style={{ color: 'var(--kpi-warning)' }}>Network Versions</h3>
                 </div>
                 <div className={`px-4 py-2 rounded-full text-[10px] font-semibold uppercase tracking-wide ${getHealthBadgeStyles(latestVersionPercentage)}`}>
                   {getHealthLabel(latestVersionPercentage)}
                 </div>
               </div>
               <div className="h-[180px] w-full min-w-0 relative mb-4">
-                <SafeResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                  <PieChart>
-                    <Pie
-                      data={versionChart.entries}
-                      dataKey="count"
-                      nameKey="label"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={85}
-                      paddingAngle={2}
-                      startAngle={90}
-                      endAngle={-270}
-                    >
-                      {versionChart.entries.map((entry) => (
-                        <Cell
-                          key={entry.id}
-                          fill={entry.color}
-                          stroke="var(--bg-bg)"
-                          strokeWidth={2}
-                        />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </SafeResponsiveContainer>
+                {versionChart.entries.length > 0 ? (
+                  <SafeResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                    <PieChart>
+                      <Pie
+                        data={versionChart.entries}
+                        dataKey="count"
+                        nameKey="label"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={85}
+                        paddingAngle={2}
+                        startAngle={90}
+                        endAngle={-270}
+                      >
+                        {versionChart.entries.map((entry) => (
+                          <Cell
+                            key={entry.id}
+                            fill={entry.color}
+                            stroke="var(--bg-bg)"
+                            strokeWidth={2}
+                          />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </SafeResponsiveContainer>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-text-soft text-sm">
+                    No version data available
+                  </div>
+                )}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-center">
                     <p className="text-3xl font-bold text-text-main">{versionChart.latestPercentLabel}%</p>
@@ -1733,7 +1766,7 @@ export default function Page() {
               {viewMode === "map" && (
                 <ClientErrorBoundary
                   fallback={({ error, reset }) => (
-                    <div className="h-[650px] w-full rounded-xl border border-border-app bg-bg-card flex flex-col items-center justify-center gap-3 text-text-soft theme-transition">
+                    <div className="h-[650px] w-full rounded-xl border border-border-app kpi-card flex flex-col items-center justify-center gap-3 text-text-soft theme-transition">
                       <p className="text-xs uppercase tracking-[0.35em]">Map failed to render</p>
                       <p className="text-[11px] font-mono text-text-faint max-w-[820px] px-6 text-center wrap-break-word">
                         {error.message}
@@ -1791,10 +1824,10 @@ export default function Page() {
                           (window.location.href = `/pnode/${pnode.ip}`)
                         }
                         className={clsx(
-                          "p-6 rounded-xl border border-l-4 cursor-pointer transition-all hover:-translate-y-1 theme-transition group",
+                          "p-6 rounded-xl border border-l-4 cursor-pointer transition-all hover:-translate-y-1 theme-transition group kpi-card",
                           isLight
-                            ? "bg-white border-black/10 hover:shadow-[0_20px_35px_-15px_rgba(15,23,42,0.25)]"
-                            : "bg-bg-card border-border-app hover:shadow-[0_25px_45px_-20px_rgba(20,28,58,0.55)]",
+                            ? "border-black/10 hover:shadow-[0_20px_35px_-15px_rgba(15,23,42,0.25)]"
+                            : "border-border-app hover:shadow-[0_25px_45px_-20px_rgba(20,28,58,0.55)]",
                           statusBorderClass
                         )}
                       >

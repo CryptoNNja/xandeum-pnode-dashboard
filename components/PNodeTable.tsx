@@ -86,10 +86,10 @@ export default function PNodeTable({
   return (
     <div
       className={clsx(
-        "overflow-x-auto rounded-xl border shadow-xl transition-colors",
+        "overflow-x-auto rounded-xl border shadow-xl transition-colors kpi-card",
         isLight
-          ? "border-black/10 bg-white/95"
-          : "border-border-app bg-bg-card"
+          ? "border-black/10"
+          : "border-border-app"
       )}
     >
       <table className="w-full text-left border-collapse text-sm">

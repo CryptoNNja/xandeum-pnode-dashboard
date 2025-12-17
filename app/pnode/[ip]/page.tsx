@@ -11,13 +11,19 @@ import { getHealthStatus } from '@/lib/health';
 import type { PNode } from '@/lib/types';
 import { useToast } from '@/components/common/Toast';
 
-const STATUS_COLORS: Record<string, string> = {
-  Excellent: '#10B981',
-  Good: '#3B82F6',
-  Warning: '#F59E0B',
-  Critical: '#EF4444',
-  Private: '#64748B',
+// Helper to get CSS variable value
+const getCssVar = (varName: string, fallback: string): string => {
+  if (typeof window === "undefined") return fallback;
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback;
 };
+
+const getStatusColors = (): Record<string, string> => ({
+  Excellent: getCssVar("--kpi-excellent", "#10B981"),
+  Good: getCssVar("--kpi-good", "#3B82F6"),
+  Warning: getCssVar("--kpi-warning", "#F59E0B"),
+  Critical: getCssVar("--kpi-critical", "#EF4444"),
+  Private: getCssVar("--kpi-private", "#64748B"),
+});
 
 const hexToRgba = (hex: string, alpha: number) => {
     const sanitized = hex.replace('#', '');
@@ -35,7 +41,8 @@ const hexToRgba = (hex: string, alpha: number) => {
 };
   
 const getStatusStyles = (status: string) => {
-    const base = STATUS_COLORS[status] || STATUS_COLORS.Private;
+    const statusColors = getStatusColors();
+    const base = statusColors[status] || statusColors.Private;
     return {
       color: base,
       backgroundColor: hexToRgba(base, 0.15),

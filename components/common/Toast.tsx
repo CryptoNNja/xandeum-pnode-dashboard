@@ -38,26 +38,50 @@ const ToastItem = ({ toast, onRemove }: ToastProps) => {
     info: Info,
   };
 
+  // Helper to get CSS variable value
+  const getCssVar = (varName: string, fallback: string): string => {
+    if (typeof window === "undefined") return fallback;
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback;
+  };
+
+  // Helper to convert hex to rgba
+  const hexToRgba = (hex: string, alpha: number): string => {
+    const sanitized = hex.replace("#", "");
+    const expanded = sanitized.length === 3
+      ? sanitized.split("").map((char) => char + char).join("")
+      : sanitized;
+    const bigint = Number.parseInt(expanded, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
+  const successColor = getCssVar("--kpi-excellent", "#22c55e");
+  const errorColor = getCssVar("--kpi-critical", "#ef4444");
+  const warningColor = getCssVar("--kpi-warning", "#eab308");
+  const infoColor = getCssVar("--kpi-good", "#3b82f6");
+
   const colors = {
     success: { 
-      bg: 'rgba(34, 197, 94, 0.15)', 
-      border: 'rgba(34, 197, 94, 0.4)', 
-      icon: '#22c55e' 
+      bg: hexToRgba(successColor, 0.15), 
+      border: hexToRgba(successColor, 0.4), 
+      icon: successColor
     },
     error: { 
-      bg: 'rgba(239, 68, 68, 0.15)', 
-      border: 'rgba(239, 68, 68, 0.4)', 
-      icon: '#ef4444' 
+      bg: hexToRgba(errorColor, 0.15), 
+      border: hexToRgba(errorColor, 0.4), 
+      icon: errorColor
     },
     warning: { 
-      bg: 'rgba(234, 179, 8, 0.15)', 
-      border: 'rgba(234, 179, 8, 0.4)', 
-      icon: '#eab308' 
+      bg: hexToRgba(warningColor, 0.15), 
+      border: hexToRgba(warningColor, 0.4), 
+      icon: warningColor
     },
     info: { 
-      bg: 'rgba(59, 130, 246, 0.15)', 
-      border: 'rgba(59, 130, 246, 0.4)', 
-      icon: '#3b82f6' 
+      bg: hexToRgba(infoColor, 0.15), 
+      border: hexToRgba(infoColor, 0.4), 
+      icon: infoColor
     },
   };
 

@@ -471,7 +471,7 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
     };
 
     return (
-        <div className="bg-bg-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
+        <div className="kpi-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
             <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-[rgba(255,215,0,0.15)] flex items-center justify-center">
                     <Trophy className="w-5 h-5 text-[#FFD700]" strokeWidth={2.3} />
