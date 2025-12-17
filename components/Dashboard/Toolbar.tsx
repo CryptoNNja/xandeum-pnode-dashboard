@@ -18,18 +18,10 @@ import {
 import clsx from "clsx";
 import type { PNode } from "@/lib/types";
 import { ViewMode, NodeFilter } from "@/hooks/usePnodeDashboard";
+import { Tooltip } from "@/components/common/Tooltip";
 
 const TOOLBAR_BUTTON_BASE =
-  "relative group p-2 rounded-lg hover:bg-white/5 transition-colors";
-
-const ToolbarTooltip = ({ label }: { label: string }) => (
-  <span
-    className="pointer-events-none absolute left-1/2 top-full mt-2 w-max max-w-[260px] -translate-x-1/2 whitespace-nowrap rounded-lg border border-border-app bg-bg-card px-3 py-2 text-[11px] text-text-main opacity-0 shadow-2xl translate-y-1 scale-[0.98] transition duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100 group-focus-within:opacity-100 group-focus-within:translate-y-0 group-focus-within:scale-100 z-50"
-    role="tooltip"
-  >
-    {label}
-  </span>
-);
+  "relative p-2 rounded-lg hover:bg-white/5 transition-colors";
 
 type ToolbarProps = {
   searchTerm: string;
@@ -94,16 +86,17 @@ export const Toolbar = ({
 
           {/* Filter */}
           <div className="relative">
-            <button
-              type="button"
-              onClick={() => setFilterMenuOpen((prev) => !prev)}
-              className={clsx(TOOLBAR_BUTTON_BASE, "flex items-center gap-1")}
-              aria-label="Filter"
-            >
-              <Eye className="w-5 h-5 text-text-soft" />
-              <ChevronDown className={clsx("w-4 h-4 text-text-soft transition-transform", filterMenuOpen ? "rotate-180" : "rotate-0")} />
-              <ToolbarTooltip label="Filter nodes by visibility" />
-            </button>
+            <Tooltip content="Filter nodes by visibility">
+              <button
+                type="button"
+                onClick={() => setFilterMenuOpen((prev) => !prev)}
+                className={clsx(TOOLBAR_BUTTON_BASE, "flex items-center gap-1")}
+                aria-label="Filter"
+              >
+                <Eye className="w-5 h-5 text-text-soft" />
+                <ChevronDown className={clsx("w-4 h-4 text-text-soft transition-transform", filterMenuOpen ? "rotate-180" : "rotate-0")} />
+              </button>
+            </Tooltip>
 
             {filterMenuOpen && (
               <div className="absolute left-0 mt-3 w-56 rounded-xl border border-border-app bg-bg-card shadow-2xl z-[60] overflow-hidden">
@@ -140,57 +133,63 @@ export const Toolbar = ({
           </div>
 
           {/* View modes */}
-          <button
-            type="button"
-            onClick={() => setViewMode("table")}
-            className={clsx(
-              TOOLBAR_BUTTON_BASE,
-              viewMode === "table" ? "text-accent-aqua" : "text-text-soft"
-            )}
-            style={viewMode === "table" ? { backgroundColor: 'var(--accent-aqua)' + '22' } : undefined}
-          >
-            <List className="w-5 h-5" />
-            <ToolbarTooltip label="Table View" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("grid")}
-            className={clsx(
-              TOOLBAR_BUTTON_BASE,
-              viewMode === "grid" ? "text-accent-aqua" : "text-text-soft"
-            )}
-            style={viewMode === "grid" ? { backgroundColor: 'var(--accent-aqua)' + '22' } : undefined}
-          >
-            <LayoutGrid className="w-5 h-5" />
-            <ToolbarTooltip label="Grid View" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("map")}
-            className={clsx(
-              TOOLBAR_BUTTON_BASE,
-              viewMode === "map" ? "text-accent-aqua" : "text-text-soft"
-            )}
-            style={viewMode === "map" ? { backgroundColor: 'var(--accent-aqua)' + '22' } : undefined}
-          >
-            <MapPin className="w-5 h-5" />
-            <ToolbarTooltip label="Map View" />
-          </button>
+          <Tooltip content="Table View">
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              className={clsx(
+                TOOLBAR_BUTTON_BASE,
+                viewMode === "table" ? "text-accent-aqua" : "text-text-soft"
+              )}
+              style={viewMode === "table" ? { backgroundColor: 'var(--accent-aqua)' + '22' } : undefined}
+            >
+              <List className="w-5 h-5" />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Grid View">
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={clsx(
+                TOOLBAR_BUTTON_BASE,
+                viewMode === "grid" ? "text-accent-aqua" : "text-text-soft"
+              )}
+              style={viewMode === "grid" ? { backgroundColor: 'var(--accent-aqua)' + '22' } : undefined}
+            >
+              <LayoutGrid className="w-5 h-5" />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Map View">
+            <button
+              type="button"
+              onClick={() => setViewMode("map")}
+              className={clsx(
+                TOOLBAR_BUTTON_BASE,
+                viewMode === "map" ? "text-accent-aqua" : "text-text-soft"
+              )}
+              style={viewMode === "map" ? { backgroundColor: 'var(--accent-aqua)' + '22' } : undefined}
+            >
+              <MapPin className="w-5 h-5" />
+            </button>
+          </Tooltip>
 
           <div className="h-6 w-px bg-border-app mx-1" />
 
           {/* Export */}
           <div className="relative">
-            <button
-              type="button"
-              onClick={() => setExportMenuOpen((prev) => !prev)}
-              className={clsx(TOOLBAR_BUTTON_BASE, "flex items-center gap-1", pnodesCount === 0 && "opacity-50 pointer-events-none")}
-              aria-label="Export"
-            >
-              <Download className="w-5 h-5 text-text-soft" />
-              <ChevronDown className={clsx("w-4 h-4 text-text-soft transition-transform", exportMenuOpen ? "rotate-180" : "rotate-0")} />
-              <ToolbarTooltip label="Export data" />
-            </button>
+            <Tooltip content="Export data">
+              <button
+                type="button"
+                onClick={() => setExportMenuOpen((prev) => !prev)}
+                className={clsx(TOOLBAR_BUTTON_BASE, "flex items-center gap-1", pnodesCount === 0 && "opacity-50 pointer-events-none")}
+                aria-label="Export"
+              >
+                <Download className="w-5 h-5 text-text-soft" />
+                <ChevronDown className={clsx("w-4 h-4 text-text-soft transition-transform", exportMenuOpen ? "rotate-180" : "rotate-0")} />
+              </button>
+            </Tooltip>
             {exportMenuOpen && (
               <div className="absolute left-0 mt-3 w-48 rounded-xl border border-border-app bg-bg-card shadow-2xl z-[60] overflow-hidden">
                 <button
@@ -228,26 +227,28 @@ export const Toolbar = ({
           </div>
 
           {/* Refresh */}
-          <button
-            type="button"
-            onClick={onRefresh}
-            className={TOOLBAR_BUTTON_BASE}
-            aria-label="Refresh"
-          >
-            <RefreshCw className={clsx("w-5 h-5 text-text-soft", refreshing ? "animate-spin" : "")} />
-            <ToolbarTooltip label="Refresh data" />
-          </button>
+          <Tooltip content="Refresh data">
+            <button
+              type="button"
+              onClick={onRefresh}
+              className={TOOLBAR_BUTTON_BASE}
+              aria-label="Refresh"
+            >
+              <RefreshCw className={clsx("w-5 h-5 text-text-soft", refreshing ? "animate-spin" : "")} />
+            </button>
+          </Tooltip>
 
           {/* Settings */}
-          <button
-            type="button"
-            onClick={onSettingsClick}
-            className={TOOLBAR_BUTTON_BASE}
-            aria-label="Settings"
-          >
-            <Settings className="w-5 h-5 text-text-soft" />
-            <ToolbarTooltip label="Dashboard settings" />
-          </button>
+          <Tooltip content="Dashboard settings">
+            <button
+              type="button"
+              onClick={onSettingsClick}
+              className={TOOLBAR_BUTTON_BASE}
+              aria-label="Settings"
+            >
+              <Settings className="w-5 h-5 text-text-soft" />
+            </button>
+          </Tooltip>
         </div>
 
         {/* Live status */}

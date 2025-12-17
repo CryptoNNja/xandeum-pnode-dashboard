@@ -2,6 +2,7 @@
 
 import { Radio, ShieldCheck, Network, LucideIcon } from "lucide-react";
 import { hexToRgba, getKpiColors } from "@/lib/utils";
+import { InfoTooltip } from "@/components/common/InfoTooltip";
 
 type SummaryHeaderProps = {
   publicCount: number;
@@ -46,9 +47,12 @@ export const SummaryHeader = ({
       <div className="kpi-card relative overflow-hidden p-6">
         <div className="flex items-start justify-between gap-6">
           <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
-              Public Nodes
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
+                Public Nodes
+              </p>
+              <InfoTooltip content="Active pNodes reachable via pRPC, providing public storage and gossip services." />
+            </div>
             <p className="text-4xl font-bold text-text-main mt-2">
               {publicCount}
             </p>
@@ -71,9 +75,12 @@ export const SummaryHeader = ({
       <div className="kpi-card relative overflow-hidden p-6">
         <div className="flex items-start justify-between gap-6">
           <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
-              Private Nodes
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
+                Private Nodes
+              </p>
+              <InfoTooltip content="Gossip-only nodes that participate in the network state but do not expose public services." />
+            </div>
             <p className="text-4xl font-bold text-text-main mt-2">
               {privateCount}
             </p>
@@ -96,9 +103,12 @@ export const SummaryHeader = ({
       <div className="kpi-card relative overflow-hidden p-6">
         <div className="flex items-start justify-between gap-6">
           <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
-              Total Nodes
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
+                Total Nodes
+              </p>
+              <InfoTooltip content="Grand total of all nodes detected in the Xandeum network (Public + Private)." />
+            </div>
             <p className="text-4xl font-bold text-text-main mt-2">
               {totalNodes}
             </p>
@@ -121,9 +131,12 @@ export const SummaryHeader = ({
       <div className="kpi-card relative overflow-hidden p-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
-              Network Health
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
+                Network Health
+              </p>
+              <InfoTooltip content="Global stability score based on node uptime, version diversity, and resource availability." />
+            </div>
             <p className="text-sm text-text-faint">Overall network score</p>
           </div>
           <div

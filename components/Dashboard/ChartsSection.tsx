@@ -4,7 +4,9 @@ import {
     Cpu,
     Package,
     Radio,
+    Trophy,
   } from "lucide-react";
+import { InfoTooltip } from "@/components/common/InfoTooltip";
 import {
     BarChart,
     Bar,
@@ -44,9 +46,12 @@ export const ChartsSection = ({
 
         {/* CPU LOAD */}
         <div className="kpi-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
-          <div className="flex items-center gap-2 mb-4">
-            <Cpu className="w-4 h-4 text-[#10B981]" strokeWidth={2.5} />
-            <h3 className="text-xs font-semibold text-[#10B981]">CPU Load</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Cpu className="w-4 h-4 text-[#10B981]" strokeWidth={2.5} />
+              <h3 className="text-xs font-semibold text-[#10B981]">CPU Load</h3>
+            </div>
+            <InfoTooltip content="Distribution of pNodes by CPU utilization buckets. Helps identify bottlenecks in processing power." />
           </div>
           <div className="h-[260px] w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
@@ -70,9 +75,12 @@ export const ChartsSection = ({
 
         {/* STORAGE DISTRIBUTION */}
         <div className="kpi-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
-          <div className="flex items-center gap-2 mb-4">
-            <Package className="w-4 h-4 text-[#7B3FF2]" strokeWidth={2.5} />
-            <h3 className="text-xs font-semibold text-[#7B3FF2]">Storage</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Package className="w-4 h-4 text-[#7B3FF2]" strokeWidth={2.5} />
+              <h3 className="text-xs font-semibold text-[#7B3FF2]">Storage</h3>
+            </div>
+            <InfoTooltip content="Distribution of pNodes by storage capacity. Shows the range of storage sizes available across the network." />
           </div>
           <div className="h-[260px] w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
@@ -108,6 +116,7 @@ export const ChartsSection = ({
             <div className="flex items-center gap-2">
               <Radio className="w-4 h-4 text-[#F97316]" strokeWidth={2.5} />
               <h3 className="text-xs font-semibold text-[#F97316]">Network Versions</h3>
+              <InfoTooltip content="Share of nodes running various software versions. Running the latest version is crucial for network consensus." />
             </div>
             <div className={`px-4 py-2 rounded-full text-[10px] font-semibold uppercase tracking-wide ${getHealthBadgeStyles(latestVersionPercentage)}`}>
               {getHealthLabel(latestVersionPercentage)}

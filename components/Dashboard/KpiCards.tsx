@@ -14,6 +14,7 @@ import {
     AlertTriangle,
     type LucideIcon,
   } from "lucide-react";
+import { InfoTooltip } from "@/components/common/InfoTooltip";
 
 type KpiCardsProps = {
     publicCount: number;
@@ -76,7 +77,10 @@ export const KpiCards = ({
           <div className="kpi-card relative overflow-hidden p-6">
             <div className="flex items-start justify-between gap-6">
               <div>
-                <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Storage Capacity</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Storage Capacity</p>
+                  <InfoTooltip content="Total storage space committed by pNodes to the Xandeum network. 'Utilized' shows actual data stored." />
+                </div>
                 <p className="text-sm text-text-faint">Total available storage</p>
                 <div className="flex items-baseline gap-2 mt-4">
                   <span className="text-3xl font-bold text-text-main">
@@ -121,7 +125,10 @@ export const KpiCards = ({
           <div className="kpi-card relative overflow-hidden p-6">
             <div className="flex items-start justify-between gap-6">
               <div>
-                <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Avg CPU Usage</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Avg CPU Usage</p>
+                  <InfoTooltip content="Average processing load across all active public pNodes. High load may impact node responsiveness." />
+                </div>
                 <p className="text-sm text-text-faint">Across public p-nodes</p>
                 <div className="flex items-baseline gap-2 mt-4">
                   <span className="text-4xl font-bold text-text-main">
@@ -166,7 +173,10 @@ export const KpiCards = ({
           <div className="kpi-card relative overflow-hidden p-6">
             <div className="flex items-start justify-between gap-6">
               <div>
-                <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Avg RAM Usage</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Avg RAM Usage</p>
+                  <InfoTooltip content="Average memory consumption. Sufficient RAM is vital for pNodes to handle high transaction throughput." />
+                </div>
                 <p className="text-sm text-text-faint">Average memory load</p>
                 <div className="flex items-baseline gap-2 mt-4">
                   <span className="text-3xl font-bold text-text-main">
@@ -214,7 +224,10 @@ export const KpiCards = ({
           <div className="kpi-card relative overflow-hidden p-6">
             <div className="flex items-start justify-between gap-6">
               <div>
-                <p className="text-xs uppercase tracking-[0.35em] text-text-soft">System Alerts</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">System Alerts</p>
+                  <InfoTooltip content="Real-time notifications about node offline status, version lag, or resource exhaustion." />
+                </div>
                 <p className="text-sm text-text-faint">Critical & warnings</p>
                 <div className="flex items-baseline gap-2 mt-4">
                   <p

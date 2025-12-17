@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import PNodeTable from "@/components/PNodeTable";
 import { GB_IN_BYTES, TB_IN_BYTES, getStatusColors } from "@/lib/utils";
 import type { PNode } from "@/lib/types";
+import { InfoTooltip } from "@/components/common/InfoTooltip";
 
 const NodesMap = dynamic(() => import("@/components/NodesMap"), {
   ssr: false,
@@ -42,7 +43,11 @@ export const DashboardContent = ({
 
   if (viewMode === "map") {
     return (
-      <section className="max-w-7xl mx-auto px-6 w-full">
+      <section className="max-w-7xl mx-auto px-6 w-full space-y-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-text-soft">Global Node Distribution</h2>
+          <InfoTooltip content="Geographic location of detected pNodes. Clustered markers indicate multiple nodes in the same region." />
+        </div>
         <div className="h-[650px] relative">
           <NodesMap nodes={filteredAndSortedPNodes} />
         </div>

@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { ThemeProvider } from "@/lib/theme";
 import ThemeBody from "./ThemeBody";
 import { ToastProvider } from "@/components/common/Toast";
+import { TooltipProvider } from "@/components/common/Tooltip";
 
 export const metadata: Metadata = {
   title: "Xandeum P-Node Analytics",
@@ -20,7 +21,9 @@ export default function RootLayout({
       <ThemeProvider>
         <ThemeBody>
           <ToastProvider>
-            {children}
+            <TooltipProvider>
+              {children}
+            </TooltipProvider>
           </ToastProvider>
         </ThemeBody>
       </ThemeProvider>

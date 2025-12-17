@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
-import { Trophy, ArrowRight, HardDrive, Zap, Star, ChevronDown } from "lucide-react";
+import { Trophy, ArrowRight, HardDrive, Zap, Star, ChevronDown, Info } from "lucide-react";
+import { InfoTooltip } from "@/components/common/InfoTooltip";
 import { useTheme } from "@/hooks/useTheme";
 import { calculateNodeScore } from "@/lib/scoring";
 import type { PNode } from "@/lib/types";
@@ -497,11 +498,14 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
 
     return (
         <div className="kpi-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255,215,0,0.15)' }}>
-                    <Trophy className="w-5 h-5" style={{ color: '#FFD700' }} strokeWidth={2.3} />
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255,215,0,0.15)' }}>
+                        <Trophy className="w-5 h-5" style={{ color: '#FFD700' }} strokeWidth={2.3} />
+                    </div>
+                    <h3 className="text-lg font-semibold text-text-main">Network Leaderboard</h3>
                 </div>
-                <h3 className="text-lg font-semibold text-text-main">Network Leaderboard</h3>
+                <InfoTooltip content="Ranking of pNodes based on performance, storage commitment, or uptime. Use the dropdown to switch metrics." />
             </div>
 
             <LeaderboardDropdown
