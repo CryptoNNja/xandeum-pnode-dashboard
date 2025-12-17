@@ -8,6 +8,7 @@ import SkeletonLoader from "@/components/SkeletonLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { usePnodeDashboard } from "@/hooks/usePnodeDashboard";
 import { SummaryHeader } from "@/components/Dashboard/SummaryHeader";
+import { HealthDistribution } from "@/components/Dashboard/HealthDistribution";
 import { ChartsSection } from "@/components/Dashboard/ChartsSection";
 import { DashboardContent } from "@/components/Dashboard/DashboardContent";
 import { AlertsModal } from "@/components/Dashboard/AlertsModal";
@@ -70,6 +71,7 @@ export default function Page() {
     cpuDistribution,
     storageDistribution,
     versionChart,
+    healthDistribution,
     alerts,
     criticalCount,
     warningCount,
@@ -135,6 +137,11 @@ export default function Page() {
           totalNodes={pnodes.length}
           networkHealthInsights={networkHealthInsights}
           networkUptimeStats={networkUptimeStats}
+        />
+
+        <HealthDistribution
+          healthDistribution={healthDistribution}
+          totalNodes={pnodes.length}
         />
 
         {/* DETAILED KPI CARDS */}

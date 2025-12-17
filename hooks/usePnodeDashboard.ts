@@ -607,6 +607,12 @@ export const usePnodeDashboard = (theme?: string) => {
     storageDistribution,
     cpuDistribution,
     versionChart,
+    healthDistribution: {
+      excellent: allPnodes.filter(p => p._healthStatus === "Excellent").length,
+      good: allPnodes.filter(p => p._healthStatus === "Good").length,
+      warning: allPnodes.filter(p => p._healthStatus === "Warning").length,
+      critical: allPnodes.filter(p => p._healthStatus === "Critical").length,
+    },
     exportData,
     exportCsv,
     exportExcel

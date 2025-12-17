@@ -63,6 +63,7 @@ export const AdvancedFilters = ({
       case "Good": return statusColors.good;
       case "Warning": return statusColors.warning;
       case "Critical": return statusColors.critical;
+      case "Private": return "var(--kpi-private)";
       default: return "var(--text-soft)";
     }
   };
@@ -131,13 +132,15 @@ export const AdvancedFilters = ({
                         className={`
                           px-3 py-2 rounded-xl text-[11px] font-bold transition-all border text-left flex items-center justify-between
                           ${isSelected 
-                            ? "border-opacity-100 shadow-lg scale-[1.02]" 
+                            ? "border-opacity-100 shadow-lg scale-[1.02] ring-1 ring-offset-2 ring-offset-bg-card" 
                             : "bg-transparent border-border-app text-text-soft hover:border-text-faint"}
                         `}
                         style={{ 
-                          backgroundColor: isSelected ? `${color}15` : undefined,
+                          backgroundColor: isSelected ? `${color}25` : undefined,
                           borderColor: isSelected ? color : undefined,
-                          color: isSelected ? color : "var(--text-soft)"
+                          color: isSelected ? color : "var(--text-soft)",
+                          // @ts-ignore
+                          "--ring-color": color
                         }}
                       >
                         {status}
@@ -164,7 +167,7 @@ export const AdvancedFilters = ({
                         className={`
                           px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold transition-all border
                           ${isSelected 
-                            ? "bg-accent-aqua/20 border-accent-aqua text-accent-aqua shadow-sm" 
+                            ? "bg-accent-blue/20 border-accent-blue text-accent-blue shadow-lg scale-[1.02] ring-1 ring-accent-blue/30" 
                             : "bg-bg-bg border-border-app text-text-soft hover:border-accent-aqua/50"}
                         `}
                       >
@@ -184,23 +187,23 @@ export const AdvancedFilters = ({
                     <Cpu className="w-3.5 h-3.5 text-text-faint" />
                     <p className="text-[11px] uppercase tracking-[0.2em] text-text-faint font-bold">Minimum CPU</p>
                   </div>
-                  <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md ${minCpu > 70 ? 'bg-red-500/10 text-red-400' : 'bg-accent-aqua/10 text-accent-aqua'}`}>
+                  <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md ${minCpu > 0 ? 'bg-accent-aqua/20 text-accent-aqua ring-1 ring-accent-aqua/50' : 'bg-text-main/5 text-text-faint'}`}>
                     {minCpu}%
                   </span>
                 </div>
                 <div className="px-2">
                   <Slider.Root
-                    className="relative flex items-center select-none touch-none w-full h-5 cursor-pointer"
+                    className="relative flex items-center select-none touch-none w-full h-5 cursor-pointer group"
                     value={[minCpu]}
                     onValueChange={([val]) => setMinCpu(val)}
                     max={100}
                     step={5}
                   >
-                    <Slider.Track className="bg-text-main/10 relative grow rounded-full h-[6px] overflow-hidden">
+                    <Slider.Track className="bg-text-main/20 relative grow rounded-full h-[6px] overflow-hidden border border-white/5">
                       <Slider.Range className="absolute bg-gradient-to-r from-accent-aqua to-accent-blue rounded-full h-full" />
                     </Slider.Track>
                     <Slider.Thumb
-                      className="block w-5 h-5 bg-bg-card border-2 border-accent-aqua shadow-lg rounded-full hover:scale-125 transition-transform focus:outline-none focus:ring-4 focus:ring-accent-aqua/20"
+                      className="block w-5 h-5 bg-white border-2 border-accent-aqua shadow-xl rounded-full hover:scale-125 transition-transform focus:outline-none focus:ring-4 focus:ring-accent-aqua/30 cursor-grab active:cursor-grabbing z-10"
                       aria-label="Min CPU"
                     />
                   </Slider.Root>
@@ -218,23 +221,23 @@ export const AdvancedFilters = ({
                     <HardDrive className="w-3.5 h-3.5 text-text-faint" />
                     <p className="text-[11px] uppercase tracking-[0.2em] text-text-faint font-bold">Min Storage</p>
                   </div>
-                  <span className="text-xs font-mono font-bold bg-accent-purple/10 text-accent-purple px-2 py-0.5 rounded-md">
+                  <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md ${minStorage > 0 ? 'bg-accent-purple/20 text-accent-purple ring-1 ring-accent-purple/50' : 'bg-text-main/5 text-text-faint'}`}>
                     {minStorage} TB
                   </span>
                 </div>
                 <div className="px-2">
                   <Slider.Root
-                    className="relative flex items-center select-none touch-none w-full h-5 cursor-pointer"
+                    className="relative flex items-center select-none touch-none w-full h-5 cursor-pointer group"
                     value={[minStorage]}
                     onValueChange={([val]) => setMinStorage(val)}
                     max={10}
                     step={0.5}
                   >
-                    <Slider.Track className="bg-text-main/10 relative grow rounded-full h-[6px] overflow-hidden">
+                    <Slider.Track className="bg-text-main/20 relative grow rounded-full h-[6px] overflow-hidden border border-white/5">
                       <Slider.Range className="absolute bg-gradient-to-r from-accent-purple to-pink-500 rounded-full h-full" />
                     </Slider.Track>
                     <Slider.Thumb
-                      className="block w-5 h-5 bg-bg-card border-2 border-accent-purple shadow-lg rounded-full hover:scale-125 transition-transform focus:outline-none focus:ring-4 focus:ring-accent-purple/20"
+                      className="block w-5 h-5 bg-white border-2 border-accent-purple shadow-xl rounded-full hover:scale-125 transition-transform focus:outline-none focus:ring-4 focus:ring-accent-purple/30 cursor-grab active:cursor-grabbing z-10"
                       aria-label="Min Storage"
                     />
                   </Slider.Root>
