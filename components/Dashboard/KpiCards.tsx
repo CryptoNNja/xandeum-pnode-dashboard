@@ -149,19 +149,50 @@ export const KpiCards = ({
                   </p>
                   <span className="text-lg text-text-soft font-semibold">/100</span>
                 </div>
-                <div className="mt-4 flex items-center gap-4 text-xs uppercase tracking-widest text-text-soft">
-                  <span
-                    className="flex items-center gap-2 font-semibold"
-                    style={{ color: networkHealthInsights.trendColor }}
-                  >
-                    <span>{networkHealthInsights.trendIcon}</span>
-                    <span className="font-mono">
-                      {networkHealthInsights.delta > 0
-                        ? `+${networkHealthInsights.delta}`
-                        : networkHealthInsights.delta}
-                    </span>
-                  </span>
-                  <span>vs yesterday</span>
+                <div className="mt-4 flex flex-col gap-2 text-xs uppercase tracking-widest text-text-soft">
+                  {networkHealthInsights.deltaYesterday !== null && networkHealthInsights.deltaYesterday !== undefined && (
+                    <div className="flex items-center gap-4">
+                      <span
+                        className="flex items-center gap-2 font-semibold"
+                        style={{ color: networkHealthInsights.trendColor }}
+                      >
+                        <span>{networkHealthInsights.trendIcon}</span>
+                        <span className="font-mono">
+                          {networkHealthInsights.deltaYesterday > 0
+                            ? `+${networkHealthInsights.deltaYesterday}`
+                            : networkHealthInsights.deltaYesterday}
+                        </span>
+                      </span>
+                      <span>vs yesterday</span>
+                    </div>
+                  )}
+                  {networkHealthInsights.deltaLastWeek !== null && networkHealthInsights.deltaLastWeek !== undefined ? (
+                    <div className="flex items-center gap-4">
+                      <span
+                        className="flex items-center gap-2 font-semibold"
+                        style={{ 
+                          color: networkHealthInsights.deltaLastWeek > 0 
+                            ? "rgb(34, 197, 94)" 
+                            : networkHealthInsights.deltaLastWeek < 0 
+                            ? "rgb(239, 68, 68)" 
+                            : "var(--text-soft)" 
+                        }}
+                      >
+                        <span>{networkHealthInsights.deltaLastWeek > 0 ? "▲" : networkHealthInsights.deltaLastWeek < 0 ? "▼" : "→"}</span>
+                        <span className="font-mono">
+                          {networkHealthInsights.deltaLastWeek > 0
+                            ? `+${networkHealthInsights.deltaLastWeek}`
+                            : networkHealthInsights.deltaLastWeek}
+                        </span>
+                      </span>
+                      <span>vs last week</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-4 text-text-faint">
+                      <span className="font-mono">—</span>
+                      <span>vs last week (need 7+ days of history)</span>
+                    </div>
+                  )}
                 </div>
               </div>
               <svg

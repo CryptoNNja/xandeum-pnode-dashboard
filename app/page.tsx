@@ -417,6 +417,7 @@ export default function Page() {
   const [networkHealthHistory, setNetworkHealthHistory] = useState<number[]>([]);
   const [healthDelta, setHealthDelta] = useState<Record<HealthTrendKey, number>>(createEmptyDistribution());
   const [yesterdayScore, setYesterdayScore] = useState<number | null>(null);
+  const [lastWeekScore, setLastWeekScore] = useState<number | null>(null);
 
 
   const loadData = useCallback(
@@ -453,17 +454,40 @@ export default function Page() {
       }
       const payload = await response.json();
       if (payload.networkHealthScore !== null && payload.networkHealthScore !== undefined) {
+        console.log("[Network Health] Yesterday score loaded:", payload.networkHealthScore);
         setYesterdayScore(payload.networkHealthScore);
+      } else {
+        console.log("[Network Health] No yesterday score available (null)");
       }
     } catch (error) {
       console.error("Error loading yesterday's network health score:", error);
     }
   }, []);
 
+  const loadLastWeekScore = useCallback(async () => {
+    try {
+      const response = await fetch("/api/network-health/last-week", { cache: "no-store" });
+      if (!response.ok) {
+        console.warn("Failed to fetch last week's network health score");
+        return;
+      }
+      const payload = await response.json();
+      if (payload.networkHealthScore !== null && payload.networkHealthScore !== undefined) {
+        console.log("[Network Health] Last week score loaded:", payload.networkHealthScore);
+        setLastWeekScore(payload.networkHealthScore);
+      } else {
+        console.log("[Network Health] No last week score available (null)");
+      }
+    } catch (error) {
+      console.error("Error loading last week's network health score:", error);
+    }
+  }, []);
+
   useEffect(() => {
     loadData();
     loadYesterdayScore();
-  }, [loadData, loadYesterdayScore]);
+    loadLastWeekScore();
+  }, [loadData, loadYesterdayScore, loadLastWeekScore]);
 
   useEffect(() => {
     const ms =
@@ -703,16 +727,29 @@ export default function Page() {
     const score = networkHealthScore;
     const sparklineValues = networkHealthHistory.length > 0 ? networkHealthHistory : [score];
 
-    // Calculate delta: use yesterdayScore if available, otherwise fall back to last refresh comparison
-    const delta = yesterdayScore !== null
+    // Calculate delta vs yesterday: use yesterdayScore if available, otherwise fall back to last refresh comparison
+    const deltaYesterday = yesterdayScore !== null
       ? score - yesterdayScore
       : (sparklineValues.length >= 2
-          ? sparklineValues[sparklineValues.length - 1] - sparklineValues[sparklineValues.length - 2]
-          : 0);
+        ? sparklineValues[sparklineValues.length - 1] - sparklineValues[sparklineValues.length - 2]
+        : 0);
+
+    // Calculate delta vs last week
+    const deltaLastWeek = lastWeekScore !== null
+      ? score - lastWeekScore
+      : null;
+
+    // Debug log to understand what's happening
+    if (yesterdayScore !== null) {
+      console.log(`[Network Health] Current: ${score}, Yesterday: ${yesterdayScore}, Delta: ${deltaYesterday}`);
+    }
+    if (lastWeekScore !== null) {
+      console.log(`[Network Health] Current: ${score}, Last Week: ${lastWeekScore}, Delta: ${deltaLastWeek}`);
+    }
 
     const color = getNetworkHealthColor(score);
-    const trendIcon = delta > 0 ? "▲" : delta < 0 ? "▼" : "→";
-    const trendColor = delta > 0 ? "text-green-400" : delta < 0 ? "text-red-400" : "text-text-soft";
+    const trendIcon = deltaYesterday > 0 ? "▲" : deltaYesterday < 0 ? "▼" : "→";
+    const trendColor = deltaYesterday > 0 ? "text-green-400" : deltaYesterday < 0 ? "text-red-400" : "text-text-soft";
     const svgWidth = 120;
     const svgHeight = 36;
     const sampleCount = Math.max(1, sparklineValues.length);
@@ -727,17 +764,19 @@ export default function Page() {
 
     return {
       score,
-      delta,
+      delta: deltaYesterday, // Keep 'delta' for backward compatibility (vs yesterday)
+      deltaYesterday,
+      deltaLastWeek,
       color,
-      trendIcon,
-      trendColor,
+      trendIcon: deltaYesterday > 0 ? "▲" : deltaYesterday < 0 ? "▼" : "→",
+      trendColor: deltaYesterday > 0 ? "text-green-400" : deltaYesterday < 0 ? "text-red-400" : "text-text-soft",
       svgWidth,
       svgHeight,
       sparklinePoints: points,
       sparklineAreaPoints: areaPoints,
       sparklineFill: hexToRgba(color, 0.15),
     };
-  }, [networkHealthScore, networkHealthHistory, yesterdayScore]);
+  }, [networkHealthScore, networkHealthHistory, yesterdayScore, lastWeekScore]);
 
   const storageCapacityStats = useMemo(() => {
     let totalCommitted = 0;
