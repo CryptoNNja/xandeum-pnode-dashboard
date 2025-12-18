@@ -194,26 +194,43 @@ export const getHealthLabel = (percentage: number) => {
  * - getCountryFlag("FR") => "🇫🇷"
  * - getCountryFlag("DE") => "🇩🇪"
  */
+// Common country code to emoji mapping for reliable display
+const FLAG_MAP: Record<string, string> = {
+    'US': '🇺🇸', 'GB': '🇬🇧', 'FR': '🇫🇷', 'DE': '🇩🇪', 'IT': '🇮🇹',
+    'ES': '🇪🇸', 'PT': '🇵🇹', 'NL': '🇳🇱', 'BE': '🇧🇪', 'CH': '🇨🇭',
+    'AT': '🇦🇹', 'PL': '🇵🇱', 'CZ': '🇨🇿', 'SE': '🇸🇪', 'NO': '🇳🇴',
+    'DK': '🇩🇰', 'FI': '🇫🇮', 'IE': '🇮🇪', 'RU': '🇷🇺', 'UA': '🇺🇦',
+    'IN': '🇮🇳', 'CN': '🇨🇳', 'JP': '🇯🇵', 'KR': '🇰🇷', 'SG': '🇸🇬',
+    'AU': '🇦🇺', 'NZ': '🇳🇿', 'CA': '🇨🇦', 'MX': '🇲🇽', 'BR': '🇧🇷',
+    'AR': '🇦🇷', 'CL': '🇨🇱', 'CO': '🇨🇴', 'ZA': '🇿🇦', 'NG': '🇳🇬',
+    'EG': '🇪🇬', 'KE': '🇰🇪', 'AE': '🇦🇪', 'SA': '🇸🇦', 'IL': '🇮🇱',
+    'TR': '🇹🇷', 'TH': '🇹🇭', 'VN': '🇻🇳', 'ID': '🇮🇩', 'MY': '🇲🇾',
+    'PH': '🇵🇭', 'PK': '🇵🇰', 'BD': '🇧🇩', 'HK': '🇭🇰', 'TW': '🇹🇼',
+};
+
 export const getCountryFlag = (countryCode?: string | null): string => {
     if (!countryCode || countryCode.length !== 2) {
         return "🌍"; // Globe emoji as fallback
     }
 
-    // Convert country code to regional indicator symbols
-    // Regional indicators are Unicode characters from U+1F1E6 to U+1F1FF
-    // 'A' = 65 in ASCII, U+1F1E6 = 127462, difference = 127397
-    const codePoints = countryCode
-        .toUpperCase()
+    const code = countryCode.toUpperCase();
+    
+    // Try direct mapping first (more reliable on Windows)
+    if (FLAG_MAP[code]) {
+        return FLAG_MAP[code];
+    }
+
+    // Fallback: Generate from Unicode regional indicators
+    const codePoints = code
         .split('')
         .map(char => {
-            const code = char.charCodeAt(0);
-            // Ensure it's a valid letter A-Z
-            if (code >= 65 && code <= 90) {
-                return 127397 + code;
+            const charCode = char.charCodeAt(0);
+            if (charCode >= 65 && charCode <= 90) {
+                return 127397 + charCode;
             }
             return null;
         })
-        .filter((code): code is number => code !== null);
+        .filter((cp): cp is number => cp !== null);
 
     if (codePoints.length !== 2) {
         return "🌍";

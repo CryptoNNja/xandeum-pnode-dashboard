@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
       lng: row.lng,
       city: row.city,
       country: row.country,
+      country_code: (row as any).country_code,
     }));
 
     return NextResponse.json({

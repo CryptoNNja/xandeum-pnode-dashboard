@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Cpu, HardDrive, Zap, MapPin, Activity, ShieldCheck, Globe } from "lucide-react";
 import PNodeTable from "@/components/PNodeTable";
-import { GB_IN_BYTES, TB_IN_BYTES, getStatusColors, hexToRgba, getCountryFlag, formatBytesAdaptive } from "@/lib/utils";
+import { GB_IN_BYTES, TB_IN_BYTES, getStatusColors, hexToRgba, formatBytesAdaptive } from "@/lib/utils";
 import type { PNode } from "@/lib/types";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
 import clsx from "clsx";
@@ -259,7 +259,14 @@ const DashboardContentComponent = ({
                 <span className="text-[10px] font-bold truncate max-w-[140px] flex items-center gap-1.5">
                   {pnode.city ? (
                     <>
-                      <span className="text-sm leading-none">{getCountryFlag(pnode.country_code)}</span>
+                      <img 
+                        src={`https://flagcdn.com/w40/${pnode.country_code?.toLowerCase()}.png`}
+                        alt={pnode.country || "flag"}
+                        className="w-4 h-3 object-cover rounded-sm shadow-sm"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).parentElement!.innerHTML = '<span class="text-xs">🌍</span>';
+                        }}
+                      />
                       <span>{pnode.city}, {pnode.country}</span>
                     </>
                   ) : (

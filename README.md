@@ -148,9 +148,30 @@ xandeum-dashboard/
 - [x] Advanced Filters (Health, Version, Resources)
 - [x] Dark/Light mode (completed)
 - [x] Export to CSV/Excel (completed)
-- [ ] Deploy to Vercel
+- [x] Deploy to Vercel
 - [ ] Historical data tracking
 - [ ] Demo video
+
+## ⚠️ Free Tier Limitations
+
+This dashboard is built using **free tier services** to demonstrate functionality. Some features are limited:
+
+| Service | Free Tier Limit | Impact |
+|---------|-----------------|--------|
+| **Vercel** | 1 cron job/day | Data refresh once daily instead of real-time |
+| **Supabase** | 500MB DB, 2GB bandwidth | Sufficient for current network size |
+| **ipwho.is** | ~10k requests/month | Geolocation uses fallback (ip-api.com) when limit reached |
+| **ip-api.com** | 45 requests/min | Backup geolocation provider, no monthly limit |
+
+### 🚀 Production Recommendations
+
+For a production deployment with real-time capabilities:
+
+- **Vercel Pro** ($20/mo) → Cron jobs every minute, more bandwidth
+- **Supabase Pro** ($25/mo) → Real-time subscriptions, more storage
+- **ipinfo.io** ($99/mo) → Reliable geolocation with higher limits
+
+> 💡 The current free tier setup is fully functional for demonstration and moderate traffic. The architecture is designed to scale seamlessly when upgraded.
 
 ## 👨‍💻 Author
 

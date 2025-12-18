@@ -144,16 +144,16 @@ interface GeolocationData {
 }
 
 async function getGeolocation(ip: string): Promise<GeolocationData | null> {
+    // Skip local/reserved IPs
+    if (ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('127.') || ip.startsWith('100.')) {
+        return null;
+    }
+
     try {
+        // Provider 1: ipwho.is (Primary)
         const res = await axios.get(
-            `https://ipwho.is/${ip}?fields=success,latitude,longitude,city,country,country_code`,
-            {
-                timeout: 3000,
-                headers: {
-                    'user-agent': 'xandeum-dashboard/1.0',
-                    'accept': 'application/json'
-                }
-            }
+            `https://ipwho.is/${ip}?fields=success,latitude,longitude,city,country,country_code,message`,
+            { timeout: 3000 }
         );
 
         if (res.data?.success) {
@@ -165,10 +165,34 @@ async function getGeolocation(ip: string): Promise<GeolocationData | null> {
                 country_code: res.data.country_code || null
             };
         }
+
+        if (res.data?.message?.toLowerCase().includes('limit')) {
+            throw new Error('Rate limited');
+        }
     } catch (error) {
-        // Silently fail for geolocation errors
-        console.log(`⚠️  Geolocation failed for ${ip}`);
+        // console.log(`⚠️ ipwho.is failed for ${ip}, trying fallback...`);
     }
+
+    try {
+        // Provider 2: ip-api.com (Fallback)
+        const res = await axios.get(
+            `http://ip-api.com/json/${ip}?fields=status,lat,lon,city,country,countryCode`,
+            { timeout: 3000 }
+        );
+
+        if (res.data?.status === 'success') {
+            return {
+                lat: res.data.lat || null,
+                lng: res.data.lon || null,
+                city: res.data.city || null,
+                country: res.data.country || null,
+                country_code: res.data.countryCode || null
+            };
+        }
+    } catch (error) {
+        // console.error(`❌ All geolocation providers failed for ${ip}`);
+    }
+
     return null;
 }
 
@@ -226,12 +250,35 @@ export const main = async () => {
 
     console.log('📊 Fetching stats and geolocation...');
     const statsPromises = allIps.map(ip => getStats(ip));
-    const geoPromises = allIps.map(ip => getGeolocation(ip));
+    
+    // Fetch existing nodes to avoid re-geolocating every time
+    const { data: existingNodes } = await supabaseAdmin
+        .from('pnodes')
+        .select('ip, lat, lng, city, country, country_code');
+    
+    const existingMap = new Map(existingNodes?.map(n => [n.ip, n]) || []);
+    
+    const allStats = await Promise.allSettled(statsPromises);
+    const allGeo: (GeolocationData | null)[] = [];
 
-    const [allStats, allGeo] = await Promise.all([
-        Promise.allSettled(statsPromises),
-        Promise.allSettled(geoPromises)
-    ]);
+    // Geolocation with rate limiting and caching
+    for (const ip of allIps) {
+        const existing = existingMap.get(ip);
+        if (existing && existing.lat && existing.lng && existing.country_code) {
+            allGeo.push({
+                lat: existing.lat,
+                lng: existing.lng,
+                city: existing.city,
+                country: existing.country,
+                country_code: existing.country_code
+            });
+        } else {
+            const geo = await getGeolocation(ip);
+            allGeo.push(geo);
+            // Small delay to respect ip-api.com limits (45/min)
+            if (geo) await new Promise(r => setTimeout(r, 1000));
+        }
+    }
 
     const pnodesToUpsert: Database['public']['Tables']['pnodes']['Insert'][] = [];
     const historyToInsert: Database['public']['Tables']['pnode_history']['Insert'][] = [];
@@ -241,12 +288,10 @@ export const main = async () => {
         const statsResult = allStats[i];
         const geoResult = allGeo[i];
 
-        let status: PNodeStatus;
-        let stats: PNodeStats;
+        const status = (statsResult.status === 'fulfilled' && statsResult.value) ? 'active' : 'gossip_only';
+        const stats = (statsResult.status === 'fulfilled' && statsResult.value) ? statsResult.value : EMPTY_STATS;
 
-        if (statsResult.status === 'fulfilled' && statsResult.value) {
-            status = 'active';
-            stats = statsResult.value;
+        if (status === 'active') {
             historyToInsert.push({
                 ip,
                 ts: Math.floor(Date.now() / 1000),
@@ -258,12 +303,9 @@ export const main = async () => {
                 packets_sent: stats.packets_sent,
                 packets_received: stats.packets_received
             });
-        } else {
-            status = 'gossip_only';
-            stats = EMPTY_STATS;
         }
 
-        const geo = geoResult.status === 'fulfilled' ? geoResult.value : null;
+        const geo = allGeo[i];
 
         pnodesToUpsert.push({
             ip: ip,
