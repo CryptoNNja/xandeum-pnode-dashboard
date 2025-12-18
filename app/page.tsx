@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { Search, List, LayoutGrid, MapPin, Download, RefreshCw, Settings, Loader2, CheckCircle, ChevronDown, Check } from "lucide-react";
 import clsx from "clsx";
@@ -17,6 +17,7 @@ import { SettingsModal } from "@/components/Dashboard/SettingsModal";
 import { KpiCards } from "@/components/Dashboard/KpiCards";
 import { Toolbar } from "@/components/Dashboard/Toolbar";
 import { AdvancedFilters } from "@/components/Dashboard/AdvancedFilters";
+import { AboutPNodes } from "@/components/Dashboard/AboutPNodes";
 import { hexToRgba, getKpiColors, getStatusColors } from "@/lib/utils";
 
 const TOOLTIP_STYLES = `
@@ -116,6 +117,24 @@ export default function Page() {
     return `${hours}h ago`;
   }, [currentTime, lastUpdate]);
 
+  // Calculate unique countries from pnodes with location data
+  const countriesCount = useMemo(() => {
+    const countries = new Set<string>();
+    pnodes.forEach((p) => {
+      if (p.country && p.country !== "Unknown") {
+        countries.add(p.country);
+      }
+    });
+    return countries.size;
+  }, [pnodes]);
+
+  // Calculate total storage committed
+  const totalStorageBytes = useMemo(() => {
+    return pnodes
+      .filter((p) => p.status === "active")
+      .reduce((sum, p) => sum + (p.stats?.file_size ?? 0), 0);
+  }, [pnodes]);
+
   if (loading) {
     return <SkeletonLoader />;
   }
@@ -130,6 +149,13 @@ export default function Page() {
       <EnhancedHero
         criticalCount={criticalCount}
         onAlertsClick={() => setIsAlertOpen(true)}
+      />
+
+      {/* ABOUT PNODES - Educational Section */}
+      <AboutPNodes
+        totalStorageBytes={totalStorageBytes}
+        activeNodesCount={publicCount}
+        countriesCount={countriesCount}
       />
 
       <section className="max-w-7xl mx-auto px-6 space-y-8 w-full">
