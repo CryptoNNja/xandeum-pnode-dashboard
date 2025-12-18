@@ -85,7 +85,8 @@ export default function Page() {
     quickResultsCount,
     exportData,
     exportCsv,
-    exportExcel
+    exportExcel,
+    exportPdf
   } = usePnodeDashboard(theme);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -191,6 +192,7 @@ export default function Page() {
             onExportData={exportData}
             onExportCsv={exportCsv}
             onExportExcel={exportExcel}
+            onExportPdf={exportPdf}
             isAdvancedFilterOpen={isAdvancedFilterOpen}
             setIsAdvancedFilterOpen={setIsAdvancedFilterOpen}
             lastUpdateText={getTimeAgo()}

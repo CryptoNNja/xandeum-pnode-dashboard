@@ -8,6 +8,8 @@ import { getHealthStatus } from "@/lib/health";
 import { calculateNodeScore } from "@/lib/scoring";
 import { computeVersionOverview } from "@/lib/kpi";
 import { useToast } from "@/components/common/Toast";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { 
   GB_IN_BYTES, 
   TB_IN_BYTES, 
@@ -552,48 +554,150 @@ export const usePnodeDashboard = (theme?: string) => {
   }, [loadYesterdayScore, loadLastWeekScore]);
 
   const exportData = useCallback(() => {
-    const dataStr = JSON.stringify(allPnodes, null, 2);
+    const dataStr = JSON.stringify(filteredAndSortedPNodes, null, 2);
     const dataBlob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `pnodes_export_${new Date().toISOString().split("T")[0]}.json`;
+    link.download = `xandeum_audit_${new Date().toISOString().split("T")[0]}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    toast.success("JSON export started");
-  }, [allPnodes]);
+    toast.success("Full data export (JSON) completed");
+  }, [filteredAndSortedPNodes, toast]);
 
   const exportCsv = useCallback(() => {
-    if (allPnodes.length === 0) return;
-    const headers = ["IP", "Status", "Version", "CPU %", "RAM Used", "RAM Total", "Storage", "Uptime"];
-    const rows = allPnodes.map((p) => [
+    if (filteredAndSortedPNodes.length === 0) return;
+    const headers = [
+      "IP Address", 
+      "Status", 
+      "Health Score", 
+      "Health Label", 
+      "Version", 
+      "Location", 
+      "CPU Usage %", 
+      "RAM Used (Bytes)", 
+      "RAM Total (Bytes)", 
+      "Storage Committed (Bytes)", 
+      "Storage Used (Bytes)", 
+      "Uptime (Sec)", 
+      "Packets Sent", 
+      "Packets Received"
+    ];
+    const rows = filteredAndSortedPNodes.map((p) => [
       p.ip,
       p.status,
+      p._score,
+      p._healthStatus,
       p.version || "unknown",
-      p.stats?.cpu_percent?.toFixed(1) || "0",
+      `${p.city || ""}, ${p.country || ""}`.trim() || "unknown",
+      p.stats?.cpu_percent?.toFixed(2) || "0",
       p.stats?.ram_used || "0",
       p.stats?.ram_total || "0",
       p.stats?.file_size || "0",
+      p.stats?.total_bytes || "0",
       p.stats?.uptime || "0",
+      p.stats?.packets_sent || "0",
+      p.stats?.packets_received || "0",
     ]);
     const csvContent = [headers, ...rows].map((r) => r.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `pnodes_export_${new Date().toISOString().split("T")[0]}.csv`;
+    link.download = `xandeum_audit_${new Date().toISOString().split("T")[0]}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    toast.success("CSV export started");
-  }, [allPnodes]);
+    toast.success("CSV report generated");
+  }, [filteredAndSortedPNodes, toast]);
 
   const exportExcel = useCallback(() => {
-    exportCsv();
-  }, [exportCsv]);
+    // Standard Excel-friendly CSV (with BOM for UTF-8)
+    if (filteredAndSortedPNodes.length === 0) return;
+    const headers = ["IP Address", "Status", "Health Score", "Version", "Location", "CPU %", "RAM Used", "RAM Total", "Storage", "Uptime"];
+    const rows = filteredAndSortedPNodes.map((p) => [
+      p.ip,
+      p.status,
+      p._score,
+      p.version || "unknown",
+      `${p.city || ""}, ${p.country || ""}`.trim() || "unknown",
+      p.stats?.cpu_percent?.toFixed(2) || "0",
+      (p.stats?.ram_used ?? 0) / GB_IN_BYTES,
+      (p.stats?.ram_total ?? 0) / GB_IN_BYTES,
+      (p.stats?.file_size ?? 0) / TB_IN_BYTES,
+      p.stats?.uptime || "0",
+    ]);
+    const csvContent = "\uFEFF" + [headers, ...rows].map((r) => r.map(v => `"${v}"`).join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `xandeum_audit_report.xls`; // Using .xls trick for direct Excel opening
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Excel compatible report generated");
+  }, [filteredAndSortedPNodes, toast]);
+
+  const exportPdf = useCallback(() => {
+    if (filteredAndSortedPNodes.length === 0) return;
+    
+    const doc = new jsPDF();
+    const timestamp = new Date().toLocaleString();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setTextColor(0, 212, 170); // Xandeum Aqua
+    doc.text("Xandeum pNode Network Audit", 14, 22);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${timestamp}`, 14, 30);
+    doc.text(`Total Nodes Analyzed: ${filteredAndSortedPNodes.length}`, 14, 35);
+    
+    // Summary Box
+    doc.setDrawColor(0, 212, 170);
+    doc.setLineWidth(0.5);
+    doc.rect(14, 42, 182, 25);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(0);
+    const excellentCount = filteredAndSortedPNodes.filter(p => p._healthStatus === "Excellent").length;
+    const avgHealth = Math.round(filteredAndSortedPNodes.reduce((acc, p) => acc + (p._score || 0), 0) / filteredAndSortedPNodes.length);
+    
+    doc.text(`Network Health Score: ${avgHealth}/100`, 20, 50);
+    doc.text(`Excellent Nodes: ${excellentCount}`, 20, 57);
+    doc.text(`Public Nodes: ${filteredAndSortedPNodes.filter(p => p.status === "active").length}`, 100, 50);
+    doc.text(`Private Nodes: ${filteredAndSortedPNodes.filter(p => p.status === "gossip_only").length}`, 100, 57);
+
+    // Table
+    const tableData = filteredAndSortedPNodes.map(p => [
+      p.ip,
+      p.status === "active" ? "Public" : "Private",
+      p._healthStatus || "N/A",
+      `${p._score || 0}%`,
+      p.version ? p.version.split(' ')[0] : "v?",
+      `${(p.stats?.file_size ?? 0) / TB_IN_BYTES >= 1 
+        ? ((p.stats?.file_size ?? 0) / TB_IN_BYTES).toFixed(1) + " TB" 
+        : ((p.stats?.file_size ?? 0) / GB_IN_BYTES).toFixed(0) + " GB"}`
+    ]);
+
+    autoTable(doc, {
+      startY: 75,
+      head: [['IP Address', 'Type', 'Health', 'Score', 'Version', 'Storage']],
+      body: tableData,
+      headStyles: { fillColor: [0, 212, 170], textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { top: 75 },
+    });
+
+    doc.save(`xandeum_network_audit_${new Date().toISOString().split('T')[0]}.pdf`);
+    toast.success("PDF Audit Report downloaded");
+  }, [filteredAndSortedPNodes, toast]);
 
   return {
     pnodes: allPnodes,
@@ -674,6 +778,7 @@ export const usePnodeDashboard = (theme?: string) => {
     },
     exportData,
     exportCsv,
-    exportExcel
+    exportExcel,
+    exportPdf
   };
 };

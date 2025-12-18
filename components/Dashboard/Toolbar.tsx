@@ -38,6 +38,7 @@ type ToolbarProps = {
   onExportData: () => void;
   onExportCsv: () => void;
   onExportExcel: () => void;
+  onExportPdf: () => void;
   isAdvancedFilterOpen: boolean;
   setIsAdvancedFilterOpen: (open: boolean) => void;
   lastUpdateText: string;
@@ -60,6 +61,7 @@ export const Toolbar = ({
   onExportData,
   onExportCsv,
   onExportExcel,
+  onExportPdf,
   isAdvancedFilterOpen,
   setIsAdvancedFilterOpen,
   lastUpdateText,
@@ -243,6 +245,16 @@ export const Toolbar = ({
                   className="w-full px-4 py-3 text-sm text-text-main hover:bg-bg-bg2 transition-colors"
                 >
                   Excel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onExportPdf();
+                    setExportMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-3 text-sm text-text-main hover:bg-bg-bg2 transition-colors font-bold text-accent-aqua border-t border-border-app/50"
+                >
+                  PDF Report
                 </button>
               </div>
             )}
