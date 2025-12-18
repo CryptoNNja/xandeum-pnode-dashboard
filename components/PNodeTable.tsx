@@ -7,6 +7,7 @@ import { calculateNodeScore, getScoreColor } from "@/lib/scoring";
 import { useTheme } from "@/hooks/useTheme";
 import { getHealthStatus } from "@/lib/health";
 import type { PNode } from "@/lib/types";
+import { formatBytesAdaptive } from "@/lib/utils";
 
 interface PNodeTableProps {
   data: PNode[];
@@ -26,9 +27,6 @@ const PNodeTableComponent = ({
   const isLight = themeMounted ? theme === "light" : false;
 
   if (!data || !Array.isArray(data)) return null;
-
-  const formatBytes = (bytes: number) =>
-    `${Math.max(bytes, 0) / 1_000_000_000 < 0.1 ? (bytes / 1_000_000_000).toFixed(1) : (bytes / 1_000_000_000).toFixed(0)} GB`;
 
   const formatUptime = (seconds: number) => {
     if (seconds === 0) return "-";
@@ -234,14 +232,14 @@ const PNodeTableComponent = ({
                 </td>
 
                 <td className="p-4 text-sm text-accent font-semibold whitespace-nowrap align-middle">
-                  {formatBytes(ramUsed)}{" "}
+                  {formatBytesAdaptive(ramUsed)}{" "}
                   <span className="text-text-faint text-xs">
-                    / {formatBytes(ramTotal)}
+                    / {formatBytesAdaptive(ramTotal)}
                   </span>
                 </td>
 
                 <td className="p-4 text-sm font-semibold whitespace-nowrap align-middle" style={{ color: 'var(--accent)' }}>
-                  {formatBytes(committedBytes)}
+                  {formatBytesAdaptive(committedBytes)}
                 </td>
 
                 <td className="p-4 text-sm text-text-main font-mono whitespace-nowrap align-middle">

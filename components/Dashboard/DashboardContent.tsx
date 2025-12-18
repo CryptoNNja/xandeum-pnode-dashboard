@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Cpu, HardDrive, Zap, MapPin, Activity, ShieldCheck, Globe } from "lucide-react";
 import PNodeTable from "@/components/PNodeTable";
-import { GB_IN_BYTES, TB_IN_BYTES, getStatusColors, hexToRgba, getCountryFlag } from "@/lib/utils";
+import { GB_IN_BYTES, TB_IN_BYTES, getStatusColors, hexToRgba, getCountryFlag, formatBytesAdaptive } from "@/lib/utils";
 import type { PNode } from "@/lib/types";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
 import clsx from "clsx";
@@ -239,7 +239,7 @@ const DashboardContentComponent = ({
                       <HardDrive className="w-3 h-3" /> Disk
                     </span>
                     <span className="text-text-main">
-                      {(storage / TB_IN_BYTES).toFixed(1)}TB
+                      {formatBytesAdaptive(storage)}
                     </span>
                   </div>
                   <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
