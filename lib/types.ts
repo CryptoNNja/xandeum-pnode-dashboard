@@ -29,6 +29,7 @@ export interface PNode {
   lng?: number | null;
   city?: string | null;
   country?: string | null;
+  country_code?: string | null;
 }
 
 // Stats vides par défaut pour éviter les `undefined` / `NaN`

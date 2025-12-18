@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Cpu, HardDrive, Zap, MapPin, Activity, ShieldCheck, Globe } from "lucide-react";
 import PNodeTable from "@/components/PNodeTable";
-import { GB_IN_BYTES, TB_IN_BYTES, getStatusColors, hexToRgba } from "@/lib/utils";
+import { GB_IN_BYTES, TB_IN_BYTES, getStatusColors, hexToRgba, getCountryFlag } from "@/lib/utils";
 import type { PNode } from "@/lib/types";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
 import clsx from "clsx";
@@ -256,8 +256,18 @@ const DashboardContentComponent = ({
             <div className="pt-4 border-t border-border-app/50 flex items-center justify-between">
               <div className="flex items-center gap-2 text-text-soft">
                 <MapPin className="w-3.5 h-3.5 text-accent-aqua" />
-                <span className="text-[10px] font-bold truncate max-w-[120px]">
-                  {pnode.city ? `${pnode.city}, ${pnode.country || ""}` : "Unknown Origin"}
+                <span className="text-[10px] font-bold truncate max-w-[140px] flex items-center gap-1.5">
+                  {pnode.city ? (
+                    <>
+                      <span className="text-sm leading-none">{getCountryFlag(pnode.country_code)}</span>
+                      <span>{pnode.city}, {pnode.country}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-sm leading-none">🌍</span>
+                      <span>Unknown Location</span>
+                    </>
+                  )}
                 </span>
               </div>
               <div className="flex items-center gap-3">

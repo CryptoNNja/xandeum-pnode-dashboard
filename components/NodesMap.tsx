@@ -25,6 +25,7 @@ interface IpWhoResponse {
   longitude?: number;
   city?: string;
   country?: string;
+  country_code?: string;
 }
 
 const getMapStyles = (isLight: boolean) => `

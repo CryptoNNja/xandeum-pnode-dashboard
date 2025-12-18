@@ -184,4 +184,42 @@ export const getHealthLabel = (percentage: number) => {
     return "Critical";
 };
 
+/**
+ * Convert ISO 3166-1 alpha-2 country code to flag emoji
+ * @param countryCode - Two-letter country code (e.g., "US", "FR", "DE")
+ * @returns Flag emoji or globe emoji if invalid
+ *
+ * Examples:
+ * - getCountryFlag("US") => "🇺🇸"
+ * - getCountryFlag("FR") => "🇫🇷"
+ * - getCountryFlag("DE") => "🇩🇪"
+ */
+export const getCountryFlag = (countryCode?: string | null): string => {
+    if (!countryCode || countryCode.length !== 2) {
+        return "🌍"; // Globe emoji as fallback
+    }
+
+    // Convert country code to regional indicator symbols
+    // Regional indicators are Unicode characters from U+1F1E6 to U+1F1FF
+    // 'A' = 65 in ASCII, U+1F1E6 = 127462, difference = 127397
+    const codePoints = countryCode
+        .toUpperCase()
+        .split('')
+        .map(char => {
+            const code = char.charCodeAt(0);
+            // Ensure it's a valid letter A-Z
+            if (code >= 65 && code <= 90) {
+                return 127397 + code;
+            }
+            return null;
+        })
+        .filter((code): code is number => code !== null);
+
+    if (codePoints.length !== 2) {
+        return "🌍";
+    }
+
+    return String.fromCodePoint(...codePoints);
+};
+
 

@@ -25,6 +25,7 @@ export type Database = {
           lng: number | null;
           city: string | null;
           country: string | null;
+          country_code: string | null;
         };
         Insert: {
           ip: string;
@@ -36,6 +37,7 @@ export type Database = {
           lng?: number | null;
           city?: string | null;
           country?: string | null;
+          country_code?: string | null;
         };
         Update: {
           ip?: string;
@@ -47,6 +49,7 @@ export type Database = {
           lng?: number | null;
           city?: string | null;
           country?: string | null;
+          country_code?: string | null;
         };
         Relationships: [];
       };

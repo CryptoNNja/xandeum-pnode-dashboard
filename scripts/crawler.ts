@@ -128,11 +128,48 @@ async function getPodsWithStats(ip: string): Promise<PodWithStats[]> {
         { jsonrpc: "2.0", method: "get-pods-with-stats", id: 1 },
         { timeout: 3000 }
       );
-  
+
       return res.data?.result?.pods ?? [];
     } catch {
       return [];
     }
+}
+
+interface GeolocationData {
+    lat: number | null;
+    lng: number | null;
+    city: string | null;
+    country: string | null;
+    country_code: string | null;
+}
+
+async function getGeolocation(ip: string): Promise<GeolocationData | null> {
+    try {
+        const res = await axios.get(
+            `https://ipwho.is/${ip}?fields=success,latitude,longitude,city,country,country_code`,
+            {
+                timeout: 3000,
+                headers: {
+                    'user-agent': 'xandeum-dashboard/1.0',
+                    'accept': 'application/json'
+                }
+            }
+        );
+
+        if (res.data?.success) {
+            return {
+                lat: res.data.latitude || null,
+                lng: res.data.longitude || null,
+                city: res.data.city || null,
+                country: res.data.country || null,
+                country_code: res.data.country_code || null
+            };
+        }
+    } catch (error) {
+        // Silently fail for geolocation errors
+        console.log(`⚠️  Geolocation failed for ${ip}`);
+    }
+    return null;
 }
 
 export const main = async () => {
@@ -187,16 +224,23 @@ export const main = async () => {
     });
     console.log(`✅ Version discovery complete. Found ${versionMap.size} versions.`);
 
+    console.log('📊 Fetching stats and geolocation...');
     const statsPromises = allIps.map(ip => getStats(ip));
-    const allStats = await Promise.allSettled(statsPromises);
-    
+    const geoPromises = allIps.map(ip => getGeolocation(ip));
+
+    const [allStats, allGeo] = await Promise.all([
+        Promise.allSettled(statsPromises),
+        Promise.allSettled(geoPromises)
+    ]);
+
     const pnodesToUpsert: Database['public']['Tables']['pnodes']['Insert'][] = [];
     const historyToInsert: Database['public']['Tables']['pnode_history']['Insert'][] = [];
 
     for (let i = 0; i < allIps.length; i++) {
         const ip = allIps[i];
         const statsResult = allStats[i];
-        
+        const geoResult = allGeo[i];
+
         let status: PNodeStatus;
         let stats: PNodeStats;
 
@@ -219,11 +263,18 @@ export const main = async () => {
             stats = EMPTY_STATS;
         }
 
+        const geo = geoResult.status === 'fulfilled' ? geoResult.value : null;
+
         pnodesToUpsert.push({
             ip: ip,
             status: status,
             version: versionMap.get(ip) || "unknown",
-            stats: stats as unknown as Json, // We cast to Json, assuming PNodeStats is compatible
+            stats: stats as unknown as Json,
+            lat: geo?.lat,
+            lng: geo?.lng,
+            city: geo?.city,
+            country: geo?.country,
+            country_code: geo?.country_code,
             last_crawled_at: new Date().toISOString()
         });
     }
