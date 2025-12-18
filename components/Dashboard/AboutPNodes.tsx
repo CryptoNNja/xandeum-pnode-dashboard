@@ -34,7 +34,7 @@ const AboutPNodesComponent = ({
     {
       icon: Server,
       value: activeNodesCount.toString(),
-      label: "Active Nodes",
+      label: "Public Nodes",
       color: "#14F195", // Xandeum Green
     },
     {
