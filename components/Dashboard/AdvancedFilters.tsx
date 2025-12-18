@@ -9,7 +9,7 @@ import { getStatusColors } from "@/lib/utils";
 type AdvancedFiltersProps = {
   isOpen: boolean;
   onClose: () => void;
-  availableVersions: string[];
+  versionBuckets: { id: string; label: string; count: number; color: string }[];
   selectedVersions: string[];
   setSelectedVersions: (versions: string[]) => void;
   selectedHealthStatuses: string[];
@@ -27,7 +27,7 @@ const HEALTH_STATUSES = ["Excellent", "Good", "Warning", "Critical", "Private"];
 export const AdvancedFilters = ({
   isOpen,
   onClose,
-  availableVersions,
+  versionBuckets,
   selectedVersions,
   setSelectedVersions,
   selectedHealthStatuses,
@@ -155,27 +155,41 @@ export const AdvancedFilters = ({
               <div className="space-y-5">
                 <div className="flex items-center gap-2">
                   <Zap className="w-3.5 h-3.5 text-text-faint" />
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-text-faint font-bold">Client Versions</p>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-text-faint font-bold">Network Releases</p>
                 </div>
-                <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
-                  {availableVersions.length > 0 ? availableVersions.map((version) => {
-                    const isSelected = selectedVersions.includes(version);
+                <div className="flex flex-col gap-2">
+                  {versionBuckets.length > 0 ? versionBuckets.map((bucket) => {
+                    const isSelected = selectedVersions.includes(bucket.id);
                     return (
                       <button
-                        key={version}
-                        onClick={() => toggleVersion(version)}
+                        key={bucket.id}
+                        onClick={() => toggleVersion(bucket.id)}
                         className={`
-                          px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold transition-all border
+                          w-full px-4 py-2.5 rounded-xl text-[11px] font-bold transition-all border flex items-center justify-between
                           ${isSelected 
-                            ? "bg-accent-blue/20 border-accent-blue text-accent-blue shadow-lg scale-[1.02] ring-1 ring-accent-blue/30" 
-                            : "bg-bg-bg border-border-app text-text-soft hover:border-accent-aqua/50"}
+                            ? "shadow-lg scale-[1.02] ring-1" 
+                            : "bg-bg-bg border-border-app text-text-soft hover:border-text-faint"}
                         `}
+                        style={{
+                          backgroundColor: isSelected ? `${bucket.color}20` : undefined,
+                          borderColor: isSelected ? bucket.color : undefined,
+                          color: isSelected ? bucket.color : undefined,
+                          // @ts-ignore
+                          "--ring-color": bucket.color
+                        }}
                       >
-                        {version}
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: bucket.color }} />
+                          <span>{bucket.label}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] opacity-60 font-mono">{bucket.count} nodes</span>
+                          {isSelected && <Check className="w-3.5 h-3.5" />}
+                        </div>
                       </button>
                     );
                   }) : (
-                    <p className="text-[10px] text-text-faint italic">No versions detected</p>
+                    <p className="text-[10px] text-text-faint italic px-2">No versions detected</p>
                   )}
                 </div>
               </div>

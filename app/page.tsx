@@ -205,7 +205,7 @@ export default function Page() {
           <AdvancedFilters
             isOpen={isAdvancedFilterOpen}
             onClose={() => setIsAdvancedFilterOpen(false)}
-            availableVersions={availableVersions}
+            versionBuckets={versionChart.entries}
             selectedVersions={selectedVersions}
             setSelectedVersions={setSelectedVersions}
             selectedHealthStatuses={selectedHealthStatuses}

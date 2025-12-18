@@ -206,7 +206,13 @@ export const usePnodeDashboard = (theme?: string) => {
       // Basic visibility
       if (nodeFilter !== "all" && (nodeFilter === "public" ? p.status !== "active" : p.status !== "gossip_only")) return;
       // Versions
-      if (selectedVersions.length > 0 && (!p.version || !selectedVersions.includes(p.version))) return;
+      if (selectedVersions.length > 0) {
+        const matchesVersion = selectedVersions.some(vId => 
+          p.version?.toLowerCase().startsWith(vId.toLowerCase()) || 
+          (vId === "other" && (!p.version || p.version.trim() === ""))
+        );
+        if (!matchesVersion) return;
+      }
       // Health
       if (selectedHealthStatuses.length > 0 && !selectedHealthStatuses.includes(p._healthStatus)) return;
       // CPU (instant feedback)
@@ -243,7 +249,12 @@ export const usePnodeDashboard = (theme?: string) => {
 
     // Advanced: Versions
     if (selectedVersions.length > 0) {
-      result = result.filter(p => p.version && selectedVersions.includes(p.version));
+      result = result.filter(p => 
+        selectedVersions.some(vId => 
+          p.version?.toLowerCase().startsWith(vId.toLowerCase()) || 
+          (vId === "other" && (!p.version || p.version.trim() === ""))
+        )
+      );
     }
 
     // Advanced: Health Status
