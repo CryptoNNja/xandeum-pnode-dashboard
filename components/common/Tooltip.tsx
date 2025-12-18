@@ -3,6 +3,7 @@
 import React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { motion } from "framer-motion";
+import { useTheme } from "@/hooks/useTheme";
 
 type TooltipProps = {
   children: React.ReactNode;
@@ -25,6 +26,9 @@ export const Tooltip = ({
   className,
   delayDuration = 150,
 }: TooltipProps) => {
+  const { theme } = useTheme();
+  const isLight = theme === "light";
+
   return (
     <TooltipPrimitive.Root delayDuration={delayDuration}>
       <TooltipPrimitive.Trigger asChild>
@@ -40,21 +44,26 @@ export const Tooltip = ({
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: side === "top" ? 2 : -2 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.1, ease: "easeOut" }}
-            className={`
-              max-w-xs px-3 py-2
-              bg-bg-card border border-border-app rounded-xl 
-              shadow-2xl
-              text-text-main text-[12px] font-semibold leading-relaxed
-              theme-transition
-              ${className || ""}
-            `}
+            transition={{ duration: 0.12, ease: "easeOut" }}
+            className={`max-w-xs px-4 py-3 rounded-xl shadow-2xl ${className || ""}`}
+            style={{
+              backgroundColor: isLight ? "#ffffff" : "#1a1f3a",
+              border: `1.5px solid ${isLight ? "rgba(123, 63, 242, 0.25)" : "rgba(123, 63, 242, 0.4)"}`,
+              boxShadow: isLight 
+                ? "0 10px 40px -10px rgba(123, 63, 242, 0.15), 0 4px 12px -2px rgba(0, 0, 0, 0.08)"
+                : "0 10px 40px -10px rgba(123, 63, 242, 0.3), 0 4px 12px -2px rgba(0, 0, 0, 0.4)",
+            }}
           >
-            {content}
+            <p 
+              className="text-[13px] font-medium leading-relaxed"
+              style={{ color: isLight ? "#1e293b" : "#e2e8f0" }}
+            >
+              {content}
+            </p>
             <TooltipPrimitive.Arrow 
-              className="fill-border-app" 
               width={12} 
-              height={6} 
+              height={6}
+              style={{ fill: isLight ? "#ffffff" : "#1a1f3a" }}
             />
           </motion.div>
         </TooltipPrimitive.Content>

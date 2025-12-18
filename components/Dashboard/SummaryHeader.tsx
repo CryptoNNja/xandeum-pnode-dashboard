@@ -135,7 +135,7 @@ export const SummaryHeader = ({
               <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
                 Network Health
               </p>
-              <InfoTooltip content="Global stability score based on node uptime, version diversity, and resource availability." />
+              <InfoTooltip content="Overall network reliability score. A healthy pNode network ensures Xandeum can scale Solana's state without bottlenecks." />
             </div>
             <p className="text-sm text-text-faint">Overall network score</p>
           </div>

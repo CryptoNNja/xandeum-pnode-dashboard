@@ -175,7 +175,7 @@ export const KpiCards = ({
               <div>
                 <div className="flex items-center gap-2">
                   <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Avg RAM Usage</p>
-                  <InfoTooltip content="Average memory consumption. Sufficient RAM is vital for pNodes to handle high transaction throughput." />
+                  <InfoTooltip content="Average memory consumption across pNodes. Adequate RAM enables efficient data caching for Xandeum's storage layer operations." />
                 </div>
                 <p className="text-sm text-text-faint">Average memory load</p>
                 <div className="flex items-baseline gap-2 mt-4">

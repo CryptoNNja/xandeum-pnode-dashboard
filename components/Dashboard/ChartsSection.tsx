@@ -52,7 +52,7 @@ const ChartsSectionComponent = ({
               <Cpu className="w-4 h-4 text-[#10B981]" strokeWidth={2.5} />
               <h3 className="text-xs font-semibold text-[#10B981]">CPU Load</h3>
             </div>
-            <InfoTooltip content="Distribution of pNodes by CPU utilization buckets. Helps identify bottlenecks in processing power." />
+            <InfoTooltip content="Processing load distribution across pNodes. Low CPU usage ensures efficient storage request handling for Xandeum's network." />
           </div>
           <div className="h-[260px] w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
@@ -81,7 +81,7 @@ const ChartsSectionComponent = ({
               <Package className="w-4 h-4 text-[#7B3FF2]" strokeWidth={2.5} />
               <h3 className="text-xs font-semibold text-[#7B3FF2]">Storage</h3>
             </div>
-            <InfoTooltip content="Distribution of pNodes by storage capacity. Shows the range of storage sizes available across the network." />
+            <InfoTooltip content="Storage capacity committed to Xandeum's decentralized storage layer. More capacity enables greater scalability for Solana dApps." />
           </div>
           <div className="h-[260px] w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
