@@ -225,11 +225,14 @@ export const usePnodeDashboard = (theme?: string) => {
       if (nodeFilter !== "all" && (nodeFilter === "public" ? p.status !== "active" : p.status !== "gossip_only")) return;
       // Versions
       if (selectedVersions.length > 0) {
-        const matchesVersion = selectedVersions.some(vId => 
-          p.version?.toLowerCase().startsWith(vId.toLowerCase()) || 
-          (vId === "other" && (!p.version || p.version.trim() === ""))
-        );
-        if (!matchesVersion) return;
+        const trimmed = p.version?.trim();
+        let bucketId = "other";
+        if (trimmed && !/^unknown$/i.test(trimmed)) {
+          const normalized = trimmed.replace(/^V/, "v").startsWith("v") ? trimmed.replace(/^V/, "v") : `v${trimmed}`;
+          const match = normalized.match(/^v(\d+)\.(\d+)/i);
+          if (match) bucketId = `v${match[1]}.${match[2]}`;
+        }
+        if (!selectedVersions.includes(bucketId)) return;
       }
       // Health
       if (selectedHealthStatuses.length > 0 && !selectedHealthStatuses.includes(p._healthStatus)) return;
@@ -267,12 +270,16 @@ export const usePnodeDashboard = (theme?: string) => {
 
     // Advanced: Versions
     if (selectedVersions.length > 0) {
-      result = result.filter(p => 
-        selectedVersions.some(vId => 
-          p.version?.toLowerCase().startsWith(vId.toLowerCase()) || 
-          (vId === "other" && (!p.version || p.version.trim() === ""))
-        )
-      );
+      result = result.filter(p => {
+        const trimmed = p.version?.trim();
+        let bucketId = "other";
+        if (trimmed && !/^unknown$/i.test(trimmed)) {
+          const normalized = trimmed.replace(/^V/, "v").startsWith("v") ? trimmed.replace(/^V/, "v") : `v${trimmed}`;
+          const match = normalized.match(/^v(\d+)\.(\d+)/i);
+          if (match) bucketId = `v${match[1]}.${match[2]}`;
+        }
+        return selectedVersions.includes(bucketId);
+      });
     }
 
     // Advanced: Health Status
