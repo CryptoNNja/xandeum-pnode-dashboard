@@ -111,7 +111,6 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
   const [geoJsonError, setGeoJsonError] = useState<string | null>(null);
   const [geoLocateErrorCount, setGeoLocateErrorCount] = useState(0);
   const [mapKey, setMapKey] = useState(0);
-  const [calculatedWidth, setCalculatedWidth] = useState<number | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const mapDebugEnabled =
@@ -158,28 +157,6 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
       });
   }, []);
 
-
-  // Calculate width from window size (accounting for max-width and padding)
-  useEffect(() => {
-    const calculateWidth = () => {
-      if (typeof window === "undefined") return;
-      
-      // Calculate based on max-w-7xl (1280px) with px-6 (24px padding each side)
-      const maxWidth = 1280; // max-w-7xl = 80rem = 1280px
-      const padding = 48; // 24px * 2
-      const windowWidth = window.innerWidth;
-      const availableWidth = Math.min(windowWidth - padding, maxWidth - padding);
-      
-      setCalculatedWidth(availableWidth);
-      if (mapDebugEnabled) {
-        console.log('[Map Debug] Calculated width:', availableWidth, 'px (window:', windowWidth, 'px)');
-      }
-    };
-
-    calculateWidth();
-    window.addEventListener('resize', calculateWidth);
-    return () => window.removeEventListener('resize', calculateWidth);
-  }, [mapDebugEnabled]);
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -386,17 +363,12 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
   return (
     <div 
       ref={wrapperRef}
-      className="relative w-full rounded-xl border shadow-2xl"
+      className="relative w-full rounded-xl border shadow-2xl overflow-hidden"
       style={{
         height: '650px',
-        width: calculatedWidth ? `${calculatedWidth}px` : '100%',
-        minWidth: calculatedWidth ? `${calculatedWidth}px` : '100%',
-        maxWidth: '100%',
-        display: 'block',
-        boxSizing: 'border-box',
+        width: '100%',
         borderColor: isLight ? 'rgba(0, 0, 0, 0.12)' : '#2D3454',
         background: isLight ? '#f5f5f7' : '#020204',
-        overflow: 'hidden',
         position: 'relative',
       }}
     >
@@ -442,8 +414,7 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
         scrollWheelZoom={true}
         style={{ 
           height: "650px", 
-          width: calculatedWidth ? `${calculatedWidth}px` : "100%",
-          minWidth: calculatedWidth ? `${calculatedWidth}px` : "100%",
+          width: "100%",
           background: "transparent"
         }}
         maxBounds={[[-90, -180], [90, 180]]}

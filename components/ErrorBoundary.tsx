@@ -40,6 +40,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       console.error('Component Stack:', errorInfo.componentStack);
     }
 
+    // Here you could also send to error tracking service (Sentry, etc.)
+    // Example: logErrorToService(error, errorInfo);
+
     this.setState({
       error,
       errorInfo,
