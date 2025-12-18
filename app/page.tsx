@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import Image from "next/image";
 import { Search, List, LayoutGrid, MapPin, Download, RefreshCw, Settings, Loader2, CheckCircle, ChevronDown, Check } from "lucide-react";
 import clsx from "clsx";
 import EnhancedHero from "@/components/EnhancedHero";
@@ -245,11 +246,17 @@ export default function Page() {
             <p className="text-text-soft text-xs">Official pNode Analytics Dashboard v1.0</p>
           </div>
           <div className="flex items-center gap-3 px-5 py-2.5 rounded-full border border-border-app bg-bg-card shadow-sm">
-            <div className="w-8 h-8 rounded-full bg-accent-aqua/10 flex items-center justify-center overflow-hidden">
-              <span className="text-xs font-bold text-accent-aqua">NX</span>
+            <div className="w-8 h-8 rounded-full border border-accent-aqua/30 flex items-center justify-center overflow-hidden">
+              <Image
+                src="/avatar-ninja.png"
+                alt="Ninja0x Avatar"
+                width={32}
+                height={32}
+                className="object-cover"
+              />
             </div>
             <p className="text-xs text-text-soft">
-              Coded with <span className="text-red-400">❤️</span> by <span className="font-semibold text-text-main">Ninja0x</span>
+              Built with <span className="text-red-400">❤️</span> by <span className="font-semibold text-text-main">Ninja0x</span>
             </p>
           </div>
         </div>
