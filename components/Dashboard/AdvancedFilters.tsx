@@ -218,10 +218,19 @@ export const AdvancedFilters = ({
                     step={5}
                   >
                     <Slider.Track className="bg-text-main/20 relative grow rounded-full h-[6px] overflow-hidden border border-white/5">
-                      <Slider.Range className="absolute bg-gradient-to-r from-accent-aqua to-accent-blue rounded-full h-full" />
+                      <Slider.Range 
+                        className="absolute rounded-full h-full transition-all duration-300" 
+                        style={{ 
+                          background: `linear-gradient(to right, var(--accent-aqua), #F59E0B, #EF4444)` 
+                        }}
+                      />
                     </Slider.Track>
                     <Slider.Thumb
-                      className="block w-5 h-5 bg-white border-2 border-accent-aqua shadow-xl rounded-full hover:scale-125 transition-transform focus:outline-none focus:ring-4 focus:ring-accent-aqua/30 cursor-grab active:cursor-grabbing z-10"
+                      className="block w-5 h-5 bg-white border-2 shadow-xl rounded-full hover:scale-125 transition-all focus:outline-none focus:ring-4 cursor-grab active:cursor-grabbing z-10"
+                      style={{ 
+                        borderColor: minCpu > 70 ? '#EF4444' : minCpu > 40 ? '#F59E0B' : 'var(--accent-aqua)',
+                        boxShadow: `0 0 15px ${minCpu > 70 ? '#EF4444' : minCpu > 40 ? '#F59E0B' : 'var(--accent-aqua)'}66`
+                      }}
                       aria-label="Min CPU"
                     />
                   </Slider.Root>
@@ -262,7 +271,11 @@ export const AdvancedFilters = ({
                       <Slider.Range className="absolute bg-gradient-to-r from-accent-purple to-pink-500 rounded-full h-full" />
                     </Slider.Track>
                     <Slider.Thumb
-                      className="block w-5 h-5 bg-white border-2 border-accent-purple shadow-xl rounded-full hover:scale-125 transition-transform focus:outline-none focus:ring-4 focus:ring-accent-purple/30 cursor-grab active:cursor-grabbing z-10"
+                      className="block w-5 h-5 bg-white border-2 shadow-xl rounded-full hover:scale-125 transition-all focus:outline-none focus:ring-4 cursor-grab active:cursor-grabbing z-10"
+                      style={{ 
+                        borderColor: minStorage > 80 ? '#ec4899' : minStorage > 40 ? '#a855f7' : 'var(--accent-purple)',
+                        boxShadow: `0 0 15px ${minStorage > 80 ? '#ec4899' : minStorage > 40 ? '#a855f7' : 'var(--accent-purple)'}66`
+                      }}
                       aria-label="Min Storage"
                     />
                   </Slider.Root>
