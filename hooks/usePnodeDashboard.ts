@@ -614,25 +614,11 @@ export const usePnodeDashboard = (theme?: string) => {
     cpuDistribution,
     versionChart,
     healthDistribution: {
-      excellent: allPnodes.filter(p => {
-        const isTarget = nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
-        return isTarget && p._healthStatus === "Excellent";
-      }).length,
-      good: allPnodes.filter(p => {
-        const isTarget = nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
-        return isTarget && p._healthStatus === "Good";
-      }).length,
-      warning: allPnodes.filter(p => {
-        const isTarget = nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
-        return isTarget && p._healthStatus === "Warning";
-      }).length,
-      critical: allPnodes.filter(p => {
-        const isTarget = nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
-        return isTarget && p._healthStatus === "Critical";
-      }).length,
-      total: allPnodes.filter(p => {
-        return nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
-      }).length,
+      excellent: allPnodes.filter(p => p.status === "active" && p._healthStatus === "Excellent").length,
+      good: allPnodes.filter(p => p.status === "active" && p._healthStatus === "Good").length,
+      warning: allPnodes.filter(p => p.status === "active" && p._healthStatus === "Warning").length,
+      critical: allPnodes.filter(p => p.status === "active" && p._healthStatus === "Critical").length,
+      total: allPnodes.filter(p => p.status === "active").length,
     },
     exportData,
     exportCsv,

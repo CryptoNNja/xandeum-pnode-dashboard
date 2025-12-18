@@ -162,8 +162,6 @@ export default function Page() {
         <HealthDistribution
           healthDistribution={healthDistribution}
           totalNodes={pnodes.length}
-          nodeFilter={nodeFilter}
-          setNodeFilter={setNodeFilter}
         />
 
         {/* CHARTS SECTION */}
