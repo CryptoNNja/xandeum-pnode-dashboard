@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/lib/theme";
 import ThemeBody from "./ThemeBody";
 import { ToastProvider } from "@/components/common/Toast";
 import { TooltipProvider } from "@/components/common/Tooltip";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export const metadata: Metadata = {
   title: "Xandeum P-Node Analytics",
@@ -20,11 +21,13 @@ export default function RootLayout({
     <html lang="en">
       <ThemeProvider>
         <ThemeBody>
-          <ToastProvider>
-            <TooltipProvider>
-              {children}
-            </TooltipProvider>
-          </ToastProvider>
+          <ErrorBoundary>
+            <ToastProvider>
+              <TooltipProvider>
+                {children}
+              </TooltipProvider>
+            </ToastProvider>
+          </ErrorBoundary>
         </ThemeBody>
       </ThemeProvider>
     </html>

@@ -15,10 +15,10 @@ describe("computeVersionOverview", () => {
   it("should return correct overview for an empty list of nodes", () => {
     const overview = computeVersionOverview([]);
     expect(overview.total).toBe(0);
-    expect(overview.buckets.length).toBeGreaterThan(0); // Should still have defined buckets
+    expect(overview.buckets.length).toBe(0); // No nodes = no buckets (filtered out)
     expect(overview.latestPercentage).toBe(0);
     expect(overview.health.tone).toBe("critical");
-    expect(overview.health.description).toContain("0% on v0.7");
+    expect(overview.health.description).toContain("0% on latest"); // "latest" when no version detected
   });
 
   it("maps nodes into buckets with detail breakdowns and correct health summary", () => {
@@ -89,8 +89,10 @@ describe("computeVersionOverview", () => {
     expect(byId["v0.4"].count).toBe(1);
     expect(byId["v0.5"].count).toBe(1);
     expect(byId["other"].count).toBe(1);
-    expect(overview.latestPercentage).toBe(0);
-    expect(overview.health.tone).toBe("critical");
+    // v0.5 is the highest version detected, so it's "latest" with 1/3 = 33.33%
+    expect(overview.latestPercentage).toBeCloseTo(33.33, 1);
+    expect(overview.health.tone).toBe("critical"); // < 50% is critical
+    expect(overview.defaultBucketId).toBe("v0.5"); // Highest version becomes default
   });
 });
 

@@ -58,11 +58,37 @@ cd xandeum-pnode-dashboard
 # Install dependencies
 npm install
 
+# Configure environment variables
+cp .env.example .env.local
+# Edit .env.local with your actual Supabase credentials
+
 # Start development server
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
+
+### 🔐 Environment Setup
+
+1. **Copy the example environment file:**
+   ```bash
+   cp .env.example .env.local
+   ```
+
+2. **Get your Supabase credentials:**
+   - Go to [Supabase Dashboard](https://supabase.com/dashboard)
+   - Select your project → Settings → API
+   - Copy the `URL` and `anon key`
+
+3. **Update `.env.local` with your values:**
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+   BACKFILL_SECRET=generate_random_secret_with_openssl_rand_hex_32
+   ```
+
+⚠️ **Security Notice:** Never commit `.env.local` to version control. This file is already in `.gitignore`.
 
 ## 🏗️ Project Structure
 

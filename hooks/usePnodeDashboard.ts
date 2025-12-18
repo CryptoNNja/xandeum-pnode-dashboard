@@ -151,7 +151,26 @@ export const usePnodeDashboard = (theme?: string) => {
     }
   }, []);
 
-  // Real-time subscription
+  // Helper to process a single node (calculate score and health)
+  const processNode = useCallback((node: PNode) => {
+    const score = calculateNodeScore(node);
+    let healthStatus = "Private";
+
+    if (node.status === "active") {
+      if (score >= 90) healthStatus = "Excellent";
+      else if (score >= 70) healthStatus = "Good";
+      else if (score >= 40) healthStatus = "Warning";
+      else healthStatus = "Critical";
+    }
+
+    return {
+      ...node,
+      _score: score,
+      _healthStatus: healthStatus
+    };
+  }, []);
+
+  // Real-time subscription with incremental updates
   useEffect(() => {
     loadData();
 
@@ -160,13 +179,45 @@ export const usePnodeDashboard = (theme?: string) => {
         .on(
             'postgres_changes',
             {
-                event: '*',
+                event: 'INSERT',
                 schema: 'public',
                 table: 'pnodes'
             },
-            () => {
-                // For simplicity and correctness of derived states, refetch all on change
-                loadData();
+            (payload) => {
+                // Add new node incrementally
+                const newNode = processNode(payload.new as PNode);
+                setAllPnodes(prev => [...prev, newNode]);
+                setLastUpdate(new Date());
+            }
+        )
+        .on(
+            'postgres_changes',
+            {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'pnodes'
+            },
+            (payload) => {
+                // Update existing node incrementally
+                const updatedNode = processNode(payload.new as PNode);
+                setAllPnodes(prev => prev.map(n =>
+                    n.ip === updatedNode.ip ? updatedNode : n
+                ));
+                setLastUpdate(new Date());
+            }
+        )
+        .on(
+            'postgres_changes',
+            {
+                event: 'DELETE',
+                schema: 'public',
+                table: 'pnodes'
+            },
+            (payload) => {
+                // Remove deleted node incrementally
+                const deletedIp = (payload.old as PNode).ip;
+                setAllPnodes(prev => prev.filter(n => n.ip !== deletedIp));
+                setLastUpdate(new Date());
             }
         )
         .subscribe();
@@ -174,7 +225,7 @@ export const usePnodeDashboard = (theme?: string) => {
     return () => {
         supabase.removeChannel(channel);
     };
-  }, [loadData]);
+  }, [loadData, processNode]);
   
   useEffect(() => {
     const ms =
