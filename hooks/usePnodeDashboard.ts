@@ -62,11 +62,29 @@ export const usePnodeDashboard = (theme?: string) => {
   const [selectedVersions, setSelectedVersions] = useState<string[]>([]);
   const [selectedHealthStatuses, setSelectedHealthStatuses] = useState<string[]>([]);
   const [minCpu, setMinCpu] = useState<number>(0);
-  const [minStorage, setMinStorage] = useState<number>(0); // in TB
+  const [minStorage, setMinStorage] = useState<number>(0); // 0-100 for non-linear scale
 
-  // Debounce resource filters to keep UI responsive
+  // Max storage in the network for auto-calibration
+  const maxStorageBytes = useMemo(() => {
+    if (allPnodes.length === 0) return 10 * TB_IN_BYTES;
+    const max = Math.max(...allPnodes.map(p => p.stats?.file_size ?? 0));
+    return Math.max(max, TB_IN_BYTES); // At least 1TB for scale
+  }, [allPnodes]);
+
+  // Convert 0-100 slider value to actual bytes (non-linear)
+  // 0-50 maps to 0-1TB, 50-100 maps to 1TB-Max
+  const sliderToBytes = useCallback((val: number) => {
+    if (val === 0) return 0;
+    if (val <= 50) {
+      return (val / 50) * TB_IN_BYTES;
+    }
+    const ratio = (val - 50) / 50;
+    return TB_IN_BYTES + ratio * (maxStorageBytes - TB_IN_BYTES);
+  }, [maxStorageBytes]);
+
+  const currentMinStorageBytes = useMemo(() => sliderToBytes(minStorage), [minStorage, sliderToBytes]);
   const [debouncedMinCpu] = useDebounce(minCpu, 150);
-  const [debouncedMinStorage] = useDebounce(minStorage, 150);
+  const [debouncedMinStorageBytes] = useDebounce(currentMinStorageBytes, 150);
 
   // Sorting
   const [sortKey, setSortKey] = useState<SortKey>("health");
@@ -217,13 +235,13 @@ export const usePnodeDashboard = (theme?: string) => {
       if (selectedHealthStatuses.length > 0 && !selectedHealthStatuses.includes(p._healthStatus)) return;
       // CPU (instant feedback)
       if (minCpu > 0 && (p.stats?.cpu_percent ?? 0) < minCpu) return;
-      // Storage (instant feedback)
-      if (minStorage > 0 && (p.stats?.file_size ?? 0) < minStorage * TB_IN_BYTES) return;
+      // Storage (instant feedback using bytes)
+      if (minStorage > 0 && (p.stats?.file_size ?? 0) < currentMinStorageBytes) return;
       
       count++;
     });
     return count;
-  }, [allPnodes, nodeFilter, selectedVersions, selectedHealthStatuses, minCpu, minStorage]);
+  }, [allPnodes, nodeFilter, selectedVersions, selectedHealthStatuses, minCpu, minStorage, currentMinStorageBytes]);
   
   // Filtering and Sorting logic (Frontend)
   const filteredAndSortedPNodes = useMemo(() => {
@@ -267,9 +285,9 @@ export const usePnodeDashboard = (theme?: string) => {
       result = result.filter(p => (p.stats?.cpu_percent ?? 0) >= debouncedMinCpu);
     }
 
-    // Advanced: Min Storage (TB)
-    if (debouncedMinStorage > 0) {
-      result = result.filter(p => (p.stats?.file_size ?? 0) >= debouncedMinStorage * TB_IN_BYTES);
+    // Advanced: Min Storage (using debounced bytes)
+    if (debouncedMinStorageBytes > 0) {
+      result = result.filter(p => (p.stats?.file_size ?? 0) >= debouncedMinStorageBytes);
     }
 
     // Sort
@@ -300,7 +318,7 @@ export const usePnodeDashboard = (theme?: string) => {
     });
 
     return result;
-  }, [allPnodes, debouncedSearchTerm, nodeFilter, selectedVersions, selectedHealthStatuses, debouncedMinCpu, debouncedMinStorage, sortKey, sortDirection]);
+  }, [allPnodes, debouncedSearchTerm, nodeFilter, selectedVersions, selectedHealthStatuses, debouncedMinCpu, debouncedMinStorageBytes, sortKey, sortDirection]);
 
   // Derived global states (always based on allPnodes)
   const activeNodes = useMemo(() => allPnodes.filter((pnode) => pnode.status === "active"), [allPnodes]);
@@ -594,6 +612,8 @@ export const usePnodeDashboard = (theme?: string) => {
     setMinCpu,
     minStorage,
     setMinStorage,
+    maxStorageBytes,
+    sliderToBytes,
     resetFilters,
     availableVersions,
     autoRefreshOption,
@@ -625,11 +645,25 @@ export const usePnodeDashboard = (theme?: string) => {
     cpuDistribution,
     versionChart,
     healthDistribution: {
-      excellent: allPnodes.filter(p => p.status === "active" && p._healthStatus === "Excellent").length,
-      good: allPnodes.filter(p => p.status === "active" && p._healthStatus === "Good").length,
-      warning: allPnodes.filter(p => p.status === "active" && p._healthStatus === "Warning").length,
-      critical: allPnodes.filter(p => p.status === "active" && p._healthStatus === "Critical").length,
-      total: allPnodes.filter(p => p.status === "active").length,
+      excellent: allPnodes.filter(p => {
+        const isTarget = nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
+        return isTarget && p._healthStatus === "Excellent";
+      }).length,
+      good: allPnodes.filter(p => {
+        const isTarget = nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
+        return isTarget && p._healthStatus === "Good";
+      }).length,
+      warning: allPnodes.filter(p => {
+        const isTarget = nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
+        return isTarget && p._healthStatus === "Warning";
+      }).length,
+      critical: allPnodes.filter(p => {
+        const isTarget = nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
+        return isTarget && p._healthStatus === "Critical";
+      }).length,
+      total: allPnodes.filter(p => {
+        return nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
+      }).length,
     },
     exportData,
     exportCsv,

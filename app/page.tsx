@@ -55,6 +55,8 @@ export default function Page() {
     setMinCpu,
     minStorage,
     setMinStorage,
+    maxStorageBytes,
+    sliderToBytes,
     resetFilters,
     availableVersions,
     autoRefreshOption,
@@ -214,6 +216,8 @@ export default function Page() {
             setMinCpu={setMinCpu}
             minStorage={minStorage}
             setMinStorage={setMinStorage}
+            maxStorageBytes={maxStorageBytes}
+            sliderToBytes={sliderToBytes}
             onReset={resetFilters}
             resultsCount={quickResultsCount}
           />

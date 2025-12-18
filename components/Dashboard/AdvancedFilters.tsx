@@ -18,6 +18,8 @@ type AdvancedFiltersProps = {
   setMinCpu: (val: number) => void;
   minStorage: number;
   setMinStorage: (val: number) => void;
+  maxStorageBytes: number;
+  sliderToBytes: (val: number) => number;
   onReset: () => void;
   resultsCount: number;
 };
@@ -36,6 +38,8 @@ export const AdvancedFilters = ({
   setMinCpu,
   minStorage,
   setMinStorage,
+  maxStorageBytes,
+  sliderToBytes,
   onReset,
   resultsCount,
 }: AdvancedFiltersProps) => {
@@ -236,7 +240,14 @@ export const AdvancedFilters = ({
                     <p className="text-[11px] uppercase tracking-[0.2em] text-text-faint font-bold">Min Storage</p>
                   </div>
                   <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md ${minStorage > 0 ? 'bg-accent-purple/20 text-accent-purple ring-1 ring-accent-purple/50' : 'bg-text-main/5 text-text-faint'}`}>
-                    {minStorage} TB
+                    {(() => {
+                      const bytes = sliderToBytes(minStorage);
+                      if (bytes === 0) return "Any";
+                      if (bytes < 1024 * 1024 * 1024 * 1024) {
+                        return `${(bytes / (1024 * 1024 * 1024)).toFixed(0)} GB`;
+                      }
+                      return `${(bytes / (1024 * 1024 * 1024 * 1024)).toFixed(1)} TB`;
+                    })()}
                   </span>
                 </div>
                 <div className="px-2">
@@ -244,8 +255,8 @@ export const AdvancedFilters = ({
                     className="relative flex items-center select-none touch-none w-full h-5 cursor-pointer group"
                     value={[minStorage]}
                     onValueChange={([val]) => setMinStorage(val)}
-                    max={10}
-                    step={0.5}
+                    max={100}
+                    step={1}
                   >
                     <Slider.Track className="bg-text-main/20 relative grow rounded-full h-[6px] overflow-hidden border border-white/5">
                       <Slider.Range className="absolute bg-gradient-to-r from-accent-purple to-pink-500 rounded-full h-full" />
@@ -256,8 +267,18 @@ export const AdvancedFilters = ({
                     />
                   </Slider.Root>
                   <div className="flex justify-between mt-3 text-[9px] text-text-faint font-mono uppercase tracking-tighter">
-                    <span>Low (0 TB)</span>
-                    <span>High (10 TB)</span>
+                    <div className="flex flex-col items-start gap-1">
+                      <span>0 GB</span>
+                      <span className="opacity-40 text-[7px]">Precision Range</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1 opacity-30">
+                      <span className="w-px h-2 bg-text-soft" />
+                      <span>1 TB</span>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <span>{(maxStorageBytes / (1024 * 1024 * 1024 * 1024)).toFixed(1)} TB</span>
+                      <span className="opacity-40 text-[7px]">Network Max</span>
+                    </div>
                   </div>
                 </div>
               </div>
