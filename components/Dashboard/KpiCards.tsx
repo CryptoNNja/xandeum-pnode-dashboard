@@ -630,9 +630,9 @@ export const KpiCards = ({
               <div>
                 <div className="flex items-center gap-2">
                   <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Network Growth</p>
-                  <InfoTooltip content="Percentage change in total node count over the last 7 days. Positive growth indicates expanding network adoption." />
+                  <InfoTooltip content="Percentage change in active node count based on recent historical snapshots. Calculated from daily network snapshots (improves accuracy over 7+ days)." />
                 </div>
-                <p className="text-sm text-text-faint">7-day node growth rate</p>
+                <p className="text-sm text-text-faint">Recent node growth rate</p>
                 <div className="flex items-baseline gap-2 mt-4">
                   <span 
                     className="text-4xl font-bold tracking-tight"
@@ -708,9 +708,9 @@ export const KpiCards = ({
               <div>
                 <div className="flex items-center gap-2">
                   <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Storage Growth</p>
-                  <InfoTooltip content="Percentage increase in total pages stored over the last 7 days. Indicates actual network utilization and data growth." />
+                  <InfoTooltip content="Percentage increase in total pages stored based on recent historical snapshots. Indicates actual network utilization and data growth trends." />
                 </div>
-                <p className="text-sm text-text-faint">7-day data growth rate</p>
+                <p className="text-sm text-text-faint">Recent data growth rate</p>
                 <div className="flex items-baseline gap-2 mt-4">
                   <span 
                     className="text-4xl font-bold tracking-tight"
