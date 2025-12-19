@@ -371,6 +371,11 @@ export const usePnodeDashboard = (theme?: string) => {
         if (cpuPercent >= 90) generated.push({ ip: pnode.ip, severity: "critical", type: "CPU Overload", message: `Load at ${cpuPercent.toFixed(1)}%`, value: `${cpuPercent.toFixed(1)}%` });
         else if (cpuPercent >= 75) generated.push({ ip: pnode.ip, severity: "warning", type: "CPU Pressure", message: `Load at ${cpuPercent.toFixed(1)}%`, value: `${cpuPercent.toFixed(1)}%` });
 
+        const uptimeSeconds = Number.isFinite(stats.uptime) ? stats.uptime : 0;
+        const uptimeHours = uptimeSeconds / 3600;
+        if (uptimeHours < 1 && uptimeHours > 0) generated.push({ ip: pnode.ip, severity: "critical", type: "Recently Restarted", message: `Uptime ${Math.floor(uptimeSeconds / 60)}min`, value: `${Math.floor(uptimeSeconds / 60)}min` });
+        else if (uptimeHours < 6 && uptimeHours >= 1) generated.push({ ip: pnode.ip, severity: "warning", type: "Low Uptime", message: `Uptime ${uptimeHours.toFixed(1)}h`, value: `${uptimeHours.toFixed(1)}h` });
+
         const ramTotal = Number.isFinite(stats.ram_total) ? stats.ram_total : 0;
         const ramUsed = Number.isFinite(stats.ram_used) ? stats.ram_used : 0;
         if (ramTotal > 0) {
