@@ -1,22 +1,7 @@
 'use client';
 
 import { calculateNodeScore, getScoreColor, getScoreLabel } from '@/lib/scoring';
-
-interface PNodeStats {
-  cpu_percent: number;
-  ram_used: number;
-  ram_total: number;
-  uptime: number;
-  packets_sent: number;
-  packets_received: number;
-}
-
-interface PNode {
-  ip: string;
-  status: string;
-  stats: PNodeStats;
-  version?: string;
-}
+import type { PNode } from '@/lib/types';
 
 interface ScoreDisplayProps {
   pnode: PNode;

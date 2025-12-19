@@ -183,6 +183,8 @@ export default function Page() {
           alerts={alerts}
           criticalCount={criticalCount}
           warningCount={warningCount}
+          activeStreamsTotal={pnodes.reduce((sum, p) => sum + (p.stats?.active_streams || 0), 0)}
+          activeNodesWithStreams={pnodes.filter(p => (p.stats?.active_streams || 0) > 0).length}
           KPI_COLORS={kpiColors}
           STATUS_COLORS={statusColors}
           hexToRgba={hexToRgba}

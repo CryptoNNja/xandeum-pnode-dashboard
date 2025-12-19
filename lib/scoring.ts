@@ -1,26 +1,13 @@
-interface PNodeStats {
-  cpu_percent: number;
-  ram_used: number;
-  ram_total: number;
-  uptime: number;
-  packets_sent: number;
-  packets_received: number;
-}
-
-interface PNode {
-  ip: string;
-  status: string;
-  stats: PNodeStats;
-  version?: string;
-}
+import type { PNode, PNodeStats } from "./types";
 
 /**
  * Calcule un score de performance 0-100 pour un pNode
  * Basé sur:
- * - CPU efficiency (40%)
- * - RAM efficiency (25%)
+ * - CPU efficiency (35%)
+ * - RAM efficiency (20%)
  * - Uptime (20%)
  * - Network stability (15%)
+ * - Active Streams (10%)
  */
 export function calculateNodeScore(pnode: PNode): number {
   // Nœuds privés = 0
@@ -28,19 +15,19 @@ export function calculateNodeScore(pnode: PNode): number {
     return 0;
   }
 
-  // CPU efficiency (40%)
+  // CPU efficiency (35%)
   // Optimal: <20%, Good: 20-50%, Poor: 50-80%, Critical: >80%
   const cpuScore = Math.max(0, Math.min(100, 100 - pnode.stats.cpu_percent));
-  const cpuWeighted = cpuScore * 0.4;
+  const cpuWeighted = cpuScore * 0.35;
 
-  // RAM efficiency (25%)
+  // RAM efficiency (20%)
   // Optimal: <50%, Good: 50-75%, Poor: 75-90%, Critical: >90%
   const ramPercent =
     pnode.stats.ram_total > 0
       ? (pnode.stats.ram_used / pnode.stats.ram_total) * 100
       : 0;
   const ramScore = Math.max(0, Math.min(100, 100 - ramPercent));
-  const ramWeighted = ramScore * 0.25;
+  const ramWeighted = ramScore * 0.2;
 
   // Uptime (20%)
   // <1h: 0%, 1-24h: 25%, 1-7d: 50%, 7-30d: 75%, >30d: 100%
@@ -72,7 +59,17 @@ export function calculateNodeScore(pnode: PNode): number {
   }
   const stabilityWeighted = stabilityScore * 0.15;
 
-  const totalScore = cpuWeighted + ramWeighted + uptimeWeighted + stabilityWeighted;
+  // Active Streams (10%)
+  // More active streams = better participation in network
+  // 0 streams: 0%, 1-2: 50%, 3-5: 75%, 6+: 100%
+  const activeStreams = pnode.stats.active_streams || 0;
+  let streamsScore = 0;
+  if (activeStreams >= 6) streamsScore = 100;
+  else if (activeStreams >= 3) streamsScore = 75;
+  else if (activeStreams >= 1) streamsScore = 50;
+  const streamsWeighted = streamsScore * 0.1;
+
+  const totalScore = cpuWeighted + ramWeighted + uptimeWeighted + stabilityWeighted + streamsWeighted;
 
   return Math.round(Math.max(0, Math.min(100, totalScore)));
 }

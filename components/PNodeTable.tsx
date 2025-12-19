@@ -80,6 +80,8 @@ const PNodeTableComponent = ({
     { key: "ram", label: "RAM Usage" },
     { key: "storage", label: "Storage" },
     { key: "packets", label: "Traffic" },
+    { key: "active_streams", label: "Streams" },
+    { key: "total_pages", label: "Pages" },
     { key: "uptime", label: "Uptime" },
   ];
 
@@ -102,6 +104,8 @@ const PNodeTableComponent = ({
           <col style={{ width: '120px' }} />
           <col style={{ width: '90px' }} />
           <col style={{ width: '120px' }} />
+          <col style={{ width: '70px' }} />
+          <col style={{ width: '90px' }} />
           <col style={{ width: '75px' }} />
           <col style={{ width: '50px' }} />
         </colgroup>
@@ -260,6 +264,22 @@ const PNodeTableComponent = ({
                       </span>
                     </span>
                   </div>
+                </td>
+
+                <td className="p-4 text-sm text-text-main font-mono text-center whitespace-nowrap align-middle">
+                  <span className="px-2 py-1 rounded-md bg-green-900/20 border border-green-600/30">
+                    {pnode.stats.active_streams || 0}
+                  </span>
+                </td>
+
+                <td className="p-4 text-sm text-text-main font-mono text-center whitespace-nowrap align-middle">
+                  {pnode.stats.total_pages > 0 ? (
+                    <span className="text-accent-purple font-semibold">
+                      {pnode.stats.total_pages.toLocaleString()}
+                    </span>
+                  ) : (
+                    <span className="text-text-faint">—</span>
+                  )}
                 </td>
 
                 <td className="p-4 text-sm text-text-main font-mono whitespace-nowrap align-middle">

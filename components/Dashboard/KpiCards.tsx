@@ -12,6 +12,7 @@ import {
     HardDrive,
     Zap,
     AlertTriangle,
+    Activity,
     type LucideIcon,
   } from "lucide-react";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
@@ -30,6 +31,8 @@ type KpiCardsProps = {
     alerts: any[];
     criticalCount: number;
     warningCount: number;
+    activeStreamsTotal: number;
+    activeNodesWithStreams: number;
     KPI_COLORS: any;
     STATUS_COLORS: any;
     hexToRgba: (hex: string, alpha: number) => string;
@@ -49,6 +52,8 @@ export const KpiCards = ({
     alerts: _alerts,
     criticalCount: _criticalCount,
     warningCount: _warningCount,
+    activeStreamsTotal,
+    activeNodesWithStreams,
     KPI_COLORS,
     STATUS_COLORS,
     hexToRgba
@@ -276,6 +281,56 @@ export const KpiCards = ({
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Active Streams Card */}
+          <div className="kpi-card relative overflow-hidden p-6">
+            <div className="flex items-start justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Active Streams</p>
+                  <InfoTooltip content="Number of active data streams across all pNodes. Streams represent real-time data synchronization channels in the Xandeum network." />
+                </div>
+                <p className="text-sm text-text-faint">Network-wide data flow</p>
+                <div className="flex items-baseline gap-2 mt-4">
+                  <p
+                    className="text-4xl font-bold tracking-tight"
+                    style={{ color: activeStreamsTotal > 0 ? "#10B981" : "#6B7280" }}
+                  >
+                    {activeStreamsTotal}
+                  </p>
+                  <span className="text-sm font-mono text-text-soft">
+                    {activeStreamsTotal === 1 ? "stream" : "streams"}
+                  </span>
+                </div>
+              </div>
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: hexToRgba("#10B981", 0.12) }}
+              >
+                <Activity className="w-5 h-5" strokeWidth={2.3} style={{ color: "#10B981" }} />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-soft">Active nodes</span>
+                <span className="font-semibold text-text-main">{activeNodesWithStreams}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm mt-2">
+                <span className="text-text-soft">Avg per node</span>
+                <span className="font-semibold text-text-main">
+                  {activeNodesWithStreams > 0
+                    ? (activeStreamsTotal / activeNodesWithStreams).toFixed(1)
+                    : "0"}
+                </span>
+              </div>
+              <p className="text-sm text-text-faint mt-4">
+                {activeStreamsTotal > 0
+                  ? `${activeNodesWithStreams} nodes streaming data`
+                  : "No active streams detected"}
+              </p>
+            </div>
           </div>
         </div>
     )
