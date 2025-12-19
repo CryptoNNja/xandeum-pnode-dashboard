@@ -160,7 +160,11 @@ function LeaderboardDropdown({ activeTab, onChange, isLightMode = false }: Leade
                     {isOpen && (
                         <div
                             className="absolute right-0 z-50 mt-1 w-full overflow-hidden rounded-xl border border-border-app shadow-[0_18px_40px_rgba(5,8,22,0.5)]"
-                            style={{ backgroundColor: panelBg }}
+                            style={{ 
+                                backgroundColor: isLightMode ? 'rgba(255, 255, 255, 0.95)' : 'rgba(16, 23, 52, 0.95)',
+                                backdropFilter: 'blur(12px)',
+                                WebkitBackdropFilter: 'blur(12px)'
+                            }}
                             role="listbox"
                         >
                             {TAB_ORDER.map((tabKey) => {

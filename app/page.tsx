@@ -13,7 +13,6 @@ import { HealthDistribution } from "@/components/Dashboard/HealthDistribution";
 import { ChartsSection } from "@/components/Dashboard/ChartsSection";
 import { DashboardContent } from "@/components/Dashboard/DashboardContent";
 import { AlertsModal } from "@/components/Dashboard/AlertsModal";
-import { SettingsModal } from "@/components/Dashboard/SettingsModal";
 import { KpiCards } from "@/components/Dashboard/KpiCards";
 import { Toolbar } from "@/components/Dashboard/Toolbar";
 import { AdvancedFilters } from "@/components/Dashboard/AdvancedFilters";
@@ -94,7 +93,6 @@ export default function Page() {
   } = usePnodeDashboard(theme);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -222,7 +220,6 @@ export default function Page() {
             setNodeFilter={setNodeFilter}
             onRefresh={refreshData}
             refreshing={refreshing}
-            onSettingsClick={() => setIsSettingsOpen(true)}
             onExportData={exportData}
             onExportCsv={exportCsv}
             onExportExcel={exportExcel}
@@ -304,15 +301,6 @@ export default function Page() {
         isLight={isLight}
       />
 
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        autoRefreshOption={autoRefreshOption}
-        setAutoRefreshOption={setAutoRefreshOption}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        isLight={isLight}
-      />
 
       {/* SEARCH MODAL */}
       {isSearchOpen && (

@@ -9,7 +9,6 @@ import {
   MapPin,
   Download,
   RefreshCw,
-  Settings,
   Loader2,
   CheckCircle,
   ChevronDown,
@@ -34,7 +33,6 @@ type ToolbarProps = {
   setNodeFilter: (filter: NodeFilter) => void;
   onRefresh: () => void;
   refreshing: boolean;
-  onSettingsClick: () => void;
   onExportData: () => void;
   onExportCsv: () => void;
   onExportExcel: () => void;
@@ -56,7 +54,6 @@ export const Toolbar = ({
   setNodeFilter,
   onRefresh,
   refreshing,
-  onSettingsClick,
   onExportData,
   onExportCsv,
   onExportExcel,
@@ -121,7 +118,7 @@ export const Toolbar = ({
             </Tooltip>
 
             {filterMenuOpen && (
-              <div className="absolute left-0 mt-3 w-56 rounded-xl border border-border-app bg-bg-card shadow-2xl z-[60] overflow-hidden">
+              <div className="absolute left-0 mt-3 w-56 rounded-xl border border-border-app bg-bg-card/95 backdrop-blur-md shadow-2xl z-[60] overflow-hidden">
                 {(
                   [
                     { key: "all" as const, label: `All (${pnodesCount})` },
@@ -213,7 +210,7 @@ export const Toolbar = ({
               </button>
             </Tooltip>
             {exportMenuOpen && (
-              <div className="absolute left-0 mt-3 w-48 rounded-xl border border-border-app bg-bg-card shadow-2xl z-[60] overflow-hidden">
+              <div className="absolute left-0 mt-3 w-48 rounded-xl border border-border-app bg-bg-card/95 backdrop-blur-md shadow-2xl z-[60] overflow-hidden">
                 <button
                   type="button"
                   onClick={() => {
@@ -291,18 +288,6 @@ export const Toolbar = ({
               aria-label="Refresh"
             >
               <RefreshCw className={clsx("w-5 h-5 text-text-soft", refreshing ? "animate-spin" : "")} />
-            </button>
-          </Tooltip>
-
-          {/* Settings */}
-          <Tooltip content="Dashboard settings">
-            <button
-              type="button"
-              onClick={onSettingsClick}
-              className={TOOLBAR_BUTTON_BASE}
-              aria-label="Settings"
-            >
-              <Settings className="w-5 h-5 text-text-soft" />
             </button>
           </Tooltip>
         </div>
