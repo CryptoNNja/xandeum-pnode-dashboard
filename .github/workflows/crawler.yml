@@ -36,6 +36,11 @@ jobs:
           echo "NODE_ENV: $NODE_ENV"
           echo "SUPABASE_URL exists: ${{ secrets.SUPABASE_URL != '' }}"
           echo "SUPABASE_SERVICE_ROLE_KEY exists: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}"
+          echo "SUPABASE_URL length: ${#SUPABASE_URL}"
+          echo "SUPABASE_SERVICE_ROLE_KEY length: ${#SUPABASE_SERVICE_ROLE_KEY}"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           
       - name: Run pNodes crawler
         env:
