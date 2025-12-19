@@ -4,13 +4,13 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
-import { Trophy, ArrowRight, HardDrive, Zap, Star, ChevronDown, Info } from "lucide-react";
+import { Trophy, ArrowRight, HardDrive, Zap, Star, ChevronDown, Info, Coins } from "lucide-react";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
 import { useTheme } from "@/hooks/useTheme";
 import { calculateNodeScore } from "@/lib/scoring";
 import type { PNode } from "@/lib/types";
 
-type LeaderboardTab = "performance" | "storage" | "uptime";
+type LeaderboardTab = "performance" | "storage" | "uptime" | "credits";
 type RowVariant = "card" | "modal";
 
 interface TopPerformersChartProps {
@@ -35,7 +35,13 @@ interface UptimeEntry {
     lastSeen?: number;
 }
 
-type AnyEntry = PerformanceEntry | StorageEntry | UptimeEntry;
+interface CreditsEntry {
+    node: PNode;
+    credits: number;
+    podId?: string;
+}
+
+type AnyEntry = PerformanceEntry | StorageEntry | UptimeEntry | CreditsEntry;
 
 const MAX_FULL_LEADERBOARD = 30;
 
@@ -90,9 +96,16 @@ const TAB_META: Record<LeaderboardTab, LeaderboardMeta> = {
         accentText: getCssVar("--kpi-excellent", "#10B981"),
         tooltip: "Longest-running nodes measured by reported uptime and last seen timestamp.",
     },
+    credits: {
+        label: "Credits",
+        icon: Coins,
+        accentBg: hexToRgba("#7B3FF2", 0.15),
+        accentText: "#14F195",
+        tooltip: "Total credits earned by each pNode this cycle. Rewards reset monthly.",
+    },
 };
 
-const TAB_ORDER: LeaderboardTab[] = ["performance", "storage", "uptime"];
+const TAB_ORDER: LeaderboardTab[] = ["performance", "storage", "uptime", "credits"];
 
 interface LeaderboardTabsProps {
     activeTab: LeaderboardTab;
@@ -234,6 +247,7 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
     const [isSmallScreen, setIsSmallScreen] = useState(false);
     const [showFullLeaderboard, setShowFullLeaderboard] = useState(false);
     const [activeTab, setActiveTab] = useState<LeaderboardTab>("performance");
+    const [creditsData, setCreditsData] = useState<{ pod_id: string; credits: number }[]>([]);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -245,6 +259,25 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
     }, []);
 
     const portalContainer = typeof window !== "undefined" ? document.body : null;
+
+    // Fetch credits data
+    useEffect(() => {
+        const fetchCredits = async () => {
+            try {
+                const response = await fetch('/api/pods-credits');
+                if (response.ok) {
+                    const data = await response.json();
+                    setCreditsData(data.topEarners || []);
+                }
+            } catch (error) {
+                console.error('Failed to fetch credits:', error);
+            }
+        };
+        
+        fetchCredits();
+        const interval = setInterval(fetchCredits, 300_000); // Refresh every 5 min
+        return () => clearInterval(interval);
+    }, []);
 
     const performanceRanking = useMemo<PerformanceEntry[]>(() => {
         if (!nodes || nodes.length === 0) return [];
@@ -301,10 +334,33 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
             .slice(0, MAX_FULL_LEADERBOARD);
     }, [nodes]);
 
+    const creditsRanking = useMemo<CreditsEntry[]>(() => {
+        if (!creditsData || creditsData.length === 0) return [];
+        // Try to match credits data with nodes via potential future pubkey field
+        // For now, show pod_id formatted nicely
+        return creditsData
+            .map((credit) => {
+                // Try to find matching node by pubkey
+                const matchedNode = nodes.find(n => n.pubkey === credit.pod_id);
+                
+                return {
+                    node: matchedNode || {
+                        ip: `${credit.pod_id.slice(0, 4)}...${credit.pod_id.slice(-4)}`, // Show first 4 + last 4
+                        status: "active",
+                        stats: {},
+                    } as PNode,
+                    credits: credit.credits,
+                    podId: credit.pod_id,
+                };
+            })
+            .slice(0, MAX_FULL_LEADERBOARD);
+    }, [creditsData, nodes]);
+
     const getRankingForTab = (tab: LeaderboardTab): AnyEntry[] => {
         if (tab === "performance") return performanceRanking;
         if (tab === "storage") return storageRanking;
-        return uptimeRanking;
+        if (tab === "uptime") return uptimeRanking;
+        return creditsRanking;
     };
 
     const activeRanking = getRankingForTab(activeTab);
@@ -480,6 +536,58 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
         </div>
     );
 
+    const renderCreditsRow = (
+        entry: CreditsEntry,
+        rank: number,
+        variant: RowVariant,
+        closeModal: boolean
+    ) => {
+        const formattedCredits = entry.credits.toLocaleString();
+        const hasMatchedNode = entry.node.ip.includes('.'); // Check if it's a real IP
+        
+        return (
+            <div
+                key={`credits-${entry.podId}-${variant}`}
+                role={hasMatchedNode ? "button" : undefined}
+                tabIndex={hasMatchedNode ? 0 : undefined}
+                onClick={hasMatchedNode ? () => handleRowClick(entry.node.ip, closeModal) : undefined}
+                onKeyDown={hasMatchedNode ? handleRowKeyDown(entry.node.ip, closeModal) : undefined}
+                className={clsx(
+                    rowBaseClasses(variant),
+                    hasMatchedNode && rowHoverClass,
+                    "grid grid-cols-[2.5rem_minmax(0,1fr)_auto] gap-x-4 gap-y-1",
+                    !hasMatchedNode && "cursor-default"
+                )}
+            >
+                <span className="text-sm font-semibold text-text-faint text-right">{rank}.</span>
+                <div className="min-w-0">
+                    {hasMatchedNode ? (
+                        <>
+                            <p className="font-mono text-sm text-text-main truncate">{entry.node.ip}</p>
+                            <p className="text-xs text-text-soft">Matched node</p>
+                        </>
+                    ) : (
+                        <>
+                            <p className="font-mono text-xs text-text-main truncate" title={entry.podId}>
+                                {entry.node.ip}
+                            </p>
+                            <p className="text-xs text-text-soft">Pod ID (no IP match)</p>
+                        </>
+                    )}
+                </div>
+                <div className="flex flex-col items-end gap-1 text-right">
+                    <span className="text-lg font-bold leading-none" style={{ color: '#14F195' }}>
+                        {formattedCredits}
+                    </span>
+                    <div className="flex items-center gap-2 text-xs text-text-soft">
+                        <span>Credits</span>
+                        <Coins className="w-3 h-3" style={{ color: '#14F195' }} />
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     const renderRow = (
         tab: LeaderboardTab,
         entry: AnyEntry,
@@ -493,7 +601,10 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
         if (tab === "storage") {
             return renderStorageRow(entry as StorageEntry, rank, variant, closeModal);
         }
-        return renderUptimeRow(entry as UptimeEntry, rank, variant, closeModal);
+        if (tab === "uptime") {
+            return renderUptimeRow(entry as UptimeEntry, rank, variant, closeModal);
+        }
+        return renderCreditsRow(entry as CreditsEntry, rank, variant, closeModal);
     };
 
     return (
@@ -543,7 +654,10 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
             {showFullLeaderboard && portalContainer
                 ? createPortal(
                     <div
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        className={clsx(
+                            "fixed inset-0 backdrop-blur-md z-50 flex items-center justify-center p-4",
+                            isLight ? "bg-white/95" : "bg-black/90"
+                        )}
                         onClick={() => setShowFullLeaderboard(false)}
                     >
                         <div

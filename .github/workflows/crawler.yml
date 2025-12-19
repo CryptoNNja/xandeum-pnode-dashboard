@@ -1,0 +1,47 @@
+name: Xandeum pNodes Crawler
+
+on:
+  # Exécute toutes les 10 minutes
+  schedule:
+    - cron: '*/10 * * * *'
+  
+  # Permet de lancer manuellement depuis l'interface GitHub
+  workflow_dispatch:
+  
+  # Optionnel : Lance au push sur main (pour tester)
+  # push:
+  #   branches: [ main ]
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10  # Timeout de sécurité
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run pNodes crawler
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          NODE_ENV: production
+        run: |
+          echo "🚀 Starting Xandeum pNodes crawler..."
+          npx tsx scripts/crawler.ts
+          echo "✅ Crawler completed successfully!"
+          
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Crawler failed! Check the logs above."
+          exit 1

@@ -13,9 +13,12 @@ import {
     Zap,
     AlertTriangle,
     Activity,
+    Trophy,
     type LucideIcon,
   } from "lucide-react";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
+
+import type { NetworkParticipationMetrics } from "@/lib/blockchain-metrics";
 
 type KpiCardsProps = {
     publicCount: number;
@@ -36,6 +39,8 @@ type KpiCardsProps = {
     KPI_COLORS: any;
     STATUS_COLORS: any;
     hexToRgba: (hex: string, alpha: number) => string;
+    networkParticipation: NetworkParticipationMetrics | null;
+    isLight: boolean;
 };
 
 export const KpiCards = ({
@@ -56,7 +61,9 @@ export const KpiCards = ({
     activeNodesWithStreams,
     KPI_COLORS,
     STATUS_COLORS,
-    hexToRgba
+    hexToRgba,
+    networkParticipation,
+    isLight
 }: KpiCardsProps) => {
     // Use real props instead of hardcoded test data
     const alerts = _alerts;
@@ -331,6 +338,129 @@ export const KpiCards = ({
                   : "No active streams detected"}
               </p>
             </div>
+          </div>
+
+          {/* Network Participation Card */}
+          <div className="kpi-card relative overflow-hidden p-6">
+            <div className="flex items-start justify-between gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
+                    Network Participation
+                  </p>
+                  <InfoTooltip content="Shows how many pNodes are earning rewards in Xandeum's credit system this cycle. This may differ from discovered nodes as not all nodes participate in rewards." />
+                </div>
+                <p className="text-sm text-text-faint">Credit system participants</p>
+
+                {networkParticipation ? (
+                  <>
+                    <div className="flex items-baseline gap-2 mt-4">
+                      <span 
+                        className="text-4xl font-bold tracking-tight"
+                        style={{ 
+                          color: networkParticipation.participationRate >= 85 
+                            ? "#10B981" 
+                            : networkParticipation.participationRate >= 70 
+                            ? "#F59E0B" 
+                            : "#EF4444" 
+                        }}
+                      >
+                        {networkParticipation.podsEarning}
+                      </span>
+                      <span className="text-lg text-text-soft font-semibold">
+                        / {networkParticipation.totalPods}
+                      </span>
+                      <span className="text-sm text-text-faint ml-1">nodes</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-baseline gap-2 mt-4">
+                    <span className="text-4xl font-bold tracking-tight text-text-faint">—</span>
+                  </div>
+                )}
+              </div>
+
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ 
+                  background: hexToRgba(
+                    networkParticipation && networkParticipation.participationRate >= 85 ? "#10B981" : 
+                    networkParticipation && networkParticipation.participationRate >= 70 ? "#F59E0B" : "#EF4444", 
+                    0.12
+                  ) 
+                }}
+              >
+                <Trophy 
+                  className="w-5 h-5" 
+                  strokeWidth={2.3} 
+                  style={{ 
+                    color: networkParticipation && networkParticipation.participationRate >= 85 ? "#10B981" : 
+                           networkParticipation && networkParticipation.participationRate >= 70 ? "#F59E0B" : "#EF4444" 
+                  }} 
+                />
+              </div>
+            </div>
+
+            {networkParticipation ? (
+              <>
+                <div className="mt-6">
+                  <div
+                    className="w-full h-2 rounded-full overflow-hidden border"
+                    style={{ 
+                      background: isLight ? "rgba(15,23,42,0.06)" : "rgba(255,255,255,0.05)", 
+                      borderColor: "var(--border-default)" 
+                    }}
+                  >
+                    <div
+                      className="h-full rounded-full transition-all duration-500 ease-out"
+                      style={{
+                        width: `${networkParticipation.participationRate}%`,
+                        background: networkParticipation.participationRate >= 85
+                          ? "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)"
+                          : networkParticipation.participationRate >= 70
+                          ? "linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%)"
+                          : "linear-gradient(90deg, #EF4444 0%, #F87171 100%)",
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-text-soft mt-2">
+                    <span>{networkParticipation.participationRate.toFixed(1)}% earning</span>
+                    <span className="font-medium">
+                      {networkParticipation.totalPods > 0 ? `${networkParticipation.totalPods} in rewards system` : "No data"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  {networkParticipation.podsInactive === 0 ? (
+                    <p 
+                      className="text-sm font-medium flex items-center gap-2"
+                      style={{ color: "#10B981" }}
+                    >
+                      <span className="text-base">✓</span>
+                      All nodes earning rewards
+                    </p>
+                  ) : (
+                    <p 
+                      className="text-sm font-medium"
+                      style={{ 
+                        color: networkParticipation.participationRate >= 70 ? "#F59E0B" : "#EF4444" 
+                      }}
+                    >
+                      {networkParticipation.podsInactive === 1 
+                        ? "1 node inactive this cycle"
+                        : `${networkParticipation.podsInactive} nodes inactive this cycle`
+                      }
+                    </p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="mt-6">
+                <p className="text-sm text-text-faint">Loading participation data...</p>
+              </div>
+            )}
           </div>
         </div>
     )

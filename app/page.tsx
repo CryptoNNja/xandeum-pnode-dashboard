@@ -67,6 +67,8 @@ export default function Page() {
     healthFilter,
     setHealthFilter,
     networkHealthInsights,
+    networkSyncMetrics,
+    networkParticipation,
     networkUptimeStats,
     storageCapacityStats,
     storageBarColors,
@@ -189,6 +191,8 @@ export default function Page() {
           KPI_COLORS={kpiColors}
           STATUS_COLORS={statusColors}
           hexToRgba={hexToRgba}
+          networkParticipation={networkParticipation}
+          isLight={isLight}
         />
 
         <HealthDistribution

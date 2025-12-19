@@ -7,6 +7,7 @@ import type { PNode } from "@/lib/types";
 import { getHealthStatus } from "@/lib/health";
 import { calculateNodeScore } from "@/lib/scoring";
 import { computeVersionOverview } from "@/lib/kpi";
+import { calculateNetworkSyncMetrics, fetchNetworkParticipation, type NetworkParticipationMetrics } from "@/lib/blockchain-metrics";
 import { useToast } from "@/components/common/Toast";
 import { 
   GB_IN_BYTES, 
@@ -99,6 +100,9 @@ export const usePnodeDashboard = (theme?: string) => {
   // Historical scores
   const [yesterdayScore, setYesterdayScore] = useState<number | null>(null);
   const [lastWeekScore, setLastWeekScore] = useState<number | null>(null);
+  
+  // Network participation from credits API
+  const [networkParticipation, setNetworkParticipation] = useState<NetworkParticipationMetrics | null>(null);
 
   const loadData = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true);
@@ -596,6 +600,8 @@ export const usePnodeDashboard = (theme?: string) => {
     message: versionOverview.health.description,
   }), [versionOverview]);
 
+  const networkSyncMetrics = useMemo(() => calculateNetworkSyncMetrics(allPnodes), [allPnodes]);
+
   useEffect(() => {
     if (activeNodes.length === 0 || !lastUpdate) return;
     setNetworkHealthHistory((prev) => [...prev, networkHealthScore].slice(-24));
@@ -633,6 +639,22 @@ export const usePnodeDashboard = (theme?: string) => {
     loadYesterdayScore();
     loadLastWeekScore();
   }, [loadYesterdayScore, loadLastWeekScore]);
+
+  // Load network participation metrics
+  useEffect(() => {
+    const loadParticipation = async () => {
+      const data = await fetchNetworkParticipation();
+      if (data) {
+        setNetworkParticipation(data);
+      }
+    };
+    
+    loadParticipation();
+    
+    // Refresh every 5 minutes
+    const interval = setInterval(loadParticipation, 300_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const exportData = useCallback(() => {
     const dataStr = JSON.stringify(allPnodes, null, 2);
@@ -724,6 +746,8 @@ export const usePnodeDashboard = (theme?: string) => {
     criticalCount,
     warningCount,
     networkHealthScore,
+    networkSyncMetrics,
+    networkParticipation,
     versionOverview,
     networkHealthInsights,
     storageCapacityStats,

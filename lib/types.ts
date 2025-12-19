@@ -25,6 +25,7 @@ export interface PNode {
   status: PNodeStatus;
   stats: PNodeStats;
   version?: string;
+  pubkey?: string; // Xandeum node public key (for credits matching)
   lat?: number | null;
   lng?: number | null;
   city?: string | null;

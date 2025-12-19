@@ -21,6 +21,7 @@ export type Database = {
           version: string;
           stats: Json;
           last_crawled_at: string;
+          pubkey: string | null;
           lat: number | null;
           lng: number | null;
           city: string | null;
@@ -33,6 +34,7 @@ export type Database = {
           version: string;
           stats: Json;
           last_crawled_at: string;
+          pubkey?: string | null;
           lat?: number | null;
           lng?: number | null;
           city?: string | null;
@@ -45,6 +47,7 @@ export type Database = {
           version?: string;
           stats?: Json;
           last_crawled_at?: string;
+          pubkey?: string | null;
           lat?: number | null;
           lng?: number | null;
           city?: string | null;

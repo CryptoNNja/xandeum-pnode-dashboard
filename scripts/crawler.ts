@@ -231,9 +231,10 @@ export const main = async () => {
     const allIps = Array.from(discovered).filter(ip => ip !== '127.0.0.1' && ip !== 'localhost');
     console.log(`🔍 Filtered out localhost. Processing ${allIps.length} valid nodes.`);
 
-    // Fetch all metadata first to build a map
+    // Fetch all metadata first to build maps for version and pubkey
     const versionMap = new Map<string, string>();
-    console.log('📡 Fetching versions...');
+    const pubkeyMap = new Map<string, string>();
+    console.log('📡 Fetching versions and pubkeys...');
     const metadataPromises = allIps.map(ip => getPodsWithStats(ip));
     const metadataResults = await Promise.allSettled(metadataPromises);
     metadataResults.forEach(result => {
@@ -241,13 +242,17 @@ export const main = async () => {
             result.value.forEach(pod => {
                 const ip = extractIp(pod.address);
                 const version = coerceString(pod.version);
+                const pubkey = coerceString(pod.pubkey);
                 if (ip && version) {
                     versionMap.set(ip, version);
+                }
+                if (ip && pubkey) {
+                    pubkeyMap.set(ip, pubkey);
                 }
             })
         }
     });
-    console.log(`✅ Version discovery complete. Found ${versionMap.size} versions.`);
+    console.log(`✅ Metadata discovery complete. Found ${versionMap.size} versions and ${pubkeyMap.size} pubkeys.`);
 
     console.log('📊 Fetching stats and geolocation...');
     const statsPromises = allIps.map(ip => getStats(ip));
@@ -312,6 +317,7 @@ export const main = async () => {
             ip: ip,
             status: status,
             version: versionMap.get(ip) || "unknown",
+            pubkey: pubkeyMap.get(ip) || null,
             stats: stats as unknown as Json,
             lat: geo?.lat,
             lng: geo?.lng,
