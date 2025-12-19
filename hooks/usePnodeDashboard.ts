@@ -110,7 +110,7 @@ export const usePnodeDashboard = (theme?: string) => {
     try {
       // Fetch all nodes for accurate global KPIs and easy filtering/sorting
       // Add retry logic for transient Supabase errors (502, 503, 504)
-      let response;
+      let response: Response | undefined;
       let attempts = 0;
       const maxAttempts = 3;
 
@@ -129,8 +129,8 @@ export const usePnodeDashboard = (theme?: string) => {
         break;
       }
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch pnodes (${response.status})`);
+      if (!response || !response.ok) {
+        throw new Error(`Failed to fetch pnodes (${response?.status || 'unknown error'})`);
       }
 
       const payload = await response.json();
