@@ -228,8 +228,9 @@ export const main = async () => {
     console.log(`✅ Discovery complete. Found ${discovered.size} unique nodes.`);
 
     // --- PHASE 2: DATA ENRICHMENT & SAVING ---
-    const allIps = Array.from(discovered);
-    
+    const allIps = Array.from(discovered).filter(ip => ip !== '127.0.0.1' && ip !== 'localhost');
+    console.log(`🔍 Filtered out localhost. Processing ${allIps.length} valid nodes.`);
+
     // Fetch all metadata first to build a map
     const versionMap = new Map<string, string>();
     console.log('📡 Fetching versions...');

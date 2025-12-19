@@ -68,6 +68,11 @@ export async function getNodeHistory(ip: string, hours: number = 24) {
     console.log("getNodeHistory: supabaseAdmin is null");
     return [];
   }
+  // Prevent fetching history for localhost
+  if (ip === '127.0.0.1' || ip === 'localhost') {
+    console.log("getNodeHistory: ignoring localhost");
+    return [];
+  }
   const since = Math.floor(Date.now() / 1000) - hours * 3600;
   const { data, error } = await supabaseAdmin
     .from("pnode_history")
