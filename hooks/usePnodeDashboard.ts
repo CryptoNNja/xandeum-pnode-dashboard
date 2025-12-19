@@ -109,16 +109,43 @@ export const usePnodeDashboard = (theme?: string) => {
 
     try {
       // Fetch all nodes for accurate global KPIs and easy filtering/sorting
-      // Add retry logic for transient Supabase errors (502, 503, 504)
+      // Add retry logic for transient Supabase errors (502, 503, 504, 500)
       let response: Response | undefined;
       let attempts = 0;
       const maxAttempts = 3;
 
       while (attempts < maxAttempts) {
-        response = await fetch(`/api/pnodes?limit=1000`, { cache: "no-store" });
+        // Add timeout to prevent hanging requests (30s max)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
-        // Retry on 502/503/504 (Supabase/Cloudflare transient errors)
-        if (response.status >= 502 && response.status <= 504 && attempts < maxAttempts - 1) {
+        try {
+          response = await fetch(`/api/pnodes?limit=1000`, {
+            cache: "no-store",
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+        } catch (fetchError: any) {
+          clearTimeout(timeoutId);
+          // Handle timeout or network errors
+          if (fetchError.name === 'AbortError') {
+            console.log(`Request timeout (30s), retrying... (attempt ${attempts + 1}/${maxAttempts})`);
+          } else {
+            console.log(`Network error: ${fetchError.message}, retrying... (attempt ${attempts + 1}/${maxAttempts})`);
+          }
+
+          if (attempts < maxAttempts - 1) {
+            attempts++;
+            const delay = Math.min(1000 * Math.pow(2, attempts), 5000);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          } else {
+            throw new Error(`Failed to fetch pnodes after ${maxAttempts} attempts: ${fetchError.message}`);
+          }
+        }
+
+        // Retry on 500/502/503/504 (Supabase/Cloudflare infrastructure errors)
+        if (response && (response.status >= 500 && response.status <= 504) && attempts < maxAttempts - 1) {
           attempts++;
           const delay = Math.min(1000 * Math.pow(2, attempts), 5000); // Exponential backoff, max 5s
           console.log(`Supabase error ${response.status}, retrying in ${delay}ms (attempt ${attempts}/${maxAttempts})...`);

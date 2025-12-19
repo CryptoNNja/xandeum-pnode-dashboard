@@ -21,9 +21,11 @@ import {
     Wifi,
     CheckCircle2,
     ChevronRight,
+    Blocks,
     type LucideIcon,
   } from "lucide-react";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
+import { CollapsibleSection } from "./CollapsibleSection";
 
 import type { NetworkParticipationMetrics } from "@/lib/blockchain-metrics";
 
@@ -105,7 +107,15 @@ export const KpiCards = ({
     };
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="space-y-6">
+          {/* Section 1: Performance & Resources */}
+          <CollapsibleSection
+            title="PERFORMANCE & RESOURCES"
+            icon={<Cpu className="w-5 h-5" strokeWidth={2.5} />}
+            description="Real-time system metrics and resource utilization"
+            defaultOpen={true}
+            accentColor="#10B981"
+          >
           {/* Storage Capacity */}
           <div className="kpi-card relative overflow-hidden p-6">
             <div className="flex items-start justify-between gap-6">
@@ -360,7 +370,16 @@ export const KpiCards = ({
               </p>
             </div>
           </div>
+          </CollapsibleSection>
 
+          {/* Section 2: Growth & Network Metrics */}
+          <CollapsibleSection
+            title="GROWTH & NETWORK METRICS"
+            icon={<TrendingUp className="w-5 h-5" strokeWidth={2.5} />}
+            description="Network expansion and participation insights"
+            defaultOpen={true}
+            accentColor="#F59E0B"
+          >
           {/* Network Participation Card */}
           <div className="kpi-card relative overflow-hidden p-6">
             <div className="flex items-start justify-between gap-6">
@@ -701,7 +720,16 @@ export const KpiCards = ({
               </p>
             </div>
           </div>
+          </CollapsibleSection>
 
+          {/* Section 3: Advanced Analytics */}
+          <CollapsibleSection
+            title="ADVANCED ANALYTICS"
+            icon={<Blocks className="w-5 h-5" strokeWidth={2.5} />}
+            description="Storage trends, throughput, and version metrics"
+            defaultOpen={true}
+            accentColor="#8B5CF6"
+          >
           {/* Storage Growth Rate Card */}
           <div className="kpi-card relative overflow-hidden p-6">
             <div className="flex items-start justify-between gap-6">
@@ -946,6 +974,7 @@ export const KpiCards = ({
               </p>
             </div>
           </div>
+          </CollapsibleSection>
         </div>
     )
 }
