@@ -14,6 +14,8 @@ import {
     AlertTriangle,
     Activity,
     Trophy,
+    Globe,
+    FileText,
     type LucideIcon,
   } from "lucide-react";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
@@ -41,6 +43,8 @@ type KpiCardsProps = {
     hexToRgba: (hex: string, alpha: number) => string;
     networkParticipation: NetworkParticipationMetrics | null;
     isLight: boolean;
+    countriesCount: number;
+    totalPagesCount: number;
 };
 
 export const KpiCards = ({
@@ -63,7 +67,9 @@ export const KpiCards = ({
     STATUS_COLORS,
     hexToRgba,
     networkParticipation,
-    isLight
+    isLight,
+    countriesCount,
+    totalPagesCount
 }: KpiCardsProps) => {
     // Use real props instead of hardcoded test data
     const alerts = _alerts;
@@ -461,6 +467,146 @@ export const KpiCards = ({
                 <p className="text-sm text-text-faint">Loading participation data...</p>
               </div>
             )}
+          </div>
+
+          {/* Geographic Distribution Card */}
+          <div className="kpi-card relative overflow-hidden p-6">
+            <div className="flex items-start justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Geographic Spread</p>
+                  <InfoTooltip content="Number of countries/regions hosting pNodes. Greater geographic diversity improves network resilience and reduces latency for global users." />
+                </div>
+                <p className="text-sm text-text-faint">Network decentralization</p>
+                <div className="flex items-baseline gap-2 mt-4">
+                  <span 
+                    className="text-4xl font-bold tracking-tight"
+                    style={{ 
+                      color: countriesCount >= 20 
+                        ? "#10B981" 
+                        : countriesCount >= 10 
+                        ? "#3B82F6" 
+                        : countriesCount >= 5 
+                        ? "#F59E0B" 
+                        : "#EF4444" 
+                    }}
+                  >
+                    {countriesCount}
+                  </span>
+                  <span className="text-sm font-mono text-text-soft">
+                    {countriesCount === 1 ? "country" : "countries"}
+                  </span>
+                </div>
+              </div>
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ 
+                  background: hexToRgba(
+                    countriesCount >= 20 ? "#10B981" : 
+                    countriesCount >= 10 ? "#3B82F6" : 
+                    countriesCount >= 5 ? "#F59E0B" : "#EF4444", 
+                    0.12
+                  ) 
+                }}
+              >
+                <Globe 
+                  className="w-5 h-5" 
+                  strokeWidth={2.3} 
+                  style={{ 
+                    color: countriesCount >= 20 ? "#10B981" : 
+                           countriesCount >= 10 ? "#3B82F6" : 
+                           countriesCount >= 5 ? "#F59E0B" : "#EF4444" 
+                  }} 
+                />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-soft">Total nodes</span>
+                <span className="font-semibold text-text-main">{totalNodes}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm mt-2">
+                <span className="text-text-soft">Avg nodes/region</span>
+                <span className="font-semibold text-text-main">
+                  {countriesCount > 0 ? (totalNodes / countriesCount).toFixed(1) : "0"}
+                </span>
+              </div>
+              <p className="text-sm text-text-faint mt-4">
+                {countriesCount >= 20
+                  ? "Excellent global diversity" 
+                  : countriesCount >= 10 
+                  ? "Strong geographic spread" 
+                  : countriesCount >= 5 
+                  ? "Moderate regional distribution" 
+                  : "Limited geographic spread"}
+              </p>
+            </div>
+          </div>
+
+          {/* Total Pages Card */}
+          <div className="kpi-card relative overflow-hidden p-6">
+            <div className="flex items-start justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Total Pages</p>
+                  <InfoTooltip content="Total number of data pages stored across all pNodes. Each page represents a unit of data in Xandeum's distributed storage layer." />
+                </div>
+                <p className="text-sm text-text-faint">Network-wide storage units</p>
+                <div className="flex items-baseline gap-2 mt-4">
+                  <span 
+                    className="text-4xl font-bold tracking-tight text-text-main"
+                  >
+                    {totalPagesCount >= 1000000 
+                      ? `${(totalPagesCount / 1000000).toFixed(2)}M`
+                      : totalPagesCount >= 1000
+                      ? `${(totalPagesCount / 1000).toFixed(1)}K`
+                      : totalPagesCount.toLocaleString()}
+                  </span>
+                  <span className="text-sm font-mono text-text-soft">
+                    {totalPagesCount === 1 ? "page" : "pages"}
+                  </span>
+                </div>
+              </div>
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: hexToRgba("#3B82F6", 0.12) }}
+              >
+                <FileText 
+                  className="w-5 h-5" 
+                  strokeWidth={2.3} 
+                  style={{ color: "#3B82F6" }} 
+                />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-soft">Active nodes</span>
+                <span className="font-semibold text-text-main">{publicCount}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm mt-2">
+                <span className="text-text-soft">Avg pages/node</span>
+                <span className="font-semibold text-text-main">
+                  {publicCount > 0 
+                    ? (totalPagesCount / publicCount >= 1000
+                      ? `${(totalPagesCount / publicCount / 1000).toFixed(1)}K`
+                      : (totalPagesCount / publicCount).toFixed(0))
+                    : "0"}
+                </span>
+              </div>
+              <p className="text-sm text-text-faint mt-4">
+                {totalPagesCount >= 10000000 
+                  ? "Massive network adoption" 
+                  : totalPagesCount >= 1000000 
+                  ? "High network utilization" 
+                  : totalPagesCount >= 100000
+                  ? "Growing storage adoption" 
+                  : totalPagesCount >= 10000
+                  ? "Active deployment phase"
+                  : "Early stage deployment"}
+              </p>
+            </div>
           </div>
         </div>
     )

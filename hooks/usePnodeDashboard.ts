@@ -118,17 +118,10 @@ export const usePnodeDashboard = (theme?: string) => {
       const payload = await response.json();
       
       if (payload.data && Array.isArray(payload.data)) {
-        // Pre-calculate scores once per load to optimize filtering/sorting performance
+        // Pre-calculate scores and health status once per load to optimize filtering/sorting performance
         const pnodesWithScores = payload.data.map((p: PNode) => {
           const score = calculateNodeScore(p);
-          let healthStatus = "Private";
-          
-          if (p.status === "active") {
-            if (score >= 90) healthStatus = "Excellent";
-            else if (score >= 70) healthStatus = "Good";
-            else if (score >= 40) healthStatus = "Warning";
-            else healthStatus = "Critical";
-          }
+          const healthStatus = getHealthStatus(p); // Use sophisticated health calculation
           
           return {
             ...p,

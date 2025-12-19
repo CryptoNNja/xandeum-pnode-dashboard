@@ -620,7 +620,7 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
                     </div>
                     <h3 className="text-lg font-semibold tracking-[0.35em] text-text-main">Network Leaderboard</h3>
                 </div>
-                <InfoTooltip content="Ranking of pNodes based on performance, storage commitment, or uptime. Use the dropdown to switch metrics." />
+                <InfoTooltip content="Ranking of pNodes based on performance score, storage commitment, uptime duration, or reward credits. Use the dropdown to switch between different metrics." />
             </div>
 
             <LeaderboardDropdown

@@ -118,10 +118,11 @@ export default function Page() {
     return `${hours}h ago`;
   }, [currentTime, lastUpdate]);
 
-  // Calculate unique countries from pnodes with location data
+  // Calculate unique countries from ALL pnodes with location data (public + private)
   const countriesCount = useMemo(() => {
     const countries = new Set<string>();
     pnodes.forEach((p) => {
+      // Include both public and private nodes for geographic diversity
       if (p.country && p.country !== "Unknown") {
         countries.add(p.country);
       }
@@ -134,6 +135,13 @@ export default function Page() {
     return pnodes
       .filter((p) => p.status === "active")
       .reduce((sum, p) => sum + (p.stats?.file_size ?? 0), 0);
+  }, [pnodes]);
+
+  // Calculate total pages across all nodes
+  const totalPagesCount = useMemo(() => {
+    return pnodes
+      .filter((p) => p.status === "active")
+      .reduce((sum, p) => sum + (p.stats?.total_pages ?? 0), 0);
   }, [pnodes]);
 
   if (loading) {
@@ -191,6 +199,8 @@ export default function Page() {
           hexToRgba={hexToRgba}
           networkParticipation={networkParticipation}
           isLight={isLight}
+          countriesCount={countriesCount}
+          totalPagesCount={totalPagesCount}
         />
 
         <HealthDistribution
