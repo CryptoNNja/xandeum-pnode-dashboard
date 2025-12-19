@@ -1,9 +1,9 @@
 name: Xandeum pNodes Crawler
 
 on:
-  # Exécute toutes les 10 minutes
+  # Exécute toutes les heures
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '0 * * * *'
   
   # Permet de lancer manuellement depuis l'interface GitHub
   workflow_dispatch:
