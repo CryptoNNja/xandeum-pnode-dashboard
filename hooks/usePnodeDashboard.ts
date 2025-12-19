@@ -21,7 +21,7 @@ import {
 } from "@/lib/utils";
 
 export type ViewMode = "table" | "grid" | "map";
-export type SortKey = "ip" | "cpu" | "ram" | "storage" | "uptime" | "health" | "packets";
+export type SortKey = "ip" | "cpu" | "ram" | "storage" | "uptime" | "health" | "packets" | "active_streams" | "total_pages" | "score" | "version";
 export type SortDirection = "asc" | "desc";
 export type NodeFilter = "all" | "public" | "private";
 export type HealthFilter = "all" | "public" | "private";
@@ -308,13 +308,26 @@ export const usePnodeDashboard = (theme?: string) => {
         case "ram": valA = a.stats?.ram_used ?? 0; valB = b.stats?.ram_used ?? 0; break;
         case "storage": valA = a.stats?.file_size ?? 0; valB = b.stats?.file_size ?? 0; break;
         case "uptime": valA = a.stats?.uptime ?? 0; valB = b.stats?.uptime ?? 0; break;
-        case "packets": 
+        case "packets":
           valA = (a.stats?.packets_sent ?? 0) + (a.stats?.packets_received ?? 0);
           valB = (b.stats?.packets_sent ?? 0) + (b.stats?.packets_received ?? 0);
           break;
-        case "health": 
+        case "active_streams":
+          valA = a.stats?.active_streams ?? 0;
+          valB = b.stats?.active_streams ?? 0;
+          break;
+        case "total_pages":
+          valA = a.stats?.total_pages ?? 0;
+          valB = b.stats?.total_pages ?? 0;
+          break;
+        case "score":
+        case "health":
           valA = a._score;
           valB = b._score;
+          break;
+        case "version":
+          valA = a.version ?? "";
+          valB = b.version ?? "";
           break;
         default: valA = a.ip; valB = b.ip;
       }
@@ -505,6 +518,76 @@ export const usePnodeDashboard = (theme?: string) => {
     }));
   }, [allPnodes, theme]);
 
+  const pagesDistribution = useMemo(() => {
+    // Get all active nodes with pages data
+    const activeNodesWithPages = allPnodes
+      .filter(p => p.status === "active" && (p.stats?.total_pages ?? 0) > 0)
+      .map(p => p.stats?.total_pages ?? 0)
+      .sort((a, b) => a - b);
+
+    if (activeNodesWithPages.length === 0) {
+      // Fallback buckets if no data
+      return [
+        { range: "0", min: 0, max: 0, count: 0, color: "#64748B" }
+      ];
+    }
+
+    const maxPages = Math.max(...activeNodesWithPages);
+    const minPages = Math.min(...activeNodesWithPages.filter(p => p > 0));
+
+    // Create adaptive buckets based on logarithmic scale
+    const createLogBuckets = (min: number, max: number) => {
+      if (max === 0) return [];
+
+      // Use log scale for better distribution
+      const logMin = Math.log10(Math.max(min, 1));
+      const logMax = Math.log10(max);
+      const step = (logMax - logMin) / 5; // 5 buckets
+
+      const buckets = [];
+      const colors = ["#10B981", "#06B6D4", "#3B82F6", "#8B5CF6", "#F59E0B"]; // Green -> Cyan -> Blue -> Purple -> Orange
+
+      for (let i = 0; i < 5; i++) {
+        const bucketLogMin = logMin + (i * step);
+        const bucketLogMax = logMin + ((i + 1) * step);
+        const bucketMin = Math.pow(10, bucketLogMin);
+        const bucketMax = i === 4 ? Infinity : Math.pow(10, bucketLogMax);
+
+        // Format label based on magnitude
+        const formatPageCount = (val: number) => {
+          if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
+          if (val >= 1_000) return `${(val / 1_000).toFixed(0)}K`;
+          return val.toFixed(0);
+        };
+
+        const label = i === 4
+          ? `${formatPageCount(bucketMin)}+`
+          : `${formatPageCount(bucketMin)}-${formatPageCount(bucketMax)}`;
+
+        buckets.push({
+          range: label,
+          min: Math.round(bucketMin),
+          max: bucketMax,
+          color: colors[i]
+        });
+      }
+
+      return buckets;
+    };
+
+    const pagesBuckets = createLogBuckets(minPages, maxPages);
+
+    return pagesBuckets.map((bucket) => ({
+      range: bucket.range,
+      count: allPnodes.filter((pnode) =>
+        pnode.status === "active" &&
+        (pnode.stats?.total_pages ?? 0) >= bucket.min &&
+        (pnode.stats?.total_pages ?? 0) < bucket.max
+      ).length,
+      color: bucket.color
+    }));
+  }, [allPnodes]);
+
   const versionOverview = useMemo(() => computeVersionOverview(allPnodes), [allPnodes]);
 
   const versionChart = useMemo(() => ({
@@ -650,6 +733,7 @@ export const usePnodeDashboard = (theme?: string) => {
     networkUptimeStats,
     storageDistribution,
     cpuDistribution,
+    pagesDistribution,
     versionChart,
     healthDistribution: {
       excellent: allPnodes.filter(p => {

@@ -21,6 +21,7 @@ import {
     YAxis,
 } from "recharts";
 import TopPerformersChart from "@/components/TopPerformersChart";
+import { DataDistributionChart } from "@/components/Dashboard/DataDistributionChart";
 import type { PNode } from "@/lib/types";
 import { CustomTooltip } from "@/components/common/Tooltips";
 import { getHealthBadgeStyles, getHealthLabel } from "@/lib/utils";
@@ -28,6 +29,7 @@ import { getHealthBadgeStyles, getHealthLabel } from "@/lib/utils";
 type ChartsSectionProps = {
     cpuDistribution: any[];
     storageDistribution: any[];
+    pagesDistribution: any[];
     versionChart: any;
     latestVersionPercentage: number;
     isLight: boolean;
@@ -37,20 +39,23 @@ type ChartsSectionProps = {
 const ChartsSectionComponent = ({
     cpuDistribution,
     storageDistribution,
+    pagesDistribution,
     versionChart,
     latestVersionPercentage,
     isLight,
     pnodes
 }: ChartsSectionProps) => {
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="space-y-6">
+        {/* First row: 3 distribution charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* CPU LOAD */}
         <div className="kpi-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Cpu className="w-4 h-4 text-[#10B981]" strokeWidth={2.5} />
-              <h3 className="text-xs font-semibold text-[#10B981]">CPU Load</h3>
+              <h3 className="text-xs font-semibold tracking-[0.35em] text-[#10B981]">CPU Load</h3>
             </div>
             <InfoTooltip content="Processing load distribution across pNodes. Low CPU usage ensures efficient storage request handling for Xandeum's network." />
           </div>
@@ -79,7 +84,7 @@ const ChartsSectionComponent = ({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Package className="w-4 h-4 text-[#7B3FF2]" strokeWidth={2.5} />
-              <h3 className="text-xs font-semibold text-[#7B3FF2]">Storage</h3>
+              <h3 className="text-xs font-semibold tracking-[0.35em] text-[#7B3FF2]">Storage</h3>
             </div>
             <InfoTooltip content="Storage capacity committed to Xandeum's decentralized storage layer. More capacity enables greater scalability for Solana dApps." />
           </div>
@@ -111,12 +116,18 @@ const ChartsSectionComponent = ({
           </div>
         </div>
 
+        {/* DATA DISTRIBUTION */}
+        <DataDistributionChart pagesDistribution={pagesDistribution} isLight={isLight} />
+      </div>
+
+      {/* Second row: Network Versions and Top Performers */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* NETWORK VERSIONS */}
         <div className="kpi-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Radio className="w-4 h-4 text-[#F97316]" strokeWidth={2.5} />
-              <h3 className="text-xs font-semibold text-[#F97316]">Network Versions</h3>
+              <h3 className="text-xs font-semibold tracking-[0.35em] text-[#F97316]">Network Versions</h3>
               <InfoTooltip content="Share of nodes running various software versions. Running the latest version is crucial for network consensus." />
             </div>
             <div className={`px-4 py-2 rounded-full text-[10px] font-semibold uppercase tracking-wide ${getHealthBadgeStyles(latestVersionPercentage)}`}>
@@ -186,6 +197,7 @@ const ChartsSectionComponent = ({
         {/* TOP PERFORMERS */}
         <TopPerformersChart nodes={pnodes} />
       </div>
+    </div>
     )
 }
 

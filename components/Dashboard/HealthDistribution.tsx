@@ -36,7 +36,7 @@ const HealthDistributionComponent = ({
     <div className="kpi-card p-8 rounded-2xl border border-border-app shadow-xl theme-transition">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-text-main">Health Distribution</h3>
+          <h3 className="text-sm font-bold uppercase tracking-[0.35em] text-text-main">Health Distribution</h3>
           <InfoTooltip content="Distribution based on public node performance scores. Private nodes participate in the network state but do not provide measurable data for health scoring." />
         </div>
         <div className="px-4 py-2 bg-bg-bg border border-border-app rounded-xl text-xs font-bold text-text-soft">

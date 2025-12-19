@@ -2,6 +2,7 @@
 
 import React, { memo } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 import clsx from "clsx";
 import { calculateNodeScore, getScoreColor } from "@/lib/scoring";
 import { useTheme } from "@/hooks/useTheme";
@@ -96,18 +97,17 @@ const PNodeTableComponent = ({
     >
       <table className="w-full text-left border-collapse text-sm">
         <colgroup>
-          <col style={{ width: '60px' }} />
+          <col style={{ width: '50px' }} />
           <col style={{ width: '130px' }} />
           <col style={{ width: '85px' }} />
-          <col style={{ width: '80px' }} />
-          <col style={{ width: '90px' }} />
-          <col style={{ width: '120px' }} />
-          <col style={{ width: '90px' }} />
-          <col style={{ width: '120px' }} />
-          <col style={{ width: '70px' }} />
-          <col style={{ width: '90px' }} />
           <col style={{ width: '75px' }} />
-          <col style={{ width: '50px' }} />
+          <col style={{ width: '80px' }} />
+          <col style={{ width: '110px' }} />
+          <col style={{ width: '85px' }} />
+          <col style={{ width: '110px' }} />
+          <col style={{ width: '70px' }} />
+          <col style={{ width: '85px' }} />
+          <col style={{ width: '75px' }} />
         </colgroup>
         <thead>
           <tr
@@ -133,9 +133,6 @@ const PNodeTableComponent = ({
                 </div>
               </th>
             ))}
-            <th className="p-4 text-[11px] font-bold uppercase tracking-wider text-text-faint text-right">
-              Action
-            </th>
           </tr>
         </thead>
         <tbody
@@ -198,10 +195,11 @@ const PNodeTableComponent = ({
                 key={pnode.ip}
                 onClick={() => router.push(`/pnode/${pnode.ip}`)}
                 className={clsx(
-                  "transition-colors cursor-pointer group",
+                  "transition-all duration-200 cursor-pointer group relative",
                   isLight
-                    ? "hover:bg-black/5"
-                    : "bg-bg-card hover:bg-table-hover"
+                    ? "hover:bg-black/5 hover:shadow-md"
+                    : "bg-bg-card hover:bg-table-hover hover:shadow-lg hover:shadow-accent-aqua/5",
+                  "hover:border-l-4 hover:border-l-accent-aqua"
                 )}
               >
                 <td className="p-4 text-center align-middle">
@@ -211,7 +209,10 @@ const PNodeTableComponent = ({
                 </td>
 
                 <td className="p-4 font-mono text-text-main font-medium group-hover:text-accent-aqua transition-colors whitespace-nowrap align-middle">
-                  {pnode.ip}
+                  <div className="flex items-center gap-2">
+                    {pnode.ip}
+                    <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--accent-aqua)' }} />
+                  </div>
                 </td>
 
                 <td className="p-4 align-middle">
@@ -284,12 +285,6 @@ const PNodeTableComponent = ({
 
                 <td className="p-4 text-sm text-text-main font-mono whitespace-nowrap align-middle">
                   {formatUptime(pnode.stats.uptime)}
-                </td>
-
-                <td className="p-4 text-right align-middle">
-                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-bg-bg2 text-accent-aqua opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1">
-                    →
-                  </span>
                 </td>
               </tr>
             );

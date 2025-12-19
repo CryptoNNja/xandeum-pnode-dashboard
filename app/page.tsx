@@ -74,6 +74,7 @@ export default function Page() {
     avgRamUsage,
     cpuDistribution,
     storageDistribution,
+    pagesDistribution,
     versionChart,
     healthDistribution,
     alerts,
@@ -199,6 +200,7 @@ export default function Page() {
         <ChartsSection
           cpuDistribution={cpuDistribution}
           storageDistribution={storageDistribution}
+          pagesDistribution={pagesDistribution}
           versionChart={versionChart}
           latestVersionPercentage={versionChart.latestPercentLabel ? parseInt(versionChart.latestPercentLabel) : 0}
           isLight={isLight}

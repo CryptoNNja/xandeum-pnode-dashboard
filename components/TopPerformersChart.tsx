@@ -503,7 +503,7 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255,215,0,0.15)' }}>
                         <Trophy className="w-5 h-5" style={{ color: '#FFD700' }} strokeWidth={2.3} />
                     </div>
-                    <h3 className="text-lg font-semibold text-text-main">Network Leaderboard</h3>
+                    <h3 className="text-lg font-semibold tracking-[0.35em] text-text-main">Network Leaderboard</h3>
                 </div>
                 <InfoTooltip content="Ranking of pNodes based on performance, storage commitment, or uptime. Use the dropdown to switch metrics." />
             </div>

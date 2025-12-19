@@ -210,7 +210,7 @@ export default function PNodeDetailPage() {
         </div>
 
         <div className="bg-bg-card border border-border-app rounded-xl p-6">
-          <h2 className="text-sm font-semibold mb-4 uppercase">Metrics</h2>
+          <h2 className="text-sm font-semibold mb-4 uppercase">System Metrics</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="bg-bg2 p-4 rounded-lg theme-transition">
               <p className="text-text-soft text-xs uppercase mb-2">CPU</p>
@@ -225,20 +225,44 @@ export default function PNodeDetailPage() {
               <p className="text-xs text-text-faint mt-1">{formatBytes(pnode.stats.ram_used)} / {formatBytes(pnode.stats.ram_total)}</p>
             </div>
             <div className="bg-bg2 p-4 rounded-lg theme-transition">
-              <p className="text-text-soft text-xs uppercase mb-2">Storage</p>
+              <p className="text-text-soft text-xs uppercase mb-2">Storage Committed</p>
               <p className="text-2xl font-bold text-accent">{formatBytes(pnode.stats.file_size)}</p>
             </div>
+          </div>
+        </div>
+
+        <div className="bg-bg-card border border-border-app rounded-xl p-6">
+          <h2 className="text-sm font-semibold mb-4 uppercase">Blockchain Metrics</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="bg-bg2 p-4 rounded-lg theme-transition">
-              <p className="text-text-soft text-xs uppercase mb-2">Sent</p>
+              <p className="text-text-soft text-xs uppercase mb-2">Active Streams</p>
+              <p className="text-2xl font-bold text-green-400">{pnode.stats.active_streams ?? 0}</p>
+              <p className="text-xs text-text-faint mt-1">Real-time data channels</p>
+            </div>
+            <div className="bg-bg2 p-4 rounded-lg theme-transition">
+              <p className="text-text-soft text-xs uppercase mb-2">Total Pages</p>
+              <p className="text-2xl font-bold text-accent-purple">{(pnode.stats.total_pages ?? 0).toLocaleString()}</p>
+              <p className="text-xs text-text-faint mt-1">Blockchain data indexed</p>
+            </div>
+            <div className="bg-bg2 p-4 rounded-lg theme-transition">
+              <p className="text-text-soft text-xs uppercase mb-2">Current Index</p>
+              <p className="text-2xl font-bold text-blue-400">{(pnode.stats.current_index ?? 0).toLocaleString()}</p>
+              <p className="text-xs text-text-faint mt-1">Indexing position</p>
+            </div>
+            <div className="bg-bg2 p-4 rounded-lg theme-transition">
+              <p className="text-text-soft text-xs uppercase mb-2">Packets Sent</p>
               <p className="text-2xl font-bold text-accent-aqua">{(pnode.stats.packets_sent ?? 0).toLocaleString()}</p>
+              <p className="text-xs text-text-faint mt-1">Network traffic out</p>
             </div>
             <div className="bg-bg2 p-4 rounded-lg theme-transition">
-              <p className="text-text-soft text-xs uppercase mb-2">Received</p>
+              <p className="text-text-soft text-xs uppercase mb-2">Packets Received</p>
               <p className="text-2xl font-bold text-kpi-warning">{(pnode.stats.packets_received ?? 0).toLocaleString()}</p>
+              <p className="text-xs text-text-faint mt-1">Network traffic in</p>
             </div>
             <div className="bg-bg2 p-4 rounded-lg theme-transition">
-              <p className="text-text-soft text-xs uppercase mb-2">Streams</p>
-              <p className="text-2xl font-bold">{pnode.stats.active_streams}</p>
+              <p className="text-text-soft text-xs uppercase mb-2">Total Packets</p>
+              <p className="text-2xl font-bold text-text-main">{((pnode.stats.packets_sent ?? 0) + (pnode.stats.packets_received ?? 0)).toLocaleString()}</p>
+              <p className="text-xs text-text-faint mt-1">Combined traffic</p>
             </div>
           </div>
         </div>
