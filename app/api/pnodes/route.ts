@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       ip: row.ip,
       status: row.status as PNodeStatus,
       version: row.version,
-      pubkey: row.pubkey,
+      pubkey: row.pubkey ?? undefined,
       stats: row.stats as unknown as import("@/lib/types").PNodeStats,
       lat: row.lat,
       lng: row.lng,

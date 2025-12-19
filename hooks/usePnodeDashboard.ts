@@ -109,8 +109,26 @@ export const usePnodeDashboard = (theme?: string) => {
 
     try {
       // Fetch all nodes for accurate global KPIs and easy filtering/sorting
-      const response = await fetch(`/api/pnodes?limit=1000`, { cache: "no-store" });
-      
+      // Add retry logic for transient Supabase errors (502, 503, 504)
+      let response;
+      let attempts = 0;
+      const maxAttempts = 3;
+
+      while (attempts < maxAttempts) {
+        response = await fetch(`/api/pnodes?limit=1000`, { cache: "no-store" });
+
+        // Retry on 502/503/504 (Supabase/Cloudflare transient errors)
+        if (response.status >= 502 && response.status <= 504 && attempts < maxAttempts - 1) {
+          attempts++;
+          const delay = Math.min(1000 * Math.pow(2, attempts), 5000); // Exponential backoff, max 5s
+          console.log(`Supabase error ${response.status}, retrying in ${delay}ms (attempt ${attempts}/${maxAttempts})...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+
+        break;
+      }
+
       if (!response.ok) {
         throw new Error(`Failed to fetch pnodes (${response.status})`);
       }
