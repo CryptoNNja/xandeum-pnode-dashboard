@@ -5,13 +5,19 @@ import type { PNode, PNodeStats, PNodeStatus } from '../lib/types';
 import { EMPTY_STATS } from '../lib/types';
 import type { Database, Json } from '../types/supabase.mjs';
 
-// Load environment variables from .env.local
-dotenv.config({ path: './.env.local' });
+// Load environment variables from .env.local (for local development only)
+// In production/CI, variables are already in process.env from GitHub Actions
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: './.env.local' });
+}
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const IPWHO_API_KEY = process.env.IPWHO_API_KEY; // Keep this for geolocation
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('Environment check failed:');
+  console.error('SUPABASE_URL present:', !!SUPABASE_URL);
+  console.error('SUPABASE_SERVICE_ROLE_KEY present:', !!SUPABASE_SERVICE_ROLE_KEY);
   throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
 }
 
