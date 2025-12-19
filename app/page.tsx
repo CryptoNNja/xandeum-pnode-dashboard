@@ -11,8 +11,10 @@ import { usePnodeDashboard } from "@/hooks/usePnodeDashboard";
 import { SummaryHeader } from "@/components/Dashboard/SummaryHeader";
 import { HealthDistribution } from "@/components/Dashboard/HealthDistribution";
 import { ChartsSection } from "@/components/Dashboard/ChartsSection";
+import TopPerformersChart from "@/components/TopPerformersChart";
 import { DashboardContent } from "@/components/Dashboard/DashboardContent";
 import { AlertsModal } from "@/components/Dashboard/AlertsModal";
+import { VersionDetailsModal } from "@/components/Dashboard/VersionDetailsModal";
 import { KpiCards } from "@/components/Dashboard/KpiCards";
 import { Toolbar } from "@/components/Dashboard/Toolbar";
 import { AdvancedFilters } from "@/components/Dashboard/AdvancedFilters";
@@ -94,6 +96,7 @@ export default function Page() {
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -143,6 +146,39 @@ export default function Page() {
       .filter((p) => p.status === "active")
       .reduce((sum, p) => sum + (p.stats?.total_pages ?? 0), 0);
   }, [pnodes]);
+
+  // Calculate growth rates (placeholder - requires historical data)
+  // TODO: Implement with Supabase historical queries
+  const networkGrowthRate = useMemo(() => {
+    // For now, return 0 - will be calculated from historical data
+    // Compare current node count vs 7 days ago
+    return 0; // Placeholder
+  }, [pnodes]);
+
+  const storageGrowthRate = useMemo(() => {
+    // For now, return 0 - will be calculated from historical data
+    // Compare current pages count vs 7 days ago
+    return 0; // Placeholder
+  }, [totalPagesCount]);
+
+  // Calculate network bandwidth (packets per second estimate)
+  const networkBandwidth = useMemo(() => {
+    const totalPackets = pnodes
+      .filter((p) => p.status === "active")
+      .reduce((sum, p) => sum + (p.stats?.packets_sent ?? 0) + (p.stats?.packets_received ?? 0), 0);
+    
+    // Rough estimate: divide by average uptime to get packets/sec
+    const avgUptime = pnodes
+      .filter((p) => p.status === "active" && (p.stats?.uptime ?? 0) > 0)
+      .reduce((sum, p, _, arr) => sum + (p.stats?.uptime ?? 0) / arr.length, 0);
+    
+    return avgUptime > 0 ? totalPackets / avgUptime : 0;
+  }, [pnodes]);
+
+  // Version adoption percentage (already calculated in versionChart)
+  const versionAdoptionPercent = useMemo(() => {
+    return parseInt(versionChart.latestPercentLabel) || 0;
+  }, [versionChart]);
 
   if (loading) {
     return <SkeletonLoader />;
@@ -201,22 +237,31 @@ export default function Page() {
           isLight={isLight}
           countriesCount={countriesCount}
           totalPagesCount={totalPagesCount}
+          networkGrowthRate={networkGrowthRate}
+          storageGrowthRate={storageGrowthRate}
+          networkBandwidth={networkBandwidth}
+          versionAdoptionPercent={versionAdoptionPercent}
+          onVersionClick={() => setIsVersionModalOpen(true)}
         />
 
-        <HealthDistribution
-          healthDistribution={healthDistribution}
-          totalNodes={pnodes.length}
-        />
+        {/* HEALTH & LEADERBOARD - Side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <HealthDistribution
+            healthDistribution={healthDistribution}
+            totalNodes={pnodes.length}
+          />
+          
+          <TopPerformersChart
+            nodes={pnodes}
+          />
+        </div>
 
         {/* CHARTS SECTION */}
         <ChartsSection
           cpuDistribution={cpuDistribution}
           storageDistribution={storageDistribution}
           pagesDistribution={pagesDistribution}
-          versionChart={versionChart}
-          latestVersionPercentage={versionChart.latestPercentLabel ? parseInt(versionChart.latestPercentLabel) : 0}
           isLight={isLight}
-          pnodes={pnodes}
         />
 
         {/* TOOLBAR */}
@@ -309,6 +354,18 @@ export default function Page() {
         onClose={() => setIsAlertOpen(false)}
         alerts={alerts}
         isLight={isLight}
+      />
+
+      <VersionDetailsModal
+        isOpen={isVersionModalOpen}
+        onClose={() => setIsVersionModalOpen(false)}
+        versionChart={versionChart}
+        pnodes={pnodes}
+        isLight={isLight}
+        onFilterByVersion={(version) => {
+          // Filter dashboard by version
+          setSearchTerm(version);
+        }}
       />
 
 

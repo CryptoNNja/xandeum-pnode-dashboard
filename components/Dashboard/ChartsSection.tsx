@@ -4,8 +4,6 @@ import React, { memo } from "react";
 import {
     Cpu,
     Package,
-    Radio,
-    Trophy,
   } from "lucide-react";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
 import {
@@ -20,30 +18,21 @@ import {
     XAxis,
     YAxis,
 } from "recharts";
-import TopPerformersChart from "@/components/TopPerformersChart";
 import { DataDistributionChart } from "@/components/Dashboard/DataDistributionChart";
-import type { PNode } from "@/lib/types";
 import { CustomTooltip } from "@/components/common/Tooltips";
-import { getHealthBadgeStyles, getHealthLabel } from "@/lib/utils";
 
 type ChartsSectionProps = {
     cpuDistribution: any[];
     storageDistribution: any[];
     pagesDistribution: any[];
-    versionChart: any;
-    latestVersionPercentage: number;
     isLight: boolean;
-    pnodes: PNode[];
 };
 
 const ChartsSectionComponent = ({
     cpuDistribution,
     storageDistribution,
     pagesDistribution,
-    versionChart,
-    latestVersionPercentage,
-    isLight,
-    pnodes
+    isLight
 }: ChartsSectionProps) => {
     return (
         <div className="space-y-6">
@@ -120,83 +109,6 @@ const ChartsSectionComponent = ({
         <DataDistributionChart pagesDistribution={pagesDistribution} isLight={isLight} />
       </div>
 
-      {/* Second row: Network Versions and Top Performers */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* NETWORK VERSIONS */}
-        <div className="kpi-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Radio className="w-4 h-4 text-[#F97316]" strokeWidth={2.5} />
-              <h3 className="text-xs font-semibold tracking-[0.35em] text-[#F97316]">Network Versions</h3>
-              <InfoTooltip content="Share of nodes running various software versions. Running the latest version is crucial for network consensus." />
-            </div>
-            <div className={`px-4 py-2 rounded-full text-[10px] font-semibold uppercase tracking-wide ${getHealthBadgeStyles(latestVersionPercentage)}`}>
-              {getHealthLabel(latestVersionPercentage)}
-            </div>
-          </div>
-          <div className="h-[180px] w-full min-w-0 relative mb-4">
-            {versionChart.entries.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                <PieChart>
-                    <Pie
-                    data={versionChart.entries}
-                    dataKey="count"
-                    nameKey="label"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={85}
-                    paddingAngle={2}
-                    startAngle={90}
-                    endAngle={-270}
-                    >
-                    {versionChart.entries.map((entry: any) => (
-                        <Cell
-                        key={entry.id}
-                        fill={entry.color}
-                        stroke="var(--bg-bg)"
-                        strokeWidth={2}
-                        />
-                    ))}
-                    </Pie>
-                </PieChart>
-                </ResponsiveContainer>
-            ) : (
-                <div className="h-full flex items-center justify-center">
-                    <p className="text-xs text-text-soft">No version data available</p>
-                </div>
-            )}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="text-center">
-                <p className="text-3xl font-bold text-text-main">{versionChart.latestPercentLabel}%</p>
-                <p className="text-[10px] text-text-faint uppercase tracking-wider">Latest</p>
-              </div>
-            </div>
-          </div>
-          <div className="space-y-2">
-            {versionChart.entries.map((entry: any) => (
-              <div key={entry.id} className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{ backgroundColor: entry.color }}
-                  />
-                  <span className="text-text-soft">{entry.label}</span>
-                </div>
-                <span className="font-mono font-bold text-text-main">
-                  {entry.count} | {entry.percentage.toFixed(1)}%
-                </span>
-              </div>
-            ))}
-          </div>
-          <p className="text-[11px] text-text-soft text-center mt-4 tracking-wide uppercase">
-            {versionChart.message}
-          </p>
-        </div>
-
-        {/* TOP PERFORMERS */}
-        <TopPerformersChart nodes={pnodes} />
-      </div>
     </div>
     )
 }

@@ -16,6 +16,11 @@ import {
     Trophy,
     Globe,
     FileText,
+    TrendingUp,
+    Database,
+    Wifi,
+    CheckCircle2,
+    ChevronRight,
     type LucideIcon,
   } from "lucide-react";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
@@ -45,6 +50,11 @@ type KpiCardsProps = {
     isLight: boolean;
     countriesCount: number;
     totalPagesCount: number;
+    networkGrowthRate: number;
+    storageGrowthRate: number;
+    networkBandwidth: number;
+    versionAdoptionPercent: number;
+    onVersionClick?: () => void;
 };
 
 export const KpiCards = ({
@@ -69,7 +79,12 @@ export const KpiCards = ({
     networkParticipation,
     isLight,
     countriesCount,
-    totalPagesCount
+    totalPagesCount,
+    networkGrowthRate,
+    storageGrowthRate,
+    networkBandwidth,
+    versionAdoptionPercent,
+    onVersionClick
 }: KpiCardsProps) => {
     // Use real props instead of hardcoded test data
     const alerts = _alerts;
@@ -605,6 +620,329 @@ export const KpiCards = ({
                   : totalPagesCount >= 10000
                   ? "Active deployment phase"
                   : "Early stage deployment"}
+              </p>
+            </div>
+          </div>
+
+          {/* Network Growth Rate Card */}
+          <div className="kpi-card relative overflow-hidden p-6">
+            <div className="flex items-start justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Network Growth</p>
+                  <InfoTooltip content="Percentage change in total node count over the last 7 days. Positive growth indicates expanding network adoption." />
+                </div>
+                <p className="text-sm text-text-faint">7-day node growth rate</p>
+                <div className="flex items-baseline gap-2 mt-4">
+                  <span 
+                    className="text-4xl font-bold tracking-tight"
+                    style={{ 
+                      color: networkGrowthRate > 0 
+                        ? "#10B981" 
+                        : networkGrowthRate < 0 
+                        ? "#EF4444" 
+                        : "#6B7280" 
+                    }}
+                  >
+                    {networkGrowthRate > 0 ? "+" : ""}{networkGrowthRate.toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ 
+                  background: hexToRgba(
+                    networkGrowthRate > 0 ? "#10B981" : 
+                    networkGrowthRate < 0 ? "#EF4444" : "#6B7280", 
+                    0.12
+                  ) 
+                }}
+              >
+                <TrendingUp 
+                  className="w-5 h-5" 
+                  strokeWidth={2.3} 
+                  style={{ 
+                    color: networkGrowthRate > 0 ? "#10B981" : 
+                           networkGrowthRate < 0 ? "#EF4444" : "#6B7280",
+                    transform: networkGrowthRate < 0 ? "rotate(180deg)" : "none"
+                  }} 
+                />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-soft">Current nodes</span>
+                <span className="font-semibold text-text-main">{totalNodes}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm mt-2">
+                <span className="text-text-soft">Trend</span>
+                <span 
+                  className="font-semibold"
+                  style={{ 
+                    color: networkGrowthRate > 0 ? "#10B981" : 
+                           networkGrowthRate < 0 ? "#EF4444" : "#6B7280" 
+                  }}
+                >
+                  {networkGrowthRate > 5 ? "Rapid expansion" : 
+                   networkGrowthRate > 0 ? "Growing" : 
+                   networkGrowthRate < -5 ? "Declining" : 
+                   "Stable"}
+                </span>
+              </div>
+              <p className="text-sm text-text-faint mt-4">
+                {networkGrowthRate > 10 
+                  ? "Strong network adoption" 
+                  : networkGrowthRate > 0 
+                  ? "Healthy growth trajectory" 
+                  : networkGrowthRate < -5
+                  ? "Network contraction detected"
+                  : "Stable network size"}
+              </p>
+            </div>
+          </div>
+
+          {/* Storage Growth Rate Card */}
+          <div className="kpi-card relative overflow-hidden p-6">
+            <div className="flex items-start justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Storage Growth</p>
+                  <InfoTooltip content="Percentage increase in total pages stored over the last 7 days. Indicates actual network utilization and data growth." />
+                </div>
+                <p className="text-sm text-text-faint">7-day data growth rate</p>
+                <div className="flex items-baseline gap-2 mt-4">
+                  <span 
+                    className="text-4xl font-bold tracking-tight"
+                    style={{ 
+                      color: storageGrowthRate > 0 
+                        ? "#10B981" 
+                        : storageGrowthRate < 0 
+                        ? "#EF4444" 
+                        : "#6B7280" 
+                    }}
+                  >
+                    {storageGrowthRate > 0 ? "+" : ""}{storageGrowthRate.toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ 
+                  background: hexToRgba(
+                    storageGrowthRate > 0 ? "#10B981" : 
+                    storageGrowthRate < 0 ? "#EF4444" : "#6B7280", 
+                    0.12
+                  ) 
+                }}
+              >
+                <Database 
+                  className="w-5 h-5" 
+                  strokeWidth={2.3} 
+                  style={{ 
+                    color: storageGrowthRate > 0 ? "#10B981" : 
+                           storageGrowthRate < 0 ? "#EF4444" : "#6B7280"
+                  }} 
+                />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-soft">Total pages</span>
+                <span className="font-semibold text-text-main">
+                  {totalPagesCount >= 1000000 
+                    ? `${(totalPagesCount / 1000000).toFixed(2)}M`
+                    : totalPagesCount >= 1000
+                    ? `${(totalPagesCount / 1000).toFixed(1)}K`
+                    : totalPagesCount.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm mt-2">
+                <span className="text-text-soft">Usage trend</span>
+                <span 
+                  className="font-semibold"
+                  style={{ 
+                    color: storageGrowthRate > 0 ? "#10B981" : 
+                           storageGrowthRate < 0 ? "#EF4444" : "#6B7280" 
+                  }}
+                >
+                  {storageGrowthRate > 10 ? "Accelerating" : 
+                   storageGrowthRate > 0 ? "Increasing" : 
+                   storageGrowthRate < -5 ? "Decreasing" : 
+                   "Steady"}
+                </span>
+              </div>
+              <p className="text-sm text-text-faint mt-4">
+                {storageGrowthRate > 15 
+                  ? "Rapid data adoption" 
+                  : storageGrowthRate > 0 
+                  ? "Active network usage" 
+                  : storageGrowthRate < -5
+                  ? "Data pruning detected"
+                  : "Stable storage usage"}
+              </p>
+            </div>
+          </div>
+
+          {/* Network Bandwidth Card */}
+          <div className="kpi-card relative overflow-hidden p-6">
+            <div className="flex items-start justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Network Throughput</p>
+                  <InfoTooltip content="Total network activity measured in packets per second. Higher throughput indicates active data synchronization across nodes." />
+                </div>
+                <p className="text-sm text-text-faint">Aggregate bandwidth</p>
+                <div className="flex items-baseline gap-2 mt-4">
+                  <span className="text-4xl font-bold tracking-tight text-text-main">
+                    {networkBandwidth >= 1000000 
+                      ? `${(networkBandwidth / 1000000).toFixed(2)}M`
+                      : networkBandwidth >= 1000
+                      ? `${(networkBandwidth / 1000).toFixed(1)}K`
+                      : networkBandwidth.toFixed(0)}
+                  </span>
+                  <span className="text-sm font-mono text-text-soft">pkt/s</span>
+                </div>
+              </div>
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: hexToRgba("#3B82F6", 0.12) }}
+              >
+                <Wifi 
+                  className="w-5 h-5" 
+                  strokeWidth={2.3} 
+                  style={{ color: "#3B82F6" }} 
+                />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-soft">Active nodes</span>
+                <span className="font-semibold text-text-main">{publicCount}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm mt-2">
+                <span className="text-text-soft">Avg per node</span>
+                <span className="font-semibold text-text-main">
+                  {publicCount > 0 
+                    ? `${(networkBandwidth / publicCount).toFixed(0)} pkt/s`
+                    : "0 pkt/s"}
+                </span>
+              </div>
+              <p className="text-sm text-text-faint mt-4">
+                {networkBandwidth > 1000000 
+                  ? "High network activity" 
+                  : networkBandwidth > 100000
+                  ? "Moderate traffic flow" 
+                  : networkBandwidth > 10000
+                  ? "Light network usage"
+                  : "Minimal activity"}
+              </p>
+            </div>
+          </div>
+
+          {/* Version Adoption Card */}
+          <div 
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40"
+            onClick={onVersionClick}
+            role="button"
+            tabIndex={0}
+            aria-label="View version details"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onVersionClick?.();
+              }
+            }}
+            style={{
+              position: 'relative',
+            }}
+          >
+            {/* Subtle click indicator overlay */}
+            <div 
+              className="absolute top-2 right-2 opacity-30 group-hover:opacity-60 transition-opacity"
+              style={{
+                pointerEvents: 'none'
+              }}
+            >
+              <ChevronRight className="w-4 h-4 text-text-soft" />
+            </div>
+            <div className="flex items-start justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Version Adoption</p>
+                    <InfoTooltip content="Percentage of nodes running the latest software version. Click card to see detailed version breakdown." />
+                  </div>
+                </div>
+                <p className="text-sm text-text-faint">Latest version coverage</p>
+                <div className="flex items-baseline gap-2 mt-4">
+                  <span 
+                    className="text-4xl font-bold tracking-tight"
+                    style={{ 
+                      color: versionAdoptionPercent >= 80 
+                        ? "#10B981" 
+                        : versionAdoptionPercent >= 60 
+                        ? "#3B82F6" 
+                        : versionAdoptionPercent >= 40 
+                        ? "#F59E0B" 
+                        : "#EF4444" 
+                    }}
+                  >
+                    {versionAdoptionPercent}%
+                  </span>
+                </div>
+              </div>
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ 
+                  background: hexToRgba(
+                    versionAdoptionPercent >= 80 ? "#10B981" : 
+                    versionAdoptionPercent >= 60 ? "#3B82F6" : 
+                    versionAdoptionPercent >= 40 ? "#F59E0B" : "#EF4444", 
+                    0.12
+                  ) 
+                }}
+              >
+                <CheckCircle2 
+                  className="w-5 h-5" 
+                  strokeWidth={2.3} 
+                  style={{ 
+                    color: versionAdoptionPercent >= 80 ? "#10B981" : 
+                           versionAdoptionPercent >= 60 ? "#3B82F6" : 
+                           versionAdoptionPercent >= 40 ? "#F59E0B" : "#EF4444" 
+                  }} 
+                />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-soft">Total nodes</span>
+                <span className="font-semibold text-text-main">{totalNodes}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm mt-2">
+                <span className="text-text-soft">On latest</span>
+                <span 
+                  className="font-semibold"
+                  style={{ 
+                    color: versionAdoptionPercent >= 80 ? "#10B981" : 
+                           versionAdoptionPercent >= 60 ? "#3B82F6" : 
+                           versionAdoptionPercent >= 40 ? "#F59E0B" : "#EF4444" 
+                  }}
+                >
+                  {Math.round(totalNodes * versionAdoptionPercent / 100)}
+                </span>
+              </div>
+              <p className="text-sm text-text-faint mt-4">
+                {versionAdoptionPercent >= 80 
+                  ? "Excellent version compliance" 
+                  : versionAdoptionPercent >= 60 
+                  ? "Good adoption rate" 
+                  : versionAdoptionPercent >= 40
+                  ? "Fragmented versions"
+                  : "Critical: outdated network"}
               </p>
             </div>
           </div>
