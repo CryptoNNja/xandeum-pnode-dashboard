@@ -100,6 +100,10 @@ export default function Page() {
   const [currentTime, setCurrentTime] = useState(Date.now());
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Growth metrics from historical data
+  const [networkGrowthRate, setNetworkGrowthRate] = useState(0);
+  const [storageGrowthRate, setStorageGrowthRate] = useState(0);
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
     return () => clearInterval(timer);
@@ -110,6 +114,23 @@ export default function Page() {
       setTimeout(() => searchInputRef.current?.focus(), 100);
     }
   }, [isSearchOpen]);
+
+  // Fetch growth metrics on mount
+  useEffect(() => {
+    async function fetchGrowthMetrics() {
+      try {
+        const response = await fetch("/api/growth-metrics", { cache: "no-store" });
+        if (response.ok) {
+          const data = await response.json();
+          setNetworkGrowthRate(data.networkGrowthRate || 0);
+          setStorageGrowthRate(data.storageGrowthRate || 0);
+        }
+      } catch (error) {
+        console.error("Error fetching growth metrics:", error);
+      }
+    }
+    fetchGrowthMetrics();
+  }, []);
 
   const getTimeAgo = useCallback(() => {
     if (!lastUpdate) return "";
@@ -146,20 +167,6 @@ export default function Page() {
       .filter((p) => p.status === "active")
       .reduce((sum, p) => sum + (p.stats?.total_pages ?? 0), 0);
   }, [pnodes]);
-
-  // Calculate growth rates (placeholder - requires historical data)
-  // TODO: Implement with Supabase historical queries
-  const networkGrowthRate = useMemo(() => {
-    // For now, return 0 - will be calculated from historical data
-    // Compare current node count vs 7 days ago
-    return 0; // Placeholder
-  }, [pnodes]);
-
-  const storageGrowthRate = useMemo(() => {
-    // For now, return 0 - will be calculated from historical data
-    // Compare current pages count vs 7 days ago
-    return 0; // Placeholder
-  }, [totalPagesCount]);
 
   // Calculate network bandwidth (packets per second estimate)
   const networkBandwidth = useMemo(() => {

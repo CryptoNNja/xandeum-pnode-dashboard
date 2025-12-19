@@ -56,7 +56,16 @@ jobs:
           echo "SUPABASE_SERVICE_ROLE_KEY length: ${#SUPABASE_SERVICE_ROLE_KEY}"
           npx tsx scripts/crawler.ts
           echo "✅ Crawler completed successfully!"
-          
+
+      - name: Save daily network snapshot
+        run: |
+          echo "📸 Saving daily network snapshot..."
+          export NODE_ENV=production
+          export SUPABASE_URL="${{ secrets.SUPABASE_URL }}"
+          export SUPABASE_SERVICE_ROLE_KEY="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+          npx tsx scripts/save-daily-snapshot.ts
+          echo "✅ Snapshot saved successfully!"
+
       - name: Notify on failure
         if: failure()
         run: |
