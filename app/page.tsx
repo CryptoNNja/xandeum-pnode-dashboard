@@ -70,6 +70,7 @@ export default function Page() {
     networkHealthInsights,
     networkSyncMetrics,
     networkParticipation,
+    networkMetadata,
     networkUptimeStats,
     storageCapacityStats,
     storageBarColors,
@@ -154,11 +155,18 @@ export default function Page() {
     return countries.size;
   }, [pnodes]);
 
-  // Calculate total storage committed
-  const totalStorageBytes = useMemo(() => {
+  // Calculate total storage committed (from ALL nodes, not just active)
+  // Use storage_committed which comes from get-pods-with-stats API
+  const totalStorageCommitted = useMemo(() => {
+    return pnodes.reduce((sum, p) => sum + (p.stats?.storage_committed ?? 0), 0);
+  }, [pnodes]);
+
+  // Calculate total storage used (only active nodes)
+  // Mapping: total_bytes is the actual storage used (as of API v0.7)
+  const totalStorageUsed = useMemo(() => {
     return pnodes
       .filter((p) => p.status === "active")
-      .reduce((sum, p) => sum + (p.stats?.file_size ?? 0), 0);
+      .reduce((sum, p) => sum + (p.stats?.total_bytes ?? 0), 0);
   }, [pnodes]);
 
   // Calculate total pages across all nodes
@@ -205,8 +213,9 @@ export default function Page() {
 
       {/* ABOUT PNODES - Educational Section */}
       <AboutPNodes
-        totalStorageBytes={totalStorageBytes}
-        activeNodesCount={publicCount}
+        totalStorageCommitted={totalStorageCommitted}
+        totalStorageUsed={totalStorageUsed}
+        networkMetadata={networkMetadata}
         countriesCount={countriesCount}
       />
 
@@ -241,6 +250,7 @@ export default function Page() {
           STATUS_COLORS={statusColors}
           hexToRgba={hexToRgba}
           networkParticipation={networkParticipation}
+          networkMetadata={networkMetadata}
           isLight={isLight}
           countriesCount={countriesCount}
           totalPagesCount={totalPagesCount}

@@ -226,7 +226,7 @@ export default function PNodeDetailPage() {
             </div>
             <div className="bg-bg2 p-4 rounded-lg theme-transition">
               <p className="text-text-soft text-xs uppercase mb-2">Storage Committed</p>
-              <p className="text-2xl font-bold text-accent">{formatBytes(pnode.stats.file_size)}</p>
+              <p className="text-2xl font-bold text-accent">{formatBytes(pnode.stats.storage_committed)}</p>
             </div>
           </div>
         </div>

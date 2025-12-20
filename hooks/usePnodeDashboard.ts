@@ -68,7 +68,7 @@ export const usePnodeDashboard = (theme?: string) => {
   // Max storage in the network for auto-calibration
   const maxStorageBytes = useMemo(() => {
     if (allPnodes.length === 0) return 10 * TB_IN_BYTES;
-    const max = Math.max(...allPnodes.map(p => p.stats?.file_size ?? 0));
+    const max = Math.max(...allPnodes.map(p => p.stats?.storage_committed ?? 0));
     return Math.max(max, TB_IN_BYTES); // At least 1TB for scale
   }, [allPnodes]);
 
@@ -103,6 +103,21 @@ export const usePnodeDashboard = (theme?: string) => {
   
   // Network participation from credits API
   const [networkParticipation, setNetworkParticipation] = useState<NetworkParticipationMetrics | null>(null);
+
+  // Network metadata (gossip discovery stats)
+  const [networkMetadata, setNetworkMetadata] = useState<{
+    networkTotal: number;
+    crawledNodes: number;
+    activeNodes: number;
+    coveragePercent: number;
+    lastUpdated: string | null;
+  }>({
+    networkTotal: 0,
+    crawledNodes: 0,
+    activeNodes: 0,
+    coveragePercent: 0,
+    lastUpdated: null
+  });
 
   const loadData = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true);
@@ -281,7 +296,7 @@ export const usePnodeDashboard = (theme?: string) => {
       // CPU (instant feedback)
       if (minCpu > 0 && (p.stats?.cpu_percent ?? 0) < minCpu) return;
       // Storage (instant feedback using bytes)
-      if (minStorage > 0 && (p.stats?.file_size ?? 0) < currentMinStorageBytes) return;
+      if (minStorage > 0 && (p.stats?.storage_committed ?? 0) < currentMinStorageBytes) return;
       
       count++;
     });
@@ -336,7 +351,7 @@ export const usePnodeDashboard = (theme?: string) => {
 
     // Advanced: Min Storage (using debounced bytes)
     if (debouncedMinStorageBytes > 0) {
-      result = result.filter(p => (p.stats?.file_size ?? 0) >= debouncedMinStorageBytes);
+      result = result.filter(p => (p.stats?.storage_committed ?? 0) >= debouncedMinStorageBytes);
     }
 
     // Sort
@@ -348,7 +363,7 @@ export const usePnodeDashboard = (theme?: string) => {
         case "ip": valA = a.ip; valB = b.ip; break;
         case "cpu": valA = a.stats?.cpu_percent ?? 0; valB = b.stats?.cpu_percent ?? 0; break;
         case "ram": valA = a.stats?.ram_used ?? 0; valB = b.stats?.ram_used ?? 0; break;
-        case "storage": valA = a.stats?.file_size ?? 0; valB = b.stats?.file_size ?? 0; break;
+        case "storage": valA = a.stats?.storage_committed ?? 0; valB = b.stats?.storage_committed ?? 0; break;
         case "uptime": valA = a.stats?.uptime ?? 0; valB = b.stats?.uptime ?? 0; break;
         case "packets":
           valA = (a.stats?.packets_sent ?? 0) + (a.stats?.packets_received ?? 0);
@@ -411,7 +426,7 @@ export const usePnodeDashboard = (theme?: string) => {
             else if (ramPercent >= 75) generated.push({ ip: pnode.ip, severity: "warning", type: "RAM Pressure", message: `${ramPercent.toFixed(1)}% utilized`, value: `${ramPercent.toFixed(1)}%` });
         }
 
-        const committedBytes = Number.isFinite(stats.file_size) ? (stats.file_size ?? 0) : 0;
+        const committedBytes = Number.isFinite(stats.storage_committed) ? (stats.storage_committed ?? 0) : 0;
         const usedBytes = Number.isFinite(stats.total_bytes) ? (stats.total_bytes ?? 0) : 0;
         if (committedBytes > 0) {
             const storagePercent = (usedBytes / committedBytes) * 100;
@@ -481,13 +496,22 @@ export const usePnodeDashboard = (theme?: string) => {
     let totalCommitted = 0;
     let totalUsed = 0;
 
+    // Storage committed: ALL nodes (even gossip_only)
+    // Use storage_committed from get-pods-with-stats API
+    allPnodes.forEach((pnode) => {
+      const stats = pnode.stats;
+      if (!stats) return;
+      const committed = stats.storage_committed ?? 0;
+      totalCommitted += Number.isFinite(committed) ? committed : 0;
+    });
+
+    // Storage used: only ACTIVE nodes
+    // Mapping: total_bytes is the actual storage used (as of API v0.7)
     allPnodes.forEach((pnode) => {
       if (pnode.status !== "active") return;
       const stats = pnode.stats;
       if (!stats) return;
-      const committed = stats.file_size ?? 0;
       const used = stats.total_bytes ?? 0;
-      totalCommitted += Number.isFinite(committed) ? committed : 0;
       totalUsed += Number.isFinite(used) ? used : 0;
     });
 
@@ -553,7 +577,7 @@ export const usePnodeDashboard = (theme?: string) => {
 
   const storageDistribution = useMemo(() => STORAGE_BUCKETS.map((bucket) => ({
     range: bucket.label,
-    count: allPnodes.filter((pnode) => pnode.status === "active" && (pnode.stats?.file_size ?? 0) >= bucket.min && (pnode.stats?.file_size ?? 0) < bucket.max).length
+    count: allPnodes.filter((pnode) => pnode.status === "active" && (pnode.stats?.storage_committed ?? 0) >= bucket.min && (pnode.stats?.storage_committed ?? 0) < bucket.max).length
   })), [allPnodes]);
 
   const cpuDistribution = useMemo(() => {
@@ -691,11 +715,32 @@ export const usePnodeDashboard = (theme?: string) => {
         setNetworkParticipation(data);
       }
     };
-    
+
     loadParticipation();
-    
+
     // Refresh every 5 minutes
     const interval = setInterval(loadParticipation, 300_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Load network metadata (gossip discovery stats)
+  useEffect(() => {
+    const loadNetworkMetadata = async () => {
+      try {
+        const response = await fetch('/api/network-metadata', { cache: 'no-store' });
+        if (response.ok) {
+          const data = await response.json();
+          setNetworkMetadata(data);
+        }
+      } catch (error) {
+        console.error('Error fetching network metadata:', error);
+      }
+    };
+
+    loadNetworkMetadata();
+
+    // Refresh every 5 minutes (in sync with participation)
+    const interval = setInterval(loadNetworkMetadata, 300_000);
     return () => clearInterval(interval);
   }, []);
 
@@ -723,7 +768,7 @@ export const usePnodeDashboard = (theme?: string) => {
       p.stats?.cpu_percent?.toFixed(1) || "0",
       p.stats?.ram_used || "0",
       p.stats?.ram_total || "0",
-      p.stats?.file_size || "0",
+      p.stats?.storage_committed || "0",
       p.stats?.uptime || "0",
     ]);
     const csvContent = [headers, ...rows].map((r) => r.join(",")).join("\n");
@@ -791,6 +836,7 @@ export const usePnodeDashboard = (theme?: string) => {
     networkHealthScore,
     networkSyncMetrics,
     networkParticipation,
+    networkMetadata,
     versionOverview,
     networkHealthInsights,
     storageCapacityStats,

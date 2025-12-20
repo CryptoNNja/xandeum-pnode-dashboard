@@ -231,16 +231,19 @@ export const main = async () => {
         });
     }
 
-    console.log(`✅ Discovery complete. Found ${discovered.size} unique nodes.`);
-
     // --- PHASE 2: DATA ENRICHMENT & SAVING ---
+    // Filter out localhost BEFORE counting network total
     const allIps = Array.from(discovered).filter(ip => ip !== '127.0.0.1' && ip !== 'localhost');
-    console.log(`🔍 Filtered out localhost. Processing ${allIps.length} valid nodes.`);
+    const networkTotal = allIps.length;
+    console.log(`✅ Discovery complete. Found ${discovered.size} unique nodes via gossip/RPC.`);
+    console.log(`🔍 Filtered out localhost. Processing ${allIps.length} valid nodes for network total.`);
 
-    // Fetch all metadata first to build maps for version and pubkey
+    // Fetch all metadata first to build maps for version, pubkey, and storage_committed
     const versionMap = new Map<string, string>();
     const pubkeyMap = new Map<string, string>();
-    console.log('📡 Fetching versions and pubkeys...');
+    const storageCommittedMap = new Map<string, number>();
+    const storageUsedMap = new Map<string, number>();
+    console.log('📡 Fetching versions, pubkeys, and storage commitments...');
     const metadataPromises = allIps.map(ip => getPodsWithStats(ip));
     const metadataResults = await Promise.allSettled(metadataPromises);
     metadataResults.forEach(result => {
@@ -249,16 +252,25 @@ export const main = async () => {
                 const ip = extractIp(pod.address);
                 const version = coerceString(pod.version);
                 const pubkey = coerceString(pod.pubkey);
+                const storageCommitted = coerceNumber(pod.storage_committed);
+                const storageUsed = coerceNumber(pod.storage_used);
+
                 if (ip && version) {
                     versionMap.set(ip, version);
                 }
                 if (ip && pubkey) {
                     pubkeyMap.set(ip, pubkey);
                 }
+                if (ip && storageCommitted > 0) {
+                    storageCommittedMap.set(ip, storageCommitted);
+                }
+                if (ip && storageUsed > 0) {
+                    storageUsedMap.set(ip, storageUsed);
+                }
             })
         }
     });
-    console.log(`✅ Metadata discovery complete. Found ${versionMap.size} versions and ${pubkeyMap.size} pubkeys.`);
+    console.log(`✅ Metadata discovery complete. Found ${versionMap.size} versions, ${pubkeyMap.size} pubkeys, ${storageCommittedMap.size} commitments, and ${storageUsedMap.size} used stats.`);
 
     console.log('📊 Fetching stats and geolocation...');
     const statsPromises = allIps.map(ip => getStats(ip));
@@ -301,7 +313,29 @@ export const main = async () => {
         const geoResult = allGeo[i];
 
         const status = (statsResult.status === 'fulfilled' && statsResult.value) ? 'active' : 'gossip_only';
-        const stats = (statsResult.status === 'fulfilled' && statsResult.value) ? statsResult.value : EMPTY_STATS;
+        // Create a copy of stats to avoid mutating shared EMPTY_STATS constant
+        const stats: PNodeStats = (statsResult.status === 'fulfilled' && statsResult.value)
+            ? { ...statsResult.value }
+            : { ...EMPTY_STATS };
+
+        // Enrich stats with storage data from get-pods-with-stats (gossip)
+        const storageCommitted = storageCommittedMap.get(ip);
+        const storageUsed = storageUsedMap.get(ip);
+
+        // Add storage_committed for ALL nodes (both active and gossip_only)
+        if (storageCommitted && storageCommitted > 0) {
+            stats.storage_committed = storageCommitted;
+        }
+
+        if (status === 'gossip_only') {
+            // For private nodes, also map storage_committed to file_size for backwards compatibility
+            if (storageCommitted && storageCommitted > 0) {
+                stats.file_size = storageCommitted;
+            }
+            if (storageUsed && storageUsed > 0) {
+                stats.total_bytes = storageUsed;
+            }
+        }
 
         if (status === 'active') {
             historyToInsert.push({
@@ -344,7 +378,26 @@ export const main = async () => {
     } else {
         console.log('✅ Successfully saved pnodes data.');
     }
-    
+
+    // Save network metadata (total discovered vs crawled)
+    const activeNodesCount = pnodesToUpsert.filter(p => p.status === 'active').length;
+    console.log(`📊 Updating network metadata: ${networkTotal} total, ${allIps.length} crawled, ${activeNodesCount} active`);
+    const { error: metadataError } = await (supabaseAdmin as any)
+        .from('network_metadata')
+        .upsert({
+            id: 1, // Singleton record
+            network_total: networkTotal,
+            crawled_nodes: allIps.length,
+            active_nodes: activeNodesCount,
+            last_updated: new Date().toISOString()
+        }, { onConflict: 'id' });
+
+    if (metadataError) {
+        console.error('Error saving network metadata:', metadataError);
+    } else {
+        console.log('✅ Network metadata updated.');
+    }
+
     if (historyToInsert.length > 0) {
         console.log(`💾 Saving ${historyToInsert.length} history records...`);
         const { error: historyError } = await supabaseAdmin

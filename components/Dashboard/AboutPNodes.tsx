@@ -1,40 +1,53 @@
 "use client";
 
-import { memo, useMemo } from "react";
-import { motion } from "framer-motion";
-import { Database, Server, Globe, Zap, ChevronRight } from "lucide-react";
+import { memo, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Database, Radio, Globe, Zap, ChevronRight, ChevronDown } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { TB_IN_BYTES } from "@/lib/utils";
 
 interface AboutPNodesProps {
-  totalStorageBytes: number;
-  activeNodesCount: number;
+  totalStorageCommitted: number;
+  totalStorageUsed: number;
+  networkMetadata: {
+    networkTotal: number;
+    crawledNodes: number;
+    coveragePercent: number;
+  };
   countriesCount: number;
 }
 
 const AboutPNodesComponent = ({
-  totalStorageBytes,
-  activeNodesCount,
+  totalStorageCommitted,
+  totalStorageUsed,
+  networkMetadata,
   countriesCount,
 }: AboutPNodesProps) => {
   const { theme } = useTheme();
   const isLight = theme === "light";
+  const [isOpen, setIsOpen] = useState(true);
 
-  const totalStorageTB = useMemo(() => {
-    return (totalStorageBytes / TB_IN_BYTES).toFixed(1);
-  }, [totalStorageBytes]);
+  const storageCommittedTB = useMemo(() => {
+    return (totalStorageCommitted / TB_IN_BYTES).toFixed(1);
+  }, [totalStorageCommitted]);
+
+  const storageUsedGB = useMemo(() => {
+    return (totalStorageUsed / (1024 ** 3)).toFixed(2);
+  }, [totalStorageUsed]);
 
   const stats = [
     {
       icon: Database,
-      value: `${totalStorageTB} TB`,
+      value: `${storageCommittedTB} TB`,
       label: "Storage Committed",
+      sublabel: `${storageUsedGB} GB used`,
       color: "#7B3FF2", // Xandeum Purple
     },
     {
-      icon: Server,
-      value: activeNodesCount.toString(),
-      label: "Public Nodes",
+      icon: Radio,
+      value: `${networkMetadata.crawledNodes} / ${networkMetadata.networkTotal}`,
+      label: "Network Coverage",
+      sublabel: `${networkMetadata.coveragePercent.toFixed(1)}% discovered`,
       color: "#14F195", // Xandeum Green
     },
     {
@@ -81,110 +94,156 @@ const AboutPNodesComponent = ({
           }}
         />
 
-        <div className="relative z-10 p-6 md:p-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            {/* Left: Explanation */}
-            <div className="flex-1 max-w-2xl">
-              <div className="flex items-center gap-2 mb-3">
-                <Zap
-                  className="w-4 h-4"
-                  style={{ color: "#14F195" }}
-                  strokeWidth={2.5}
-                />
-                <span
-                  className="text-[10px] font-bold uppercase tracking-[0.2em]"
-                  style={{ color: "#14F195" }}
-                >
-                  What are pNodes?
-                </span>
-              </div>
-
-              <h2
-                className="text-lg md:text-xl font-bold mb-3 leading-tight"
-                style={{ color: isLight ? "#0f172a" : "#f8fafc" }}
+        {/* Clickable Header with Collapse Indicator */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="relative z-10 w-full p-6 md:p-8 flex items-center justify-between gap-4 group hover:opacity-90 transition-opacity"
+        >
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-3">
+              <Zap
+                className="w-4 h-4"
+                style={{ color: "#14F195" }}
+                strokeWidth={2.5}
+              />
+              <span
+                className="text-[10px] font-bold uppercase tracking-[0.2em]"
+                style={{ color: "#14F195" }}
               >
-                The Backbone of Xandeum's{" "}
-                <span
-                  style={{
-                    background: "linear-gradient(90deg, #7B3FF2, #14F195)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                  }}
-                >
-                  Decentralized Storage
-                </span>
-              </h2>
-
-              <p
-                className="text-sm leading-relaxed"
-                style={{ color: isLight ? "#4b5563" : "#94a3b8" }}
-              >
-                Provider Nodes (pNodes) solve Solana's state bloat problem by offloading 
-                account data to a distributed network. Each node commits storage capacity, 
-                enabling Xandeum to scale beyond traditional blockchain limitations.
-              </p>
-
-              <a
-                href="https://www.xandeum.network/docs"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 mt-4 text-xs font-semibold transition-colors hover:opacity-80"
-                style={{ color: "#7B3FF2" }}
-              >
-                Learn more about Xandeum
-                <ChevronRight className="w-3 h-3" />
-              </a>
+                What are pNodes?
+              </span>
             </div>
 
-            {/* Right: Stats */}
-            <div className="flex flex-wrap lg:flex-nowrap gap-4 lg:gap-6">
-              {stats.map((stat, index) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4, delay: 0.2 + index * 0.1 }}
-                  className="flex-1 min-w-[100px] p-4 rounded-xl border theme-transition text-center"
-                  style={{
-                    background: isLight
-                      ? "rgba(255, 255, 255, 0.7)"
-                      : "rgba(26, 31, 58, 0.5)",
-                    borderColor: isLight
-                      ? "rgba(0, 0, 0, 0.06)"
-                      : "rgba(100, 116, 139, 0.2)",
-                  }}
-                >
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-2"
-                    style={{
-                      background: isLight
-                        ? `${stat.color}15`
-                        : `${stat.color}20`,
-                    }}
-                  >
-                    <stat.icon
-                      className="w-4 h-4"
-                      style={{ color: stat.color }}
-                      strokeWidth={2.2}
-                    />
-                  </div>
-                  <p
-                    className="text-xl md:text-2xl font-black tracking-tight"
-                    style={{ color: stat.color }}
-                  >
-                    {stat.value}
-                  </p>
-                  <p
-                    className="text-[10px] font-medium uppercase tracking-wider mt-1"
-                    style={{ color: isLight ? "#6b7280" : "#64748b" }}
-                  >
-                    {stat.label}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
+            <h2
+              className="text-lg md:text-xl font-bold mb-2 leading-tight text-left"
+              style={{ color: isLight ? "#0f172a" : "#f8fafc" }}
+            >
+              The Backbone of Xandeum's{" "}
+              <span
+                style={{
+                  background: "linear-gradient(90deg, #7B3FF2, #14F195)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                Decentralized Storage
+              </span>
+            </h2>
+
+            <p
+              className="text-xs text-left"
+              style={{ color: isLight ? "#6b7280" : "#94a3b8" }}
+            >
+              Click to {isOpen ? "collapse" : "expand"} details
+            </p>
           </div>
-        </div>
+
+          {/* Chevron indicator */}
+          <motion.div
+            animate={{ rotate: isOpen ? 180 : 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="flex-shrink-0"
+            style={{ color: isLight ? "#7B3FF2" : "#14F195" }}
+          >
+            <ChevronDown className="w-6 h-6" strokeWidth={2.5} />
+          </motion.div>
+        </button>
+
+        {/* Collapsible Content */}
+        <AnimatePresence initial={false}>
+          {isOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              style={{ overflow: "hidden" }}
+            >
+              <div className="relative z-10 px-6 md:px-8 pb-6 md:pb-8">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                  {/* Left: Explanation */}
+                  <div className="flex-1 max-w-2xl">
+                    <p
+                      className="text-sm leading-relaxed mb-4"
+                      style={{ color: isLight ? "#4b5563" : "#94a3b8" }}
+                    >
+                      Provider Nodes (pNodes) solve Solana's state bloat problem by offloading
+                      account data to a distributed network. Each node commits storage capacity,
+                      enabling Xandeum to scale beyond traditional blockchain limitations.
+                    </p>
+
+                    <a
+                      href="https://www.xandeum.network"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-semibold transition-colors hover:opacity-80"
+                      style={{ color: "#7B3FF2" }}
+                    >
+                      Visit Xandeum Network
+                      <ChevronRight className="w-3 h-3" />
+                    </a>
+                  </div>
+
+                  {/* Right: Stats */}
+                  <div className="flex flex-wrap lg:flex-nowrap gap-4 lg:gap-6">
+                    {stats.map((stat, index) => (
+                      <motion.div
+                        key={stat.label}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.4, delay: 0.1 + index * 0.1 }}
+                        className="flex-1 min-w-[100px] p-4 rounded-xl border theme-transition text-center"
+                        style={{
+                          background: isLight
+                            ? "rgba(255, 255, 255, 0.7)"
+                            : "rgba(26, 31, 58, 0.5)",
+                          borderColor: isLight
+                            ? "rgba(0, 0, 0, 0.06)"
+                            : "rgba(100, 116, 139, 0.2)",
+                        }}
+                      >
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-2"
+                          style={{
+                            background: isLight
+                              ? `${stat.color}15`
+                              : `${stat.color}20`,
+                          }}
+                        >
+                          <stat.icon
+                            className="w-4 h-4"
+                            style={{ color: stat.color }}
+                            strokeWidth={2.2}
+                          />
+                        </div>
+                        <p
+                          className="text-xl md:text-2xl font-black tracking-tight"
+                          style={{ color: stat.color }}
+                        >
+                          {stat.value}
+                        </p>
+                        <p
+                          className="text-[10px] font-medium uppercase tracking-wider mt-1"
+                          style={{ color: isLight ? "#6b7280" : "#64748b" }}
+                        >
+                          {stat.label}
+                        </p>
+                        {(stat as any).sublabel && (
+                          <p
+                            className="text-[9px] font-medium mt-0.5"
+                            style={{ color: isLight ? "#9ca3af" : "#64748b" }}
+                          >
+                            {(stat as any).sublabel}
+                          </p>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </motion.section>
   );

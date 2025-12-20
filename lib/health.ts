@@ -47,8 +47,8 @@ export function getHealthStatus(pnode?: PNode | null): HealthStatus {
   const ramPercent =
     ramTotal > 0 ? clampPercent((ramUsed / ramTotal) * 100) : 0;
 
-  // API v0.7 mapping: committed=stats.file_size, used=stats.total_bytes
-  const committedBytes = sanitizeNumber(stats.file_size);
+  // Use storage_committed from get-pods-with-stats API
+  const committedBytes = sanitizeNumber(stats.storage_committed);
   const usedBytes = sanitizeNumber(stats.total_bytes);
   const storagePercent =
     committedBytes > 0 ? clampPercent((usedBytes / committedBytes) * 100) : 0;

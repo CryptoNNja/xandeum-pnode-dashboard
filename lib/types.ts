@@ -14,6 +14,7 @@ export interface PNodeStats {
   total_bytes: number;
   total_pages: number;
   uptime: number;
+  storage_committed?: number; // From get-pods-with-stats (capacity promised)
 }
 
 // Statut "network" du node tel qu'on le déduit dans notre crawler

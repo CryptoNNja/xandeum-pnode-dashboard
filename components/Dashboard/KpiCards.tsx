@@ -49,6 +49,13 @@ type KpiCardsProps = {
     STATUS_COLORS: any;
     hexToRgba: (hex: string, alpha: number) => string;
     networkParticipation: NetworkParticipationMetrics | null;
+    networkMetadata: {
+        networkTotal: number;
+        crawledNodes: number;
+        activeNodes: number;
+        coveragePercent: number;
+        lastUpdated: string | null;
+    };
     isLight: boolean;
     countriesCount: number;
     totalPagesCount: number;
@@ -79,6 +86,7 @@ export const KpiCards = ({
     STATUS_COLORS,
     hexToRgba,
     networkParticipation,
+    networkMetadata,
     isLight,
     countriesCount,
     totalPagesCount,
@@ -380,6 +388,115 @@ export const KpiCards = ({
             defaultOpen={true}
             accentColor="#F59E0B"
           >
+          {/* Network Coverage Card */}
+          <div className="kpi-card relative overflow-hidden p-6">
+            <div className="flex items-start justify-between gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
+                    Network Coverage
+                  </p>
+                  <InfoTooltip content="Shows how many pNodes we've successfully crawled vs the total network size discovered via gossip protocol. Higher coverage means more accurate network insights." />
+                </div>
+                <p className="text-sm text-text-faint">Crawled nodes vs network total</p>
+
+                <div className="flex items-baseline gap-2 mt-4">
+                  <span
+                    className="text-4xl font-bold tracking-tight"
+                    style={{
+                      color: networkMetadata.coveragePercent >= 80
+                        ? "#10B981"
+                        : networkMetadata.coveragePercent >= 60
+                        ? "#3B82F6"
+                        : networkMetadata.coveragePercent >= 40
+                        ? "#F59E0B"
+                        : "#EF4444"
+                    }}
+                  >
+                    {networkMetadata.crawledNodes}
+                  </span>
+                  <span className="text-lg text-text-soft font-semibold">
+                    / {networkMetadata.networkTotal}
+                  </span>
+                  <span className="text-sm text-text-faint ml-1">nodes</span>
+                </div>
+              </div>
+
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{
+                  background: hexToRgba(
+                    networkMetadata.coveragePercent >= 80 ? "#10B981" :
+                    networkMetadata.coveragePercent >= 60 ? "#3B82F6" :
+                    networkMetadata.coveragePercent >= 40 ? "#F59E0B" : "#EF4444",
+                    0.12
+                  )
+                }}
+              >
+                <Radio
+                  className="w-5 h-5"
+                  strokeWidth={2.3}
+                  style={{
+                    color: networkMetadata.coveragePercent >= 80 ? "#10B981" :
+                           networkMetadata.coveragePercent >= 60 ? "#3B82F6" :
+                           networkMetadata.coveragePercent >= 40 ? "#F59E0B" : "#EF4444"
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div
+                className="w-full h-2 rounded-full overflow-hidden border"
+                style={{
+                  background: isLight ? "rgba(15,23,42,0.06)" : "rgba(255,255,255,0.05)",
+                  borderColor: "var(--border-default)"
+                }}
+              >
+                <div
+                  className="h-full rounded-full transition-all duration-500 ease-out"
+                  style={{
+                    width: `${networkMetadata.coveragePercent}%`,
+                    background: networkMetadata.coveragePercent >= 80
+                      ? "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)"
+                      : networkMetadata.coveragePercent >= 60
+                      ? "linear-gradient(90deg, #3B82F6 0%, #60A5FA 100%)"
+                      : networkMetadata.coveragePercent >= 40
+                      ? "linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%)"
+                      : "linear-gradient(90deg, #EF4444 0%, #F87171 100%)",
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-text-soft mt-2">
+                <span>{networkMetadata.coveragePercent.toFixed(1)}% discovered</span>
+                <span className="font-medium">
+                  {networkMetadata.activeNodes} active nodes
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <p
+                className="text-sm font-medium"
+                style={{
+                  color: networkMetadata.coveragePercent >= 80 ? "#10B981" :
+                         networkMetadata.coveragePercent >= 60 ? "#3B82F6" :
+                         networkMetadata.coveragePercent >= 40 ? "#F59E0B" : "#EF4444"
+                }}
+              >
+                {networkMetadata.coveragePercent >= 80
+                  ? "Excellent network coverage"
+                  : networkMetadata.coveragePercent >= 60
+                  ? "Good network coverage"
+                  : networkMetadata.coveragePercent >= 40
+                  ? "Moderate coverage - discovery ongoing"
+                  : "Limited coverage - early discovery phase"
+                }
+              </p>
+            </div>
+          </div>
+
           {/* Network Participation Card */}
           <div className="kpi-card relative overflow-hidden p-6">
             <div className="flex items-start justify-between gap-6">

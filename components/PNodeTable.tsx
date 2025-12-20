@@ -187,8 +187,10 @@ const PNodeTableComponent = ({
             const versionLabel = getVersionLabel(pnode, isPrivate);
             const ramUsed = Math.max(pnode.stats.ram_used ?? 0, 0);
             const ramTotal = Math.max(pnode.stats.ram_total ?? 0, 0);
-            // API v0.7: stats.file_size = storage_committed
-            const committedBytes = Math.max(pnode.stats.file_size ?? 0, 0);
+            
+            // Use storage_committed for capacity, total_bytes for used
+            const committedBytes = Math.max(pnode.stats.storage_committed ?? 0, 0);
+            const usedBytes = Math.max(pnode.stats.total_bytes ?? 0, 0);
 
             return (
               <tr

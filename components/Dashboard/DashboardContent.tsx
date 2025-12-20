@@ -101,8 +101,13 @@ const DashboardContentComponent = ({
         const ramUsed = pnode.stats?.ram_used ?? 0;
         const ramTotal = pnode.stats?.ram_total ?? 1; // avoid /0
         const ramPercent = (ramUsed / ramTotal) * 100;
-        const storage = pnode.stats?.file_size ?? 0;
-        const storagePercent = Math.min(100, (storage / (1 * TB_IN_BYTES)) * 100);
+        
+        // Use storage_committed for capacity, total_bytes for used
+        const storageCommitted = pnode.stats?.storage_committed ?? 0;
+        const storageUsed = pnode.stats?.total_bytes ?? 0;
+        const storagePercent = storageCommitted > 0
+          ? Math.min(100, (storageUsed / storageCommitted) * 100)
+          : 0;
 
         return (
           <div
@@ -236,18 +241,23 @@ const DashboardContentComponent = ({
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
                     <span className="flex items-center gap-1.5 text-text-soft">
-                      <HardDrive className="w-3 h-3" /> Disk
+                      <HardDrive className="w-3 h-3" /> Storage
                     </span>
                     <span className="text-text-main">
-                      {formatBytesAdaptive(storage)}
+                      {formatBytesAdaptive(storageCommitted)}
                     </span>
                   </div>
                   <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-accent-purple" 
+                    <div
+                      className="h-full bg-accent-purple"
                       style={{ width: `${storagePercent}%` }}
                     />
                   </div>
+                  {storageCommitted > 0 && (
+                    <p className="text-[9px] text-text-faint">
+                      {formatBytesAdaptive(storageUsed)} used ({storagePercent.toFixed(1)}%)
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
