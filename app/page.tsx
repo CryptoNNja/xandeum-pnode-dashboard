@@ -165,6 +165,16 @@ export default function Page() {
     return countries.size;
   }, [pnodes]);
 
+  const countriesWithCodes = useMemo(() => {
+    const countriesMap = new Map<string, string>();
+    pnodes.forEach((p) => {
+      if (p.country && p.country !== "Unknown" && p.country_code) {
+        countriesMap.set(p.country, p.country_code.toUpperCase());
+      }
+    });
+    return Array.from(countriesMap, ([name, code]) => ({ name, code }));
+  }, [pnodes]);
+
   // Calculate total storage committed (from ALL nodes, not just active)
   // Use storage_committed which comes from get-pods-with-stats API
   const totalStorageCommitted = useMemo(() => {
@@ -276,6 +286,7 @@ export default function Page() {
           networkMetadata={networkMetadata}
           isLight={isLight}
           countriesCount={countriesCount}
+          countriesWithCodes={countriesWithCodes}
           totalPagesCount={totalPagesCount}
           networkGrowthRate={networkGrowthRate}
           storageGrowthRate={storageGrowthRate}

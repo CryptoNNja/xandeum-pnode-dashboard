@@ -33,6 +33,7 @@ import { StorageAnalyticsModal } from "./StorageAnalyticsModal";
 import { DataDistributionModal } from "./DataDistributionModal";
 import { NetworkCoverageModal } from "./NetworkCoverageModal";
 import { LeaderboardModal } from "./LeaderboardModal";
+import { FlagsCarousel } from "./FlagsCarousel";
 import { calculateNodeScore } from "@/lib/scoring";
 
 import type { NetworkParticipationMetrics } from "@/lib/blockchain-metrics";
@@ -66,6 +67,7 @@ type KpiCardsProps = {
     };
     isLight: boolean;
     countriesCount: number;
+    countriesWithCodes: { name: string; code: string }[];
     totalPagesCount: number;
     networkGrowthRate: number;
     storageGrowthRate: number;
@@ -109,6 +111,7 @@ export const KpiCards = ({
     networkMetadata,
     isLight,
     countriesCount,
+    countriesWithCodes,
     totalPagesCount,
     networkGrowthRate,
     storageGrowthRate,
@@ -1049,7 +1052,7 @@ export const KpiCards = ({
             }}
           >
             <div className="flex items-start justify-between gap-6">
-              <div>
+              <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Geographic Spread</p>
                   <InfoTooltip content="Number of countries/regions hosting pNodes. Greater geographic diversity improves network resilience and reduces latency for global users. Click to view detailed distribution." />
@@ -1076,7 +1079,7 @@ export const KpiCards = ({
                 </div>
               </div>
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110 flex-shrink-0"
                 style={{ background: hexToRgba("#7B3FF2", 0.12) }}
               >
                 <Globe 
@@ -1087,7 +1090,12 @@ export const KpiCards = ({
               </div>
             </div>
 
-            <div className="mt-6">
+            {/* Flags Carousel */}
+            <div className="mt-4">
+              <FlagsCarousel countries={countriesWithCodes} maxVisible={8} />
+            </div>
+
+            <div className="mt-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-text-soft">Total nodes</span>
                 <span className="font-semibold text-text-main">{totalNodes}</span>
