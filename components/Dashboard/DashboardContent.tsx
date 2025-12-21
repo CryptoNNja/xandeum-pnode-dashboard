@@ -1,9 +1,9 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { Cpu, HardDrive, Zap, MapPin, Activity, ShieldCheck, Globe } from "lucide-react";
+import { Cpu, HardDrive, Zap, MapPin, Activity, ShieldCheck, Globe, ChevronDown, Check, LayoutGrid } from "lucide-react";
 import PNodeTable from "@/components/PNodeTable";
 import { GB_IN_BYTES, TB_IN_BYTES, getStatusColors, hexToRgba, formatBytesAdaptive } from "@/lib/utils";
 import type { PNode } from "@/lib/types";
@@ -30,6 +30,17 @@ type DashboardContentProps = {
   onSort: (key: any) => void;
   loading: boolean;
   isLight: boolean;
+  // Pagination for table view
+  paginatedPNodes: (PNode & { _score?: number; _healthStatus?: string })[];
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+  // Grid view
+  gridPNodes: (PNode & { _score?: number; _healthStatus?: string })[];
+  gridLimit: number;
+  setGridLimit: (limit: number) => void;
 };
 
 const DashboardContentComponent = ({
@@ -40,9 +51,19 @@ const DashboardContentComponent = ({
   onSort,
   loading,
   isLight,
+  paginatedPNodes,
+  currentPage,
+  totalPages,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  gridPNodes,
+  gridLimit,
+  setGridLimit,
 }: DashboardContentProps) => {
   const router = useRouter();
   const statusColors = getStatusColors();
+  const [gridLimitMenuOpen, setGridLimitMenuOpen] = useState(false);
 
   const getHealthColor = (status?: string) => {
     switch (status) {
@@ -79,18 +100,104 @@ const DashboardContentComponent = ({
     return (
       <section className="max-w-7xl mx-auto px-6">
         <PNodeTable
-          data={filteredAndSortedPNodes as PNode[]}
+          data={paginatedPNodes as PNode[]}
           onSort={onSort}
           sortKey={sortKey}
           sortDirection={sortDirection}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={filteredAndSortedPNodes.length}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
         />
       </section>
     );
   }
 
+  const gridLimitOptions = [
+    { value: 50, label: "Top 50" },
+    { value: 100, label: "Top 100" },
+    { value: 200, label: "Top 200" },
+    { value: -1, label: "All" },
+  ];
+
+  const currentGridLimitLabel = gridLimitOptions.find(opt => opt.value === gridLimit)?.label || "Top 100";
+
   return (
-    <section className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {filteredAndSortedPNodes.map((pnode) => {
+    <section className="max-w-7xl mx-auto px-6 space-y-4">
+      {/* Grid info and controls */}
+      <div
+        className={clsx(
+          "flex items-center justify-between px-6 py-4 rounded-xl border transition-colors shadow-lg",
+          isLight
+            ? "bg-gradient-to-r from-white to-gray-50 border-black/10"
+            : "bg-gradient-to-r from-bg-card to-bg-bg2 border-border-app"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <LayoutGrid className="w-5 h-5 text-accent-aqua" />
+          <p className="text-sm font-medium">
+            Showing <span className="font-bold text-accent-aqua">{gridPNodes.length}</span> of{" "}
+            <span className="font-bold text-text-main">{filteredAndSortedPNodes.length}</span> nodes
+            {gridLimit !== -1 && <span className="text-text-soft ml-1">(sorted by score)</span>}
+          </p>
+        </div>
+
+        {/* Grid limit selector */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-text-soft uppercase tracking-wider font-bold">Display:</span>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setGridLimitMenuOpen((prev) => !prev)}
+              className={clsx(
+                "flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-semibold cursor-pointer transition-all duration-200",
+                isLight
+                  ? "bg-white border-black/20 text-black hover:border-black/40 hover:shadow-md"
+                  : "bg-bg-card border-border-app text-text-main hover:border-accent-aqua/50 hover:shadow-lg shadow-accent-aqua/10"
+              )}
+            >
+              <span>{currentGridLimitLabel}</span>
+              <ChevronDown className={clsx("w-4 h-4 transition-transform", gridLimitMenuOpen ? "rotate-180" : "rotate-0")} />
+            </button>
+            {gridLimitMenuOpen && (
+              <>
+                {/* Backdrop to close menu */}
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setGridLimitMenuOpen(false)}
+                />
+                {/* Dropdown menu */}
+                <div className="absolute right-0 mt-2 w-36 rounded-xl border border-border-app bg-bg-card/95 backdrop-blur-md shadow-2xl z-50 overflow-hidden">
+                  {gridLimitOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        setGridLimit(option.value);
+                        setGridLimitMenuOpen(false);
+                      }}
+                      className={clsx(
+                        "w-full px-4 py-3 text-sm font-medium transition-colors flex items-center justify-between",
+                        gridLimit === option.value
+                          ? "text-accent-aqua bg-accent-aqua/10"
+                          : "text-text-main hover:bg-bg-bg2"
+                      )}
+                    >
+                      <span>{option.label}</span>
+                      {gridLimit === option.value && <Check className="w-4 h-4" />}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {gridPNodes.map((pnode) => {
         const score = pnode._score ?? 0;
         const healthStatus = pnode._healthStatus;
         const healthColor = getHealthColor(healthStatus);
@@ -300,6 +407,7 @@ const DashboardContentComponent = ({
           </div>
         );
       })}
+      </div>
     </section>
   );
 };

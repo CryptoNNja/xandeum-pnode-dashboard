@@ -15,6 +15,7 @@ import TopPerformersChart from "@/components/TopPerformersChart";
 import { DashboardContent } from "@/components/Dashboard/DashboardContent";
 import { AlertsModal } from "@/components/Dashboard/AlertsModal";
 import { VersionDetailsModal } from "@/components/Dashboard/VersionDetailsModal";
+import { GeographicDistributionModal } from "@/components/Dashboard/GeographicDistributionModal";
 import { KpiCards } from "@/components/Dashboard/KpiCards";
 import { Toolbar } from "@/components/Dashboard/Toolbar";
 import { AdvancedFilters } from "@/components/Dashboard/AdvancedFilters";
@@ -92,12 +93,24 @@ export default function Page() {
     quickResultsCount,
     exportData,
     exportCsv,
-    exportExcel
+    exportExcel,
+    // Pagination
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    paginatedPNodes,
+    // Grid View
+    gridPNodes,
+    gridLimit,
+    setGridLimit,
   } = usePnodeDashboard(theme);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
+  const [isGeographicModalOpen, setIsGeographicModalOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -272,6 +285,7 @@ export default function Page() {
           networkBandwidth={networkBandwidth}
           versionAdoptionPercent={versionAdoptionPercent}
           onVersionClick={() => setIsVersionModalOpen(true)}
+          onGeographicClick={() => setIsGeographicModalOpen(true)}
         />
 
         {/* HEALTH & LEADERBOARD - Side by side */}
@@ -349,6 +363,15 @@ export default function Page() {
           onSort={handleSort}
           loading={loading}
           isLight={isLight}
+          paginatedPNodes={paginatedPNodes}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          gridPNodes={gridPNodes}
+          gridLimit={gridLimit}
+          setGridLimit={setGridLimit}
         />
       </section>
 
@@ -398,6 +421,13 @@ export default function Page() {
         }}
       />
 
+      <GeographicDistributionModal
+        isOpen={isGeographicModalOpen}
+        onClose={() => setIsGeographicModalOpen(false)}
+        totalNodes={pnodes.length}
+        countriesCount={countriesCount}
+        isLight={isLight}
+      />
 
       {/* SEARCH MODAL */}
       {isSearchOpen && (

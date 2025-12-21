@@ -9,12 +9,20 @@ import { useTheme } from "@/hooks/useTheme";
 import { getHealthStatus } from "@/lib/health";
 import type { PNode } from "@/lib/types";
 import { formatBytesAdaptive } from "@/lib/utils";
+import { Pagination } from "@/components/common/Pagination";
 
 interface PNodeTableProps {
   data: PNode[];
   onSort: (key: string) => void;
   sortKey: string;
   sortDirection: "asc" | "desc";
+  // Pagination props
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+  totalItems: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
 }
 
 const PNodeTableComponent = ({
@@ -22,6 +30,12 @@ const PNodeTableComponent = ({
   onSort,
   sortKey,
   sortDirection,
+  currentPage,
+  totalPages,
+  pageSize,
+  totalItems,
+  onPageChange,
+  onPageSizeChange,
 }: PNodeTableProps) => {
   const { theme, mounted: themeMounted } = useTheme();
   const router = useRouter();
@@ -293,6 +307,16 @@ const PNodeTableComponent = ({
           })}
         </tbody>
       </table>
+
+      {/* Pagination */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        pageSize={pageSize}
+        totalItems={totalItems}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+      />
     </div>
   );
 };

@@ -64,6 +64,7 @@ type KpiCardsProps = {
     networkBandwidth: number;
     versionAdoptionPercent: number;
     onVersionClick?: () => void;
+    onGeographicClick?: () => void;
 };
 
 export const KpiCards = ({
@@ -94,7 +95,8 @@ export const KpiCards = ({
     storageGrowthRate,
     networkBandwidth,
     versionAdoptionPercent,
-    onVersionClick
+    onVersionClick,
+    onGeographicClick
 }: KpiCardsProps) => {
     // Use real props instead of hardcoded test data
     const alerts = _alerts;
@@ -164,11 +166,10 @@ export const KpiCards = ({
                 style={{ background: "var(--progress-track)", borderColor: "var(--border-default)" }}
               >
                 <div
-                  className="h-full rounded-full"
+                  className="h-full rounded-full transition-all duration-500 ease-out"
                   style={{
                     width: `${Number.isFinite(storageCapacityStats.percent) ? storageCapacityStats.percent : 0}%`,
-                    background: storageBarColors.fill,
-                    transition: "width 500ms ease",
+                    background: "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)",
                   }}
                 />
               </div>
@@ -209,11 +210,10 @@ export const KpiCards = ({
                 style={{ background: "var(--progress-track)", borderColor: "var(--border-default)" }}
               >
                 <div
-                  className="h-full rounded-full"
+                  className="h-full rounded-full transition-all duration-500 ease-out"
                   style={{
                     width: `${Math.min(100, avgCpuUsage.percent)}%`,
-                    background: KPI_COLORS.cpu,
-                    transition: "width 500ms ease",
+                    background: "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)",
                   }}
                 />
               </div>
@@ -260,11 +260,10 @@ export const KpiCards = ({
                 style={{ background: "var(--progress-track)", borderColor: "var(--border-default)" }}
               >
                 <div
-                  className="h-full rounded-full"
+                  className="h-full rounded-full transition-all duration-500 ease-out"
                   style={{
                     width: `${avgRamUsage.ratio}%`,
-                    background: KPI_COLORS.ram,
-                    transition: "width 500ms ease",
+                    background: "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)",
                   }}
                 />
               </div>
@@ -521,13 +520,7 @@ export const KpiCards = ({
                   className="h-full rounded-full transition-all duration-500 ease-out"
                   style={{
                     width: `${networkMetadata.coveragePercent}%`,
-                    background: networkMetadata.coveragePercent >= 80
-                      ? "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)"
-                      : networkMetadata.coveragePercent >= 60
-                      ? "linear-gradient(90deg, #3B82F6 0%, #60A5FA 100%)"
-                      : networkMetadata.coveragePercent >= 40
-                      ? "linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%)"
-                      : "linear-gradient(90deg, #EF4444 0%, #F87171 100%)",
+                    background: "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)",
                   }}
                 />
               </div>
@@ -636,11 +629,7 @@ export const KpiCards = ({
                       className="h-full rounded-full transition-all duration-500 ease-out"
                       style={{
                         width: `${networkParticipation.participationRate}%`,
-                        background: networkParticipation.participationRate >= 85
-                          ? "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)"
-                          : networkParticipation.participationRate >= 70
-                          ? "linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%)"
-                          : "linear-gradient(90deg, #EF4444 0%, #F87171 100%)",
+                        background: "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)",
                       }}
                     />
                   </div>
@@ -685,12 +674,23 @@ export const KpiCards = ({
           </div>
 
           {/* Geographic Distribution Card */}
-          <div className="kpi-card relative overflow-hidden p-6">
+          <div 
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            onClick={onGeographicClick}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onGeographicClick?.();
+              }
+            }}
+          >
             <div className="flex items-start justify-between gap-6">
               <div>
                 <div className="flex items-center gap-2">
                   <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Geographic Spread</p>
-                  <InfoTooltip content="Number of countries/regions hosting pNodes. Greater geographic diversity improves network resilience and reduces latency for global users." />
+                  <InfoTooltip content="Number of countries/regions hosting pNodes. Greater geographic diversity improves network resilience and reduces latency for global users. Click to view detailed distribution." />
                 </div>
                 <p className="text-sm text-text-faint">Network decentralization</p>
                 <div className="flex items-baseline gap-2 mt-4">
@@ -714,7 +714,7 @@ export const KpiCards = ({
                 </div>
               </div>
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center"
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
                 style={{ 
                   background: hexToRgba(
                     countriesCount >= 20 ? "#10B981" : 
@@ -756,6 +756,11 @@ export const KpiCards = ({
                   ? "Moderate regional distribution" 
                   : "Limited geographic spread"}
               </p>
+            </div>
+
+            {/* Click indicator */}
+            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ChevronRight className="w-5 h-5 text-accent-primary" />
             </div>
           </div>
 
@@ -1053,7 +1058,7 @@ export const KpiCards = ({
 
           {/* Version Adoption Card */}
           <div 
-            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40"
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
             onClick={onVersionClick}
             role="button"
             tabIndex={0}
@@ -1064,19 +1069,7 @@ export const KpiCards = ({
                 onVersionClick?.();
               }
             }}
-            style={{
-              position: 'relative',
-            }}
           >
-            {/* Subtle click indicator overlay */}
-            <div 
-              className="absolute top-2 right-2 opacity-30 group-hover:opacity-60 transition-opacity"
-              style={{
-                pointerEvents: 'none'
-              }}
-            >
-              <ChevronRight className="w-4 h-4 text-text-soft" />
-            </div>
             <div className="flex items-start justify-between gap-6">
               <div>
                 <div className="flex items-center gap-2">
@@ -1104,7 +1097,7 @@ export const KpiCards = ({
                 </div>
               </div>
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center"
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
                 style={{ 
                   background: hexToRgba(
                     versionAdoptionPercent >= 80 ? "#10B981" : 
@@ -1153,6 +1146,11 @@ export const KpiCards = ({
                   ? "Fragmented versions"
                   : "Critical: outdated network"}
               </p>
+            </div>
+
+            {/* Click indicator */}
+            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ChevronRight className="w-5 h-5 text-accent-primary" />
             </div>
           </div>
           </CollapsibleSection>

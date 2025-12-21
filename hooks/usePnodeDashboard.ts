@@ -91,6 +91,13 @@ export const usePnodeDashboard = (theme?: string) => {
   const [sortKey, setSortKey] = useState<SortKey>("health");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(50);
+
+  // Grid View Settings
+  const [gridLimit, setGridLimit] = useState<number>(100); // 50, 100, 200, or -1 for all
+
   // Other state
   const [autoRefreshOption, setAutoRefreshOption] = useState<AutoRefreshOption>("1m");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
@@ -360,7 +367,15 @@ export const usePnodeDashboard = (theme?: string) => {
       let valB: any = 0;
 
       switch (sortKey) {
-        case "ip": valA = a.ip; valB = b.ip; break;
+        case "ip":
+          // Convert IP to comparable number for proper sorting
+          const ipToNumber = (ip: string) => {
+            const parts = ip.split('.').map(Number);
+            return (parts[0] || 0) * 16777216 + (parts[1] || 0) * 65536 + (parts[2] || 0) * 256 + (parts[3] || 0);
+          };
+          valA = ipToNumber(a.ip);
+          valB = ipToNumber(b.ip);
+          break;
         case "cpu": valA = a.stats?.cpu_percent ?? 0; valB = b.stats?.cpu_percent ?? 0; break;
         case "ram": valA = a.stats?.ram_used ?? 0; valB = b.stats?.ram_used ?? 0; break;
         case "storage": valA = a.stats?.storage_committed ?? 0; valB = b.stats?.storage_committed ?? 0; break;
@@ -378,9 +393,20 @@ export const usePnodeDashboard = (theme?: string) => {
           valB = b.stats?.total_pages ?? 0;
           break;
         case "score":
-        case "health":
           valA = a._score;
           valB = b._score;
+          break;
+        case "health":
+          // Sort by health status with priority: Excellent > Good > Warning > Critical > Private
+          const healthPriority: Record<string, number> = {
+            'Excellent': 4,
+            'Good': 3,
+            'Warning': 2,
+            'Critical': 1,
+            'Private': 0
+          };
+          valA = healthPriority[a._healthStatus] ?? -1;
+          valB = healthPriority[b._healthStatus] ?? -1;
           break;
         case "version":
           valA = a.version ?? "";
@@ -396,6 +422,30 @@ export const usePnodeDashboard = (theme?: string) => {
 
     return result;
   }, [allPnodes, debouncedSearchTerm, nodeFilter, selectedVersions, selectedHealthStatuses, debouncedMinCpu, debouncedMinStorageBytes, sortKey, sortDirection]);
+
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, nodeFilter, selectedVersions, selectedHealthStatuses, debouncedMinCpu, debouncedMinStorageBytes, sortKey, sortDirection]);
+
+  // Pagination for Table View
+  const totalPages = useMemo(() => Math.ceil(filteredAndSortedPNodes.length / pageSize), [filteredAndSortedPNodes.length, pageSize]);
+
+  const paginatedPNodes = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return filteredAndSortedPNodes.slice(startIndex, endIndex);
+  }, [filteredAndSortedPNodes, currentPage, pageSize]);
+
+  // Grid View with intelligent limit
+  const gridPNodes = useMemo(() => {
+    if (gridLimit === -1) {
+      // Show all nodes
+      return filteredAndSortedPNodes;
+    }
+    // Show top N nodes by score
+    return filteredAndSortedPNodes.slice(0, gridLimit);
+  }, [filteredAndSortedPNodes, gridLimit]);
 
   // Derived global states (always based on allPnodes)
   const activeNodes = useMemo(() => allPnodes.filter((pnode) => pnode.status === "active"), [allPnodes]);
@@ -523,12 +573,18 @@ export const usePnodeDashboard = (theme?: string) => {
     const percent = totalCommitted > 0 ? (totalUsed / totalCommitted) * 100 : 0;
     const percentClamped = Math.min(100, percent);
 
-    const MB_IN_BYTES = 1024 * 1024;
+    // Use decimal formatting (KB=1e3, MB=1e6, etc.) to match AboutPNodes display
+    const KB = 1e3;
+    const MB = 1e6;
+    const GB = 1e9;
+    const TB = 1e12;
+    
     const formatAdaptive = (bytes: number) => {
-      if (bytes >= TB_IN_BYTES) return `${(bytes / TB_IN_BYTES).toFixed(2)} TB`;
-      if (bytes >= GB_IN_BYTES) return `${(bytes / GB_IN_BYTES).toFixed(2)} GB`;
-      if (bytes >= MB_IN_BYTES) return `${(bytes / MB_IN_BYTES).toFixed(1)} MB`;
-      return `${(bytes / 1024).toFixed(0)} KB`;
+      if (bytes >= TB) return `${(bytes / TB).toFixed(2)} TB`;
+      if (bytes >= GB) return `${(bytes / GB).toFixed(2)} GB`;
+      if (bytes >= MB) return `${(bytes / MB).toFixed(1)} MB`;
+      if (bytes >= KB) return `${(bytes / KB).toFixed(2)} KB`;
+      return `${bytes} bytes`;
     };
 
     return {
@@ -832,6 +888,17 @@ export const usePnodeDashboard = (theme?: string) => {
     privateCount,
     filteredAndSortedPNodes,
     quickResultsCount,
+    // Pagination
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    paginatedPNodes,
+    // Grid View
+    gridPNodes,
+    gridLimit,
+    setGridLimit,
     alerts,
     criticalCount,
     warningCount,

@@ -292,19 +292,39 @@ export const Toolbar = ({
           </Tooltip>
         </div>
 
-        {/* Live status */}
-        <div className="flex items-center gap-2">
-          {loading || refreshing ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin text-text-soft" />
-              <span className="text-[11px] text-text-soft font-mono">Updating...</span>
-            </>
-          ) : (
-            <>
-              <CheckCircle className="w-4 h-4 text-green-400" />
-              <span className="text-[11px] text-text-soft font-mono">{lastUpdateText || "—"}</span>
-            </>
-          )}
+        {/* Results counter & Live status */}
+        <div className="flex items-center gap-4">
+          {/* Results Counter */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-bg rounded-lg border border-border-app">
+            <Eye className="w-4 h-4 text-accent-aqua" />
+            <span className="text-xs font-bold text-text-main">
+              {pnodesCount}
+            </span>
+            <span className="text-[10px] text-text-soft">nodes</span>
+            <div className="w-px h-4 bg-border-app" />
+            <span className="text-[10px] text-text-soft">
+              <span className="font-semibold text-green-400">{publicCount}</span> public
+            </span>
+            <span className="text-[10px] text-text-soft">•</span>
+            <span className="text-[10px] text-text-soft">
+              <span className="font-semibold text-blue-400">{privateCount}</span> private
+            </span>
+          </div>
+
+          {/* Live status */}
+          <div className="flex items-center gap-2">
+            {loading || refreshing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-text-soft" />
+                <span className="text-[11px] text-text-soft font-mono">Updating...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle className="w-4 h-4 text-green-400" />
+                <span className="text-[11px] text-text-soft font-mono">{lastUpdateText || "—"}</span>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </section>
