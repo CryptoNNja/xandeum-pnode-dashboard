@@ -204,7 +204,7 @@ export const KpiCards = ({
             title="NETWORK STATUS"
             icon={<Network className="w-5 h-5" strokeWidth={2.5} />}
             description="Core metrics and network composition"
-            defaultOpen={true}
+            defaultOpen={false}
             accentColor="#3B82F6"
           >
           {/* Network Participation Card */}
@@ -480,7 +480,7 @@ export const KpiCards = ({
             title="SYSTEM HEALTH"
             icon={<ShieldCheck className="w-5 h-5" strokeWidth={2.5} />}
             description="Performance, reliability, and network status"
-            defaultOpen={true}
+            defaultOpen={false}
             accentColor="#10B981"
           >
           {/* Network Coverage Card */}
@@ -888,7 +888,7 @@ export const KpiCards = ({
             title="DATA INSIGHTS"
             icon={<Database className="w-5 h-5" strokeWidth={2.5} />}
             description="Storage, distribution, and performance analytics"
-            defaultOpen={true}
+            defaultOpen={false}
             accentColor="#7B3FF2"
           >
           {/* Storage Capacity Card */}
