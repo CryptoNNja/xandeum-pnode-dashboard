@@ -1,10 +1,49 @@
 "use client";
 
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Database, Radio, Globe, Zap, ChevronRight, ChevronDown } from "lucide-react";
+import { Database, Radio, Globe, Zap, ChevronRight, ChevronDown, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { TB_IN_BYTES } from "@/lib/utils";
+
+interface TokenData {
+  price: number;
+  priceChange24h: number;
+}
+
+const useTokenPrice = () => {
+  const [tokenData, setTokenData] = useState<TokenData | null>(null);
+
+  useEffect(() => {
+    const fetchTokenPrice = async () => {
+      try {
+        const response = await fetch(
+          'https://api.coingecko.com/api/v3/simple/price?ids=xandeum&vs_currencies=usd&include_24hr_change=true'
+        );
+        
+        if (!response.ok) throw new Error('Failed to fetch');
+        
+        const data = await response.json();
+        
+        if (data.xandeum) {
+          setTokenData({
+            price: data.xandeum.usd,
+            priceChange24h: data.xandeum.usd_24h_change || 0,
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching token price:', err);
+      }
+    };
+
+    fetchTokenPrice();
+    const interval = setInterval(fetchTokenPrice, 120000); // 2 minutes
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  return tokenData;
+};
 
 interface AboutPNodesProps {
   totalStorageCommitted: number;
@@ -30,6 +69,7 @@ const AboutPNodesComponent = ({
   const { theme } = useTheme();
   const isLight = theme === "light";
   const [isOpen, setIsOpen] = useState(false); // Collapsed by default
+  const tokenData = useTokenPrice();
 
   const storageCommittedTB = useMemo(() => {
     return (totalStorageCommitted / TB_IN_BYTES).toFixed(1);
@@ -125,29 +165,45 @@ const AboutPNodesComponent = ({
   ];
 
   // Extended stats (when expanded)
-  const extendedStats = [
-    {
-      icon: Database,
-      value: `${storageCommittedTB} TB`,
-      label: "Storage Committed",
-      sublabel: `${storageUsedPodsFormatted} used (pods) · ${storageUsedStatsFormatted} used (stats)`,
+  const extendedStats = useMemo(() => {
+    const stats = [
+      {
+        icon: Database,
+        value: `${storageCommittedTB} TB`,
+        label: "Storage Committed",
+        sublabel: `${storageUsedPodsFormatted} used (pods) · ${storageUsedStatsFormatted} used (stats)`,
+        color: "#7B3FF2", // Xandeum Purple
+      },
+      {
+        icon: Radio,
+        value: `${networkMetadata.crawledNodes} / ${networkMetadata.networkTotal}`,
+        label: "Network Coverage",
+        sublabel: `${networkMetadata.coveragePercent.toFixed(1)}% discovered`,
+        color: "#14F195", // Xandeum Green
+      },
+      {
+        icon: Globe,
+        value: countriesCount.toString(),
+        label: "Countries",
+        color: "#00D4AA", // Aqua
+      },
+    ];
 
-      color: "#7B3FF2", // Xandeum Purple
-    },
-    {
-      icon: Radio,
-      value: `${networkMetadata.crawledNodes} / ${networkMetadata.networkTotal}`,
-      label: "Network Coverage",
-      sublabel: `${networkMetadata.coveragePercent.toFixed(1)}% discovered`,
-      color: "#14F195", // Xandeum Green
-    },
-    {
-      icon: Globe,
-      value: countriesCount.toString(),
-      label: "Countries",
-      color: "#00D4AA", // Aqua
-    },
-  ];
+    // Add token price if available
+    if (tokenData) {
+      const isPositive = tokenData.priceChange24h >= 0;
+      stats.push({
+        icon: DollarSign,
+        value: `$${tokenData.price.toFixed(6)}`,
+        label: "XAND Token",
+        sublabel: `${isPositive ? '+' : ''}${tokenData.priceChange24h.toFixed(2)}% 24h`,
+        color: isPositive ? "#10B981" : "#EF4444",
+        customIcon: isPositive ? TrendingUp : TrendingDown,
+      });
+    }
+
+    return stats;
+  }, [storageCommittedTB, storageUsedPodsFormatted, storageUsedStatsFormatted, networkMetadata, countriesCount, tokenData]);
 
   return (
     <motion.section
@@ -301,16 +357,19 @@ const AboutPNodesComponent = ({
               style={{ overflow: "hidden" }}
             >
               <div className="relative z-10 px-6 md:px-8 pb-6 md:pb-8">
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col lg:flex-row gap-6 items-start">
                   {/* Explanation */}
-                  <div className="max-w-3xl">
+                  <div className="flex-1 max-w-3xl">
                     <p
                       className="text-sm leading-relaxed mb-4"
                       style={{ color: isLight ? "#4b5563" : "#94a3b8" }}
                     >
-                      Provider Nodes (pNodes) solve Solana's state bloat problem by offloading
-                      account data to a distributed network. Each node commits storage capacity,
-                      enabling Xandeum to scale beyond traditional blockchain limitations.
+                      Xandeum is building a scalable, decentralized storage layer for the Solana blockchain. 
+                      It aims to solve the "blockchain storage trilemma" by providing a solution that is scalable, 
+                      smart contract native, and allows for random access. Xandeum's liquid staking pool allows SOL 
+                      holders to earn rewards from both staking and storage fees, making it the first multi-validator 
+                      pool sharing block rewards with stakers. The XAND token serves as the governance token, granting 
+                      holders voting rights in the Xandeum DAO to shape the platform's future.
                     </p>
 
                     <a
@@ -324,6 +383,68 @@ const AboutPNodesComponent = ({
                       <ChevronRight className="w-3 h-3" />
                     </a>
                   </div>
+
+                  {/* XAND Token Card - Compact */}
+                  {tokenData && (() => {
+                    const isPositive = tokenData.priceChange24h >= 0;
+                    const cardColor = isPositive ? "#10B981" : "#EF4444";
+                    const TrendIcon = isPositive ? TrendingUp : TrendingDown;
+                    
+                    return (
+                      <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="w-full lg:w-48 p-3 rounded-lg transition-all hover:shadow-md"
+                        style={{
+                          background: isLight
+                            ? `linear-gradient(135deg, ${cardColor}10 0%, ${cardColor}03 100%)`
+                            : `linear-gradient(135deg, ${cardColor}15 0%, ${cardColor}05 100%)`,
+                          border: '1px solid',
+                          borderColor: `${cardColor}30`,
+                        }}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-1.5">
+                            <DollarSign
+                              className="w-4 h-4"
+                              style={{ color: cardColor }}
+                              strokeWidth={2.5}
+                            />
+                            <p className="text-xs font-semibold text-text-soft">
+                              XAND
+                            </p>
+                          </div>
+                          <TrendIcon
+                            className="w-4 h-4"
+                            style={{ color: cardColor }}
+                            strokeWidth={2.5}
+                          />
+                        </div>
+
+                        <p className="text-xl font-bold text-text-main mb-0.5">
+                          ${tokenData.price.toFixed(6)}
+                        </p>
+
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-text-soft">24h</span>
+                          <span className="font-semibold" style={{ color: cardColor }}>
+                            {isPositive ? '+' : ''}{tokenData.priceChange24h.toFixed(2)}%
+                          </span>
+                        </div>
+
+                        <a
+                          href="https://www.coingecko.com/en/coins/xandeum"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 text-[10px] text-text-soft hover:text-accent-primary transition-colors inline-flex items-center gap-0.5"
+                        >
+                          CoinGecko
+                          <ChevronRight className="w-2.5 h-2.5" />
+                        </a>
+                      </motion.div>
+                    );
+                  })()}
                 </div>
               </div>
             </motion.div>
