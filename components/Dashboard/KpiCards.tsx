@@ -34,6 +34,7 @@ import { DataDistributionModal } from "./DataDistributionModal";
 import { NetworkCoverageModal } from "./NetworkCoverageModal";
 import { LeaderboardModal } from "./LeaderboardModal";
 import { FlagsCarousel } from "./FlagsCarousel";
+import { PacketsAnimation } from "./PacketsAnimation";
 import { calculateNodeScore } from "@/lib/scoring";
 
 import type { NetworkParticipationMetrics } from "@/lib/blockchain-metrics";
@@ -366,7 +367,15 @@ export const KpiCards = ({
               </div>
             </div>
 
-            <div className="mt-6">
+            {/* Packets Animation */}
+            <div className="mt-4 mb-4">
+              <PacketsAnimation 
+                throughput={networkBandwidth / 1000} 
+                maxThroughput={1000}
+              />
+            </div>
+
+            <div className="mt-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-text-soft">Active nodes</span>
                 <span className="font-semibold text-text-main">{publicCount}</span>
