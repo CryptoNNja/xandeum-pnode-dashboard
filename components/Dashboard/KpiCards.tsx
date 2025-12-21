@@ -1,6 +1,7 @@
 
 "use client"
 
+import { useState } from "react";
 import {
     Radio,
     ShieldCheck,
@@ -26,6 +27,11 @@ import {
   } from "lucide-react";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
 import { CollapsibleSection } from "./CollapsibleSection";
+import { HealthDistributionModal } from "./HealthDistributionModal";
+import { CpuDistributionModal } from "./CpuDistributionModal";
+import { StorageAnalyticsModal } from "./StorageAnalyticsModal";
+import { DataDistributionModal } from "./DataDistributionModal";
+import { NetworkCoverageModal } from "./NetworkCoverageModal";
 
 import type { NetworkParticipationMetrics } from "@/lib/blockchain-metrics";
 
@@ -65,6 +71,16 @@ type KpiCardsProps = {
     versionAdoptionPercent: number;
     onVersionClick?: () => void;
     onGeographicClick?: () => void;
+    healthDistribution: {
+        excellent: number;
+        good: number;
+        warning: number;
+        critical: number;
+        total: number;
+    };
+    cpuDistribution: any[];
+    storageDistribution: any[];
+    pagesDistribution: any[];
 };
 
 export const KpiCards = ({
@@ -96,7 +112,11 @@ export const KpiCards = ({
     networkBandwidth,
     versionAdoptionPercent,
     onVersionClick,
-    onGeographicClick
+    onGeographicClick,
+    healthDistribution,
+    cpuDistribution,
+    storageDistribution,
+    pagesDistribution
 }: KpiCardsProps) => {
     // Use real props instead of hardcoded test data
     const alerts = _alerts;
@@ -115,6 +135,13 @@ export const KpiCards = ({
     };
     const avgCpuUsage = _avgCpuUsage;
     const avgRamUsage = _avgRamUsage;
+
+    // State for modals
+    const [isHealthModalOpen, setIsHealthModalOpen] = useState(false);
+    const [isCpuModalOpen, setIsCpuModalOpen] = useState(false);
+    const [isStorageModalOpen, setIsStorageModalOpen] = useState(false);
+    const [isDataModalOpen, setIsDataModalOpen] = useState(false);
+    const [isNetworkCoverageModalOpen, setIsNetworkCoverageModalOpen] = useState(false);
 
     const formatUtilizationPercent = (percent: number) => {
       if (!Number.isFinite(percent) || percent <= 0) return "0%";
@@ -136,12 +163,23 @@ export const KpiCards = ({
             accentColor="#10B981"
           >
           {/* Storage Capacity */}
-          <div className="kpi-card relative overflow-hidden p-6">
+          <div 
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            onClick={() => setIsStorageModalOpen(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setIsStorageModalOpen(true);
+              }
+            }}
+          >
             <div className="flex items-start justify-between gap-6">
               <div>
                 <div className="flex items-center gap-2">
                   <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Storage Capacity</p>
-                  <InfoTooltip content="Total storage space committed by pNodes to the Xandeum network. 'Utilized' shows actual data stored." />
+                  <InfoTooltip content="Total storage space committed by pNodes to the Xandeum network. 'Utilized' shows actual data stored. Click to view distribution and growth analytics." />
                 </div>
                 <p className="text-sm text-text-faint">Total available storage</p>
                 <div className="flex items-baseline gap-2 mt-4">
@@ -154,7 +192,7 @@ export const KpiCards = ({
                 </div>
               </div>
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center"
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
                 style={{ background: hexToRgba(storageBarColors.accent, 0.12) }}
               >
                 <HardDrive className="w-5 h-5" strokeWidth={2.3} style={{ color: storageBarColors.accent }} />
@@ -180,15 +218,31 @@ export const KpiCards = ({
                 </span>
               </div>
             </div>
+
+            {/* Click indicator */}
+            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ChevronRight className="w-5 h-5 text-accent-primary" />
+            </div>
           </div>
 
           {/* Avg CPU Usage */}
-          <div className="kpi-card relative overflow-hidden p-6">
+          <div 
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            onClick={() => setIsCpuModalOpen(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setIsCpuModalOpen(true);
+              }
+            }}
+          >
             <div className="flex items-start justify-between gap-6">
               <div>
                 <div className="flex items-center gap-2">
                   <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Avg CPU Usage</p>
-                  <InfoTooltip content="Average processing load across all active public pNodes. High load may impact node responsiveness." />
+                  <InfoTooltip content="Average processing load across all active public pNodes. High load may impact node responsiveness. Click to view detailed distribution." />
                 </div>
                 <p className="text-sm text-text-faint">Across public p-nodes</p>
                 <div className="flex items-baseline gap-2 mt-4">
@@ -198,7 +252,7 @@ export const KpiCards = ({
                 </div>
               </div>
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center"
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
                 style={{ background: hexToRgba(KPI_COLORS.cpu, 0.12) }}
               >
                 <Cpu className="w-5 h-5" strokeWidth={2.3} style={{ color: KPI_COLORS.cpu }} />
@@ -226,6 +280,11 @@ export const KpiCards = ({
                   ? `Across ${avgCpuUsage.nodeCount} active nodes`
                   : "Awaiting active telemetry"}
               </p>
+            </div>
+
+            {/* Click indicator */}
+            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ChevronRight className="w-5 h-5 text-accent-primary" />
             </div>
           </div>
 
@@ -280,19 +339,30 @@ export const KpiCards = ({
           </div>
 
           {/* Network Health - Moved from Network Overview */}
-          <div className="kpi-card relative overflow-hidden p-6">
+          <div 
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            onClick={() => setIsHealthModalOpen(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setIsHealthModalOpen(true);
+              }
+            }}
+          >
             <div className="flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2">
                   <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
                     Network Health
                   </p>
-                  <InfoTooltip content="Overall network reliability score. A healthy pNode network ensures Xandeum can scale Solana's state without bottlenecks." />
+                  <InfoTooltip content="Overall network reliability score. A healthy pNode network ensures Xandeum can scale Solana's state without bottlenecks. Click to view detailed health distribution." />
                 </div>
                 <p className="text-sm text-text-faint">Overall network score</p>
               </div>
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center"
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
                 style={{ background: hexToRgba(networkHealthInsights.color, 0.12) }}
               >
                 <ShieldCheck
@@ -390,6 +460,11 @@ export const KpiCards = ({
                 public online
               </span>
             </div>
+
+            {/* Click indicator */}
+            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ChevronRight className="w-5 h-5 text-accent-primary" />
+            </div>
           </div>
 
           {/* Active Streams Card */}
@@ -452,14 +527,25 @@ export const KpiCards = ({
             accentColor="#F59E0B"
           >
           {/* Network Coverage Card */}
-          <div className="kpi-card relative overflow-hidden p-6">
+          <div 
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            onClick={() => setIsNetworkCoverageModalOpen(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setIsNetworkCoverageModalOpen(true);
+              }
+            }}
+          >
             <div className="flex items-start justify-between gap-6">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
                     Network Coverage
                   </p>
-                  <InfoTooltip content="Shows how many pNodes we've successfully crawled vs the total network size discovered via gossip protocol. Higher coverage means more accurate network insights." />
+                  <InfoTooltip content="Shows how many pNodes we've successfully crawled vs the total network size discovered via gossip protocol. Higher coverage means more accurate network insights. Click to view coverage and growth details." />
                 </div>
                 <p className="text-sm text-text-faint">Crawled nodes vs network total</p>
 
@@ -486,7 +572,7 @@ export const KpiCards = ({
               </div>
 
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
                 style={{
                   background: hexToRgba(
                     networkMetadata.coveragePercent >= 80 ? "#10B981" :
@@ -551,6 +637,11 @@ export const KpiCards = ({
                   : "Limited coverage - early discovery phase"
                 }
               </p>
+            </div>
+
+            {/* Click indicator */}
+            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ChevronRight className="w-5 h-5 text-accent-primary" />
             </div>
           </div>
 
@@ -765,12 +856,23 @@ export const KpiCards = ({
           </div>
 
           {/* Total Pages Card */}
-          <div className="kpi-card relative overflow-hidden p-6">
+          <div 
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            onClick={() => setIsDataModalOpen(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setIsDataModalOpen(true);
+              }
+            }}
+          >
             <div className="flex items-start justify-between gap-6">
               <div>
                 <div className="flex items-center gap-2">
                   <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Total Pages</p>
-                  <InfoTooltip content="Total number of data pages stored across all pNodes. Each page represents a unit of data in Xandeum's distributed storage layer." />
+                  <InfoTooltip content="Total number of data pages stored across all pNodes. Each page represents a unit of data in Xandeum's distributed storage layer. Click to view distribution." />
                 </div>
                 <p className="text-sm text-text-faint">Network-wide storage units</p>
                 <div className="flex items-baseline gap-2 mt-4">
@@ -789,7 +891,7 @@ export const KpiCards = ({
                 </div>
               </div>
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center"
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
                 style={{ background: hexToRgba("#3B82F6", 0.12) }}
               >
                 <FileText 
@@ -827,85 +929,13 @@ export const KpiCards = ({
                   : "Early stage deployment"}
               </p>
             </div>
-          </div>
 
-          {/* Network Growth Rate Card */}
-          <div className="kpi-card relative overflow-hidden p-6">
-            <div className="flex items-start justify-between gap-6">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Network Growth</p>
-                  <InfoTooltip content="Percentage change in active node count based on recent historical snapshots. Calculated from daily network snapshots (improves accuracy over 7+ days)." />
-                </div>
-                <p className="text-sm text-text-faint">Recent node growth rate</p>
-                <div className="flex items-baseline gap-2 mt-4">
-                  <span 
-                    className="text-4xl font-bold tracking-tight"
-                    style={{ 
-                      color: networkGrowthRate > 0 
-                        ? "#10B981" 
-                        : networkGrowthRate < 0 
-                        ? "#EF4444" 
-                        : "#6B7280" 
-                    }}
-                  >
-                    {networkGrowthRate > 0 ? "+" : ""}{networkGrowthRate.toFixed(1)}%
-                  </span>
-                </div>
-              </div>
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center"
-                style={{ 
-                  background: hexToRgba(
-                    networkGrowthRate > 0 ? "#10B981" : 
-                    networkGrowthRate < 0 ? "#EF4444" : "#6B7280", 
-                    0.12
-                  ) 
-                }}
-              >
-                <TrendingUp 
-                  className="w-5 h-5" 
-                  strokeWidth={2.3} 
-                  style={{ 
-                    color: networkGrowthRate > 0 ? "#10B981" : 
-                           networkGrowthRate < 0 ? "#EF4444" : "#6B7280",
-                    transform: networkGrowthRate < 0 ? "rotate(180deg)" : "none"
-                  }} 
-                />
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-text-soft">Current nodes</span>
-                <span className="font-semibold text-text-main">{totalNodes}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-2">
-                <span className="text-text-soft">Trend</span>
-                <span 
-                  className="font-semibold"
-                  style={{ 
-                    color: networkGrowthRate > 0 ? "#10B981" : 
-                           networkGrowthRate < 0 ? "#EF4444" : "#6B7280" 
-                  }}
-                >
-                  {networkGrowthRate > 5 ? "Rapid expansion" : 
-                   networkGrowthRate > 0 ? "Growing" : 
-                   networkGrowthRate < -5 ? "Declining" : 
-                   "Stable"}
-                </span>
-              </div>
-              <p className="text-sm text-text-faint mt-4">
-                {networkGrowthRate > 10 
-                  ? "Strong network adoption" 
-                  : networkGrowthRate > 0 
-                  ? "Healthy growth trajectory" 
-                  : networkGrowthRate < -5
-                  ? "Network contraction detected"
-                  : "Stable network size"}
-              </p>
+            {/* Click indicator */}
+            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ChevronRight className="w-5 h-5 text-accent-primary" />
             </div>
           </div>
+
           </CollapsibleSection>
 
           {/* Section 3: Advanced Analytics */}
@@ -916,89 +946,6 @@ export const KpiCards = ({
             defaultOpen={true}
             accentColor="#8B5CF6"
           >
-          {/* Storage Growth Rate Card */}
-          <div className="kpi-card relative overflow-hidden p-6">
-            <div className="flex items-start justify-between gap-6">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Storage Growth</p>
-                  <InfoTooltip content="Percentage increase in total pages stored based on recent historical snapshots. Indicates actual network utilization and data growth trends." />
-                </div>
-                <p className="text-sm text-text-faint">Recent data growth rate</p>
-                <div className="flex items-baseline gap-2 mt-4">
-                  <span 
-                    className="text-4xl font-bold tracking-tight"
-                    style={{ 
-                      color: storageGrowthRate > 0 
-                        ? "#10B981" 
-                        : storageGrowthRate < 0 
-                        ? "#EF4444" 
-                        : "#6B7280" 
-                    }}
-                  >
-                    {storageGrowthRate > 0 ? "+" : ""}{storageGrowthRate.toFixed(1)}%
-                  </span>
-                </div>
-              </div>
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center"
-                style={{ 
-                  background: hexToRgba(
-                    storageGrowthRate > 0 ? "#10B981" : 
-                    storageGrowthRate < 0 ? "#EF4444" : "#6B7280", 
-                    0.12
-                  ) 
-                }}
-              >
-                <Database 
-                  className="w-5 h-5" 
-                  strokeWidth={2.3} 
-                  style={{ 
-                    color: storageGrowthRate > 0 ? "#10B981" : 
-                           storageGrowthRate < 0 ? "#EF4444" : "#6B7280"
-                  }} 
-                />
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-text-soft">Total pages</span>
-                <span className="font-semibold text-text-main">
-                  {totalPagesCount >= 1000000 
-                    ? `${(totalPagesCount / 1000000).toFixed(2)}M`
-                    : totalPagesCount >= 1000
-                    ? `${(totalPagesCount / 1000).toFixed(1)}K`
-                    : totalPagesCount.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-2">
-                <span className="text-text-soft">Usage trend</span>
-                <span 
-                  className="font-semibold"
-                  style={{ 
-                    color: storageGrowthRate > 0 ? "#10B981" : 
-                           storageGrowthRate < 0 ? "#EF4444" : "#6B7280" 
-                  }}
-                >
-                  {storageGrowthRate > 10 ? "Accelerating" : 
-                   storageGrowthRate > 0 ? "Increasing" : 
-                   storageGrowthRate < -5 ? "Decreasing" : 
-                   "Steady"}
-                </span>
-              </div>
-              <p className="text-sm text-text-faint mt-4">
-                {storageGrowthRate > 15 
-                  ? "Rapid data adoption" 
-                  : storageGrowthRate > 0 
-                  ? "Active network usage" 
-                  : storageGrowthRate < -5
-                  ? "Data pruning detected"
-                  : "Stable storage usage"}
-              </p>
-            </div>
-          </div>
-
           {/* Network Bandwidth Card */}
           <div className="kpi-card relative overflow-hidden p-6">
             <div className="flex items-start justify-between gap-6">
@@ -1154,6 +1101,52 @@ export const KpiCards = ({
             </div>
           </div>
           </CollapsibleSection>
+
+          {/* Health Distribution Modal */}
+          <HealthDistributionModal
+            isOpen={isHealthModalOpen}
+            onClose={() => setIsHealthModalOpen(false)}
+            healthDistribution={healthDistribution}
+            totalNodes={totalNodes}
+            isLight={isLight}
+          />
+
+          {/* CPU Distribution Modal */}
+          <CpuDistributionModal
+            isOpen={isCpuModalOpen}
+            onClose={() => setIsCpuModalOpen(false)}
+            cpuDistribution={cpuDistribution}
+            isLight={isLight}
+          />
+
+          {/* Storage Analytics Modal */}
+          <StorageAnalyticsModal
+            isOpen={isStorageModalOpen}
+            onClose={() => setIsStorageModalOpen(false)}
+            storageDistribution={storageDistribution}
+            storageGrowthRate={storageGrowthRate}
+            totalPagesCount={totalPagesCount}
+            isLight={isLight}
+          />
+
+          {/* Data Distribution Modal */}
+          <DataDistributionModal
+            isOpen={isDataModalOpen}
+            onClose={() => setIsDataModalOpen(false)}
+            pagesDistribution={pagesDistribution}
+            totalPagesCount={totalPagesCount}
+            isLight={isLight}
+          />
+
+          {/* Network Coverage Modal */}
+          <NetworkCoverageModal
+            isOpen={isNetworkCoverageModalOpen}
+            onClose={() => setIsNetworkCoverageModalOpen(false)}
+            networkMetadata={networkMetadata}
+            networkGrowthRate={networkGrowthRate}
+            totalNodes={totalNodes}
+            isLight={isLight}
+          />
         </div>
     )
 }

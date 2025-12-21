@@ -9,8 +9,6 @@ import SkeletonLoader from "@/components/SkeletonLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { usePnodeDashboard } from "@/hooks/usePnodeDashboard";
 import { SummaryHeader } from "@/components/Dashboard/SummaryHeader";
-import { HealthDistribution } from "@/components/Dashboard/HealthDistribution";
-import { ChartsSection } from "@/components/Dashboard/ChartsSection";
 import TopPerformersChart from "@/components/TopPerformersChart";
 import { DashboardContent } from "@/components/Dashboard/DashboardContent";
 import { AlertsModal } from "@/components/Dashboard/AlertsModal";
@@ -286,26 +284,15 @@ export default function Page() {
           versionAdoptionPercent={versionAdoptionPercent}
           onVersionClick={() => setIsVersionModalOpen(true)}
           onGeographicClick={() => setIsGeographicModalOpen(true)}
-        />
-
-        {/* HEALTH & LEADERBOARD - Side by side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <HealthDistribution
-            healthDistribution={healthDistribution}
-            totalNodes={pnodes.length}
-          />
-          
-          <TopPerformersChart
-            nodes={pnodes}
-          />
-        </div>
-
-        {/* CHARTS SECTION */}
-        <ChartsSection
+          healthDistribution={healthDistribution}
           cpuDistribution={cpuDistribution}
           storageDistribution={storageDistribution}
           pagesDistribution={pagesDistribution}
-          isLight={isLight}
+        />
+
+        {/* TOP PERFORMERS */}
+        <TopPerformersChart
+          nodes={pnodes}
         />
 
         {/* TOOLBAR */}
