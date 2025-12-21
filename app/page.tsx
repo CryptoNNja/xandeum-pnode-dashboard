@@ -9,7 +9,6 @@ import SkeletonLoader from "@/components/SkeletonLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { usePnodeDashboard } from "@/hooks/usePnodeDashboard";
 import { SummaryHeader } from "@/components/Dashboard/SummaryHeader";
-import TopPerformersChart from "@/components/TopPerformersChart";
 import { DashboardContent } from "@/components/Dashboard/DashboardContent";
 import { AlertsModal } from "@/components/Dashboard/AlertsModal";
 import { VersionDetailsModal } from "@/components/Dashboard/VersionDetailsModal";
@@ -288,11 +287,7 @@ export default function Page() {
           cpuDistribution={cpuDistribution}
           storageDistribution={storageDistribution}
           pagesDistribution={pagesDistribution}
-        />
-
-        {/* TOP PERFORMERS */}
-        <TopPerformersChart
-          nodes={pnodes}
+          pnodes={pnodes}
         />
 
         {/* TOOLBAR */}

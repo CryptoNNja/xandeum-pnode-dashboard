@@ -32,6 +32,8 @@ import { CpuDistributionModal } from "./CpuDistributionModal";
 import { StorageAnalyticsModal } from "./StorageAnalyticsModal";
 import { DataDistributionModal } from "./DataDistributionModal";
 import { NetworkCoverageModal } from "./NetworkCoverageModal";
+import { LeaderboardModal } from "./LeaderboardModal";
+import { calculateNodeScore } from "@/lib/scoring";
 
 import type { NetworkParticipationMetrics } from "@/lib/blockchain-metrics";
 
@@ -81,6 +83,7 @@ type KpiCardsProps = {
     cpuDistribution: any[];
     storageDistribution: any[];
     pagesDistribution: any[];
+    pnodes: any[];
 };
 
 export const KpiCards = ({
@@ -116,7 +119,8 @@ export const KpiCards = ({
     healthDistribution,
     cpuDistribution,
     storageDistribution,
-    pagesDistribution
+    pagesDistribution,
+    pnodes
 }: KpiCardsProps) => {
     // Use real props instead of hardcoded test data
     const alerts = _alerts;
@@ -142,6 +146,7 @@ export const KpiCards = ({
     const [isStorageModalOpen, setIsStorageModalOpen] = useState(false);
     const [isDataModalOpen, setIsDataModalOpen] = useState(false);
     const [isNetworkCoverageModalOpen, setIsNetworkCoverageModalOpen] = useState(false);
+    const [isLeaderboardModalOpen, setIsLeaderboardModalOpen] = useState(false);
 
     const formatUtilizationPercent = (percent: number) => {
       if (!Number.isFinite(percent) || percent <= 0) return "0%";
@@ -154,137 +159,178 @@ export const KpiCards = ({
 
     return (
         <div className="space-y-6">
-          {/* Section 1: Performance & Resources */}
+          {/* Section 1: NETWORK STATUS */}
           <CollapsibleSection
-            title="PERFORMANCE & RESOURCES"
-            icon={<Cpu className="w-5 h-5" strokeWidth={2.5} />}
-            description="Real-time system metrics and resource utilization"
+            title="NETWORK STATUS"
+            icon={<Network className="w-5 h-5" strokeWidth={2.5} />}
+            description="Core metrics and network composition"
             defaultOpen={true}
-            accentColor="#10B981"
+            accentColor="#3B82F6"
           >
-          {/* Storage Capacity */}
-          <div 
-            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
-            onClick={() => setIsStorageModalOpen(true)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setIsStorageModalOpen(true);
-              }
-            }}
-          >
+          {/* Network Participation Card */}
+          <div className="kpi-card relative overflow-hidden p-6">
             <div className="flex items-start justify-between gap-6">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Storage Capacity</p>
-                  <InfoTooltip content="Total storage space committed by pNodes to the Xandeum network. 'Utilized' shows actual data stored. Click to view distribution and growth analytics." />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
+                    Network Participation
+                  </p>
+                  <InfoTooltip content="Shows how many pNodes are earning rewards in Xandeum's credit system this cycle. This may differ from discovered nodes as not all nodes participate in rewards." />
                 </div>
-                <p className="text-sm text-text-faint">Total available storage</p>
-                <div className="flex items-baseline gap-2 mt-4">
-                  <span className="text-3xl font-bold text-text-main">
-                    {storageCapacityStats.formattedUsed ?? "—"}
-                  </span>
-                  <span className="text-sm text-text-soft font-semibold">
-                    / {storageCapacityStats.formattedTotal ?? "—"}
-                  </span>
-                </div>
+                <p className="text-sm text-text-faint">Credit system participants</p>
+
+                {networkParticipation ? (
+                  <>
+                    <div className="flex items-baseline gap-2 mt-4">
+                      <span 
+                        className="text-4xl font-bold tracking-tight"
+                        style={{ 
+                          color: networkParticipation.participationRate >= 85 
+                            ? "#10B981" 
+                            : networkParticipation.participationRate >= 70 
+                            ? "#F59E0B" 
+                            : "#EF4444" 
+                        }}
+                      >
+                        {networkParticipation.podsEarning}
+                      </span>
+                      <span className="text-lg text-text-soft font-semibold">
+                        / {networkParticipation.totalPods}
+                      </span>
+                      <span className="text-sm text-text-faint ml-1">nodes</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-baseline gap-2 mt-4">
+                    <span className="text-4xl font-bold tracking-tight text-text-faint">—</span>
+                  </div>
+                )}
               </div>
+
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
-                style={{ background: hexToRgba(storageBarColors.accent, 0.12) }}
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: hexToRgba("#3B82F6", 0.12) }}
               >
-                <HardDrive className="w-5 h-5" strokeWidth={2.3} style={{ color: storageBarColors.accent }} />
-              </div>
-            </div>
-            <div className="mt-6">
-              <div
-                className="w-full h-2 rounded-full overflow-hidden border"
-                style={{ background: "var(--progress-track)", borderColor: "var(--border-default)" }}
-              >
-                <div
-                  className="h-full rounded-full transition-all duration-500 ease-out"
-                  style={{
-                    width: `${Number.isFinite(storageCapacityStats.percent) ? storageCapacityStats.percent : 0}%`,
-                    background: "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)",
-                  }}
+                <Trophy 
+                  className="w-5 h-5" 
+                  strokeWidth={2.3} 
+                  style={{ color: "#3B82F6" }} 
                 />
-              </div>
-              <div className="flex items-center justify-between text-xs text-text-soft mt-2">
-                <span>{formatUtilizationPercent(storageCapacityStats.percent ?? 0)} utilized</span>
-                <span>
-                  {storageCapacityStats.formattedAvailable ?? "—"} {storageCapacityStats.availabilityLabel ?? "available"}
-                </span>
               </div>
             </div>
 
-            {/* Click indicator */}
-            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ChevronRight className="w-5 h-5 text-accent-primary" />
-            </div>
+            {networkParticipation ? (
+              <>
+                <div className="mt-6">
+                  <div
+                    className="w-full h-2 rounded-full overflow-hidden border"
+                    style={{ 
+                      background: isLight ? "rgba(15,23,42,0.06)" : "rgba(255,255,255,0.05)", 
+                      borderColor: "var(--border-default)" 
+                    }}
+                  >
+                    <div
+                      className="h-full rounded-full transition-all duration-500 ease-out"
+                      style={{
+                        width: `${networkParticipation.participationRate}%`,
+                        background: "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)",
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-text-soft mt-2">
+                    <span>{networkParticipation.participationRate.toFixed(1)}% earning</span>
+                    <span className="font-medium">
+                      {networkParticipation.totalPods > 0 ? `${networkParticipation.totalPods} in rewards system` : "No data"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  {networkParticipation.podsInactive === 0 ? (
+                    <p 
+                      className="text-sm font-medium flex items-center gap-2"
+                      style={{ color: "#10B981" }}
+                    >
+                      <span className="text-base">✓</span>
+                      All nodes earning rewards
+                    </p>
+                  ) : (
+                    <p 
+                      className="text-sm font-medium"
+                      style={{ 
+                        color: networkParticipation.participationRate >= 70 ? "#F59E0B" : "#EF4444" 
+                      }}
+                    >
+                      {networkParticipation.podsInactive === 1 
+                        ? "1 node inactive this cycle"
+                        : `${networkParticipation.podsInactive} nodes inactive this cycle`
+                      }
+                    </p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="mt-6">
+                <p className="text-sm text-text-faint">Loading participation data...</p>
+              </div>
+            )}
           </div>
 
-          {/* Avg CPU Usage */}
-          <div 
-            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
-            onClick={() => setIsCpuModalOpen(true)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setIsCpuModalOpen(true);
-              }
-            }}
-          >
+          {/* Network Throughput Card */}
+          <div className="kpi-card relative overflow-hidden p-6">
             <div className="flex items-start justify-between gap-6">
               <div>
                 <div className="flex items-center gap-2">
-                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Avg CPU Usage</p>
-                  <InfoTooltip content="Average processing load across all active public pNodes. High load may impact node responsiveness. Click to view detailed distribution." />
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Network Throughput</p>
+                  <InfoTooltip content="Total network activity measured in packets per second. Higher throughput indicates active data synchronization across nodes." />
                 </div>
-                <p className="text-sm text-text-faint">Across public p-nodes</p>
+                <p className="text-sm text-text-faint">Aggregate bandwidth</p>
                 <div className="flex items-baseline gap-2 mt-4">
-                  <span className="text-4xl font-bold text-text-main">
-                    {avgCpuUsage.percent.toFixed(0)}%
+                  <span className="text-4xl font-bold tracking-tight text-text-main">
+                    {networkBandwidth >= 1000000 
+                      ? `${(networkBandwidth / 1000000).toFixed(2)}M`
+                      : networkBandwidth >= 1000
+                      ? `${(networkBandwidth / 1000).toFixed(1)}K`
+                      : networkBandwidth.toFixed(0)}
                   </span>
+                  <span className="text-sm font-mono text-text-soft">pkt/s</span>
                 </div>
               </div>
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
-                style={{ background: hexToRgba(KPI_COLORS.cpu, 0.12) }}
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: hexToRgba("#3B82F6", 0.12) }}
               >
-                <Cpu className="w-5 h-5" strokeWidth={2.3} style={{ color: KPI_COLORS.cpu }} />
-              </div>
-            </div>
-            <div className="mt-6">
-              <div
-                className="w-full h-2 rounded-full overflow-hidden border"
-                style={{ background: "var(--progress-track)", borderColor: "var(--border-default)" }}
-              >
-                <div
-                  className="h-full rounded-full transition-all duration-500 ease-out"
-                  style={{
-                    width: `${Math.min(100, avgCpuUsage.percent)}%`,
-                    background: "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)",
-                  }}
+                <Wifi 
+                  className="w-5 h-5" 
+                  strokeWidth={2.3} 
+                  style={{ color: "#3B82F6" }} 
                 />
               </div>
-              <div className="flex items-center justify-between text-xs text-text-soft mt-2">
-                <span>Avg load</span>
-                <span>{avgCpuUsage.percent.toFixed(0)}%</span>
-              </div>
-              <p className="text-sm text-text-faint mt-4">
-                {avgCpuUsage.nodeCount > 0
-                  ? `Across ${avgCpuUsage.nodeCount} active nodes`
-                  : "Awaiting active telemetry"}
-              </p>
             </div>
 
-            {/* Click indicator */}
-            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ChevronRight className="w-5 h-5 text-accent-primary" />
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-soft">Active nodes</span>
+                <span className="font-semibold text-text-main">{publicCount}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm mt-2">
+                <span className="text-text-soft">Avg per node</span>
+                <span className="font-semibold text-text-main">
+                  {publicCount > 0 
+                    ? `${(networkBandwidth / publicCount).toFixed(0)} pkt/s`
+                    : "0 pkt/s"}
+                </span>
+              </div>
+              <p className="text-sm text-text-faint mt-4">
+                {networkBandwidth > 1000000 
+                  ? "High network activity" 
+                  : networkBandwidth > 100000
+                  ? "Moderate traffic flow" 
+                  : networkBandwidth > 10000
+                  ? "Light network usage"
+                  : "Minimal activity"}
+              </p>
             </div>
           </div>
 
@@ -308,9 +354,9 @@ export const KpiCards = ({
               </div>
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center"
-                style={{ background: hexToRgba(KPI_COLORS.ram, 0.12) }}
+                style={{ background: hexToRgba("#3B82F6", 0.12) }}
               >
-                <MemoryStick className="w-5 h-5" strokeWidth={2.3} style={{ color: KPI_COLORS.ram }} />
+                <MemoryStick className="w-5 h-5" strokeWidth={2.3} style={{ color: "#3B82F6" }} />
               </div>
             </div>
             <div className="mt-6">
@@ -338,7 +384,185 @@ export const KpiCards = ({
             </div>
           </div>
 
-          {/* Network Health - Moved from Network Overview */}
+          {/* Active Streams Card */}
+          <div className="kpi-card relative overflow-hidden p-6">
+            <div className="flex items-start justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Active Streams</p>
+                  <InfoTooltip content="Number of active data streams across all pNodes. Streams represent real-time data synchronization channels in the Xandeum network." />
+                </div>
+                <p className="text-sm text-text-faint">Network-wide data flow</p>
+                <div className="flex items-baseline gap-2 mt-4">
+                  <p
+                    className="text-4xl font-bold tracking-tight"
+                    style={{ color: activeStreamsTotal > 0 ? "#10B981" : "#6B7280" }}
+                  >
+                    {activeStreamsTotal}
+                  </p>
+                  <span className="text-sm font-mono text-text-soft">
+                    {activeStreamsTotal === 1 ? "stream" : "streams"}
+                  </span>
+                </div>
+              </div>
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: hexToRgba("#3B82F6", 0.12) }}
+              >
+                <Activity className="w-5 h-5" strokeWidth={2.3} style={{ color: "#3B82F6" }} />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-soft">Active nodes</span>
+                <span className="font-semibold text-text-main">{activeNodesWithStreams}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm mt-2">
+                <span className="text-text-soft">Avg per node</span>
+                <span className="font-semibold text-text-main">
+                  {activeNodesWithStreams > 0
+                    ? (activeStreamsTotal / activeNodesWithStreams).toFixed(1)
+                    : "0"}
+                </span>
+              </div>
+              <p className="text-sm text-text-faint mt-4">
+                {activeStreamsTotal > 0
+                  ? `${activeNodesWithStreams} nodes streaming data`
+                  : "No active streams detected"}
+              </p>
+            </div>
+          </div>
+          </CollapsibleSection>
+
+          {/* Section 2: SYSTEM HEALTH */}
+          <CollapsibleSection
+            title="SYSTEM HEALTH"
+            icon={<ShieldCheck className="w-5 h-5" strokeWidth={2.5} />}
+            description="Performance, reliability, and network status"
+            defaultOpen={true}
+            accentColor="#10B981"
+          >
+          {/* Network Coverage Card */}
+          <div 
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            onClick={() => setIsNetworkCoverageModalOpen(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setIsNetworkCoverageModalOpen(true);
+              }
+            }}
+          >
+            <div className="flex items-start justify-between gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
+                    Network Coverage
+                  </p>
+                  <InfoTooltip content="Shows how many pNodes we've successfully crawled vs the total network size discovered via gossip protocol. Higher coverage means more accurate network insights. Click to view coverage and growth details." />
+                </div>
+                <p className="text-sm text-text-faint">Crawled nodes vs network total</p>
+
+                <div className="flex items-baseline gap-2 mt-4">
+                  <span
+                    className="text-4xl font-bold tracking-tight"
+                    style={{
+                      color: networkMetadata.coveragePercent >= 80
+                        ? "#10B981"
+                        : networkMetadata.coveragePercent >= 60
+                        ? "#3B82F6"
+                        : networkMetadata.coveragePercent >= 40
+                        ? "#F59E0B"
+                        : "#EF4444"
+                    }}
+                  >
+                    {networkMetadata.crawledNodes}
+                  </span>
+                  <span className="text-lg text-text-soft font-semibold">
+                    / {networkMetadata.networkTotal}
+                  </span>
+                  <span className="text-sm text-text-faint ml-1">nodes</span>
+                </div>
+              </div>
+
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
+                style={{
+                  background: hexToRgba(
+                    networkMetadata.coveragePercent >= 80 ? "#10B981" :
+                    networkMetadata.coveragePercent >= 60 ? "#3B82F6" :
+                    networkMetadata.coveragePercent >= 40 ? "#F59E0B" : "#EF4444",
+                    0.12
+                  )
+                }}
+              >
+                <Radio
+                  className="w-5 h-5"
+                  strokeWidth={2.3}
+                  style={{
+                    color: networkMetadata.coveragePercent >= 80 ? "#10B981" :
+                           networkMetadata.coveragePercent >= 60 ? "#3B82F6" :
+                           networkMetadata.coveragePercent >= 40 ? "#F59E0B" : "#EF4444"
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div
+                className="w-full h-2 rounded-full overflow-hidden border"
+                style={{
+                  background: isLight ? "rgba(15,23,42,0.06)" : "rgba(255,255,255,0.05)",
+                  borderColor: "var(--border-default)"
+                }}
+              >
+                <div
+                  className="h-full rounded-full transition-all duration-500 ease-out"
+                  style={{
+                    width: `${networkMetadata.coveragePercent}%`,
+                    background: "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)",
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-text-soft mt-2">
+                <span>{networkMetadata.coveragePercent.toFixed(1)}% discovered</span>
+                <span className="font-medium">
+                  {networkMetadata.activeNodes} active nodes
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <p
+                className="text-sm font-medium"
+                style={{
+                  color: networkMetadata.coveragePercent >= 80 ? "#10B981" :
+                         networkMetadata.coveragePercent >= 60 ? "#3B82F6" :
+                         networkMetadata.coveragePercent >= 40 ? "#F59E0B" : "#EF4444"
+                }}
+              >
+                {networkMetadata.coveragePercent >= 80
+                  ? "Excellent network coverage"
+                  : networkMetadata.coveragePercent >= 60
+                  ? "Good network coverage"
+                  : networkMetadata.coveragePercent >= 40
+                  ? "Moderate coverage - discovery ongoing"
+                  : "Limited coverage - early discovery phase"
+                }
+              </p>
+            </div>
+
+            {/* Click indicator */}
+            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ChevronRight className="w-5 h-5 text-accent-primary" />
+            </div>
+          </div>
+
+          {/* Network Health Card */}
           <div 
             className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
             onClick={() => setIsHealthModalOpen(true)}
@@ -467,539 +691,66 @@ export const KpiCards = ({
             </div>
           </div>
 
-          {/* Active Streams Card */}
-          <div className="kpi-card relative overflow-hidden p-6">
-            <div className="flex items-start justify-between gap-6">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Active Streams</p>
-                  <InfoTooltip content="Number of active data streams across all pNodes. Streams represent real-time data synchronization channels in the Xandeum network." />
-                </div>
-                <p className="text-sm text-text-faint">Network-wide data flow</p>
-                <div className="flex items-baseline gap-2 mt-4">
-                  <p
-                    className="text-4xl font-bold tracking-tight"
-                    style={{ color: activeStreamsTotal > 0 ? "#10B981" : "#6B7280" }}
-                  >
-                    {activeStreamsTotal}
-                  </p>
-                  <span className="text-sm font-mono text-text-soft">
-                    {activeStreamsTotal === 1 ? "stream" : "streams"}
-                  </span>
-                </div>
-              </div>
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center"
-                style={{ background: hexToRgba("#10B981", 0.12) }}
-              >
-                <Activity className="w-5 h-5" strokeWidth={2.3} style={{ color: "#10B981" }} />
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-text-soft">Active nodes</span>
-                <span className="font-semibold text-text-main">{activeNodesWithStreams}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-2">
-                <span className="text-text-soft">Avg per node</span>
-                <span className="font-semibold text-text-main">
-                  {activeNodesWithStreams > 0
-                    ? (activeStreamsTotal / activeNodesWithStreams).toFixed(1)
-                    : "0"}
-                </span>
-              </div>
-              <p className="text-sm text-text-faint mt-4">
-                {activeStreamsTotal > 0
-                  ? `${activeNodesWithStreams} nodes streaming data`
-                  : "No active streams detected"}
-              </p>
-            </div>
-          </div>
-          </CollapsibleSection>
-
-          {/* Section 2: Growth & Network Metrics */}
-          <CollapsibleSection
-            title="GROWTH & NETWORK METRICS"
-            icon={<TrendingUp className="w-5 h-5" strokeWidth={2.5} />}
-            description="Network expansion and participation insights"
-            defaultOpen={true}
-            accentColor="#F59E0B"
-          >
-          {/* Network Coverage Card */}
+          {/* Avg CPU Usage Card */}
           <div 
             className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
-            onClick={() => setIsNetworkCoverageModalOpen(true)}
+            onClick={() => setIsCpuModalOpen(true)}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                setIsNetworkCoverageModalOpen(true);
+                setIsCpuModalOpen(true);
               }
             }}
           >
             <div className="flex items-start justify-between gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
-                    Network Coverage
-                  </p>
-                  <InfoTooltip content="Shows how many pNodes we've successfully crawled vs the total network size discovered via gossip protocol. Higher coverage means more accurate network insights. Click to view coverage and growth details." />
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Avg CPU Usage</p>
+                  <InfoTooltip content="Average processing load across all active public pNodes. High load may impact node responsiveness. Click to view detailed distribution." />
                 </div>
-                <p className="text-sm text-text-faint">Crawled nodes vs network total</p>
-
+                <p className="text-sm text-text-faint">Across public p-nodes</p>
                 <div className="flex items-baseline gap-2 mt-4">
-                  <span
-                    className="text-4xl font-bold tracking-tight"
-                    style={{
-                      color: networkMetadata.coveragePercent >= 80
-                        ? "#10B981"
-                        : networkMetadata.coveragePercent >= 60
-                        ? "#3B82F6"
-                        : networkMetadata.coveragePercent >= 40
-                        ? "#F59E0B"
-                        : "#EF4444"
-                    }}
-                  >
-                    {networkMetadata.crawledNodes}
+                  <span className="text-4xl font-bold text-text-main">
+                    {avgCpuUsage.percent.toFixed(0)}%
                   </span>
-                  <span className="text-lg text-text-soft font-semibold">
-                    / {networkMetadata.networkTotal}
-                  </span>
-                  <span className="text-sm text-text-faint ml-1">nodes</span>
                 </div>
               </div>
-
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
-                style={{
-                  background: hexToRgba(
-                    networkMetadata.coveragePercent >= 80 ? "#10B981" :
-                    networkMetadata.coveragePercent >= 60 ? "#3B82F6" :
-                    networkMetadata.coveragePercent >= 40 ? "#F59E0B" : "#EF4444",
-                    0.12
-                  )
-                }}
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
+                style={{ background: hexToRgba("#10B981", 0.12) }}
               >
-                <Radio
-                  className="w-5 h-5"
-                  strokeWidth={2.3}
-                  style={{
-                    color: networkMetadata.coveragePercent >= 80 ? "#10B981" :
-                           networkMetadata.coveragePercent >= 60 ? "#3B82F6" :
-                           networkMetadata.coveragePercent >= 40 ? "#F59E0B" : "#EF4444"
-                  }}
-                />
+                <Cpu className="w-5 h-5" strokeWidth={2.3} style={{ color: "#10B981" }} />
               </div>
             </div>
-
             <div className="mt-6">
               <div
                 className="w-full h-2 rounded-full overflow-hidden border"
-                style={{
-                  background: isLight ? "rgba(15,23,42,0.06)" : "rgba(255,255,255,0.05)",
-                  borderColor: "var(--border-default)"
-                }}
+                style={{ background: "var(--progress-track)", borderColor: "var(--border-default)" }}
               >
                 <div
                   className="h-full rounded-full transition-all duration-500 ease-out"
                   style={{
-                    width: `${networkMetadata.coveragePercent}%`,
+                    width: `${Math.min(100, avgCpuUsage.percent)}%`,
                     background: "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)",
                   }}
                 />
               </div>
-
               <div className="flex items-center justify-between text-xs text-text-soft mt-2">
-                <span>{networkMetadata.coveragePercent.toFixed(1)}% discovered</span>
-                <span className="font-medium">
-                  {networkMetadata.activeNodes} active nodes
-                </span>
+                <span>Avg load</span>
+                <span>{avgCpuUsage.percent.toFixed(0)}%</span>
               </div>
-            </div>
-
-            <div className="mt-4">
-              <p
-                className="text-sm font-medium"
-                style={{
-                  color: networkMetadata.coveragePercent >= 80 ? "#10B981" :
-                         networkMetadata.coveragePercent >= 60 ? "#3B82F6" :
-                         networkMetadata.coveragePercent >= 40 ? "#F59E0B" : "#EF4444"
-                }}
-              >
-                {networkMetadata.coveragePercent >= 80
-                  ? "Excellent network coverage"
-                  : networkMetadata.coveragePercent >= 60
-                  ? "Good network coverage"
-                  : networkMetadata.coveragePercent >= 40
-                  ? "Moderate coverage - discovery ongoing"
-                  : "Limited coverage - early discovery phase"
-                }
+              <p className="text-sm text-text-faint mt-4">
+                {avgCpuUsage.nodeCount > 0
+                  ? `Across ${avgCpuUsage.nodeCount} active nodes`
+                  : "Awaiting active telemetry"}
               </p>
             </div>
 
             {/* Click indicator */}
             <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
               <ChevronRight className="w-5 h-5 text-accent-primary" />
-            </div>
-          </div>
-
-          {/* Network Participation Card */}
-          <div className="kpi-card relative overflow-hidden p-6">
-            <div className="flex items-start justify-between gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
-                    Network Participation
-                  </p>
-                  <InfoTooltip content="Shows how many pNodes are earning rewards in Xandeum's credit system this cycle. This may differ from discovered nodes as not all nodes participate in rewards." />
-                </div>
-                <p className="text-sm text-text-faint">Credit system participants</p>
-
-                {networkParticipation ? (
-                  <>
-                    <div className="flex items-baseline gap-2 mt-4">
-                      <span 
-                        className="text-4xl font-bold tracking-tight"
-                        style={{ 
-                          color: networkParticipation.participationRate >= 85 
-                            ? "#10B981" 
-                            : networkParticipation.participationRate >= 70 
-                            ? "#F59E0B" 
-                            : "#EF4444" 
-                        }}
-                      >
-                        {networkParticipation.podsEarning}
-                      </span>
-                      <span className="text-lg text-text-soft font-semibold">
-                        / {networkParticipation.totalPods}
-                      </span>
-                      <span className="text-sm text-text-faint ml-1">nodes</span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex items-baseline gap-2 mt-4">
-                    <span className="text-4xl font-bold tracking-tight text-text-faint">—</span>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ 
-                  background: hexToRgba(
-                    networkParticipation && networkParticipation.participationRate >= 85 ? "#10B981" : 
-                    networkParticipation && networkParticipation.participationRate >= 70 ? "#F59E0B" : "#EF4444", 
-                    0.12
-                  ) 
-                }}
-              >
-                <Trophy 
-                  className="w-5 h-5" 
-                  strokeWidth={2.3} 
-                  style={{ 
-                    color: networkParticipation && networkParticipation.participationRate >= 85 ? "#10B981" : 
-                           networkParticipation && networkParticipation.participationRate >= 70 ? "#F59E0B" : "#EF4444" 
-                  }} 
-                />
-              </div>
-            </div>
-
-            {networkParticipation ? (
-              <>
-                <div className="mt-6">
-                  <div
-                    className="w-full h-2 rounded-full overflow-hidden border"
-                    style={{ 
-                      background: isLight ? "rgba(15,23,42,0.06)" : "rgba(255,255,255,0.05)", 
-                      borderColor: "var(--border-default)" 
-                    }}
-                  >
-                    <div
-                      className="h-full rounded-full transition-all duration-500 ease-out"
-                      style={{
-                        width: `${networkParticipation.participationRate}%`,
-                        background: "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)",
-                      }}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-text-soft mt-2">
-                    <span>{networkParticipation.participationRate.toFixed(1)}% earning</span>
-                    <span className="font-medium">
-                      {networkParticipation.totalPods > 0 ? `${networkParticipation.totalPods} in rewards system` : "No data"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  {networkParticipation.podsInactive === 0 ? (
-                    <p 
-                      className="text-sm font-medium flex items-center gap-2"
-                      style={{ color: "#10B981" }}
-                    >
-                      <span className="text-base">✓</span>
-                      All nodes earning rewards
-                    </p>
-                  ) : (
-                    <p 
-                      className="text-sm font-medium"
-                      style={{ 
-                        color: networkParticipation.participationRate >= 70 ? "#F59E0B" : "#EF4444" 
-                      }}
-                    >
-                      {networkParticipation.podsInactive === 1 
-                        ? "1 node inactive this cycle"
-                        : `${networkParticipation.podsInactive} nodes inactive this cycle`
-                      }
-                    </p>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="mt-6">
-                <p className="text-sm text-text-faint">Loading participation data...</p>
-              </div>
-            )}
-          </div>
-
-          {/* Geographic Distribution Card */}
-          <div 
-            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
-            onClick={onGeographicClick}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onGeographicClick?.();
-              }
-            }}
-          >
-            <div className="flex items-start justify-between gap-6">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Geographic Spread</p>
-                  <InfoTooltip content="Number of countries/regions hosting pNodes. Greater geographic diversity improves network resilience and reduces latency for global users. Click to view detailed distribution." />
-                </div>
-                <p className="text-sm text-text-faint">Network decentralization</p>
-                <div className="flex items-baseline gap-2 mt-4">
-                  <span 
-                    className="text-4xl font-bold tracking-tight"
-                    style={{ 
-                      color: countriesCount >= 20 
-                        ? "#10B981" 
-                        : countriesCount >= 10 
-                        ? "#3B82F6" 
-                        : countriesCount >= 5 
-                        ? "#F59E0B" 
-                        : "#EF4444" 
-                    }}
-                  >
-                    {countriesCount}
-                  </span>
-                  <span className="text-sm font-mono text-text-soft">
-                    {countriesCount === 1 ? "country" : "countries"}
-                  </span>
-                </div>
-              </div>
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
-                style={{ 
-                  background: hexToRgba(
-                    countriesCount >= 20 ? "#10B981" : 
-                    countriesCount >= 10 ? "#3B82F6" : 
-                    countriesCount >= 5 ? "#F59E0B" : "#EF4444", 
-                    0.12
-                  ) 
-                }}
-              >
-                <Globe 
-                  className="w-5 h-5" 
-                  strokeWidth={2.3} 
-                  style={{ 
-                    color: countriesCount >= 20 ? "#10B981" : 
-                           countriesCount >= 10 ? "#3B82F6" : 
-                           countriesCount >= 5 ? "#F59E0B" : "#EF4444" 
-                  }} 
-                />
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-text-soft">Total nodes</span>
-                <span className="font-semibold text-text-main">{totalNodes}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-2">
-                <span className="text-text-soft">Avg nodes/region</span>
-                <span className="font-semibold text-text-main">
-                  {countriesCount > 0 ? (totalNodes / countriesCount).toFixed(1) : "0"}
-                </span>
-              </div>
-              <p className="text-sm text-text-faint mt-4">
-                {countriesCount >= 20
-                  ? "Excellent global diversity" 
-                  : countriesCount >= 10 
-                  ? "Strong geographic spread" 
-                  : countriesCount >= 5 
-                  ? "Moderate regional distribution" 
-                  : "Limited geographic spread"}
-              </p>
-            </div>
-
-            {/* Click indicator */}
-            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ChevronRight className="w-5 h-5 text-accent-primary" />
-            </div>
-          </div>
-
-          {/* Total Pages Card */}
-          <div 
-            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
-            onClick={() => setIsDataModalOpen(true)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setIsDataModalOpen(true);
-              }
-            }}
-          >
-            <div className="flex items-start justify-between gap-6">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Total Pages</p>
-                  <InfoTooltip content="Total number of data pages stored across all pNodes. Each page represents a unit of data in Xandeum's distributed storage layer. Click to view distribution." />
-                </div>
-                <p className="text-sm text-text-faint">Network-wide storage units</p>
-                <div className="flex items-baseline gap-2 mt-4">
-                  <span 
-                    className="text-4xl font-bold tracking-tight text-text-main"
-                  >
-                    {totalPagesCount >= 1000000 
-                      ? `${(totalPagesCount / 1000000).toFixed(2)}M`
-                      : totalPagesCount >= 1000
-                      ? `${(totalPagesCount / 1000).toFixed(1)}K`
-                      : totalPagesCount.toLocaleString()}
-                  </span>
-                  <span className="text-sm font-mono text-text-soft">
-                    {totalPagesCount === 1 ? "page" : "pages"}
-                  </span>
-                </div>
-              </div>
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
-                style={{ background: hexToRgba("#3B82F6", 0.12) }}
-              >
-                <FileText 
-                  className="w-5 h-5" 
-                  strokeWidth={2.3} 
-                  style={{ color: "#3B82F6" }} 
-                />
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-text-soft">Active nodes</span>
-                <span className="font-semibold text-text-main">{publicCount}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-2">
-                <span className="text-text-soft">Avg pages/node</span>
-                <span className="font-semibold text-text-main">
-                  {publicCount > 0 
-                    ? (totalPagesCount / publicCount >= 1000
-                      ? `${(totalPagesCount / publicCount / 1000).toFixed(1)}K`
-                      : (totalPagesCount / publicCount).toFixed(0))
-                    : "0"}
-                </span>
-              </div>
-              <p className="text-sm text-text-faint mt-4">
-                {totalPagesCount >= 10000000 
-                  ? "Massive network adoption" 
-                  : totalPagesCount >= 1000000 
-                  ? "High network utilization" 
-                  : totalPagesCount >= 100000
-                  ? "Growing storage adoption" 
-                  : totalPagesCount >= 10000
-                  ? "Active deployment phase"
-                  : "Early stage deployment"}
-              </p>
-            </div>
-
-            {/* Click indicator */}
-            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ChevronRight className="w-5 h-5 text-accent-primary" />
-            </div>
-          </div>
-
-          </CollapsibleSection>
-
-          {/* Section 3: Advanced Analytics */}
-          <CollapsibleSection
-            title="ADVANCED ANALYTICS"
-            icon={<Blocks className="w-5 h-5" strokeWidth={2.5} />}
-            description="Storage trends, throughput, and version metrics"
-            defaultOpen={true}
-            accentColor="#8B5CF6"
-          >
-          {/* Network Bandwidth Card */}
-          <div className="kpi-card relative overflow-hidden p-6">
-            <div className="flex items-start justify-between gap-6">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Network Throughput</p>
-                  <InfoTooltip content="Total network activity measured in packets per second. Higher throughput indicates active data synchronization across nodes." />
-                </div>
-                <p className="text-sm text-text-faint">Aggregate bandwidth</p>
-                <div className="flex items-baseline gap-2 mt-4">
-                  <span className="text-4xl font-bold tracking-tight text-text-main">
-                    {networkBandwidth >= 1000000 
-                      ? `${(networkBandwidth / 1000000).toFixed(2)}M`
-                      : networkBandwidth >= 1000
-                      ? `${(networkBandwidth / 1000).toFixed(1)}K`
-                      : networkBandwidth.toFixed(0)}
-                  </span>
-                  <span className="text-sm font-mono text-text-soft">pkt/s</span>
-                </div>
-              </div>
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center"
-                style={{ background: hexToRgba("#3B82F6", 0.12) }}
-              >
-                <Wifi 
-                  className="w-5 h-5" 
-                  strokeWidth={2.3} 
-                  style={{ color: "#3B82F6" }} 
-                />
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-text-soft">Active nodes</span>
-                <span className="font-semibold text-text-main">{publicCount}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-2">
-                <span className="text-text-soft">Avg per node</span>
-                <span className="font-semibold text-text-main">
-                  {publicCount > 0 
-                    ? `${(networkBandwidth / publicCount).toFixed(0)} pkt/s`
-                    : "0 pkt/s"}
-                </span>
-              </div>
-              <p className="text-sm text-text-faint mt-4">
-                {networkBandwidth > 1000000 
-                  ? "High network activity" 
-                  : networkBandwidth > 100000
-                  ? "Moderate traffic flow" 
-                  : networkBandwidth > 10000
-                  ? "Light network usage"
-                  : "Minimal activity"}
-              </p>
             </div>
           </div>
 
@@ -1045,23 +796,12 @@ export const KpiCards = ({
               </div>
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
-                style={{ 
-                  background: hexToRgba(
-                    versionAdoptionPercent >= 80 ? "#10B981" : 
-                    versionAdoptionPercent >= 60 ? "#3B82F6" : 
-                    versionAdoptionPercent >= 40 ? "#F59E0B" : "#EF4444", 
-                    0.12
-                  ) 
-                }}
+                style={{ background: hexToRgba("#10B981", 0.12) }}
               >
                 <CheckCircle2 
                   className="w-5 h-5" 
                   strokeWidth={2.3} 
-                  style={{ 
-                    color: versionAdoptionPercent >= 80 ? "#10B981" : 
-                           versionAdoptionPercent >= 60 ? "#3B82F6" : 
-                           versionAdoptionPercent >= 40 ? "#F59E0B" : "#EF4444" 
-                  }} 
+                  style={{ color: "#10B981" }} 
                 />
               </div>
             </div>
@@ -1100,6 +840,393 @@ export const KpiCards = ({
               <ChevronRight className="w-5 h-5 text-accent-primary" />
             </div>
           </div>
+
+          </CollapsibleSection>
+
+          {/* Section 3: DATA INSIGHTS */}
+          <CollapsibleSection
+            title="DATA INSIGHTS"
+            icon={<Database className="w-5 h-5" strokeWidth={2.5} />}
+            description="Storage, distribution, and performance analytics"
+            defaultOpen={true}
+            accentColor="#7B3FF2"
+          >
+          {/* Storage Capacity Card */}
+          <div 
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            onClick={() => setIsStorageModalOpen(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setIsStorageModalOpen(true);
+              }
+            }}
+          >
+            <div className="flex items-start justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Storage Capacity</p>
+                  <InfoTooltip content="Total storage space committed by pNodes to the Xandeum network. 'Utilized' shows actual data stored. Click to view distribution and growth analytics." />
+                </div>
+                <p className="text-sm text-text-faint">Total available storage</p>
+                <div className="flex items-baseline gap-2 mt-4">
+                  <span className="text-3xl font-bold text-text-main">
+                    {storageCapacityStats.formattedUsed ?? "—"}
+                  </span>
+                  <span className="text-sm text-text-soft font-semibold">
+                    / {storageCapacityStats.formattedTotal ?? "—"}
+                  </span>
+                </div>
+              </div>
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
+                style={{ background: hexToRgba("#7B3FF2", 0.12) }}
+              >
+                <HardDrive className="w-5 h-5" strokeWidth={2.3} style={{ color: "#7B3FF2" }} />
+              </div>
+            </div>
+            <div className="mt-6">
+              <div
+                className="w-full h-2 rounded-full overflow-hidden border"
+                style={{ background: "var(--progress-track)", borderColor: "var(--border-default)" }}
+              >
+                <div
+                  className="h-full rounded-full transition-all duration-500 ease-out"
+                  style={{
+                    width: `${Number.isFinite(storageCapacityStats.percent) ? storageCapacityStats.percent : 0}%`,
+                    background: "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)",
+                  }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-xs text-text-soft mt-2">
+                <span>{formatUtilizationPercent(storageCapacityStats.percent ?? 0)} utilized</span>
+                <span>
+                  {storageCapacityStats.formattedAvailable ?? "—"} {storageCapacityStats.availabilityLabel ?? "available"}
+                </span>
+              </div>
+            </div>
+
+            {/* Click indicator */}
+            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ChevronRight className="w-5 h-5 text-accent-primary" />
+            </div>
+          </div>
+
+          {/* Total Pages Card */}
+          <div 
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            onClick={() => setIsDataModalOpen(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setIsDataModalOpen(true);
+              }
+            }}
+          >
+            <div className="flex items-start justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Total Pages</p>
+                  <InfoTooltip content="Total number of data pages stored across all pNodes. Each page represents a unit of data in Xandeum's distributed storage layer. Click to view distribution." />
+                </div>
+                <p className="text-sm text-text-faint">Network-wide storage units</p>
+                <div className="flex items-baseline gap-2 mt-4">
+                  <span 
+                    className="text-4xl font-bold tracking-tight text-text-main"
+                  >
+                    {totalPagesCount >= 1000000 
+                      ? `${(totalPagesCount / 1000000).toFixed(2)}M`
+                      : totalPagesCount >= 1000
+                      ? `${(totalPagesCount / 1000).toFixed(1)}K`
+                      : totalPagesCount.toLocaleString()}
+                  </span>
+                  <span className="text-sm font-mono text-text-soft">
+                    {totalPagesCount === 1 ? "page" : "pages"}
+                  </span>
+                </div>
+              </div>
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
+                style={{ background: hexToRgba("#7B3FF2", 0.12) }}
+              >
+                <FileText 
+                  className="w-5 h-5" 
+                  strokeWidth={2.3} 
+                  style={{ color: "#7B3FF2" }} 
+                />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-soft">Active nodes</span>
+                <span className="font-semibold text-text-main">{publicCount}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm mt-2">
+                <span className="text-text-soft">Avg pages/node</span>
+                <span className="font-semibold text-text-main">
+                  {publicCount > 0 
+                    ? (totalPagesCount / publicCount >= 1000
+                      ? `${(totalPagesCount / publicCount / 1000).toFixed(1)}K`
+                      : (totalPagesCount / publicCount).toFixed(0))
+                    : "0"}
+                </span>
+              </div>
+              <p className="text-sm text-text-faint mt-4">
+                {totalPagesCount >= 10000000 
+                  ? "Massive network adoption" 
+                  : totalPagesCount >= 1000000 
+                  ? "High network utilization" 
+                  : totalPagesCount >= 100000
+                  ? "Growing storage adoption" 
+                  : totalPagesCount >= 10000
+                  ? "Active deployment phase"
+                  : "Early stage deployment"}
+              </p>
+            </div>
+
+            {/* Click indicator */}
+            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ChevronRight className="w-5 h-5 text-accent-primary" />
+            </div>
+          </div>
+
+          {/* Geographic Spread Card */}
+          <div 
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            onClick={onGeographicClick}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onGeographicClick?.();
+              }
+            }}
+          >
+            <div className="flex items-start justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Geographic Spread</p>
+                  <InfoTooltip content="Number of countries/regions hosting pNodes. Greater geographic diversity improves network resilience and reduces latency for global users. Click to view detailed distribution." />
+                </div>
+                <p className="text-sm text-text-faint">Network decentralization</p>
+                <div className="flex items-baseline gap-2 mt-4">
+                  <span 
+                    className="text-4xl font-bold tracking-tight"
+                    style={{ 
+                      color: countriesCount >= 20 
+                        ? "#10B981" 
+                        : countriesCount >= 10 
+                        ? "#3B82F6" 
+                        : countriesCount >= 5 
+                        ? "#F59E0B" 
+                        : "#EF4444" 
+                    }}
+                  >
+                    {countriesCount}
+                  </span>
+                  <span className="text-sm font-mono text-text-soft">
+                    {countriesCount === 1 ? "country" : "countries"}
+                  </span>
+                </div>
+              </div>
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
+                style={{ background: hexToRgba("#7B3FF2", 0.12) }}
+              >
+                <Globe 
+                  className="w-5 h-5" 
+                  strokeWidth={2.3} 
+                  style={{ color: "#7B3FF2" }} 
+                />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-soft">Total nodes</span>
+                <span className="font-semibold text-text-main">{totalNodes}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm mt-2">
+                <span className="text-text-soft">Avg nodes/region</span>
+                <span className="font-semibold text-text-main">
+                  {countriesCount > 0 ? (totalNodes / countriesCount).toFixed(1) : "0"}
+                </span>
+              </div>
+              <p className="text-sm text-text-faint mt-4">
+                {countriesCount >= 20
+                  ? "Excellent global diversity" 
+                  : countriesCount >= 10 
+                  ? "Strong geographic spread" 
+                  : countriesCount >= 5 
+                  ? "Moderate regional distribution" 
+                  : "Limited geographic spread"}
+              </p>
+            </div>
+
+            {/* Click indicator */}
+            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ChevronRight className="w-5 h-5 text-accent-primary" />
+            </div>
+          </div>
+
+          {/* Top Performers Card */}
+          <div 
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            onClick={() => setIsLeaderboardModalOpen(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setIsLeaderboardModalOpen(true);
+              }
+            }}
+          >
+            <div className="flex items-start justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Top Performers</p>
+                  <InfoTooltip content="Leaderboard of highest-scoring pNodes. Shows champion node plus category leaders. Click to view full rankings across all categories." />
+                </div>
+                <p className="text-sm text-text-faint">Performance leaderboard</p>
+                
+                {pnodes.length > 0 ? (
+                  (() => {
+                    // Calculate scores and sort nodes
+                    const scoredNodes = pnodes
+                      .map(node => ({ node, score: calculateNodeScore(node) }))
+                      .sort((a, b) => b.score - a.score);
+                    
+                    const champion = scoredNodes[0];
+                    const eliteCount = scoredNodes.filter(n => n.score >= 80).length;
+                    const avgScore = scoredNodes.reduce((sum, n) => sum + n.score, 0) / scoredNodes.length;
+                    
+                    // Get category leaders
+                    const storageLeader = [...pnodes].sort((a, b) => (b.stats?.storage_committed || 0) - (a.stats?.storage_committed || 0))[0];
+                    const uptimeLeader = [...pnodes].sort((a, b) => (b.uptime_pct || 0) - (a.uptime_pct || 0))[0];
+                    const creditsLeader = [...pnodes].sort((a, b) => (b.stats?.total_credits_earned || 0) - (a.stats?.total_credits_earned || 0))[0];
+                    
+                    return (
+                      <>
+                        {/* Champion Node */}
+                        <div className="mt-4 mb-3">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xl">🥇</span>
+                            <span className="text-xs uppercase tracking-wider text-text-soft">#1 Champion</span>
+                          </div>
+                          <div className="flex items-baseline gap-2 flex-wrap">
+                            <span className="text-2xl font-bold text-text-main">
+                              {champion.node.ip?.split('.').slice(-2).join('.') || 'N/A'}
+                            </span>
+                            <span className="text-sm text-text-soft">
+                              Score: {champion.score}
+                            </span>
+                            {champion.score >= 80 && (
+                              <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(123, 63, 242, 0.15)', color: '#7B3FF2' }}>
+                                ⭐ Elite
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Category Leaders */}
+                        <div className="mt-3 pt-3 border-t" style={{ borderColor: isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.08)' }}>
+                          <p className="text-xs uppercase tracking-wider text-text-soft mb-2">Category Leaders</p>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="flex items-center gap-1.5">
+                              <span style={{ color: '#7B3FF2' }}>🎯</span>
+                              <span className="text-text-soft">Perf:</span>
+                              <span className="font-semibold text-text-main">{champion.node.ip?.split('.').slice(-1)[0] || 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span style={{ color: '#7B3FF2' }}>💾</span>
+                              <span className="text-text-soft">Storage:</span>
+                              <span className="font-semibold text-text-main">
+                                {storageLeader?.ip?.split('.').slice(-1)[0] || 'N/A'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span style={{ color: '#7B3FF2' }}>⏱️</span>
+                              <span className="text-text-soft">Uptime:</span>
+                              <span className="font-semibold text-text-main">
+                                {uptimeLeader?.ip?.split('.').slice(-1)[0] || 'N/A'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span style={{ color: '#7B3FF2' }}>💰</span>
+                              <span className="text-text-soft">Credits:</span>
+                              <span className="font-semibold text-text-main">
+                                {creditsLeader?.ip?.split('.').slice(-1)[0] || 'N/A'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()
+                ) : (
+                  <div className="mt-4">
+                    <span className="text-2xl font-bold text-text-faint">—</span>
+                  </div>
+                )}
+              </div>
+
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
+                style={{ background: hexToRgba("#7B3FF2", 0.12) }}
+              >
+                <Trophy 
+                  className="w-5 h-5" 
+                  strokeWidth={2.3} 
+                  style={{ color: "#7B3FF2" }} 
+                />
+              </div>
+            </div>
+
+            {pnodes.length > 0 ? (() => {
+              const scoredNodes = pnodes.map(node => ({ node, score: calculateNodeScore(node) }));
+              const eliteCount = scoredNodes.filter(n => n.score >= 80).length;
+              const avgScore = scoredNodes.reduce((sum, n) => sum + n.score, 0) / scoredNodes.length;
+              
+              return (
+                <div className="mt-6">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-text-soft">Elite nodes</span>
+                    <span className="font-semibold text-text-main">{eliteCount}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm mt-2">
+                    <span className="text-text-soft">Avg score</span>
+                    <span className="font-semibold text-text-main">{avgScore.toFixed(1)}</span>
+                  </div>
+                  <p className="text-sm text-text-faint mt-4">
+                    {eliteCount >= 10
+                      ? "Strong network performance" 
+                      : eliteCount >= 5
+                      ? "Good performance levels" 
+                      : eliteCount >= 1
+                      ? "Performance emerging"
+                      : "Building network quality"}
+                  </p>
+                </div>
+              );
+            })() : (
+              <div className="mt-6">
+                <p className="text-sm text-text-faint">No data available</p>
+              </div>
+            )}
+
+            {/* Click indicator */}
+            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ChevronRight className="w-5 h-5 text-accent-primary" />
+            </div>
+          </div>
+
           </CollapsibleSection>
 
           {/* Health Distribution Modal */}
@@ -1145,6 +1272,14 @@ export const KpiCards = ({
             networkMetadata={networkMetadata}
             networkGrowthRate={networkGrowthRate}
             totalNodes={totalNodes}
+            isLight={isLight}
+          />
+
+          {/* Leaderboard Modal */}
+          <LeaderboardModal
+            isOpen={isLeaderboardModalOpen}
+            onClose={() => setIsLeaderboardModalOpen(false)}
+            nodes={pnodes}
             isLight={isLight}
           />
         </div>

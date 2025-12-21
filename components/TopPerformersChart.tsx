@@ -613,8 +613,8 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
         <div className="kpi-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255,215,0,0.15)' }}>
-                        <Trophy className="w-5 h-5" style={{ color: '#FFD700' }} strokeWidth={2.3} />
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(123, 63, 242, 0.15)' }}>
+                        <Trophy className="w-5 h-5" style={{ color: '#7B3FF2' }} strokeWidth={2.3} />
                     </div>
                     <h3 className="text-lg font-semibold tracking-[0.35em] text-text-main">Network Leaderboard</h3>
                 </div>
