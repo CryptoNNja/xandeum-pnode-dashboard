@@ -488,7 +488,7 @@ export const KpiCards = ({
           >
           {/* Network Coverage Card */}
           <div 
-            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-accent-primary/10 hover:border-accent-primary/50 hover:scale-[1.02] group"
             onClick={() => setIsNetworkCoverageModalOpen(true)}
             role="button"
             tabIndex={0}
@@ -600,14 +600,14 @@ export const KpiCards = ({
             </div>
 
             {/* Click indicator */}
-            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ChevronRight className="w-5 h-5 text-accent-primary" />
+            <div className="absolute bottom-4 right-4 opacity-30 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1">
+              <ChevronRight className="w-5 h-5 text-accent-primary" strokeWidth={2.5} />
             </div>
           </div>
 
           {/* Network Health Card */}
           <div 
-            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-accent-primary/10 hover:border-accent-primary/50 hover:scale-[1.02] group"
             onClick={() => setIsHealthModalOpen(true)}
             role="button"
             tabIndex={0}
@@ -729,14 +729,14 @@ export const KpiCards = ({
             </div>
 
             {/* Click indicator */}
-            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ChevronRight className="w-5 h-5 text-accent-primary" />
+            <div className="absolute bottom-4 right-4 opacity-30 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1">
+              <ChevronRight className="w-5 h-5 text-accent-primary" strokeWidth={2.5} />
             </div>
           </div>
 
           {/* Avg CPU Usage Card */}
           <div 
-            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-accent-primary/10 hover:border-accent-primary/50 hover:scale-[1.02] group"
             onClick={() => setIsCpuModalOpen(true)}
             role="button"
             tabIndex={0}
@@ -792,14 +792,14 @@ export const KpiCards = ({
             </div>
 
             {/* Click indicator */}
-            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ChevronRight className="w-5 h-5 text-accent-primary" />
+            <div className="absolute bottom-4 right-4 opacity-30 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1">
+              <ChevronRight className="w-5 h-5 text-accent-primary" strokeWidth={2.5} />
             </div>
           </div>
 
           {/* Version Adoption Card */}
           <div 
-            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-accent-primary/10 hover:border-accent-primary/50 hover:scale-[1.02] group"
             onClick={onVersionClick}
             role="button"
             tabIndex={0}
@@ -879,8 +879,8 @@ export const KpiCards = ({
             </div>
 
             {/* Click indicator */}
-            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ChevronRight className="w-5 h-5 text-accent-primary" />
+            <div className="absolute bottom-4 right-4 opacity-30 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1">
+              <ChevronRight className="w-5 h-5 text-accent-primary" strokeWidth={2.5} />
             </div>
           </div>
 
@@ -896,7 +896,7 @@ export const KpiCards = ({
           >
           {/* Storage Capacity Card */}
           <div 
-            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-accent-primary/10 hover:border-accent-primary/50 hover:scale-[1.02] group"
             onClick={() => setIsStorageModalOpen(true)}
             role="button"
             tabIndex={0}
@@ -952,14 +952,14 @@ export const KpiCards = ({
             </div>
 
             {/* Click indicator */}
-            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ChevronRight className="w-5 h-5 text-accent-primary" />
+            <div className="absolute bottom-4 right-4 opacity-30 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1">
+              <ChevronRight className="w-5 h-5 text-accent-primary" strokeWidth={2.5} />
             </div>
           </div>
 
           {/* Total Pages Card */}
           <div 
-            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-accent-primary/10 hover:border-accent-primary/50 hover:scale-[1.02] group"
             onClick={() => setIsDataModalOpen(true)}
             role="button"
             tabIndex={0}
@@ -1033,14 +1033,14 @@ export const KpiCards = ({
             </div>
 
             {/* Click indicator */}
-            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ChevronRight className="w-5 h-5 text-accent-primary" />
+            <div className="absolute bottom-4 right-4 opacity-30 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1">
+              <ChevronRight className="w-5 h-5 text-accent-primary" strokeWidth={2.5} />
             </div>
           </div>
 
           {/* Geographic Spread Card */}
           <div 
-            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-accent-primary/10 hover:border-accent-primary/50 hover:scale-[1.02] group"
             onClick={onGeographicClick}
             role="button"
             tabIndex={0}
@@ -1118,14 +1118,14 @@ export const KpiCards = ({
             </div>
 
             {/* Click indicator */}
-            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ChevronRight className="w-5 h-5 text-accent-primary" />
+            <div className="absolute bottom-4 right-4 opacity-30 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1">
+              <ChevronRight className="w-5 h-5 text-accent-primary" strokeWidth={2.5} />
             </div>
           </div>
 
           {/* Top Performers Card */}
           <div 
-            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all hover:shadow-xl hover:border-accent-primary/40 group"
+            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-accent-primary/10 hover:border-accent-primary/50 hover:scale-[1.02] group"
             onClick={() => setIsLeaderboardModalOpen(true)}
             role="button"
             tabIndex={0}
@@ -1136,18 +1136,19 @@ export const KpiCards = ({
               }
             }}
           >
-            <div className="flex items-start justify-between gap-4 mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255, 215, 0, 0.15)' }}>
-                  <Trophy className="w-5 h-5" style={{ color: '#FFD700' }} strokeWidth={2.3} />
+            <div className="flex items-start justify-between gap-6 mb-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Top Performers</p>
+                  <InfoTooltip content="Network champions across all categories. The overall champion leads in performance score. Click to view full leaderboard rankings." />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Top Performers</p>
-                    <InfoTooltip content="Network champions across all categories. The overall champion leads in performance score. Click to view full leaderboard rankings." />
-                  </div>
-                  <p className="text-sm text-text-faint">Category champions</p>
-                </div>
+                <p className="text-sm text-text-faint">Category champions</p>
+              </div>
+              <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
+                style={{ background: hexToRgba("#7B3FF2", 0.12) }}
+              >
+                <Trophy className="w-5 h-5" style={{ color: '#7B3FF2' }} strokeWidth={2.3} />
               </div>
             </div>
                 
@@ -1325,8 +1326,8 @@ export const KpiCards = ({
             )}
 
             {/* Click indicator */}
-            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ChevronRight className="w-5 h-5 text-accent-primary" />
+            <div className="absolute bottom-4 right-4 opacity-30 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1">
+              <ChevronRight className="w-5 h-5 text-accent-primary" strokeWidth={2.5} />
             </div>
           </div>
 
