@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
-import { Trophy, ArrowRight, HardDrive, Zap, Star, ChevronDown, Info, Coins } from "lucide-react";
+import confetti from "canvas-confetti";
+import { Trophy, ArrowRight, HardDrive, Zap, Star, ChevronDown, Info, Coins, Search, X } from "lucide-react";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
 import { useTheme } from "@/hooks/useTheme";
 import { calculateNodeScore } from "@/lib/scoring";
@@ -16,6 +17,7 @@ type RowVariant = "card" | "modal";
 interface TopPerformersChartProps {
     nodes: PNode[];
     onSelectNode?: (ip: string) => void;
+    hideHeader?: boolean;
 }
 
 interface PerformanceEntry {
@@ -244,7 +246,7 @@ const formatStartDate = (uptime?: number, lastSeen?: number) => {
     });
 };
 
-export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformersChartProps) {
+export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = false }: TopPerformersChartProps) {
     const { theme, mounted } = useTheme();
     const router = useRouter();
     const isLight = mounted ? theme === "light" : false;
@@ -252,6 +254,8 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
     const [showFullLeaderboard, setShowFullLeaderboard] = useState(false);
     const [activeTab, setActiveTab] = useState<LeaderboardTab>("performance");
     const [creditsData, setCreditsData] = useState<{ pod_id: string; credits: number }[]>([]);
+    const [allCreditsData, setAllCreditsData] = useState<{ pod_id: string; credits: number }[]>([]);
+    const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -271,7 +275,8 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
                 const response = await fetch('/api/pods-credits');
                 if (response.ok) {
                     const data = await response.json();
-                    setCreditsData(data.topEarners || []);
+                    setCreditsData(data.topEarners || []); // Top 10 for card
+                    setAllCreditsData(data.allPods || []); // All for modal
                 }
             } catch (error) {
                 console.error('Failed to fetch credits:', error);
@@ -295,8 +300,7 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
                     return a.node.ip.localeCompare(b.node.ip);
                 }
                 return b.score - a.score;
-            })
-            .slice(0, MAX_FULL_LEADERBOARD);
+            });
     }, [nodes]);
 
     const storageRanking = useMemo<StorageEntry[]>(() => {
@@ -314,8 +318,7 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
                     return a.node.ip.localeCompare(b.node.ip);
                 }
                 return b.committed - a.committed;
-            })
-            .slice(0, MAX_FULL_LEADERBOARD);
+            });
     }, [nodes]);
 
     const uptimeRanking = useMemo<UptimeEntry[]>(() => {
@@ -332,15 +335,17 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
                     return a.node.ip.localeCompare(b.node.ip);
                 }
                 return b.uptime - a.uptime;
-            })
-            .slice(0, MAX_FULL_LEADERBOARD);
+            });
     }, [nodes]);
 
     const creditsRanking = useMemo<CreditsEntry[]>(() => {
-        if (!creditsData || creditsData.length === 0) return [];
+        // Use allCreditsData if in modal context, otherwise use top 10
+        const dataSource = showFullLeaderboard ? allCreditsData : creditsData;
+        
+        if (!dataSource || dataSource.length === 0) return [];
         // Try to match credits data with nodes via potential future pubkey field
         // For now, show pod_id formatted nicely
-        return creditsData
+        return dataSource
             .map((credit) => {
                 // Try to find matching node by pubkey
                 const matchedNode = nodes.find(n => n.pubkey === credit.pod_id);
@@ -354,9 +359,8 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
                     credits: credit.credits,
                     podId: credit.pod_id,
                 };
-            })
-            .slice(0, MAX_FULL_LEADERBOARD);
-    }, [creditsData, nodes]);
+            });
+    }, [creditsData, allCreditsData, nodes, showFullLeaderboard]);
 
     const getRankingForTab = (tab: LeaderboardTab): AnyEntry[] => {
         if (tab === "performance") return performanceRanking;
@@ -366,6 +370,23 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
     };
 
     const activeRanking = getRankingForTab(activeTab);
+    
+    // Filter ranking based on search query
+    const filteredRanking = useMemo(() => {
+        if (!searchQuery.trim()) return activeRanking;
+        
+        const query = searchQuery.toLowerCase().trim();
+        return activeRanking.filter((entry) => {
+            const ip = entry.node.ip?.toLowerCase() || "";
+            // For credits, also search in podId
+            if ('podId' in entry) {
+                const podId = (entry as CreditsEntry).podId?.toLowerCase() || "";
+                return ip.includes(query) || podId.includes(query);
+            }
+            return ip.includes(query);
+        });
+    }, [activeRanking, searchQuery]);
+    
     const displayCount = isSmallScreen ? 3 : 5;
     const visibleEntries = activeRanking.slice(0, displayCount);
     const activeTabLabel = TAB_META[activeTab].label;
@@ -389,6 +410,37 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
             }
         };
 
+    // Confetti effect for #1 champion
+    const triggerConfetti = (event: React.MouseEvent<HTMLDivElement>) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const x = (rect.left + rect.width / 2) / window.innerWidth;
+        const y = (rect.top + rect.height / 2) / window.innerHeight;
+
+        // Get colors based on active tab
+        const colors = (() => {
+            switch (activeTab) {
+                case "performance":
+                    return ["#FFD700", "#FFA500", "#FF8C00"];
+                case "storage":
+                    return ["#7B3FF2", "#9D5CFF", "#B794FF"];
+                case "uptime":
+                    return ["#10B981", "#34D399", "#6EE7B7"];
+                case "credits":
+                    return ["#14F195", "#5FFFC1", "#8FFFD6"];
+                default:
+                    return ["#FFD700", "#FFA500"];
+            }
+        })();
+
+        confetti({
+            particleCount: 50,
+            spread: 60,
+            origin: { x, y },
+            colors,
+            disableForReducedMotion: true,
+        });
+    };
+
     const statusIndicator = (status: PNode["status"]) => (
         <span
             className="w-2 h-2 rounded-full inline-flex"
@@ -400,6 +452,20 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
             aria-label={status === "active" ? "Public node" : "Private node"}
         />
     );
+
+    // Medal/Trophy for top 3
+    const getRankMedal = (rank: number) => {
+        if (rank === 1) {
+            return <span className="text-lg mr-1" title="1st Place - Champion">🏆</span>;
+        }
+        if (rank === 2) {
+            return <span className="text-lg mr-1" title="2nd Place - Silver">🥈</span>;
+        }
+        if (rank === 3) {
+            return <span className="text-lg mr-1" title="3rd Place - Bronze">🥉</span>;
+        }
+        return null;
+    };
 
     const rowBaseClasses = (variant: RowVariant) =>
         clsx(
@@ -423,6 +489,7 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
                 tabIndex={0}
                 onClick={() => handleRowClick(entry.node.ip, closeModal)}
                 onKeyDown={handleRowKeyDown(entry.node.ip, closeModal)}
+                onMouseEnter={rank === 1 ? triggerConfetti : undefined}
                 className={clsx(
                     rowBaseClasses(variant),
                     rowHoverClass,
@@ -431,7 +498,10 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
             >
                 <span className="text-sm font-semibold text-text-faint text-right">{rank}.</span>
                 <div className="min-w-0">
-                    <p className="font-mono text-sm text-text-main truncate">{entry.node.ip}</p>
+                    <div className="flex items-center gap-1">
+                        {getRankMedal(rank)}
+                        <p className="font-mono text-sm text-text-main truncate">{entry.node.ip}</p>
+                    </div>
                     <div className="mt-1 flex items-center gap-1 text-yellow-400">
                         {stars.map((filled, idx) => (
                             <Star
@@ -470,6 +540,7 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
                 tabIndex={0}
                 onClick={() => handleRowClick(entry.node.ip, closeModal)}
                 onKeyDown={handleRowKeyDown(entry.node.ip, closeModal)}
+                onMouseEnter={rank === 1 ? triggerConfetti : undefined}
                 className={clsx(
                     rowBaseClasses(variant),
                     rowHoverClass,
@@ -478,7 +549,10 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
             >
                 <span className="text-sm font-semibold text-text-faint text-right">{rank}.</span>
                 <div className="min-w-0">
-                    <p className="font-mono text-sm text-text-main truncate">{entry.node.ip}</p>
+                    <div className="flex items-center gap-1">
+                        {getRankMedal(rank)}
+                        <p className="font-mono text-sm text-text-main truncate">{entry.node.ip}</p>
+                    </div>
                     <p className="text-xs text-text-soft">{entry.node.status === "active" ? "Public" : "Private"} node</p>
                 </div>
                 <div className="flex flex-col items-end gap-1 text-right">
@@ -512,6 +586,7 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
             tabIndex={0}
             onClick={() => handleRowClick(entry.node.ip, closeModal)}
             onKeyDown={handleRowKeyDown(entry.node.ip, closeModal)}
+            onMouseEnter={rank === 1 ? triggerConfetti : undefined}
             className={clsx(
                 rowBaseClasses(variant),
                 rowHoverClass,
@@ -520,7 +595,10 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
         >
             <span className="text-sm font-semibold text-text-faint text-right">{rank}.</span>
             <div className="min-w-0">
-                <p className="font-mono text-sm text-text-main truncate">{entry.node.ip}</p>
+                <div className="flex items-center gap-1">
+                    {getRankMedal(rank)}
+                    <p className="font-mono text-sm text-text-main truncate">{entry.node.ip}</p>
+                </div>
                 <p className="text-xs text-text-soft">Online since {formatStartDate(entry.uptime, entry.lastSeen)}</p>
             </div>
             <div className="flex flex-col items-end gap-1 text-right">
@@ -554,6 +632,7 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
                 tabIndex={hasMatchedNode ? 0 : undefined}
                 onClick={hasMatchedNode ? () => handleRowClick(entry.node.ip, closeModal) : undefined}
                 onKeyDown={hasMatchedNode ? handleRowKeyDown(entry.node.ip, closeModal) : undefined}
+                onMouseEnter={rank === 1 ? triggerConfetti : undefined}
                 className={clsx(
                     rowBaseClasses(variant),
                     hasMatchedNode && rowHoverClass,
@@ -565,15 +644,23 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
                 <div className="min-w-0">
                     {hasMatchedNode ? (
                         <>
-                            <p className="font-mono text-sm text-text-main truncate">{entry.node.ip}</p>
-                            <p className="text-xs text-text-soft">Matched node</p>
+                            <div className="flex items-center gap-1">
+                                {getRankMedal(rank)}
+                                <p className="font-mono text-sm text-text-main truncate">{entry.node.ip}</p>
+                            </div>
+                            <p className="text-xs text-text-soft font-mono truncate" title={entry.podId}>
+                                Pubkey: {entry.podId}
+                            </p>
                         </>
                     ) : (
                         <>
-                            <p className="font-mono text-xs text-text-main truncate" title={entry.podId}>
-                                {entry.node.ip}
-                            </p>
-                            <p className="text-xs text-text-soft">Pod ID (no IP match)</p>
+                            <div className="flex items-center gap-1">
+                                {getRankMedal(rank)}
+                                <p className="font-mono text-xs text-text-main truncate" title={entry.podId}>
+                                    {entry.podId}
+                                </p>
+                            </div>
+                            <p className="text-xs text-text-soft">Pubkey (no IP match)</p>
                         </>
                     )}
                 </div>
@@ -611,15 +698,17 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
 
     return (
         <div className="kpi-card border border-border-app rounded-xl p-6 shadow-card-shadow theme-transition">
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(123, 63, 242, 0.15)' }}>
-                        <Trophy className="w-5 h-5" style={{ color: '#7B3FF2' }} strokeWidth={2.3} />
+            {!hideHeader && (
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(123, 63, 242, 0.15)' }}>
+                            <Trophy className="w-5 h-5" style={{ color: '#7B3FF2' }} strokeWidth={2.3} />
+                        </div>
+                        <h3 className="text-lg font-semibold tracking-[0.35em] text-text-main">Network Leaderboard</h3>
                     </div>
-                    <h3 className="text-lg font-semibold tracking-[0.35em] text-text-main">Network Leaderboard</h3>
+                    <InfoTooltip content="Ranking of pNodes based on performance score, storage commitment, uptime duration, or reward credits. Use the dropdown to switch between different metrics." />
                 </div>
-                <InfoTooltip content="Ranking of pNodes based on performance score, storage commitment, uptime duration, or reward credits. Use the dropdown to switch between different metrics." />
-            </div>
+            )}
 
             <LeaderboardDropdown
                 activeTab={activeTab}
@@ -672,7 +761,7 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
                                 <div>
                                     <p className="text-[11px] uppercase tracking-widest text-text-faint">Network Leaderboard</p>
                                     <h4 className="text-xl font-semibold text-text-main mt-1">
-                                        Top {Math.min(MAX_FULL_LEADERBOARD, getRankingForTab(activeTab).length)} Nodes
+                                        Full Rankings - {getRankingForTab(activeTab).length} {getRankingForTab(activeTab).length === 1 ? 'Node' : 'Nodes'}
                                     </h4>
                                 </div>
                                 <button
@@ -685,20 +774,76 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
                                 </button>
                             </div>
 
-                            <div className="px-6 pt-4">
+                            <div className="px-6 pt-4 space-y-4">
                                 <LeaderboardDropdown
                                     activeTab={activeTab}
-                                    onChange={setActiveTab}
+                                    onChange={(tab) => {
+                                        setActiveTab(tab);
+                                        setSearchQuery(""); // Reset search when changing tabs
+                                    }}
                                     isLightMode={isLight}
                                 />
+
+                                {/* Search Bar */}
+                                <div className="relative">
+                                    <Search 
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-soft pointer-events-none" 
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder={activeTab === "credits" ? "Search by IP or pubkey..." : "Search by IP address..."}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full pl-10 pr-10 py-2.5 rounded-xl border text-sm text-text-main placeholder:text-text-soft focus:outline-none focus:ring-2 focus:ring-accent-aqua transition-all"
+                                        style={{
+                                            background: isLight ? "#ffffff" : "#101734",
+                                            borderColor: isLight ? "rgba(15, 23, 42, 0.1)" : "rgba(255, 255, 255, 0.1)",
+                                        }}
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            onClick={() => setSearchQuery("")}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-text-soft/10 rounded transition-colors"
+                                            aria-label="Clear search"
+                                        >
+                                            <X className="w-4 h-4 text-text-soft" />
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Results count */}
+                                {searchQuery && (
+                                    <div className="text-xs text-text-soft">
+                                        {filteredRanking.length === 0 ? (
+                                            <span>No results found for "{searchQuery}"</span>
+                                        ) : filteredRanking.length === 1 ? (
+                                            <span>1 result found</span>
+                                        ) : (
+                                            <span>{filteredRanking.length} results found</span>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="px-6 pb-6 space-y-2 overflow-y-auto max-h-[calc(80vh-160px)]">
-                                {getRankingForTab(activeTab).map((entry, index) =>
-                                    renderRow(activeTab, entry, index + 1, "modal", true)
-                                )}
-                                {getRankingForTab(activeTab).length === 0 && (
+                            <div className="px-6 pb-6 space-y-2 overflow-y-auto max-h-[calc(80vh-280px)]">
+                                {filteredRanking.map((entry, index) => {
+                                    // Find the actual rank in the full ranking (before filtering)
+                                    const actualRank = activeRanking.findIndex(e => e.node.ip === entry.node.ip) + 1;
+                                    return renderRow(activeTab, entry, actualRank, "modal", true);
+                                })}
+                                {filteredRanking.length === 0 && !searchQuery && (
                                     <p className="text-center text-sm text-text-faint py-6">No telemetry available.</p>
+                                )}
+                                {filteredRanking.length === 0 && searchQuery && (
+                                    <div className="text-center py-8">
+                                        <p className="text-sm text-text-faint">No nodes found matching "{searchQuery}"</p>
+                                        <button
+                                            onClick={() => setSearchQuery("")}
+                                            className="mt-3 text-sm text-accent-aqua hover:underline"
+                                        >
+                                            Clear search
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         </div>

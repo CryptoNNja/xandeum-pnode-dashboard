@@ -81,7 +81,8 @@ export async function GET() {
           ? totalCredits / podsWithCredits.length
           : 0,
       medianCredits: median,
-      topEarners: sortedPods.slice(0, 10),
+      topEarners: sortedPods.slice(0, 10), // Top 10 for the card preview
+      allPods: sortedPods, // All pods for the full leaderboard
       distribution: buckets,
     });
   } catch (error) {

@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Radio,
     ShieldCheck,
@@ -147,6 +147,46 @@ export const KpiCards = ({
     const [isDataModalOpen, setIsDataModalOpen] = useState(false);
     const [isNetworkCoverageModalOpen, setIsNetworkCoverageModalOpen] = useState(false);
     const [isLeaderboardModalOpen, setIsLeaderboardModalOpen] = useState(false);
+
+    // State for credits data
+    const [creditsData, setCreditsData] = useState<{ pod_id: string; credits: number }[]>([]);
+
+    // Fetch credits on mount
+    useEffect(() => {
+      const fetchCredits = async () => {
+        try {
+          const response = await fetch('/api/pods-credits');
+          if (response.ok) {
+            const data = await response.json();
+            setCreditsData(data.topEarners || []);
+          }
+        } catch (error) {
+          console.error('Failed to fetch credits:', error);
+        }
+      };
+      
+      fetchCredits();
+      const interval = setInterval(fetchCredits, 300000); // Refresh every 5 min
+      return () => clearInterval(interval);
+    }, []);
+
+    // Carousel for champion rotation with transition state
+    const [activeChampionIndex, setActiveChampionIndex] = useState(0);
+    const [isTransitioning, setIsTransitioning] = useState(false);
+    const championCategories = ['performance', 'storage', 'uptime', 'credits'] as const;
+    
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setIsTransitioning(true);
+        
+        setTimeout(() => {
+          setActiveChampionIndex((prev) => (prev + 1) % championCategories.length);
+          setIsTransitioning(false);
+        }, 300); // Half of transition duration
+      }, 4000); // Rotate every 4 seconds
+      
+      return () => clearInterval(interval);
+    }, []);
 
     const formatUtilizationPercent = (percent: number) => {
       if (!Number.isFinite(percent) || percent <= 0) return "0%";
@@ -1088,136 +1128,191 @@ export const KpiCards = ({
               }
             }}
           >
-            <div className="flex items-start justify-between gap-6">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Top Performers</p>
-                  <InfoTooltip content="Leaderboard of highest-scoring pNodes. Shows champion node plus category leaders. Click to view full rankings across all categories." />
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255, 215, 0, 0.15)' }}>
+                  <Trophy className="w-5 h-5" style={{ color: '#FFD700' }} strokeWidth={2.3} />
                 </div>
-                <p className="text-sm text-text-faint">Performance leaderboard</p>
-                
-                {pnodes.length > 0 ? (
-                  (() => {
-                    // Calculate scores and sort nodes
-                    const scoredNodes = pnodes
-                      .map(node => ({ node, score: calculateNodeScore(node) }))
-                      .sort((a, b) => b.score - a.score);
-                    
-                    const champion = scoredNodes[0];
-                    const eliteCount = scoredNodes.filter(n => n.score >= 80).length;
-                    const avgScore = scoredNodes.reduce((sum, n) => sum + n.score, 0) / scoredNodes.length;
-                    
-                    // Get category leaders
-                    const storageLeader = [...pnodes].sort((a, b) => (b.stats?.storage_committed || 0) - (a.stats?.storage_committed || 0))[0];
-                    const uptimeLeader = [...pnodes].sort((a, b) => (b.uptime_pct || 0) - (a.uptime_pct || 0))[0];
-                    const creditsLeader = [...pnodes].sort((a, b) => (b.stats?.total_credits_earned || 0) - (a.stats?.total_credits_earned || 0))[0];
-                    
-                    return (
-                      <>
-                        {/* Champion Node */}
-                        <div className="mt-4 mb-3">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xl">🥇</span>
-                            <span className="text-xs uppercase tracking-wider text-text-soft">#1 Champion</span>
-                          </div>
-                          <div className="flex items-baseline gap-2 flex-wrap">
-                            <span className="text-2xl font-bold text-text-main">
-                              {champion.node.ip?.split('.').slice(-2).join('.') || 'N/A'}
-                            </span>
-                            <span className="text-sm text-text-soft">
-                              Score: {champion.score}
-                            </span>
-                            {champion.score >= 80 && (
-                              <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(123, 63, 242, 0.15)', color: '#7B3FF2' }}>
-                                ⭐ Elite
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Category Leaders */}
-                        <div className="mt-3 pt-3 border-t" style={{ borderColor: isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.08)' }}>
-                          <p className="text-xs uppercase tracking-wider text-text-soft mb-2">Category Leaders</p>
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="flex items-center gap-1.5">
-                              <span style={{ color: '#7B3FF2' }}>🎯</span>
-                              <span className="text-text-soft">Perf:</span>
-                              <span className="font-semibold text-text-main">{champion.node.ip?.split('.').slice(-1)[0] || 'N/A'}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span style={{ color: '#7B3FF2' }}>💾</span>
-                              <span className="text-text-soft">Storage:</span>
-                              <span className="font-semibold text-text-main">
-                                {storageLeader?.ip?.split('.').slice(-1)[0] || 'N/A'}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span style={{ color: '#7B3FF2' }}>⏱️</span>
-                              <span className="text-text-soft">Uptime:</span>
-                              <span className="font-semibold text-text-main">
-                                {uptimeLeader?.ip?.split('.').slice(-1)[0] || 'N/A'}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span style={{ color: '#7B3FF2' }}>💰</span>
-                              <span className="text-text-soft">Credits:</span>
-                              <span className="font-semibold text-text-main">
-                                {creditsLeader?.ip?.split('.').slice(-1)[0] || 'N/A'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    );
-                  })()
-                ) : (
-                  <div className="mt-4">
-                    <span className="text-2xl font-bold text-text-faint">—</span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Top Performers</p>
+                    <InfoTooltip content="Network champions across all categories. The overall champion leads in performance score. Click to view full leaderboard rankings." />
                   </div>
-                )}
-              </div>
-
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
-                style={{ background: hexToRgba("#7B3FF2", 0.12) }}
-              >
-                <Trophy 
-                  className="w-5 h-5" 
-                  strokeWidth={2.3} 
-                  style={{ color: "#7B3FF2" }} 
-                />
+                  <p className="text-sm text-text-faint">Category champions</p>
+                </div>
               </div>
             </div>
-
-            {pnodes.length > 0 ? (() => {
-              const scoredNodes = pnodes.map(node => ({ node, score: calculateNodeScore(node) }));
-              const eliteCount = scoredNodes.filter(n => n.score >= 80).length;
-              const avgScore = scoredNodes.reduce((sum, n) => sum + n.score, 0) / scoredNodes.length;
-              
-              return (
-                <div className="mt-6">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-text-soft">Elite nodes</span>
-                    <span className="font-semibold text-text-main">{eliteCount}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm mt-2">
-                    <span className="text-text-soft">Avg score</span>
-                    <span className="font-semibold text-text-main">{avgScore.toFixed(1)}</span>
-                  </div>
-                  <p className="text-sm text-text-faint mt-4">
-                    {eliteCount >= 10
-                      ? "Strong network performance" 
-                      : eliteCount >= 5
-                      ? "Good performance levels" 
-                      : eliteCount >= 1
-                      ? "Performance emerging"
-                      : "Building network quality"}
-                  </p>
-                </div>
-              );
-            })() : (
-              <div className="mt-6">
-                <p className="text-sm text-text-faint">No data available</p>
+                
+            {pnodes.length > 0 ? (
+              (() => {
+                // Calculate scores and sort nodes
+                const scoredNodes = pnodes
+                  .map(node => ({ node, score: calculateNodeScore(node) }))
+                  .sort((a, b) => b.score - a.score);
+                
+                const champion = scoredNodes[0];
+                
+                // Get category leaders
+                const storageLeader = [...pnodes].sort((a, b) => (b.stats?.storage_committed || 0) - (a.stats?.storage_committed || 0))[0];
+                const uptimeLeader = [...pnodes].sort((a, b) => (b.stats?.uptime || 0) - (a.stats?.uptime || 0))[0];
+                
+                // Get credits leader from API data
+                let creditsLeader = null;
+                let creditsAmount = 0;
+                if (creditsData.length > 0) {
+                  const topCredit = creditsData[0];
+                  // Try to match by pubkey first, then by pod_id substring in IP
+                  creditsLeader = pnodes.find(n => n.pubkey === topCredit.pod_id) || null;
+                  creditsAmount = topCredit.credits;
+                  
+                  // If no match, try to find by IP containing pod_id
+                  if (!creditsLeader && topCredit.pod_id) {
+                    creditsLeader = pnodes.find(n => n.ip?.includes(topCredit.pod_id.slice(0, 8))) || null;
+                  }
+                }
+                
+                // Format storage for display
+                const formatStorageCompact = (bytes?: number) => {
+                  if (!bytes || bytes <= 0) return '0 TB';
+                  const tb = bytes / 1e12;
+                  if (tb >= 1) return `${tb.toFixed(1)} TB`;
+                  const gb = bytes / 1e9;
+                  return `${gb.toFixed(0)} GB`;
+                };
+                
+                // Format uptime
+                const formatUptimeCompact = (seconds?: number) => {
+                  if (!seconds || seconds <= 0) return '0d';
+                  const days = Math.floor(seconds / 86400);
+                  const hours = Math.floor((seconds % 86400) / 3600);
+                  if (days > 0) return `${days}d ${hours}h`;
+                  return `${hours}h`;
+                };
+                
+                // Get current champion based on carousel
+                const currentCategory = championCategories[activeChampionIndex];
+                const getCurrentChampionData = () => {
+                  switch (currentCategory) {
+                    case 'performance':
+                      return {
+                        icon: '🏆',
+                        label: 'Performance Champion',
+                        color: '#FFD700',
+                        ip: champion.node.ip,
+                        value: champion.score,
+                        unit: 'score',
+                        status: champion.node.status,
+                        showElite: champion.score >= 80,
+                      };
+                    case 'storage':
+                      return {
+                        icon: '💾',
+                        label: 'Storage Champion',
+                        color: '#8B5CF6',
+                        ip: storageLeader?.ip,
+                        value: formatStorageCompact(storageLeader?.stats?.storage_committed),
+                        unit: 'committed',
+                        status: storageLeader?.status,
+                        showElite: false,
+                      };
+                    case 'uptime':
+                      return {
+                        icon: '⚡',
+                        label: 'Uptime Champion',
+                        color: '#10B981',
+                        ip: uptimeLeader?.ip,
+                        value: formatUptimeCompact(uptimeLeader?.stats?.uptime),
+                        unit: 'online',
+                        status: uptimeLeader?.status,
+                        showElite: false,
+                      };
+                    case 'credits':
+                      return {
+                        icon: '💰',
+                        label: 'Credits Champion',
+                        color: '#F97316',
+                        ip: creditsLeader?.ip || (creditsData.length > 0 ? `${creditsData[0].pod_id.slice(0, 4)}...${creditsData[0].pod_id.slice(-4)}` : 'N/A'),
+                        value: creditsAmount > 0 ? creditsAmount.toLocaleString() : (creditsData.length > 0 ? creditsData[0].credits.toLocaleString() : '0'),
+                        unit: 'earned',
+                        status: creditsLeader?.status || 'active',
+                        showElite: false,
+                      };
+                  }
+                };
+                
+                const currentChampion = getCurrentChampionData();
+                
+                return (
+                  <>
+                    {/* Dynamic Champion - Hero Section with Carousel */}
+                    <div 
+                      className="mb-4 p-4 rounded-xl"
+                      style={{ 
+                        background: isLight 
+                          ? `linear-gradient(135deg, ${currentChampion.color}14 0%, ${currentChampion.color}05 100%)`
+                          : `linear-gradient(135deg, ${currentChampion.color}20 0%, ${currentChampion.color}08 100%)`,
+                        border: '1px solid',
+                        borderColor: `${currentChampion.color}33`,
+                        minHeight: '120px',
+                        opacity: isTransitioning ? 0 : 1,
+                        transform: isTransitioning ? 'translateX(20px) scale(0.98)' : 'translateX(0) scale(1)',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.6s ease, border-color 0.6s ease'
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-2" style={{ minHeight: '28px' }}>
+                        <span className="text-lg">{currentChampion.icon}</span>
+                        <span className="text-xs uppercase tracking-[0.2em] font-semibold" style={{ color: currentChampion.color }}>
+                          {currentChampion.label}
+                        </span>
+                        {currentChampion.showElite ? (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: `${currentChampion.color}33`, color: currentChampion.color }}>
+                            Elite
+                          </span>
+                        ) : (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-semibold opacity-0 pointer-events-none" style={{ background: `${currentChampion.color}33`, color: currentChampion.color }}>
+                            Elite
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div 
+                            className="w-2 h-2 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: currentChampion.status === 'active' ? '#10B981' : '#6B7280' }}
+                          />
+                          <span className="font-mono text-lg font-bold text-text-main truncate" title={currentChampion.ip}>
+                            {currentChampion.ip || 'N/A'}
+                          </span>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-2xl font-bold" style={{ color: currentChampion.color }}>
+                            {currentChampion.value}
+                          </div>
+                          <div className="text-xs text-text-soft">{currentChampion.unit}</div>
+                        </div>
+                      </div>
+                      
+                      {/* Progress indicator */}
+                      <div className="flex items-center justify-center gap-1.5 mt-3">
+                        {championCategories.map((_, index) => (
+                          <div
+                            key={index}
+                            className="h-1 rounded-full transition-all duration-300"
+                            style={{
+                              width: index === activeChampionIndex ? '24px' : '8px',
+                              backgroundColor: index === activeChampionIndex ? currentChampion.color : isLight ? 'rgba(15, 23, 42, 0.2)' : 'rgba(255, 255, 255, 0.2)',
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                );
+              })()
+            ) : (
+              <div className="py-8 text-center">
+                <p className="text-sm text-text-faint">No nodes available</p>
+                <p className="text-xs text-text-soft mt-1">Champions will appear once nodes are connected</p>
               </div>
             )}
 
