@@ -188,9 +188,9 @@ const PNodeTableComponent = ({
             const ramUsed = Math.max(pnode.stats.ram_used ?? 0, 0);
             const ramTotal = Math.max(pnode.stats.ram_total ?? 0, 0);
             
-            // Use storage_committed for capacity, total_bytes for used
+            // Use storage_committed for capacity, storage_used for actual usage
             const committedBytes = Math.max(pnode.stats.storage_committed ?? 0, 0);
-            const usedBytes = Math.max(pnode.stats.total_bytes ?? 0, 0);
+            const usedBytes = Math.max(pnode.stats.storage_used ?? 0, 0);
 
             return (
               <tr

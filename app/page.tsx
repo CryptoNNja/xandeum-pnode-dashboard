@@ -161,9 +161,17 @@ export default function Page() {
     return pnodes.reduce((sum, p) => sum + (p.stats?.storage_committed ?? 0), 0);
   }, [pnodes]);
 
-  // Calculate total storage used (only active nodes)
-  // Mapping: total_bytes is the actual storage used (as of API v0.7)
-  const totalStorageUsed = useMemo(() => {
+  // Calculate total storage used (from ALL nodes with storage_used data)
+  // Use storage_used from get-pods-with-stats API
+  // "Storage used" as reported by get-pods-with-stats (field: storage_used).
+  // In practice this is currently very small (MBs) on the network.
+  const totalStorageUsedPods = useMemo(() => {
+    return pnodes.reduce((sum, p) => sum + (p.stats?.storage_used ?? 0), 0);
+  }, [pnodes]);
+
+  // "Storage used" as reported by get-stats (field: total_bytes), summed over ACTIVE nodes.
+  // This is closer to what the official dashboard appears to display.
+  const totalStorageUsedStats = useMemo(() => {
     return pnodes
       .filter((p) => p.status === "active")
       .reduce((sum, p) => sum + (p.stats?.total_bytes ?? 0), 0);
@@ -214,9 +222,11 @@ export default function Page() {
       {/* ABOUT PNODES - Educational Section */}
       <AboutPNodes
         totalStorageCommitted={totalStorageCommitted}
-        totalStorageUsed={totalStorageUsed}
+        totalStorageUsedPods={totalStorageUsedPods}
+        totalStorageUsedStats={totalStorageUsedStats}
         networkMetadata={networkMetadata}
         countriesCount={countriesCount}
+        totalNodes={pnodes.length}
       />
 
       <section className="max-w-7xl mx-auto px-6 space-y-8 w-full">
@@ -227,6 +237,9 @@ export default function Page() {
           totalNodes={pnodes.length}
           networkHealthInsights={networkHealthInsights}
           networkUptimeStats={networkUptimeStats}
+          alerts={alerts}
+          criticalCount={criticalCount}
+          warningCount={warningCount}
         />
 
         {/* DETAILED KPI CARDS */}

@@ -1,24 +1,21 @@
 
 import { describe, it, expect } from 'vitest';
 import { getHealthStatus } from '../lib/health';
-import type { PNode, PNodeStats } from '../lib/types'; // Import type
+import type { PNode, PNodeStats } from '../lib/types';
+import { EMPTY_STATS } from '../lib/types';
 
 const createMockNode = (stats: Partial<PNodeStats>, status: PNode['status'] = 'active'): PNode => ({
     ip: '127.0.0.1',
     status,
     version: 'v0.7.0',
     stats: {
-        cpu_percent: 0,
-        ram_used: 0,
+        ...EMPTY_STATS,
         ram_total: 16 * 1e9, // 16 GB
         uptime: 30 * 24 * 3600, // 30 days
         packets_sent: 1000,
         packets_received: 1000,
         file_size: 1 * 1e12, // 1 TB
         total_bytes: 0.5 * 1e12, // 500 GB used
-        current_index: 0,
-        last_updated: 0,
-        total_pages: 0,
         ...stats,
     },
 });

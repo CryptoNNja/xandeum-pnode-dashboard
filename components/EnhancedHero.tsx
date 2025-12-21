@@ -154,7 +154,7 @@ const EnhancedHero: React.FC<EnhancedHeroProps> = ({
                   className={`text-3xl font-bold ${titleColorClass}`}
                   style={titleGlowStyle}
                 >
-                  P-Node Analytics
+                  pNode Analytics
                 </h1>
                 <p className="text-sm text-gray-400 mt-1">Real-time Network Monitoring</p>
               </div>

@@ -5,6 +5,10 @@ import { getHealthStatus } from "./health";
 export const GB_IN_BYTES = 1024 ** 3;
 export const TB_IN_BYTES = 1024 ** 4;
 
+// Decimal units (used by some dashboards/APIs when they display "GB" as 1e9 bytes)
+export const GB_IN_BYTES_DECIMAL = 1e9;
+export const TB_IN_BYTES_DECIMAL = 1e12;
+
 export const KPI_COLORS = {
     public: "#06B6D4",
     private: "#94A3B8",

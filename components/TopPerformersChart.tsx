@@ -303,9 +303,9 @@ export default function TopPerformersChart({ nodes, onSelectNode }: TopPerformer
         if (!nodes || nodes.length === 0) return [];
         return nodes
             .map((node) => {
-                // Use storage_committed for capacity, total_bytes for used
+                // Use storage_committed for capacity, storage_used for actual usage
                 const committed = Math.max(node.stats.storage_committed ?? 0, 0);
-                const used = Math.max(node.stats.total_bytes ?? 0, 0);
+                const used = Math.max(node.stats.storage_used ?? 0, 0);
                 return { node, committed, used };
             })
             .filter((entry) => entry.committed > 0)

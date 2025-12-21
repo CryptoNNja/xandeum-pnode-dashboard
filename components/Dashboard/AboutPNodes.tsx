@@ -8,39 +8,130 @@ import { TB_IN_BYTES } from "@/lib/utils";
 
 interface AboutPNodesProps {
   totalStorageCommitted: number;
-  totalStorageUsed: number;
+  totalStorageUsedPods: number;
+  totalStorageUsedStats: number;
   networkMetadata: {
     networkTotal: number;
     crawledNodes: number;
     coveragePercent: number;
   };
   countriesCount: number;
+  totalNodes: number; // Total number of nodes for average calculation
 }
 
 const AboutPNodesComponent = ({
   totalStorageCommitted,
-  totalStorageUsed,
+  totalStorageUsedPods,
+  totalStorageUsedStats,
   networkMetadata,
   countriesCount,
+  totalNodes,
 }: AboutPNodesProps) => {
   const { theme } = useTheme();
   const isLight = theme === "light";
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false); // Collapsed by default
 
   const storageCommittedTB = useMemo(() => {
     return (totalStorageCommitted / TB_IN_BYTES).toFixed(1);
   }, [totalStorageCommitted]);
 
-  const storageUsedGB = useMemo(() => {
-    return (totalStorageUsed / (1024 ** 3)).toFixed(2);
-  }, [totalStorageUsed]);
+  const storageUsedPodsFormatted = useMemo(() => {
+    // Format adaptively based on size
+    const MB_IN_BYTES = 1024 * 1024;
+    const GB_IN_BYTES = 1024 * 1024 * 1024;
+    
+    if (totalStorageUsedPods >= TB_IN_BYTES) {
+      return `${(totalStorageUsedPods / TB_IN_BYTES).toFixed(2)} TB`;
+    } else if (totalStorageUsedPods >= GB_IN_BYTES) {
+      return `${(totalStorageUsedPods / GB_IN_BYTES).toFixed(2)} GB`;
+    } else if (totalStorageUsedPods >= MB_IN_BYTES) {
+      return `${(totalStorageUsedPods / MB_IN_BYTES).toFixed(2)} MB`;
+    } else if (totalStorageUsedPods >= 1024) {
+      return `${(totalStorageUsedPods / 1024).toFixed(2)} KB`;
+    } else {
+      return `${totalStorageUsedPods} bytes`;
+    }
+  }, [totalStorageUsedPods]);
 
-  const stats = [
+  // This is the closest metric to the official dashboard: sum(total_bytes) over active nodes.
+  // Use decimal formatting (GB=1e9) to reduce confusion when comparing.
+  const storageUsedStatsFormatted = useMemo(() => {
+    // Format adaptively based on size (decimal)
+    const KB = 1e3;
+    const MB = 1e6;
+    const GB = 1e9;
+    const TB = 1e12;
+
+    if (totalStorageUsedStats >= TB) {
+      return `${(totalStorageUsedStats / TB).toFixed(2)} TB`;
+    } else if (totalStorageUsedStats >= GB) {
+      return `${(totalStorageUsedStats / GB).toFixed(2)} GB`;
+    } else if (totalStorageUsedStats >= MB) {
+      return `${(totalStorageUsedStats / MB).toFixed(2)} MB`;
+    } else if (totalStorageUsedStats >= KB) {
+      return `${(totalStorageUsedStats / KB).toFixed(2)} KB`;
+    } else {
+      return `${totalStorageUsedStats} bytes`;
+    }
+  }, [totalStorageUsedStats]);
+
+
+  const avgCommittedPerPodFormatted = useMemo(() => {
+    if (totalNodes === 0) return "0 bytes";
+    
+    const avgBytes = totalStorageCommitted / totalNodes;
+    const GB_IN_BYTES = 1024 * 1024 * 1024;
+    
+    // Adaptive formatting
+    if (avgBytes >= TB_IN_BYTES) {
+      return `${(avgBytes / TB_IN_BYTES).toFixed(2)} TB`;
+    } else if (avgBytes >= GB_IN_BYTES) {
+      return `${(avgBytes / GB_IN_BYTES).toFixed(2)} GB`;
+    } else if (avgBytes >= 1024 * 1024) {
+      return `${(avgBytes / (1024 * 1024)).toFixed(2)} MB`;
+    } else if (avgBytes >= 1024) {
+      return `${(avgBytes / 1024).toFixed(2)} KB`;
+    } else {
+      return `${avgBytes.toFixed(0)} bytes`;
+    }
+  }, [totalStorageCommitted, totalNodes]);
+
+  // Stats always visible (when collapsed)
+  const compactStats = [
     {
       icon: Database,
       value: `${storageCommittedTB} TB`,
       label: "Storage Committed",
-      sublabel: `${storageUsedGB} GB used`,
+      color: "#7B3FF2", // Xandeum Purple
+    },
+    {
+      icon: Database,
+      value: storageUsedStatsFormatted,
+      label: "Storage Used",
+      color: "#14F195", // Xandeum Green
+    },
+    {
+      icon: Database,
+      value: avgCommittedPerPodFormatted,
+      label: "Avg Committed/Pod",
+      color: "#00D4AA", // Aqua
+    },
+    {
+      icon: Globe,
+      value: countriesCount.toString(),
+      label: "Countries",
+      color: "#F59E0B", // Orange
+    },
+  ];
+
+  // Extended stats (when expanded)
+  const extendedStats = [
+    {
+      icon: Database,
+      value: `${storageCommittedTB} TB`,
+      label: "Storage Committed",
+      sublabel: `${storageUsedPodsFormatted} used (pods) · ${storageUsedStatsFormatted} used (stats)`,
+
       color: "#7B3FF2", // Xandeum Purple
     },
     {
@@ -97,7 +188,7 @@ const AboutPNodesComponent = ({
         {/* Clickable Header with Collapse Indicator */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="relative z-10 w-full p-6 md:p-8 flex items-center justify-between gap-4 group hover:opacity-90 transition-opacity"
+          className="relative z-10 w-full p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4 group hover:opacity-90 transition-opacity"
         >
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-3">
@@ -138,15 +229,65 @@ const AboutPNodesComponent = ({
             </p>
           </div>
 
-          {/* Chevron indicator */}
-          <motion.div
-            animate={{ rotate: isOpen ? 180 : 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="flex-shrink-0"
-            style={{ color: isLight ? "#7B3FF2" : "#14F195" }}
-          >
-            <ChevronDown className="w-6 h-6" strokeWidth={2.5} />
-          </motion.div>
+          {/* Compact Stats - Always Visible */}
+          <div className="flex flex-wrap gap-3 md:gap-5">
+            {compactStats.map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, delay: 0.1 + index * 0.05 }}
+                className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg border theme-transition"
+                style={{
+                  background: isLight
+                    ? "rgba(255, 255, 255, 0.7)"
+                    : "rgba(26, 31, 58, 0.5)",
+                  borderColor: isLight
+                    ? "rgba(0, 0, 0, 0.06)"
+                    : "rgba(100, 116, 139, 0.2)",
+                }}
+              >
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: isLight
+                      ? `${stat.color}15`
+                      : `${stat.color}20`,
+                  }}
+                >
+                  <stat.icon
+                    className="w-4 h-4"
+                    style={{ color: stat.color }}
+                    strokeWidth={2.2}
+                  />
+                </div>
+                <div className="text-left">
+                  <p
+                    className="text-base md:text-lg font-bold tracking-tight leading-none"
+                    style={{ color: stat.color }}
+                  >
+                    {stat.value}
+                  </p>
+                  <p
+                    className="text-[10px] font-medium uppercase tracking-wider mt-1 leading-none"
+                    style={{ color: isLight ? "#6b7280" : "#64748b" }}
+                  >
+                    {stat.label}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+            
+            {/* Chevron indicator */}
+            <motion.div
+              animate={{ rotate: isOpen ? 180 : 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="flex items-center justify-center w-7 h-7 flex-shrink-0"
+              style={{ color: isLight ? "#7B3FF2" : "#14F195" }}
+            >
+              <ChevronDown className="w-5 h-5" strokeWidth={2.5} />
+            </motion.div>
+          </div>
         </button>
 
         {/* Collapsible Content */}
@@ -160,9 +301,9 @@ const AboutPNodesComponent = ({
               style={{ overflow: "hidden" }}
             >
               <div className="relative z-10 px-6 md:px-8 pb-6 md:pb-8">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                  {/* Left: Explanation */}
-                  <div className="flex-1 max-w-2xl">
+                <div className="flex flex-col gap-4">
+                  {/* Explanation */}
+                  <div className="max-w-3xl">
                     <p
                       className="text-sm leading-relaxed mb-4"
                       style={{ color: isLight ? "#4b5563" : "#94a3b8" }}
@@ -182,62 +323,6 @@ const AboutPNodesComponent = ({
                       Visit Xandeum Network
                       <ChevronRight className="w-3 h-3" />
                     </a>
-                  </div>
-
-                  {/* Right: Stats */}
-                  <div className="flex flex-wrap lg:flex-nowrap gap-4 lg:gap-6">
-                    {stats.map((stat, index) => (
-                      <motion.div
-                        key={stat.label}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.4, delay: 0.1 + index * 0.1 }}
-                        className="flex-1 min-w-[100px] p-4 rounded-xl border theme-transition text-center"
-                        style={{
-                          background: isLight
-                            ? "rgba(255, 255, 255, 0.7)"
-                            : "rgba(26, 31, 58, 0.5)",
-                          borderColor: isLight
-                            ? "rgba(0, 0, 0, 0.06)"
-                            : "rgba(100, 116, 139, 0.2)",
-                        }}
-                      >
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-2"
-                          style={{
-                            background: isLight
-                              ? `${stat.color}15`
-                              : `${stat.color}20`,
-                          }}
-                        >
-                          <stat.icon
-                            className="w-4 h-4"
-                            style={{ color: stat.color }}
-                            strokeWidth={2.2}
-                          />
-                        </div>
-                        <p
-                          className="text-xl md:text-2xl font-black tracking-tight"
-                          style={{ color: stat.color }}
-                        >
-                          {stat.value}
-                        </p>
-                        <p
-                          className="text-[10px] font-medium uppercase tracking-wider mt-1"
-                          style={{ color: isLight ? "#6b7280" : "#64748b" }}
-                        >
-                          {stat.label}
-                        </p>
-                        {(stat as any).sublabel && (
-                          <p
-                            className="text-[9px] font-medium mt-0.5"
-                            style={{ color: isLight ? "#9ca3af" : "#64748b" }}
-                          >
-                            {(stat as any).sublabel}
-                          </p>
-                        )}
-                      </motion.div>
-                    ))}
                   </div>
                 </div>
               </div>

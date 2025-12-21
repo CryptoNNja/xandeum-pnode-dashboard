@@ -9,7 +9,9 @@ import type { PNode, PNodeStats } from "./types";
  */
 export function calculateStorageEfficiency(stats: PNodeStats): number {
     if (!stats || stats.total_pages === 0) return 0;
-    return stats.total_bytes / stats.total_pages;
+    // Use storage_used (from get-pods-with-stats API) for accurate storage metrics
+    const usedBytes = stats.storage_used ?? stats.total_bytes ?? 0;
+    return usedBytes / stats.total_pages;
 }
 
 /**

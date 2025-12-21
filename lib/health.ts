@@ -47,9 +47,13 @@ export function getHealthStatus(pnode?: PNode | null): HealthStatus {
   const ramPercent =
     ramTotal > 0 ? clampPercent((ramUsed / ramTotal) * 100) : 0;
 
-  // Use storage_committed from get-pods-with-stats API
-  const committedBytes = sanitizeNumber(stats.storage_committed);
-  const usedBytes = sanitizeNumber(stats.total_bytes);
+  // Storage usage can come from two different sources:
+  // - get-pods-with-stats: storage_committed/storage_used (capacity promised vs actual usage)
+  // - get-stats: file_size/total_bytes (node-reported totals)
+  // Prefer pods-with-stats when available, but fallback to get-stats to stay comparable with
+  // the official dashboard and to avoid treating missing pods fields as "0%".
+  const committedBytes = sanitizeNumber(stats.storage_committed) || sanitizeNumber(stats.file_size);
+  const usedBytes = sanitizeNumber(stats.storage_used) || sanitizeNumber(stats.total_bytes);
   const storagePercent =
     committedBytes > 0 ? clampPercent((usedBytes / committedBytes) * 100) : 0;
 

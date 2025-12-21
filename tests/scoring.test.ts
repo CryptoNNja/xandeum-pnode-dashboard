@@ -1,16 +1,16 @@
 
 import { describe, it, expect } from 'vitest';
 import { calculateNodeScore, getScoreColor, getScoreLabel, getScoreBadgeColor } from '../lib/scoring';
-import type { PNode } from '../lib/types';
+import type { PNode, PNodeStats } from '../lib/types';
+import { EMPTY_STATS } from '../lib/types';
 
 // Helper to create a mock PNode object
-const createMockNode = (stats: Partial<PNode['stats']>, status: PNode['status'] = 'active'): PNode => ({
+const createMockNode = (stats: Partial<PNodeStats>, status: PNode['status'] = 'active'): PNode => ({
   ip: '127.0.0.1',
   status,
   version: 'v0.7.0',
   stats: {
-    cpu_percent: 0,
-    ram_used: 0,
+    ...EMPTY_STATS,
     ram_total: 16 * 1e9, // 16GB
     uptime: 30 * 24 * 3600 + 1, // > 30 days
     packets_sent: 1000,

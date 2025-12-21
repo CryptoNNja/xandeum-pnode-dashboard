@@ -427,7 +427,7 @@ export const usePnodeDashboard = (theme?: string) => {
         }
 
         const committedBytes = Number.isFinite(stats.storage_committed) ? (stats.storage_committed ?? 0) : 0;
-        const usedBytes = Number.isFinite(stats.total_bytes) ? (stats.total_bytes ?? 0) : 0;
+        const usedBytes = Number.isFinite(stats.storage_used) ? (stats.storage_used ?? 0) : 0;
         if (committedBytes > 0) {
             const storagePercent = (usedBytes / committedBytes) * 100;
             if (storagePercent >= 95) generated.push({ ip: pnode.ip, severity: "critical", type: "Storage Full", message: `${storagePercent.toFixed(1)}% utilized`, value: `${storagePercent.toFixed(1)}%` });
@@ -506,12 +506,14 @@ export const usePnodeDashboard = (theme?: string) => {
     });
 
     // Storage used: only ACTIVE nodes
-    // Mapping: total_bytes is the actual storage used (as of API v0.7)
+    // IMPORTANT: use total_bytes (from get-stats) for "storage used" because storage_used
+    // (from get-pods-with-stats) is often tiny/incomplete. This matches the real disk usage.
     allPnodes.forEach((pnode) => {
       if (pnode.status !== "active") return;
       const stats = pnode.stats;
       if (!stats) return;
-      const used = stats.total_bytes ?? 0;
+      // Prefer total_bytes for actual usage; fallback to storage_used if needed.
+      const used = stats.total_bytes ?? stats.storage_used ?? 0;
       totalUsed += Number.isFinite(used) ? used : 0;
     });
 
@@ -577,7 +579,7 @@ export const usePnodeDashboard = (theme?: string) => {
 
   const storageDistribution = useMemo(() => STORAGE_BUCKETS.map((bucket) => ({
     range: bucket.label,
-    count: allPnodes.filter((pnode) => pnode.status === "active" && (pnode.stats?.storage_committed ?? 0) >= bucket.min && (pnode.stats?.storage_committed ?? 0) < bucket.max).length
+    count: allPnodes.filter((pnode) => (pnode.stats?.storage_committed ?? 0) >= bucket.min && (pnode.stats?.storage_committed ?? 0) < bucket.max).length
   })), [allPnodes]);
 
   const cpuDistribution = useMemo(() => {

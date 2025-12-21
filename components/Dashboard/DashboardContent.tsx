@@ -102,9 +102,9 @@ const DashboardContentComponent = ({
         const ramTotal = pnode.stats?.ram_total ?? 1; // avoid /0
         const ramPercent = (ramUsed / ramTotal) * 100;
         
-        // Use storage_committed for capacity, total_bytes for used
+        // Use storage_committed for capacity, storage_used for actual usage
         const storageCommitted = pnode.stats?.storage_committed ?? 0;
-        const storageUsed = pnode.stats?.total_bytes ?? 0;
+        const storageUsed = pnode.stats?.storage_used ?? 0;
         const storagePercent = storageCommitted > 0
           ? Math.min(100, (storageUsed / storageCommitted) * 100)
           : 0;

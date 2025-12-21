@@ -51,7 +51,7 @@ interface PodWithStats {
     rpc_port?: number;
     storage_committed?: unknown;
     storage_usage_percent?: unknown;
-    storage_used?: unknown;
+    storage_used?: unknown; // Direct field (in bytes, often incomplete)
     uptime?: unknown;
     version?: unknown;
   }
@@ -244,15 +244,32 @@ export const main = async () => {
     const storageCommittedMap = new Map<string, number>();
     const storageUsedMap = new Map<string, number>();
     console.log('📡 Fetching versions, pubkeys, and storage commitments...');
-    const metadataPromises = allIps.map(ip => getPodsWithStats(ip));
-    const metadataResults = await Promise.allSettled(metadataPromises);
+    
+    // Batch metadata calls for speed (50 concurrent at a time)
+    const METADATA_BATCH_SIZE = 50;
+    const metadataResults: PromiseSettledResult<PodWithStats[]>[] = [];
+    
+    for (let i = 0; i < allIps.length; i += METADATA_BATCH_SIZE) {
+        const batch = allIps.slice(i, i + METADATA_BATCH_SIZE);
+        const batchResults = await Promise.allSettled(batch.map(ip => getPodsWithStats(ip)));
+        metadataResults.push(...batchResults);
+        console.log(`  Fetched metadata for ${Math.min(i + METADATA_BATCH_SIZE, allIps.length)}/${allIps.length} nodes...`);
+    }
     metadataResults.forEach(result => {
         if (result.status === 'fulfilled') {
             result.value.forEach(pod => {
                 const ip = extractIp(pod.address);
+
+                // Skip localhost - it has aberrant data
+                if (ip === '127.0.0.1' || ip === 'localhost') {
+                    return;
+                }
+
                 const version = coerceString(pod.version);
                 const pubkey = coerceString(pod.pubkey);
                 const storageCommitted = coerceNumber(pod.storage_committed);
+
+                // Use storage_used field directly from API (in bytes)
                 const storageUsed = coerceNumber(pod.storage_used);
 
                 if (ip && version) {
@@ -273,7 +290,6 @@ export const main = async () => {
     console.log(`✅ Metadata discovery complete. Found ${versionMap.size} versions, ${pubkeyMap.size} pubkeys, ${storageCommittedMap.size} commitments, and ${storageUsedMap.size} used stats.`);
 
     console.log('📊 Fetching stats and geolocation...');
-    const statsPromises = allIps.map(ip => getStats(ip));
     
     // Fetch existing nodes to avoid re-geolocating every time
     const { data: existingNodes } = await supabaseAdmin
@@ -282,10 +298,24 @@ export const main = async () => {
     
     const existingMap = new Map(existingNodes?.map(n => [n.ip, n]) || []);
     
-    const allStats = await Promise.allSettled(statsPromises);
+    // Batch RPC calls for speed (50 concurrent requests at a time to avoid overwhelming)
+    const BATCH_SIZE = 50;
+    const allStats: PromiseSettledResult<PNodeStats | null>[] = [];
+    
+    for (let i = 0; i < allIps.length; i += BATCH_SIZE) {
+        const batch = allIps.slice(i, i + BATCH_SIZE);
+        const batchResults = await Promise.allSettled(batch.map(ip => getStats(ip)));
+        allStats.push(...batchResults);
+        console.log(`  Fetched stats for ${Math.min(i + BATCH_SIZE, allIps.length)}/${allIps.length} nodes...`);
+    }
+    
     const allGeo: (GeolocationData | null)[] = [];
 
     // Geolocation with rate limiting and caching
+    // ip-api.com free tier: 45 requests/minute, we use 1.5s delay to be safe (40/min)
+    let geoCallsThisMinute = 0;
+    let minuteStartTime = Date.now();
+    
     for (const ip of allIps) {
         const existing = existingMap.get(ip);
         if (existing && existing.lat && existing.lng && existing.country_code) {
@@ -297,10 +327,24 @@ export const main = async () => {
                 country_code: existing.country_code
             });
         } else {
+            // Rate limit check: max 40 calls per minute
+            if (geoCallsThisMinute >= 40) {
+                const elapsed = Date.now() - minuteStartTime;
+                if (elapsed < 60000) {
+                    const waitTime = 60000 - elapsed;
+                    console.log(`  Rate limit: waiting ${(waitTime/1000).toFixed(1)}s before next geolocation batch...`);
+                    await new Promise(r => setTimeout(r, waitTime));
+                }
+                geoCallsThisMinute = 0;
+                minuteStartTime = Date.now();
+            }
+            
             const geo = await getGeolocation(ip);
             allGeo.push(geo);
-            // Small delay to respect ip-api.com limits (45/min)
-            if (geo) await new Promise(r => setTimeout(r, 1000));
+            if (geo) {
+                geoCallsThisMinute++;
+                await new Promise(r => setTimeout(r, 1500)); // 1.5s delay = ~40/min
+            }
         }
     }
 
@@ -322,18 +366,22 @@ export const main = async () => {
         const storageCommitted = storageCommittedMap.get(ip);
         const storageUsed = storageUsedMap.get(ip);
 
-        // Add storage_committed for ALL nodes (both active and gossip_only)
+        // Add storage_committed and storage_used for ALL nodes (both active and gossip_only)
         if (storageCommitted && storageCommitted > 0) {
             stats.storage_committed = storageCommitted;
         }
+        if (storageUsed && storageUsed > 0) {
+            stats.storage_used = storageUsed;
+        }
 
         if (status === 'gossip_only') {
-            // For private nodes, also map storage_committed to file_size for backwards compatibility
+            // For gossip_only nodes we don't have reliable `get-stats` metrics.
+            // We keep `storage_committed`/`storage_used` in their dedicated fields,
+            // and DO NOT overwrite core `get-stats` fields like `total_bytes`.
+            // (Overwriting caused confusion and made our metrics diverge from the official dashboard.)
             if (storageCommitted && storageCommitted > 0) {
+                // Legacy/backwards-compat: some UI used `file_size` as a proxy for capacity.
                 stats.file_size = storageCommitted;
-            }
-            if (storageUsed && storageUsed > 0) {
-                stats.total_bytes = storageUsed;
             }
         }
 
@@ -353,12 +401,19 @@ export const main = async () => {
 
         const geo = allGeo[i];
 
+        // Explicitly ensure storage_used is in the final stats object
+        const finalStats = {
+            ...stats,
+            storage_committed: stats.storage_committed || 0,
+            storage_used: stats.storage_used || 0
+        };
+
         pnodesToUpsert.push({
             ip: ip,
             status: status,
             version: versionMap.get(ip) || "unknown",
             pubkey: pubkeyMap.get(ip) || null,
-            stats: stats as unknown as Json,
+            stats: finalStats as unknown as Json,
             lat: geo?.lat,
             lng: geo?.lng,
             city: geo?.city,

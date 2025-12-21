@@ -1,7 +1,7 @@
 "use client";
 
-import { Radio, ShieldCheck, Network, LucideIcon } from "lucide-react";
-import { hexToRgba, getKpiColors } from "@/lib/utils";
+import { Radio, ShieldCheck, Network, LucideIcon, AlertCircle, Check, AlertTriangle } from "lucide-react";
+import { hexToRgba, getKpiColors, getStatusColors } from "@/lib/utils";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
 
 type SummaryHeaderProps = {
@@ -29,6 +29,9 @@ type SummaryHeaderProps = {
     publicOnline: number;
     publicTotal: number;
   };
+  alerts: any[];
+  criticalCount: number;
+  warningCount: number;
 };
 
 export const SummaryHeader = ({
@@ -37,9 +40,13 @@ export const SummaryHeader = ({
   totalNodes,
   networkHealthInsights,
   networkUptimeStats,
+  alerts,
+  criticalCount,
+  warningCount,
 }: SummaryHeaderProps) => {
   const UptimeIcon = networkUptimeStats.Icon;
   const kpiColors = getKpiColors();
+  const statusColors = getStatusColors();
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -127,117 +134,62 @@ export const SummaryHeader = ({
         </div>
       </div>
 
-      {/* Network Health */}
+      {/* System Alerts - Moved from Performance & Resources */}
       <div className="kpi-card relative overflow-hidden p-6">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-6">
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
-                Network Health
-              </p>
-              <InfoTooltip content="Overall network reliability score. A healthy pNode network ensures Xandeum can scale Solana's state without bottlenecks." />
+              <p className="text-xs uppercase tracking-[0.35em] text-text-soft">System Alerts</p>
+              <InfoTooltip content="Real-time notifications about node offline status, version lag, or resource exhaustion." />
             </div>
-            <p className="text-sm text-text-faint">Overall network score</p>
+            <p className="text-sm text-text-faint">Critical & warnings</p>
+            <div className="flex items-baseline gap-2 mt-4">
+              <p
+                className="text-4xl font-bold tracking-tight"
+                style={{ color: alerts.length === 0 ? kpiColors.alertOk : kpiColors.alerts }}
+              >
+                {alerts.length}
+              </p>
+              <span className="text-sm font-mono text-text-soft">
+                {alerts.length === 1 ? "alert" : "alerts"}
+              </span>
+            </div>
           </div>
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: hexToRgba(networkHealthInsights.color, 0.12) }}
+            style={{ background: hexToRgba(kpiColors.alerts, 0.12) }}
           >
-            <ShieldCheck
-              className="w-5 h-5"
-              strokeWidth={2.3}
-              style={{ color: networkHealthInsights.color }}
-            />
+            <AlertCircle className="w-5 h-5" strokeWidth={2.3} style={{ color: kpiColors.alerts }} />
           </div>
         </div>
-        <div className="flex items-end justify-between gap-6 mt-6">
-          <div>
-            <div className="flex items-baseline gap-2">
-              <p
-                className="text-4xl font-bold tracking-tight"
-                style={{ color: networkHealthInsights.color }}
-              >
-                {networkHealthInsights.score}
-              </p>
-              <span className="text-lg text-text-soft font-semibold">/100</span>
+
+        {alerts.length === 0 ? (
+          <p className="text-sm mt-6 flex items-center gap-2" style={{ color: kpiColors.alertOk }}>
+            <Check className="w-4 h-4" strokeWidth={2.2} />
+            All systems normal
+          </p>
+        ) : (
+          <div className="mt-6 space-y-2 text-sm text-text-main">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2" style={{ color: statusColors.critical }}>
+                <AlertTriangle className="w-3.5 h-3.5" strokeWidth={2.2} />
+                <span className="text-xs uppercase tracking-wide text-text-soft">Critical</span>
+              </div>
+              <span className="font-semibold" style={{ color: statusColors.critical }}>
+                {criticalCount}
+              </span>
             </div>
-            <div className="mt-4 flex flex-col gap-1">
-               <div className="flex items-center gap-4 text-xs uppercase tracking-widest text-text-soft">
-                <span
-                  className="flex items-center gap-2 font-semibold"
-                  style={{ color: networkHealthInsights.trendColor }}
-                >
-                  <span>{networkHealthInsights.trendIcon}</span>
-                  <span className="font-mono">
-                    {networkHealthInsights.deltaYesterday !== null
-                      ? (networkHealthInsights.deltaYesterday > 0
-                        ? `+${networkHealthInsights.deltaYesterday}`
-                        : networkHealthInsights.deltaYesterday)
-                      : "—"}
-                  </span>
-                </span>
-                <span>vs yesterday</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2" style={{ color: statusColors.warning }}>
+                <AlertTriangle className="w-3.5 h-3.5" strokeWidth={2.2} />
+                <span className="text-xs uppercase tracking-wide text-text-soft">Warning</span>
               </div>
-              <div className="flex items-center gap-4 text-xs uppercase tracking-widest text-text-soft">
-                <span
-                  className="flex items-center gap-2 font-semibold"
-                  style={{ color: networkHealthInsights.trendColor }}
-                >
-                  <span className="font-mono">
-                    {networkHealthInsights.deltaLastWeek !== null
-                      ? (networkHealthInsights.deltaLastWeek > 0
-                        ? `+${networkHealthInsights.deltaLastWeek}`
-                        : networkHealthInsights.deltaLastWeek)
-                      : "—"}
-                  </span>
-                </span>
-                <span>vs last week</span>
-              </div>
+              <span className="font-semibold" style={{ color: statusColors.warning }}>
+                {warningCount}
+              </span>
             </div>
           </div>
-          <svg
-            width={networkHealthInsights.svgWidth}
-            height={networkHealthInsights.svgHeight}
-            viewBox={`0 0 ${networkHealthInsights.svgWidth} ${networkHealthInsights.svgHeight}`}
-            className="shrink-0"
-          >
-            <polygon
-              fill={networkHealthInsights.sparklineFill}
-              points={networkHealthInsights.sparklineAreaPoints}
-              opacity={0.25}
-            />
-            <polyline
-              fill="none"
-              stroke={networkHealthInsights.color}
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              points={networkHealthInsights.sparklinePoints}
-            />
-          </svg>
-        </div>
-        <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-text-soft">
-          <span className="inline-flex items-center gap-2 px-2 py-2 rounded-full border border-border-app-soft">
-            <UptimeIcon
-              className="w-3.5 h-3.5"
-              strokeWidth={2.2}
-              style={{ color: networkUptimeStats.color }}
-            />
-            <span
-              className="font-semibold"
-              style={{ color: networkUptimeStats.color }}
-            >
-              {networkUptimeStats.badge}
-            </span>
-          </span>
-          <span className="font-mono text-text-main">
-            {networkUptimeStats.percent.toFixed(1)}%
-          </span>
-          <span>
-            {networkUptimeStats.publicOnline}/{networkUptimeStats.publicTotal}{" "}
-            public online
-          </span>
-        </div>
+        )}
       </div>
     </div>
   );
