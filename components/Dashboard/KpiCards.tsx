@@ -240,7 +240,7 @@ export const KpiCards = ({
                       <span className="text-lg text-text-soft font-semibold">
                         / {networkParticipation.totalPods}
                       </span>
-                      <span className="text-sm text-text-faint ml-1">nodes</span>
+                      <span className="text-sm text-text-faint ml-1">pods</span>
                     </div>
                   </>
                 ) : (
@@ -282,35 +282,49 @@ export const KpiCards = ({
                   </div>
 
                   <div className="flex items-center justify-between text-xs text-text-soft mt-2">
-                    <span>{networkParticipation.participationRate.toFixed(1)}% earning</span>
+                    <span>{networkParticipation.participationRate.toFixed(1)}% earning rewards</span>
                     <span className="font-medium">
-                      {networkParticipation.totalPods > 0 ? `${networkParticipation.totalPods} in rewards system` : "No data"}
+                      {networkParticipation.totalPods} eligible in rewards system
                     </span>
                   </div>
                 </div>
 
                 <div className="mt-4">
-                  {networkParticipation.podsInactive === 0 ? (
-                    <p 
-                      className="text-sm font-medium flex items-center gap-2"
-                      style={{ color: "#10B981" }}
-                    >
-                      <span className="text-base">✓</span>
-                      All nodes earning rewards
-                    </p>
-                  ) : (
-                    <p 
-                      className="text-sm font-medium"
-                      style={{ 
-                        color: networkParticipation.participationRate >= 70 ? "#F59E0B" : "#EF4444" 
-                      }}
-                    >
-                      {networkParticipation.podsInactive === 1 
-                        ? "1 node inactive this cycle"
-                        : `${networkParticipation.podsInactive} nodes inactive this cycle`
-                      }
-                    </p>
-                  )}
+                  {(() => {
+                    const nodesNotEligible = totalNodes - networkParticipation.totalPods;
+                    const podsInactive = networkParticipation.podsInactive;
+                    
+                    if (nodesNotEligible === 0 && podsInactive === 0) {
+                      return (
+                        <p 
+                          className="text-sm font-medium flex items-center gap-2"
+                          style={{ color: "#10B981" }}
+                        >
+                          <span className="text-base">✓</span>
+                          All nodes eligible and earning
+                        </p>
+                      );
+                    }
+                    
+                    const parts = [];
+                    if (nodesNotEligible > 0) {
+                      parts.push(`${nodesNotEligible} not yet eligible`);
+                    }
+                    if (podsInactive > 0) {
+                      parts.push(`${podsInactive} inactive`);
+                    }
+                    
+                    return (
+                      <p 
+                        className="text-sm font-medium"
+                        style={{ 
+                          color: networkParticipation.participationRate >= 70 ? "#F59E0B" : "#EF4444" 
+                        }}
+                      >
+                        {parts.join(', ')}
+                      </p>
+                    );
+                  })()}
                 </div>
               </>
             ) : (
