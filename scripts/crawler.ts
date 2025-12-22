@@ -238,12 +238,13 @@ export const main = async () => {
     console.log(`✅ Discovery complete. Found ${discovered.size} unique nodes via gossip/RPC.`);
     console.log(`🔍 Filtered out localhost. Processing ${allIps.length} valid nodes for network total.`);
 
-    // Fetch all metadata first to build maps for version, pubkey, and storage_committed
+    // Fetch all metadata first to build maps for version, pubkey, storage_committed, and is_public
     const versionMap = new Map<string, string>();
     const pubkeyMap = new Map<string, string>();
     const storageCommittedMap = new Map<string, number>();
     const storageUsedMap = new Map<string, number>();
-    console.log('📡 Fetching versions, pubkeys, and storage commitments...');
+    const isPublicMap = new Map<string, boolean>();
+    console.log('📡 Fetching versions, pubkeys, storage commitments, and public status...');
     
     // Batch metadata calls for speed (50 concurrent at a time)
     const METADATA_BATCH_SIZE = 50;
@@ -284,10 +285,14 @@ export const main = async () => {
                 if (ip && storageUsed > 0) {
                     storageUsedMap.set(ip, storageUsed);
                 }
+                // Store is_public status
+                if (ip && pod.is_public !== undefined) {
+                    isPublicMap.set(ip, pod.is_public);
+                }
             })
         }
     });
-    console.log(`✅ Metadata discovery complete. Found ${versionMap.size} versions, ${pubkeyMap.size} pubkeys, ${storageCommittedMap.size} commitments, and ${storageUsedMap.size} used stats.`);
+    console.log(`✅ Metadata discovery complete. Found ${versionMap.size} versions, ${pubkeyMap.size} pubkeys, ${storageCommittedMap.size} commitments, ${storageUsedMap.size} used stats, and ${isPublicMap.size} public flags.`);
 
     console.log('📊 Fetching stats and geolocation...');
     
@@ -356,9 +361,13 @@ export const main = async () => {
         const statsResult = allStats[i];
         const geoResult = allGeo[i];
 
-        const status = (statsResult.status === 'fulfilled' && statsResult.value) ? 'active' : 'gossip_only';
+        // Determine status: active if get-stats responds OR if is_public === true
+        const hasStats = statsResult.status === 'fulfilled' && statsResult.value;
+        const isPublic = isPublicMap.get(ip) === true;
+        const status = (hasStats || isPublic) ? 'active' : 'gossip_only';
+        
         // Create a copy of stats to avoid mutating shared EMPTY_STATS constant
-        const stats: PNodeStats = (statsResult.status === 'fulfilled' && statsResult.value)
+        const stats: PNodeStats = hasStats
             ? { ...statsResult.value }
             : { ...EMPTY_STATS };
 
