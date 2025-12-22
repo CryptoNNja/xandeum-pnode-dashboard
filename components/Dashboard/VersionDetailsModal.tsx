@@ -27,8 +27,8 @@ export const VersionDetailsModal = ({
 }: VersionDetailsModalProps) => {
   if (!isOpen) return null;
 
-  const bgColor = isLight ? "rgba(255, 255, 255, 0.98)" : "rgba(5, 8, 22, 0.98)";
-  const cardBg = isLight ? "#f8fafc" : "#101734";
+  const bgColor = isLight ? "rgba(255, 255, 255, 0.98)" : "rgba(15, 23, 42, 0.98)"; // Match card background
+  const cardBg = isLight ? "#f8fafc" : "rgba(15, 23, 42, 0.8)"; // Match kpi-card
   const textMain = isLight ? "#0f172a" : "#f1f5f9";
   const textSoft = isLight ? "#64748b" : "#94a3b8";
   const borderColor = isLight ? "#e2e8f0" : "#1e293b";

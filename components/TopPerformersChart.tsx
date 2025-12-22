@@ -101,8 +101,8 @@ const TAB_META: Record<LeaderboardTab, LeaderboardMeta> = {
     credits: {
         label: "Credits",
         icon: Coins,
-        accentBg: hexToRgba("#7B3FF2", 0.15),
-        accentText: "#14F195",
+        accentBg: hexToRgba("#F59E0B", 0.15),
+        accentText: "#F59E0B",
         tooltip: "Total credits earned by each pNode this cycle. Rewards reset monthly.",
     },
 };
@@ -426,7 +426,7 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
                 case "uptime":
                     return ["#10B981", "#34D399", "#6EE7B7"];
                 case "credits":
-                    return ["#14F195", "#5FFFC1", "#8FFFD6"];
+                    return ["#F59E0B", "#FBBF24", "#FCD34D"];
                 default:
                     return ["#FFD700", "#FFA500"];
             }
@@ -665,12 +665,12 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
                     )}
                 </div>
                 <div className="flex flex-col items-end gap-1 text-right">
-                    <span className="text-lg font-bold leading-none" style={{ color: '#14F195' }}>
+                    <span className="text-lg font-bold leading-none" style={{ color: '#F59E0B' }}>
                         {formattedCredits}
                     </span>
                     <div className="flex items-center gap-2 text-xs text-text-soft">
                         <span>Credits</span>
-                        <Coins className="w-3 h-3" style={{ color: '#14F195' }} />
+                        <Coins className="w-3 h-3" style={{ color: '#F59E0B' }} />
                     </div>
                 </div>
             </div>
