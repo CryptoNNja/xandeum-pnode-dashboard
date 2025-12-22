@@ -73,6 +73,7 @@ Three distinct ways to explore node data:
 
 **1. Table View (Default)**
 - **Sortable columns** - Click any header to sort (IP, Score, CPU, RAM, Storage, Uptime)
+- **Multi-select nodes** - Checkbox selection for batch operations and custom reports
 - **Pagination** - Navigate through 235 nodes efficiently
 - **Search & Filters** - Instant filtering by IP, health status, version, location
 - **Row actions** - Click any node for detailed view
@@ -97,7 +98,7 @@ Powerful controls for data exploration:
 - **Advanced Filters** - Multi-select dropdowns for Health, Version, CPU range, Storage range
 - **Public/Private Toggle** - Show/hide private nodes
 - **Auto-refresh** - 30-second updates + manual refresh button
-- **Export** - (Future) Download filtered data as CSV/JSON
+- **Export** - Download data as JSON, CSV, Excel, or comprehensive PDF reports
 
 ---
 
@@ -136,7 +137,41 @@ Node Score = (CPU × 25%) + (RAM × 25%) + (Uptime × 30%) + (Storage × 20%)
 - **Visual Badges** - Star ratings with confetti for #1 performers
 - **Real-time Rankings** - Top 10 updated every 5 minutes
 
-#### **4. 📊 Data Visualizations**
+#### **4. 📄 Professional PDF Reports**
+
+Export comprehensive, production-ready PDF reports with customizable node selection:
+
+**📊 Executive Summary Dashboard**
+- Total nodes, public/private breakdown, healthy node percentage
+- Average CPU, RAM usage metrics
+- **Storage Analytics** - Total committed, used, and utilization percentage
+- All metrics formatted and color-coded for easy reading
+
+**🏆 Top Performing Nodes Table**
+- Dynamic title (e.g., "Top 3 Selected Nodes" for custom selections)
+- Complete node data: IP, PubKey, Score, CPU, RAM
+- **Storage Committed & Used** - Essential for decentralized storage network
+- Uptime and health status
+- Perfectly aligned columns with professional formatting
+
+**💾 Storage Analytics Section**
+- Top 10 storage contributors ranked by committed capacity
+- Full breakdown: IP, PubKey, Committed, Used, Utilization %, Uptime
+- Purple-themed headers to differentiate from performance metrics
+- Ideal for tracking decentralized storage network capacity
+
+**📈 Health Distribution**
+- Network health breakdown (Excellent/Good/Warning/Critical)
+- Node counts per category with percentage calculations
+
+**✨ Key Features:**
+- **Smart Selection** - Export full network OR select specific nodes for comparison
+- **Adaptive Titles** - Report title changes based on selection (e.g., "5 Selected Nodes")
+- **Badge Indicator** - Purple pulsing badge on Export menu when nodes are selected
+- **Professional Layout** - Multi-page support, headers, footers, page numbers
+- **Storage-First** - Highlights decentralized storage metrics (committed/used/utilization)
+
+#### **5. 📊 Data Visualizations**
 
 <table>
 <tr>

@@ -22,6 +22,7 @@ const config: Config = {
         "text-faint": "var(--text-faint)",
         accent: "var(--accent)",
         "accent-aqua": "var(--accent-aqua)",
+        "accent-purple": "var(--accent-purple)",
         "kpi-excellent": "var(--kpi-excellent)",
         "kpi-good": "var(--kpi-good)",
         "kpi-warning": "var(--kpi-warning)",

@@ -23,6 +23,11 @@ interface PNodeTableProps {
   totalItems: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
+  // Selection props (optional)
+  selectedNodeIds?: Set<string>;
+  onToggleSelection?: (nodeIp: string) => void;
+  onSelectAll?: () => void;
+  onClearSelection?: () => void;
 }
 
 const PNodeTableComponent = ({
@@ -36,12 +41,19 @@ const PNodeTableComponent = ({
   totalItems,
   onPageChange,
   onPageSizeChange,
+  selectedNodeIds,
+  onToggleSelection,
+  onSelectAll,
+  onClearSelection,
 }: PNodeTableProps) => {
   const { theme, mounted: themeMounted } = useTheme();
   const router = useRouter();
   const isLight = themeMounted ? theme === "light" : false;
 
   if (!data || !Array.isArray(data)) return null;
+  
+  const hasSelection = selectedNodeIds && selectedNodeIds.size > 0;
+  const allSelected = data.length > 0 && data.every(node => selectedNodeIds?.has(node.ip));
 
   const formatUptime = (seconds: number) => {
     if (seconds === 0) return "-";
@@ -103,26 +115,28 @@ const PNodeTableComponent = ({
   return (
     <div
       className={clsx(
-        "overflow-x-auto rounded-xl border shadow-xl transition-colors kpi-card",
+        "w-full rounded-xl border shadow-xl transition-colors kpi-card overflow-hidden",
         isLight
           ? "border-black/10"
           : "border-border-app"
       )}
     >
-      <table className="w-full text-left border-collapse text-sm">
-        <colgroup>
-          <col style={{ width: '50px' }} />
-          <col style={{ width: '130px' }} />
-          <col style={{ width: '85px' }} />
-          <col style={{ width: '75px' }} />
-          <col style={{ width: '80px' }} />
-          <col style={{ width: '110px' }} />
-          <col style={{ width: '85px' }} />
-          <col style={{ width: '110px' }} />
-          <col style={{ width: '70px' }} />
-          <col style={{ width: '85px' }} />
-          <col style={{ width: '75px' }} />
-        </colgroup>
+      <div className="w-full overflow-x-auto">
+        <table className="w-full text-left border-collapse text-sm">
+          <colgroup>
+            {onToggleSelection && <col style={{ width: '50px' }} />}
+            <col style={{ width: '60px' }} />
+            <col style={{ width: '140px' }} />
+            <col style={{ width: '100px' }} />
+            <col style={{ width: '90px' }} />
+            <col style={{ width: '100px' }} />
+            <col style={{ width: '130px' }} />
+            <col style={{ width: '100px' }} />
+            <col style={{ width: '140px' }} />
+            <col style={{ width: '80px' }} />
+            <col style={{ width: '100px' }} />
+            <col style={{ width: '90px' }} />
+          </colgroup>
         <thead>
           <tr
             className={clsx(
@@ -132,6 +146,21 @@ const PNodeTableComponent = ({
                 : "border-border-app bg-bg-bg2"
             )}
           >
+            {/* Selection checkbox header */}
+            {onToggleSelection && (
+              <th className="p-2 text-center bg-bg-bg2/50">
+                <div className="flex items-center justify-center">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={() => allSelected ? onClearSelection?.() : onSelectAll?.()}
+                    className="w-4 h-4 rounded border-2 border-border-app bg-bg-card checked:bg-purple-500 checked:border-purple-500 focus:ring-2 focus:ring-purple-500/30 transition-all cursor-pointer hover:scale-110"
+                    title={allSelected ? "Deselect all" : "Select all"}
+                  />
+                </div>
+              </th>
+            )}
+            
             {headers.map((header) => (
               <th
                 key={header.key}
@@ -206,18 +235,40 @@ const PNodeTableComponent = ({
             const committedBytes = Math.max(pnode.stats.storage_committed ?? 0, 0);
             const usedBytes = Math.max(pnode.stats.storage_used ?? 0, 0);
 
+            const isSelected = selectedNodeIds?.has(pnode.ip);
+            
             return (
               <tr
                 key={pnode.ip}
-                onClick={() => router.push(`/pnode/${pnode.ip}`)}
+                onClick={() => !isSelected && router.push(`/pnode/${pnode.ip}`)}
                 className={clsx(
-                  "transition-all duration-200 cursor-pointer group relative",
+                  "transition-all duration-200 group relative",
+                  !isSelected && "cursor-pointer",
+                  isSelected && "!bg-purple-500/10 ring-2 ring-inset ring-purple-500",
                   isLight
                     ? "hover:bg-black/5 hover:shadow-md"
                     : "bg-bg-card hover:bg-table-hover hover:shadow-lg hover:shadow-accent-aqua/5",
-                  "hover:border-l-4 hover:border-l-accent-aqua"
+                  !isSelected && "hover:border-l-4 hover:border-l-accent-aqua"
                 )}
               >
+                {/* SELECTION CHECKBOX */}
+                {onToggleSelection && (
+                  <td 
+                    className="p-2 text-center align-middle"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-center">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => onToggleSelection(pnode.ip)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 rounded border-2 border-border-app bg-bg-card checked:bg-purple-500 checked:border-purple-500 focus:ring-2 focus:ring-purple-500/30 transition-all cursor-pointer hover:scale-110"
+                      />
+                    </div>
+                  </td>
+                )}
+                
                 <td className="p-4 text-center align-middle">
                   <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm ${getScoreColor((pnode as any)._score)}`}>
                     {(pnode as any)._score}
@@ -307,6 +358,7 @@ const PNodeTableComponent = ({
           })}
         </tbody>
       </table>
+      </div>
 
       {/* Pagination */}
       <Pagination

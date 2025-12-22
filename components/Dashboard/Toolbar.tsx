@@ -36,6 +36,9 @@ type ToolbarProps = {
   onExportData: () => void;
   onExportCsv: () => void;
   onExportExcel: () => void;
+  onExportPdf?: () => void;
+  onExportSelectedPdf?: () => void;
+  selectedNodesCount?: number;
   isAdvancedFilterOpen: boolean;
   setIsAdvancedFilterOpen: (open: boolean) => void;
   lastUpdateText: string;
@@ -57,6 +60,9 @@ export const Toolbar = ({
   onExportData,
   onExportCsv,
   onExportExcel,
+  onExportPdf,
+  onExportSelectedPdf,
+  selectedNodesCount = 0,
   isAdvancedFilterOpen,
   setIsAdvancedFilterOpen,
   lastUpdateText,
@@ -205,41 +211,101 @@ export const Toolbar = ({
                 className={clsx(TOOLBAR_BUTTON_BASE, "flex items-center gap-1", pnodesCount === 0 && "opacity-50 pointer-events-none")}
                 aria-label="Export"
               >
-                <Download className="w-5 h-5 text-text-soft" />
+                <div className="relative">
+                  <Download className="w-5 h-5 text-text-soft" />
+                  {selectedNodesCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full animate-pulse shadow-lg shadow-purple-500/50" />
+                  )}
+                </div>
                 <ChevronDown className={clsx("w-4 h-4 text-text-soft transition-transform", exportMenuOpen ? "rotate-180" : "rotate-0")} />
               </button>
             </Tooltip>
             {exportMenuOpen && (
-              <div className="absolute left-0 mt-3 w-48 rounded-xl border border-border-app bg-bg-card/95 backdrop-blur-md shadow-2xl z-[60] overflow-hidden">
+              <div className="absolute left-0 mt-3 w-56 rounded-xl border border-border-app bg-bg-card/98 backdrop-blur-xl shadow-2xl z-[60] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                {/* PDF Report - Featured option */}
+                {onExportPdf && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onExportPdf();
+                        setExportMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-3 text-left text-sm font-medium text-text-main hover:bg-accent-purple/10 active:bg-accent-purple/20 transition-all duration-150 flex items-center justify-between group border-b border-border-app-soft"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg group-hover:scale-110 transition-transform duration-200">📄</span>
+                        <div className="flex flex-col">
+                          <span className="font-semibold group-hover:text-accent-purple transition-colors">PDF Report</span>
+                          <span className="text-xs text-text-soft">Full analytics</span>
+                        </div>
+                      </div>
+                      <svg className="w-4 h-4 text-text-soft group-hover:text-accent-purple group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                    
+                    {/* Selected Nodes PDF Export - Appears when selection active */}
+                    {onExportSelectedPdf && selectedNodesCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onExportSelectedPdf();
+                          setExportMenuOpen(false);
+                        }}
+                        className="w-full px-4 py-3 text-left text-sm font-medium text-text-main bg-purple-500/10 hover:bg-purple-500/20 active:bg-purple-500/30 transition-all duration-150 flex items-center justify-between group border-b border-purple-500/20"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg group-hover:scale-110 transition-transform duration-200">✨</span>
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-purple-600 dark:text-purple-400">Export Selected ({selectedNodesCount})</span>
+                            <span className="text-xs text-text-soft">Comparative analysis</span>
+                          </div>
+                        </div>
+                      </button>
+                    )}
+                    
+                    <div className="px-3 py-2">
+                      <p className="text-xs text-text-soft uppercase tracking-wider">Data Export</p>
+                    </div>
+                  </>
+                )}
+                
+                {/* Standard export options */}
                 <button
                   type="button"
                   onClick={() => {
                     onExportData();
                     setExportMenuOpen(false);
                   }}
-                  className="w-full px-4 py-3 text-sm text-text-main hover:bg-bg-bg2 transition-colors"
+                  className="w-full px-4 py-2.5 text-left text-sm text-text-main hover:bg-bg-bg2 active:bg-bg-bg3 transition-all duration-150 flex items-center gap-3 group"
                 >
-                  JSON
+                  <span className="text-base group-hover:scale-110 transition-transform duration-200">📋</span>
+                  <span className="group-hover:translate-x-0.5 transition-transform duration-150">JSON</span>
                 </button>
+                
                 <button
                   type="button"
                   onClick={() => {
                     onExportCsv();
                     setExportMenuOpen(false);
                   }}
-                  className="w-full px-4 py-3 text-sm text-text-main hover:bg-bg-bg2 transition-colors"
+                  className="w-full px-4 py-2.5 text-left text-sm text-text-main hover:bg-bg-bg2 active:bg-bg-bg3 transition-all duration-150 flex items-center gap-3 group"
                 >
-                  CSV
+                  <span className="text-base group-hover:scale-110 transition-transform duration-200">📊</span>
+                  <span className="group-hover:translate-x-0.5 transition-transform duration-150">CSV</span>
                 </button>
+                
                 <button
                   type="button"
                   onClick={() => {
                     onExportExcel();
                     setExportMenuOpen(false);
                   }}
-                  className="w-full px-4 py-3 text-sm text-text-main hover:bg-bg-bg2 transition-colors"
+                  className="w-full px-4 py-2.5 text-left text-sm text-text-main hover:bg-bg-bg2 active:bg-bg-bg3 transition-all duration-150 flex items-center gap-3 group"
                 >
-                  Excel
+                  <span className="text-base group-hover:scale-110 transition-transform duration-200">📈</span>
+                  <span className="group-hover:translate-x-0.5 transition-transform duration-150">Excel</span>
                 </button>
               </div>
             )}

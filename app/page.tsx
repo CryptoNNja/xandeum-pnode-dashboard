@@ -18,6 +18,7 @@ import { Toolbar } from "@/components/Dashboard/Toolbar";
 import { AdvancedFilters } from "@/components/Dashboard/AdvancedFilters";
 import { AboutPNodes } from "@/components/Dashboard/AboutPNodes";
 import { hexToRgba, getKpiColors, getStatusColors } from "@/lib/utils";
+import { generatePDFReport } from "@/lib/pdf-export";
 
 const TOOLTIP_STYLES = `
   .recharts-tooltip-wrapper { outline: none !important; }
@@ -110,6 +111,34 @@ export default function Page() {
   const [isGeographicModalOpen, setIsGeographicModalOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  
+  // Selection state for multi-node PDF reports
+  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
+  const selectedNodes = useMemo(() => 
+    pnodes.filter(node => selectedNodeIds.has(node.ip)), 
+    [pnodes, selectedNodeIds]
+  );
+
+  // Selection handlers
+  const handleToggleSelection = useCallback((nodeIp: string) => {
+    setSelectedNodeIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(nodeIp)) {
+        newSet.delete(nodeIp);
+      } else {
+        newSet.add(nodeIp);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    setSelectedNodeIds(new Set(paginatedPNodes.map(node => node.ip)));
+  }, [paginatedPNodes]);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedNodeIds(new Set());
+  }, []);
 
   // Growth metrics from historical data
   const [networkGrowthRate, setNetworkGrowthRate] = useState(0);
@@ -242,6 +271,73 @@ export default function Page() {
     return parseInt(versionChart.latestPercentLabel) || 0;
   }, [versionChart]);
 
+  // Selection handlers
+  const toggleNodeSelection = useCallback((nodeIp: string) => {
+    setSelectedNodeIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(nodeIp)) {
+        newSet.delete(nodeIp);
+      } else {
+        newSet.add(nodeIp);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // Export PDF Report - Full Network
+  const exportPdf = useCallback(() => {
+    const totalPackets = pnodes.reduce((sum, p) => sum + (p.stats?.packets_sent || 0) + (p.stats?.packets_received || 0), 0);
+    const totalStorage = pnodes.reduce((sum, p) => sum + (p.stats?.storage_committed || 0), 0);
+    
+    const summary = {
+      totalNodes: pnodes.length,
+      publicNodes: publicCount,
+      privateNodes: privateCount,
+      avgCPU: avgCpuUsage.percent,
+      avgRAM: avgRamUsage.ratio * 100, // Convert ratio to percentage
+      avgUptime: pnodes.reduce((sum, p) => sum + (p.stats?.uptime || 0), 0) / pnodes.length,
+      healthyNodes: pnodes.filter(p => ((p as any)._score || 0) >= 70).length,
+      networkThroughput: totalPackets,
+      totalStorage: totalStorage,
+    };
+
+    generatePDFReport({
+      nodes: pnodes,
+      summary,
+    });
+  }, [pnodes, publicCount, privateCount, avgCpuUsage, avgRamUsage]);
+
+  // Export PDF Report - Selected Nodes (NEW!)
+  const exportSelectedPdf = useCallback(() => {
+    if (selectedNodes.length === 0) return;
+
+    const totalPackets = selectedNodes.reduce((sum, n) => sum + (n.stats?.packets_sent || 0) + (n.stats?.packets_received || 0), 0);
+    const totalStorage = selectedNodes.reduce((sum, n) => sum + (n.stats?.storage_committed || 0), 0);
+
+    const summary = {
+      totalNodes: selectedNodes.length,
+      publicNodes: selectedNodes.filter(n => n.status === 'active').length,
+      privateNodes: selectedNodes.filter(n => n.status !== 'active').length,
+      avgCPU: selectedNodes.reduce((sum, n) => sum + (n.stats?.cpu_percent || 0), 0) / selectedNodes.length,
+      avgRAM: selectedNodes.reduce((sum, n) => {
+        const usage = n.stats?.ram_used && n.stats?.ram_total 
+          ? (n.stats.ram_used / n.stats.ram_total) * 100 
+          : 0;
+        return sum + usage;
+      }, 0) / selectedNodes.length,
+      avgUptime: selectedNodes.reduce((sum, n) => sum + (n.stats?.uptime || 0), 0) / selectedNodes.length,
+      healthyNodes: selectedNodes.filter(n => ((n as any)._score || 0) >= 70).length,
+      networkThroughput: totalPackets,
+      totalStorage: totalStorage,
+    };
+
+    generatePDFReport({
+      nodes: selectedNodes,
+      summary,
+      isCustomSelection: true,
+    });
+  }, [selectedNodes]);
+
   if (loading) {
     return <SkeletonLoader />;
   }
@@ -335,6 +431,9 @@ export default function Page() {
             onExportData={exportData}
             onExportCsv={exportCsv}
             onExportExcel={exportExcel}
+            onExportPdf={exportPdf}
+            onExportSelectedPdf={exportSelectedPdf}
+            selectedNodesCount={selectedNodeIds.size}
             isAdvancedFilterOpen={isAdvancedFilterOpen}
             setIsAdvancedFilterOpen={setIsAdvancedFilterOpen}
             lastUpdateText={getTimeAgo()}
@@ -385,6 +484,10 @@ export default function Page() {
           gridPNodes={gridPNodes}
           gridLimit={gridLimit}
           setGridLimit={setGridLimit}
+          selectedNodeIds={selectedNodeIds}
+          onToggleSelection={handleToggleSelection}
+          onSelectAll={handleSelectAll}
+          onClearSelection={handleClearSelection}
         />
       </section>
 

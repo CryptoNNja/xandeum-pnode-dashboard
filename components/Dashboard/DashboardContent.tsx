@@ -41,6 +41,11 @@ type DashboardContentProps = {
   gridPNodes: (PNode & { _score?: number; _healthStatus?: string })[];
   gridLimit: number;
   setGridLimit: (limit: number) => void;
+  // Selection props
+  selectedNodeIds?: Set<string>;
+  onToggleSelection?: (nodeIp: string) => void;
+  onSelectAll?: () => void;
+  onClearSelection?: () => void;
 };
 
 const DashboardContentComponent = ({
@@ -60,6 +65,10 @@ const DashboardContentComponent = ({
   gridPNodes,
   gridLimit,
   setGridLimit,
+  selectedNodeIds,
+  onToggleSelection,
+  onSelectAll,
+  onClearSelection,
 }: DashboardContentProps) => {
   const router = useRouter();
   const statusColors = getStatusColors();
@@ -98,7 +107,7 @@ const DashboardContentComponent = ({
 
   if (viewMode === "table") {
     return (
-      <section className="max-w-7xl mx-auto px-6">
+      <section className="w-full">
         <PNodeTable
           data={paginatedPNodes as PNode[]}
           onSort={onSort}
@@ -110,6 +119,10 @@ const DashboardContentComponent = ({
           totalItems={filteredAndSortedPNodes.length}
           onPageChange={onPageChange}
           onPageSizeChange={onPageSizeChange}
+          selectedNodeIds={selectedNodeIds}
+          onToggleSelection={onToggleSelection}
+          onSelectAll={onSelectAll}
+          onClearSelection={onClearSelection}
         />
       </section>
     );
