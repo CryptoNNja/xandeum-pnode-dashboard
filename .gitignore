@@ -38,23 +38,24 @@ crawler-*.log
 next-env.d.ts
 
 # ============================================
-# AI Tools & Generated Files
+# Development Tools
 # ============================================
-# Claude Code settings (personal configuration)
+# IDE and editor settings
 .claude/
+.vscode/
+.idea/
 
-# Rovo Dev CLI
+# Executable files
+*.exe
 acli.exe
-rovo*.exe
 
-# AI-generated documentation (keep only README.md and CHANGELOG.md in version control)
+# Generated documentation
 audit_*.md
 GEMINI.md
 DEVELOPER_GUIDE.md
 DEVELOPER_GUIDE.pdf
-*.ai.md
 
-# AI-generated PDFs
+# PDF files (exclude from version control)
 *.pdf
 
 # ============================================
@@ -91,6 +92,7 @@ update_*.js
 tmp/
 tmp_*
 *_backup.md
+*_temp.*
 
 # ============================================
 # IDE & Editor Files
