@@ -22,6 +22,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Crawler logs
+crawler-*.log
+*.log
+
 # local env files
 .env*.local
 .env
@@ -38,6 +42,10 @@ next-env.d.ts
 # ============================================
 # Claude Code settings (personal configuration)
 .claude/
+
+# Rovo Dev CLI
+acli.exe
+rovo*.exe
 
 # AI-generated documentation (keep only README.md and CHANGELOG.md in version control)
 audit_*.md
@@ -56,8 +64,18 @@ DEVELOPER_GUIDE.pdf
 test-env.js
 test_*.js
 *_test.js
+test-*.js
 scripts/insert_*.js
 scripts/insert_*.ts
+
+# Debug and analysis scripts (root level)
+analyze-*.js
+calculate-*.js
+check-*.js
+find-*.js
+inspect-*.js
+sum-*.js
+update_*.js
 
 # Backup files
 *.backup
@@ -71,6 +89,8 @@ scripts/insert_*.ts
 *.temp
 .temp/
 tmp/
+tmp_*
+*_backup.md
 
 # ============================================
 # IDE & Editor Files
