@@ -377,8 +377,13 @@ export default function Page() {
             </p>
             <p className="text-text-soft text-xs">Official pNode Analytics Dashboard v1.0</p>
           </div>
-          <div className="flex items-center gap-3 px-5 py-2.5 rounded-full border border-border-app bg-bg-card shadow-sm">
-            <div className="w-8 h-8 rounded-full border border-accent-aqua/30 flex items-center justify-center overflow-hidden">
+          <a
+            href="https://x.com/Crypt0xNinja"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-5 py-2.5 rounded-full border border-border-app bg-bg-card shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-accent-aqua/10 hover:border-accent-aqua/50 hover:scale-105 group"
+          >
+            <div className="w-8 h-8 rounded-full border border-accent-aqua/30 flex items-center justify-center overflow-hidden group-hover:border-accent-aqua/60 transition-colors">
               <Image
                 src="/avatar-ninja.png"
                 alt="Ninja0x Avatar"
@@ -387,10 +392,10 @@ export default function Page() {
                 className="object-cover"
               />
             </div>
-            <p className="text-xs text-text-soft">
+            <p className="text-xs text-text-soft group-hover:text-text-main transition-colors">
               Built with <span className="text-red-400">❤️</span> by <span className="font-semibold text-text-main">Ninja0x</span>
             </p>
-          </div>
+          </a>
         </div>
       </footer>
 

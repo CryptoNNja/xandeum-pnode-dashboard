@@ -164,46 +164,7 @@ const AboutPNodesComponent = ({
     },
   ];
 
-  // Extended stats (when expanded)
-  const extendedStats = useMemo(() => {
-    const stats = [
-      {
-        icon: Database,
-        value: `${storageCommittedTB} TB`,
-        label: "Storage Committed",
-        sublabel: `${storageUsedPodsFormatted} used (pods) · ${storageUsedStatsFormatted} used (stats)`,
-        color: "#7B3FF2", // Xandeum Purple
-      },
-      {
-        icon: Radio,
-        value: `${networkMetadata.crawledNodes} / ${networkMetadata.networkTotal}`,
-        label: "Network Coverage",
-        sublabel: `${networkMetadata.coveragePercent.toFixed(1)}% discovered`,
-        color: "#14F195", // Xandeum Green
-      },
-      {
-        icon: Globe,
-        value: countriesCount.toString(),
-        label: "Countries",
-        color: "#00D4AA", // Aqua
-      },
-    ];
-
-    // Add token price if available
-    if (tokenData) {
-      const isPositive = tokenData.priceChange24h >= 0;
-      stats.push({
-        icon: DollarSign,
-        value: `$${tokenData.price.toFixed(6)}`,
-        label: "XAND Token",
-        sublabel: `${isPositive ? '+' : ''}${tokenData.priceChange24h.toFixed(2)}% 24h`,
-        color: isPositive ? "#10B981" : "#EF4444",
-        customIcon: isPositive ? TrendingUp : TrendingDown,
-      });
-    }
-
-    return stats;
-  }, [storageCommittedTB, storageUsedPodsFormatted, storageUsedStatsFormatted, networkMetadata, countriesCount, tokenData]);
+  // Note: extendedStats removed as we now use the compact token card directly in the expanded view
 
   return (
     <motion.section
