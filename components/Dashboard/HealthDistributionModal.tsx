@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Info } from "lucide-react";
+import { X, HeartPulse, Info } from "lucide-react";
 import { getStatusColors } from "@/lib/utils";
 
 type HealthDistributionModalProps = {
@@ -77,11 +77,10 @@ export const HealthDistributionModal = ({
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center"
               style={{
-                background: "linear-gradient(135deg, #7B3FF2, #14F195)",
-                opacity: 0.15,
+                background: "rgba(16, 185, 129, 0.2)",
               }}
             >
-              <Info className="w-6 h-6" style={{ color: "#7B3FF2" }} />
+              <HeartPulse className="w-6 h-6" style={{ color: "#10B981" }} strokeWidth={2.3} />
             </div>
             <div>
               <h2

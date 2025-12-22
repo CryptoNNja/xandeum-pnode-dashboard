@@ -114,6 +114,7 @@ export default function Page() {
   // Growth metrics from historical data
   const [networkGrowthRate, setNetworkGrowthRate] = useState(0);
   const [storageGrowthRate, setStorageGrowthRate] = useState(0);
+  const [networkHistory, setNetworkHistory] = useState<Array<{ date: string; nodes: number }>>([]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
@@ -141,6 +142,24 @@ export default function Page() {
       }
     }
     fetchGrowthMetrics();
+  }, []);
+
+  // Fetch network history for the growth chart
+  useEffect(() => {
+    async function fetchNetworkHistory() {
+      try {
+        const response = await fetch("/api/network-history", { cache: "no-store" });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.hasData && data.history) {
+            setNetworkHistory(data.history);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching network history:", error);
+      }
+    }
+    fetchNetworkHistory();
   }, []);
 
   const getTimeAgo = useCallback(() => {
@@ -290,6 +309,7 @@ export default function Page() {
           totalPagesCount={totalPagesCount}
           networkGrowthRate={networkGrowthRate}
           storageGrowthRate={storageGrowthRate}
+          networkHistory={networkHistory}
           networkBandwidth={networkBandwidth}
           versionAdoptionPercent={versionAdoptionPercent}
           onVersionClick={() => setIsVersionModalOpen(true)}

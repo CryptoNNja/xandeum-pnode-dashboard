@@ -58,8 +58,8 @@ export const DataDistributionModal = ({
           style={{
             borderColor: isLight ? "rgba(15, 23, 42, 0.08)" : "rgba(255, 255, 255, 0.08)",
             background: isLight
-              ? "linear-gradient(135deg, rgba(236, 72, 153, 0.03) 0%, rgba(244, 114, 182, 0.03) 100%)"
-              : "linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(244, 114, 182, 0.05) 100%)",
+              ? "linear-gradient(135deg, rgba(123, 63, 242, 0.03) 0%, rgba(20, 241, 149, 0.03) 100%)"
+              : "linear-gradient(135deg, rgba(123, 63, 242, 0.08) 0%, rgba(20, 241, 149, 0.05) 100%)",
           }}
         >
           <button

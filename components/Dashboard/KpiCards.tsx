@@ -37,6 +37,8 @@ import { LeaderboardModal } from "./LeaderboardModal";
 import { FlagsCarousel } from "./FlagsCarousel";
 import { PacketsAnimation } from "./PacketsAnimation";
 import { ActiveStreamsAnimation } from "./ActiveStreamsAnimation";
+import { MemoryFlowAnimation } from "./MemoryFlowAnimation";
+import { RewardsRainAnimation } from "./RewardsRainAnimation";
 import { calculateNodeScore } from "@/lib/scoring";
 
 import type { NetworkParticipationMetrics } from "@/lib/blockchain-metrics";
@@ -216,7 +218,7 @@ export const KpiCards = ({
             accentColor="#3B82F6"
           >
           {/* Network Participation Card */}
-          <div className="kpi-card relative overflow-hidden p-6">
+          <div className="kpi-card relative overflow-hidden p-6 flex flex-col">
             <div className="flex items-start justify-between gap-6">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
@@ -233,11 +235,7 @@ export const KpiCards = ({
                       <span 
                         className="text-4xl font-bold tracking-tight"
                         style={{ 
-                          color: networkParticipation.participationRate >= 85 
-                            ? "#10B981" 
-                            : networkParticipation.participationRate >= 70 
-                            ? "#F59E0B" 
-                            : "#EF4444" 
+                          color: "#3B82F6"
                         }}
                       >
                         {networkParticipation.podsEarning}
@@ -331,6 +329,69 @@ export const KpiCards = ({
                     );
                   })()}
                 </div>
+
+                {/* Rewards Visualization Zone */}
+                <div className="mt-auto pt-4 border-t border-border-app-soft">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs uppercase tracking-[0.25em] text-text-soft/70">
+                      Reward Distribution
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-2 h-2 rounded-full"
+                        style={{ 
+                          backgroundColor: networkParticipation.participationRate >= 85
+                            ? "#F59E0B"
+                            : networkParticipation.participationRate >= 70
+                            ? "#3B82F6"
+                            : "#6B7280",
+                          boxShadow: networkParticipation.participationRate >= 70
+                            ? `0 0 8px ${networkParticipation.participationRate >= 85 ? "#F59E0B" : "#3B82F6"}`
+                            : "none",
+                          animation: networkParticipation.participationRate >= 85 
+                            ? "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" 
+                            : "none"
+                        }}
+                      />
+                      <span className="text-xs font-mono text-text-soft">
+                        {networkParticipation.participationRate >= 85
+                          ? "EXCELLENT"
+                          : networkParticipation.participationRate >= 70
+                          ? "GOOD"
+                          : "LOW"}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Animation Container */}
+                  <div 
+                    className="relative rounded-lg overflow-hidden border"
+                    style={{ 
+                      height: "60px",
+                      background: isLight 
+                        ? "linear-gradient(135deg, rgba(59, 130, 246, 0.04) 0%, rgba(245, 158, 11, 0.04) 100%)" 
+                        : "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(245, 158, 11, 0.08) 100%)",
+                      borderColor: "var(--border-default)",
+                      backdropFilter: "blur(10px)"
+                    }}
+                  >
+                    <RewardsRainAnimation 
+                      participationRate={networkParticipation.participationRate}
+                      isActive={networkParticipation.podsEarning > 0}
+                      isLight={isLight} 
+                    />
+                    
+                    {/* Overlay gradient for depth */}
+                    <div 
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: isLight
+                          ? "radial-gradient(circle at center, transparent 40%, rgba(255,255,255,0.4) 100%)"
+                          : "radial-gradient(circle at center, transparent 40%, rgba(15,23,42,0.4) 100%)"
+                      }}
+                    />
+                  </div>
+                </div>
               </>
             ) : (
               <div className="mt-6">
@@ -340,7 +401,7 @@ export const KpiCards = ({
           </div>
 
           {/* Network Throughput Card */}
-          <div className="kpi-card relative overflow-hidden p-6">
+          <div className="kpi-card relative overflow-hidden p-6 flex flex-col">
             <div className="flex items-start justify-between gap-6">
               <div>
                 <div className="flex items-center gap-2">
@@ -349,7 +410,10 @@ export const KpiCards = ({
                 </div>
                 <p className="text-sm text-text-faint">Aggregate bandwidth</p>
                 <div className="flex items-baseline gap-2 mt-4">
-                  <span className="text-4xl font-bold tracking-tight text-text-main">
+                  <span 
+                    className="text-4xl font-bold tracking-tight"
+                    style={{ color: "#3B82F6" }}
+                  >
                     {networkBandwidth >= 1000000 
                       ? `${(networkBandwidth / 1000000).toFixed(2)}M`
                       : networkBandwidth >= 1000
@@ -371,15 +435,7 @@ export const KpiCards = ({
               </div>
             </div>
 
-            {/* Packets Animation */}
-            <div className="mt-4 mb-4">
-              <PacketsAnimation 
-                throughput={networkBandwidth / 1000} 
-                maxThroughput={1000}
-              />
-            </div>
-
-            <div className="mt-2">
+            <div className="mt-6">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-text-soft">Active nodes</span>
                 <span className="font-semibold text-text-main">{publicCount}</span>
@@ -402,10 +458,59 @@ export const KpiCards = ({
                   : "Minimal activity"}
               </p>
             </div>
+
+            {/* Bandwidth Visualization Zone */}
+            <div className="mt-auto pt-4 border-t border-border-app-soft">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs uppercase tracking-[0.25em] text-text-soft/70">
+                  Network Traffic
+                </p>
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-2 h-2 rounded-full animate-pulse"
+                    style={{ 
+                      backgroundColor: networkBandwidth > 0 ? "#3B82F6" : "#6B7280",
+                      boxShadow: networkBandwidth > 0 ? "0 0 8px #3B82F6" : "none"
+                    }}
+                  />
+                  <span className="text-xs font-mono text-text-soft">
+                    {networkBandwidth > 0 ? "ACTIVE" : "IDLE"}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Animation Container */}
+              <div 
+                className="relative rounded-lg overflow-hidden border"
+                style={{ 
+                  height: "60px",
+                  background: isLight 
+                    ? "linear-gradient(135deg, rgba(59, 130, 246, 0.04) 0%, rgba(99, 179, 237, 0.04) 100%)" 
+                    : "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(99, 179, 237, 0.08) 100%)",
+                  borderColor: "var(--border-default)",
+                  backdropFilter: "blur(10px)"
+                }}
+              >
+                <PacketsAnimation 
+                  throughput={networkBandwidth / 1000} 
+                  maxThroughput={1000}
+                />
+                
+                {/* Overlay gradient for depth */}
+                <div 
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: isLight
+                      ? "radial-gradient(circle at center, transparent 40%, rgba(255,255,255,0.4) 100%)"
+                      : "radial-gradient(circle at center, transparent 40%, rgba(15,23,42,0.4) 100%)"
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Avg RAM Usage */}
-          <div className="kpi-card relative overflow-hidden p-6">
+          <div className="kpi-card relative overflow-hidden p-6 flex flex-col">
             <div className="flex items-start justify-between gap-6">
               <div>
                 <div className="flex items-center gap-2">
@@ -414,7 +519,10 @@ export const KpiCards = ({
                 </div>
                 <p className="text-sm text-text-faint">Average memory load</p>
                 <div className="flex items-baseline gap-2 mt-4">
-                  <span className="text-3xl font-bold text-text-main">
+                  <span 
+                    className="text-3xl font-bold"
+                    style={{ color: "#3B82F6" }}
+                  >
                     {avgRamUsage.formattedUsed}
                   </span>
                   <span className="text-sm text-text-soft font-semibold">
@@ -452,10 +560,74 @@ export const KpiCards = ({
                   : "Awaiting active telemetry"}
               </p>
             </div>
+
+            {/* Memory Visualization Zone */}
+            <div className="mt-auto pt-4 border-t border-border-app-soft">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs uppercase tracking-[0.25em] text-text-soft/70">
+                  Memory Status
+                </p>
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-2 h-2 rounded-full"
+                    style={{ 
+                      backgroundColor: avgRamUsage.ratio < 60 
+                        ? "#3B82F6" 
+                        : avgRamUsage.ratio < 80 
+                        ? "#F59E0B" 
+                        : "#EF4444",
+                      boxShadow: `0 0 8px ${
+                        avgRamUsage.ratio < 60 
+                          ? "#3B82F6" 
+                          : avgRamUsage.ratio < 80 
+                          ? "#F59E0B" 
+                          : "#EF4444"
+                      }`,
+                      animation: avgRamUsage.ratio > 80 ? "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" : "none"
+                    }}
+                  />
+                  <span className="text-xs font-mono text-text-soft">
+                    {avgRamUsage.ratio < 60 
+                      ? "OPTIMAL" 
+                      : avgRamUsage.ratio < 80 
+                      ? "LOADED" 
+                      : "CRITICAL"}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Animation Container */}
+              <div 
+                className="relative rounded-lg overflow-hidden border"
+                style={{ 
+                  height: "60px",
+                  background: isLight 
+                    ? "linear-gradient(135deg, rgba(59, 130, 246, 0.04) 0%, rgba(99, 179, 237, 0.04) 100%)" 
+                    : "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(99, 179, 237, 0.08) 100%)",
+                  borderColor: "var(--border-default)",
+                  backdropFilter: "blur(10px)"
+                }}
+              >
+                <MemoryFlowAnimation 
+                  ramUsagePercent={avgRamUsage.ratio} 
+                  isLight={isLight} 
+                />
+                
+                {/* Overlay gradient for depth */}
+                <div 
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: isLight
+                      ? "radial-gradient(circle at center, transparent 40%, rgba(255,255,255,0.4) 100%)"
+                      : "radial-gradient(circle at center, transparent 40%, rgba(15,23,42,0.4) 100%)"
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Active Streams Card */}
-          <div className="kpi-card relative overflow-hidden p-6">
+          <div className="kpi-card relative overflow-hidden p-6 flex flex-col">
             <div className="flex items-start justify-between gap-6">
               <div>
                 <div className="flex items-center gap-2">
@@ -504,7 +676,7 @@ export const KpiCards = ({
             </div>
 
             {/* Stream Visualization Zone - Separated at bottom */}
-            <div className="mt-6 pt-4 border-t border-border-app-soft">
+            <div className="mt-auto pt-4 border-t border-border-app-soft">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs uppercase tracking-[0.25em] text-text-soft/70">
                   Live Stream Activity

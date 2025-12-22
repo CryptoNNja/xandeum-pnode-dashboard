@@ -26,12 +26,12 @@ export const PacketsAnimation = ({ throughput, maxThroughput = 10 }: PacketsAnim
   const duration = getAnimationDuration();
 
   return (
-    <div className="relative w-full h-8 overflow-hidden">
+    <div className="relative w-full h-full overflow-hidden flex items-center">
       {/* Background line */}
       <div 
         className="absolute top-1/2 -translate-y-1/2 w-full h-[2px]"
         style={{
-          background: 'linear-gradient(90deg, transparent 0%, rgba(123, 63, 242, 0.2) 50%, transparent 100%)',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(59, 130, 246, 0.3) 50%, transparent 100%)',
         }}
       />
 
@@ -41,8 +41,8 @@ export const PacketsAnimation = ({ throughput, maxThroughput = 10 }: PacketsAnim
           key={id}
           className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-sm"
           style={{
-            background: 'linear-gradient(135deg, #7B3FF2 0%, #14F195 100%)',
-            boxShadow: '0 0 8px rgba(123, 63, 242, 0.6)',
+            background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)',
+            boxShadow: '0 0 10px rgba(59, 130, 246, 0.7)',
             left: '-5%',
           }}
           animate={{ 

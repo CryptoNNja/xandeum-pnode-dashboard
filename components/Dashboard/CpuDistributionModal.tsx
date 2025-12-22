@@ -30,14 +30,16 @@ export const CpuDistributionModal = ({
 
   // Calculate stats
   const totalNodes = cpuDistribution.reduce((sum, item) => sum + item.count, 0);
+  
+  // Calculate average CPU using the bucket's min/max values
   const avgCpu = cpuDistribution.reduce((sum, item) => {
-    // Extract mid-point of range for average calculation
-    const rangeParts = item.range.split('-');
-    const midPoint = rangeParts.length === 2 
-      ? (parseInt(rangeParts[0]) + parseInt(rangeParts[1])) / 2 
-      : parseInt(rangeParts[0].replace('+', ''));
+    // Use the mid-point of each bucket's range (min and max from the bucket definition)
+    // The cpuDistribution array should include min/max values from getCpuBuckets()
+    const midPoint = item.min !== undefined && item.max !== undefined
+      ? (item.min + item.max) / 2
+      : 0;
     return sum + (midPoint * item.count);
-  }, 0) / totalNodes;
+  }, 0) / (totalNodes || 1); // Prevent division by zero
 
   return (
     <div
@@ -78,11 +80,10 @@ export const CpuDistributionModal = ({
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center"
               style={{
-                background: "linear-gradient(135deg, #10B981, #14F195)",
-                opacity: 0.15,
+                background: "rgba(16, 185, 129, 0.2)",
               }}
             >
-              <Cpu className="w-6 h-6" style={{ color: "#10B981" }} />
+              <Cpu className="w-6 h-6" style={{ color: "#10B981" }} strokeWidth={3} />
             </div>
             <div>
               <h2

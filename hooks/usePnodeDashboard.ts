@@ -504,7 +504,28 @@ export const usePnodeDashboard = (theme?: string) => {
 
   const networkHealthInsights = useMemo(() => {
     const score = networkHealthScore;
-    const sparklineValues = networkHealthHistory.length > 0 ? networkHealthHistory : [score];
+    
+    // Build sparkline: use historical data if available, otherwise create synthetic trend from yesterday/lastWeek scores
+    let sparklineValues: number[];
+    if (networkHealthHistory.length > 0) {
+      sparklineValues = networkHealthHistory;
+    } else if (lastWeekScore !== null && yesterdayScore !== null) {
+      // Create 7-point trend from last week to today
+      sparklineValues = [
+        lastWeekScore,
+        lastWeekScore + (yesterdayScore - lastWeekScore) * 0.2,
+        lastWeekScore + (yesterdayScore - lastWeekScore) * 0.4,
+        lastWeekScore + (yesterdayScore - lastWeekScore) * 0.6,
+        lastWeekScore + (yesterdayScore - lastWeekScore) * 0.8,
+        yesterdayScore,
+        score
+      ];
+    } else if (yesterdayScore !== null) {
+      // Create 3-point trend from yesterday to today
+      sparklineValues = [yesterdayScore, (yesterdayScore + score) / 2, score];
+    } else {
+      sparklineValues = [score];
+    }
 
     const deltaYesterday = yesterdayScore !== null
       ? score - yesterdayScore
@@ -533,7 +554,9 @@ export const usePnodeDashboard = (theme?: string) => {
       deltaLastWeek,
       color,
       trendIcon: deltaYesterday > 0 ? "▲" : deltaYesterday < 0 ? "▼" : "→",
-      trendColor: deltaYesterday > 0 ? "text-green-400" : deltaYesterday < 0 ? "text-red-400" : "text-text-soft",
+      trendColor: deltaYesterday > 0 ? "#10B981" : deltaYesterday < 0 ? "#EF4444" : "#94a3b8",
+      trendIconWeek: deltaLastWeek !== null ? (deltaLastWeek > 0 ? "▲" : deltaLastWeek < 0 ? "▼" : "→") : "→",
+      trendColorWeek: deltaLastWeek !== null ? (deltaLastWeek > 0 ? "#10B981" : deltaLastWeek < 0 ? "#EF4444" : "#94a3b8") : "#94a3b8",
       svgWidth,
       svgHeight,
       sparklinePoints: points,
@@ -642,6 +665,8 @@ export const usePnodeDashboard = (theme?: string) => {
     const buckets = getCpuBuckets();
     return buckets.map((bucket) => ({
       range: bucket.label,
+      min: bucket.min,
+      max: bucket.max,
       count: allPnodes.filter((pnode) => pnode.status === "active" && (pnode.stats?.cpu_percent ?? 0) >= bucket.min && (pnode.stats?.cpu_percent ?? 0) < bucket.max).length,
       color: bucket.color
     }));

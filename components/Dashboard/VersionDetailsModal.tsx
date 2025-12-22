@@ -66,7 +66,7 @@ export const VersionDetailsModal = ({
       {/* Modal */}
       <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none">
         <div
-          className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border shadow-2xl pointer-events-auto"
+          className="w-full max-w-5xl max-h-[92vh] overflow-hidden rounded-2xl border shadow-2xl pointer-events-auto flex flex-col"
           style={{
             backgroundColor: bgColor,
             borderColor: borderColor,
@@ -74,50 +74,69 @@ export const VersionDetailsModal = ({
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="sticky top-0 z-10 flex items-center justify-between p-6 border-b" style={{ backgroundColor: bgColor, borderColor: borderColor }}>
+          <div 
+            className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0" 
+            style={{ 
+              backgroundColor: bgColor, 
+              borderColor: borderColor,
+              background: isLight 
+                ? "linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, rgba(20, 241, 149, 0.03) 100%)" 
+                : "linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(20, 241, 149, 0.05) 100%)"
+            }}
+          >
             <div>
-              <h2 className="text-2xl font-bold" style={{ color: textMain }}>
+              <h2 className="text-xl font-bold" style={{ color: textMain }}>
                 Network Version Distribution
               </h2>
-              <p className="text-sm mt-1" style={{ color: textSoft }}>
-                Detailed breakdown of client versions across all nodes
+              <p className="text-xs mt-0.5" style={{ color: textSoft }}>
+                Client versions across all nodes
               </p>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110"
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110"
               style={{
-                backgroundColor: cardBg,
+                backgroundColor: isLight ? "rgba(16, 185, 129, 0.1)" : "rgba(16, 185, 129, 0.15)",
                 color: textSoft,
               }}
               aria-label="Close"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Content */}
-          <div className="p-6 space-y-6">
-            {/* Chart Section */}
-            <div className="rounded-xl border p-6" style={{ backgroundColor: cardBg, borderColor: borderColor }}>
-              <div className="flex items-center justify-between mb-4">
+          <div className="flex-1 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-4 p-4">
+              {/* Chart Section */}
+              <div 
+                className="rounded-xl border p-4" 
+              style={{ 
+                backgroundColor: cardBg, 
+                borderColor: isLight ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.3)",
+                background: isLight
+                  ? "linear-gradient(135deg, rgba(16, 185, 129, 0.02) 0%, rgba(20, 241, 149, 0.02) 100%)"
+                  : "linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(20, 241, 149, 0.03) 100%)"
+              }}
+            >
+              <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h3 className="text-lg font-semibold" style={{ color: textMain }}>
-                    Version Distribution Chart
+                  <h3 className="text-base font-semibold" style={{ color: textMain }}>
+                    Distribution Chart
                   </h3>
-                  <p className="text-sm mt-1" style={{ color: textSoft }}>
-                    Visual representation of version adoption
+                  <p className="text-xs mt-0.5" style={{ color: textSoft }}>
+                    Visual breakdown
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm" style={{ color: textSoft }}>Latest version</p>
-                  <p className="text-2xl font-bold" style={{ color: versionChart.entries[0]?.color || '#10B981' }}>
-                    {versionChart.latestPercentLabel}
+                  <p className="text-xs" style={{ color: textSoft }}>Latest</p>
+                  <p className="text-xl font-bold" style={{ color: versionChart.entries[0]?.color || '#10B981' }}>
+                    {versionChart.latestPercentLabel}%
                   </p>
                 </div>
               </div>
 
-              <div className="h-80">
+              <div className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -126,7 +145,7 @@ export const VersionDetailsModal = ({
                       cy="50%"
                       labelLine={false}
                       label={renderCustomLabel}
-                      outerRadius={120}
+                      outerRadius={110}
                       fill="#8884d8"
                       dataKey="value"
                     >
@@ -153,18 +172,27 @@ export const VersionDetailsModal = ({
               </div>
             </div>
 
-            {/* Version List */}
-            <div className="rounded-xl border" style={{ backgroundColor: cardBg, borderColor: borderColor }}>
-              <div className="p-4 border-b" style={{ borderColor: borderColor }}>
-                <h3 className="text-lg font-semibold" style={{ color: textMain }}>
-                  Version Details
-                </h3>
-                <p className="text-sm mt-1" style={{ color: textSoft }}>
-                  Click on a version to filter dashboard by that version
-                </p>
-              </div>
+              {/* Version List */}
+              <div 
+                className="rounded-xl border flex flex-col" 
+                style={{ 
+                  backgroundColor: cardBg, 
+                  borderColor: isLight ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.3)",
+                  background: isLight
+                    ? "linear-gradient(135deg, rgba(16, 185, 129, 0.02) 0%, rgba(20, 241, 149, 0.02) 100%)"
+                    : "linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(20, 241, 149, 0.03) 100%)"
+                }}
+              >
+                <div className="px-4 py-3 border-b" style={{ borderColor: borderColor }}>
+                  <h3 className="text-base font-semibold" style={{ color: textMain }}>
+                    Version Details
+                  </h3>
+                  <p className="text-xs mt-0.5" style={{ color: textSoft }}>
+                    Click to filter dashboard
+                  </p>
+                </div>
 
-              <div className="divide-y" style={{ borderColor: borderColor }}>
+                <div className="divide-y overflow-y-auto flex-1" style={{ borderColor: borderColor, maxHeight: '400px' }}>
                 {versionChart.entries.map((version, index) => {
                   const nodeCount = version.count;
                   const percentage = `${version.percentage.toFixed(1)}%`;
@@ -178,21 +206,21 @@ export const VersionDetailsModal = ({
                           onClose();
                         }
                       }}
-                      className="w-full p-4 flex items-center justify-between hover:bg-opacity-50 transition-all group"
+                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-opacity-50 transition-all group"
                       style={{
                         backgroundColor: "transparent",
                       }}
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
                         {/* Color indicator */}
                         <div
-                          className="w-4 h-4 rounded-full"
+                          className="w-3 h-3 rounded-full"
                           style={{ backgroundColor: version.color }}
                         />
 
                         {/* Version name */}
                         <div className="text-left">
-                          <p className="font-mono font-semibold" style={{ color: textMain }}>
+                          <p className="font-mono font-semibold text-sm" style={{ color: textMain }}>
                             {version.label}
                           </p>
                           <p className="text-xs" style={{ color: textSoft }}>
@@ -201,9 +229,9 @@ export const VersionDetailsModal = ({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
                         {/* Progress bar */}
-                        <div className="w-32 h-2 rounded-full overflow-hidden" style={{ backgroundColor: borderColor }}>
+                        <div className="w-24 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: borderColor }}>
                           <div
                             className="h-full transition-all"
                             style={{
@@ -214,7 +242,7 @@ export const VersionDetailsModal = ({
                         </div>
 
                         {/* Percentage */}
-                        <p className="text-lg font-bold w-16 text-right" style={{ color: textMain }}>
+                        <p className="text-base font-bold w-12 text-right" style={{ color: textMain }}>
                           {percentage}
                         </p>
 
@@ -228,16 +256,25 @@ export const VersionDetailsModal = ({
                     </button>
                   );
                 })}
+                </div>
               </div>
             </div>
 
             {/* Footer Info */}
-            <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: cardBg }}>
-              <p className="text-sm" style={{ color: textSoft }}>
-                Total nodes analyzed: <span className="font-semibold" style={{ color: textMain }}>{pnodes.length}</span>
+            <div 
+              className="flex items-center justify-between px-4 py-3 border-t flex-shrink-0" 
+              style={{ 
+                borderColor: isLight ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.3)",
+                background: isLight
+                  ? "linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(20, 241, 149, 0.05) 100%)"
+                  : "linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(20, 241, 149, 0.08) 100%)"
+              }}
+            >
+              <p className="text-xs" style={{ color: textSoft }}>
+                Total nodes: <span className="font-semibold" style={{ color: textMain }}>{pnodes.length}</span>
               </p>
-              <p className="text-sm" style={{ color: textSoft }}>
-                Latest version adoption: <span className="font-semibold" style={{ color: versionChart.entries[0]?.color || '#10B981' }}>{versionChart.latestPercentLabel}%</span>
+              <p className="text-xs" style={{ color: textSoft }}>
+                Latest adoption: <span className="font-semibold" style={{ color: versionChart.entries[0]?.color || '#10B981' }}>{versionChart.latestPercentLabel}%</span>
               </p>
             </div>
           </div>
