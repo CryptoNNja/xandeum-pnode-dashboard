@@ -261,6 +261,34 @@ Testing:     Vitest (64 tests, 100% pass rate)
                      100% coverage
 ```
 
+### **🔍 Network Discovery Process**
+
+The crawler uses a **two-phase approach** to discover all nodes in the network:
+
+**Phase 1: Network Discovery**
+1. Starts from **bootstrap nodes** (known initial peers)
+2. Queries each node via:
+   - `gossip` endpoint (port 5000) → Returns connected peers
+   - `get-pods` RPC method (port 6000) → Returns known pods
+3. Adds newly discovered IPs to the queue
+4. Repeats until no new nodes are found
+5. **Result**: Complete network graph (typically 200+ nodes)
+
+**Phase 2: Data Collection & Classification**
+1. Calls `get-pods-with-stats` on all discovered nodes to gather:
+   - Version, pubkey, storage commitments
+   - **`is_public` flag** (determines if node is public/private)
+2. Calls `get-stats` on each node for live metrics:
+   - CPU, RAM, uptime, packets, active_streams
+3. Node classification:
+   - **Active**: `is_public === true` OR responds to `get-stats`
+   - **Gossip-only**: Private nodes (relay traffic but don't serve content)
+
+**Why Some Public Nodes Don't Respond Directly**:
+- Public nodes are identified by the network (`is_public === true`)
+- Some are behind firewalls/NAT but accessible to other peers
+- These nodes still contribute to network health but may have limited metrics
+
 **Network Stats:**
 - 📊 **235 total nodes** (rapid growth from initial 116)
 - 📈 **+41% expansion rate** (recent trend)
