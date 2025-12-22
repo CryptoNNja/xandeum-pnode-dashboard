@@ -6,7 +6,7 @@
 
 **Professional-grade analytics platform for Xandeum pNodes with real-time monitoring, intelligent scoring, and interactive visualizations.**
 
-[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Visit_Dashboard-7B3FF2?style=for-the-badge)](https://your-deployed-url.vercel.app)
+[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Visit_Dashboard-7B3FF2?style=for-the-badge)](https://xandeum-dashboard-topaz.vercel.app)
 [![Tests](https://img.shields.io/badge/✓_Tests-64_Passing-10B981?style=for-the-badge)](tests/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-100%25-3178C6?style=for-the-badge&logo=typescript)](.)
 [![Next.js](https://img.shields.io/badge/Next.js_15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
@@ -42,6 +42,64 @@ This platform goes **beyond basic pNode listing** to deliver a comprehensive ana
 | **Data Display** | 3 view modes (Table, Grid, Map) with filtering | ✅ Complete |
 | **Live Platform** | Deployed on Vercel with auto-refresh | ✅ Complete |
 | **Documentation** | Comprehensive setup and usage guide | ✅ Complete |
+
+### **Core User Interface**
+
+#### **🎨 Dark/Light Theme System**
+
+<table>
+<tr>
+<td width="50%">
+<img src="screenshots/dashboard-main.png" alt="Dark Mode"/>
+<p align="center"><strong>Dark Mode</strong> - Optimized for extended use</p>
+</td>
+<td width="50%">
+<img src="screenshots/dashboard-light-mode.png" alt="Light Mode"/>
+<p align="center"><strong>Light Mode</strong> - Professional presentation</p>
+</td>
+</tr>
+</table>
+
+Seamless theme switching with full design system support:
+- **Dark Mode** - Optimized for extended viewing sessions with reduced eye strain
+- **Light Mode** - Clean, professional appearance for presentations and demos
+- **System Preference** - Auto-detects OS theme preference on first load
+- **Persistent** - Theme choice saved in localStorage across sessions
+- **Smooth Transitions** - All UI elements (cards, charts, animations) adapt gracefully
+- **Toggle Anywhere** - Sun/Moon icon in top-right corner accessible on all pages
+
+#### **📊 Multiple View Modes**
+Three distinct ways to explore node data:
+
+**1. Table View (Default)**
+- **Sortable columns** - Click any header to sort (IP, Score, CPU, RAM, Storage, Uptime)
+- **Pagination** - Navigate through 235 nodes efficiently
+- **Search & Filters** - Instant filtering by IP, health status, version, location
+- **Row actions** - Click any node for detailed view
+- **Color-coded badges** - Instant visual health indicators
+
+**2. Grid View**
+- **Card-based layout** - Visual overview of all nodes
+- **Compact information** - Essential metrics at a glance
+- **Responsive** - Adapts to screen size (1-4 columns)
+- **Same filtering** - All search/filter features work in grid mode
+
+**3. Map View**
+- **Geographic clustering** - See node distribution worldwide
+- **Interactive markers** - Click clusters to zoom, markers for details
+- **Health color-coding** - Green (Excellent), Blue (Good), Orange (Warning), Red (Critical)
+- **Real-time data** - Shows current node status on map
+
+#### **🛠️ Advanced Toolbar**
+Powerful controls for data exploration:
+- **View Toggle** - Switch between Table/Grid/Map instantly
+- **Search Bar** - Real-time IP address filtering
+- **Advanced Filters** - Multi-select dropdowns for Health, Version, CPU range, Storage range
+- **Public/Private Toggle** - Show/hide private nodes
+- **Auto-refresh** - 30-second updates + manual refresh button
+- **Export** - (Future) Download filtered data as CSV/JSON
+
+---
 
 ### **Innovation & Advanced Features**
 
