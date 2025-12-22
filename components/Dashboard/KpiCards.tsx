@@ -23,6 +23,7 @@ import {
     CheckCircle2,
     ChevronRight,
     Blocks,
+    HeartPulse,
     type LucideIcon,
   } from "lucide-react";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
@@ -35,6 +36,7 @@ import { NetworkCoverageModal } from "./NetworkCoverageModal";
 import { LeaderboardModal } from "./LeaderboardModal";
 import { FlagsCarousel } from "./FlagsCarousel";
 import { PacketsAnimation } from "./PacketsAnimation";
+import { ActiveStreamsAnimation } from "./ActiveStreamsAnimation";
 import { calculateNodeScore } from "@/lib/scoring";
 
 import type { NetworkParticipationMetrics } from "@/lib/blockchain-metrics";
@@ -72,6 +74,7 @@ type KpiCardsProps = {
     totalPagesCount: number;
     networkGrowthRate: number;
     storageGrowthRate: number;
+    networkHistory: Array<{ date: string; nodes: number }>;
     networkBandwidth: number;
     versionAdoptionPercent: number;
     onVersionClick?: () => void;
@@ -116,6 +119,7 @@ export const KpiCards = ({
     totalPagesCount,
     networkGrowthRate,
     storageGrowthRate,
+    networkHistory,
     networkBandwidth,
     versionAdoptionPercent,
     onVersionClick,
@@ -462,7 +466,7 @@ export const KpiCards = ({
                 <div className="flex items-baseline gap-2 mt-4">
                   <p
                     className="text-4xl font-bold tracking-tight"
-                    style={{ color: activeStreamsTotal > 0 ? "#10B981" : "#6B7280" }}
+                    style={{ color: activeStreamsTotal > 0 ? "#3B82F6" : "#6B7280" }}
                   >
                     {activeStreamsTotal}
                   </p>
@@ -497,6 +501,55 @@ export const KpiCards = ({
                   ? `${activeNodesWithStreams} nodes streaming data`
                   : "No active streams detected"}
               </p>
+            </div>
+
+            {/* Stream Visualization Zone - Separated at bottom */}
+            <div className="mt-6 pt-4 border-t border-border-app-soft">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs uppercase tracking-[0.25em] text-text-soft/70">
+                  Live Stream Activity
+                </p>
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-2 h-2 rounded-full animate-pulse"
+                    style={{ 
+                      backgroundColor: activeStreamsTotal > 0 ? "#3B82F6" : "#6B7280",
+                      boxShadow: activeStreamsTotal > 0 ? "0 0 8px #3B82F6" : "none"
+                    }}
+                  />
+                  <span className="text-xs font-mono text-text-soft">
+                    {activeStreamsTotal > 0 ? "ACTIVE" : "IDLE"}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Animation Container */}
+              <div 
+                className="relative rounded-lg overflow-hidden border"
+                style={{ 
+                  height: "60px",
+                  background: isLight 
+                    ? "linear-gradient(135deg, rgba(59, 130, 246, 0.04) 0%, rgba(99, 179, 237, 0.04) 100%)" 
+                    : "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(99, 179, 237, 0.08) 100%)",
+                  borderColor: "var(--border-default)",
+                  backdropFilter: "blur(10px)"
+                }}
+              >
+                <ActiveStreamsAnimation 
+                  activeStreams={activeStreamsTotal} 
+                  isLight={isLight} 
+                />
+                
+                {/* Overlay gradient for depth */}
+                <div 
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: isLight
+                      ? "radial-gradient(circle at center, transparent 40%, rgba(255,255,255,0.4) 100%)"
+                      : "radial-gradient(circle at center, transparent 40%, rgba(15,23,42,0.4) 100%)"
+                  }}
+                />
+              </div>
             </div>
           </div>
           </CollapsibleSection>
@@ -597,7 +650,7 @@ export const KpiCards = ({
               <div className="flex items-center justify-between text-xs text-text-soft mt-2">
                 <span>{networkMetadata.coveragePercent.toFixed(1)}% discovered</span>
                 <span className="font-medium">
-                  {networkMetadata.activeNodes} active nodes
+                  {networkMetadata.activeNodes} public nodes
                 </span>
               </div>
             </div>
@@ -653,12 +706,12 @@ export const KpiCards = ({
               </div>
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
-                style={{ background: hexToRgba(networkHealthInsights.color, 0.12) }}
+                style={{ background: hexToRgba("#10B981", 0.12) }}
               >
-                <ShieldCheck
+                <HeartPulse
                   className="w-5 h-5"
                   strokeWidth={2.3}
-                  style={{ color: networkHealthInsights.color }}
+                  style={{ color: "#10B981" }}
                 />
               </div>
             </div>
@@ -667,7 +720,7 @@ export const KpiCards = ({
                 <div className="flex items-baseline gap-2">
                   <p
                     className="text-4xl font-bold tracking-tight"
-                    style={{ color: networkHealthInsights.color }}
+                    style={{ color: "#10B981" }}
                   >
                     {networkHealthInsights.score}
                   </p>
@@ -693,8 +746,9 @@ export const KpiCards = ({
                   <div className="flex items-center gap-4 text-xs uppercase tracking-widest text-text-soft">
                     <span
                       className="flex items-center gap-2 font-semibold"
-                      style={{ color: networkHealthInsights.trendColor }}
+                      style={{ color: networkHealthInsights.trendColorWeek }}
                     >
+                      <span>{networkHealthInsights.trendIconWeek}</span>
                       <span className="font-mono">
                         {networkHealthInsights.deltaLastWeek !== null
                           ? (networkHealthInsights.deltaLastWeek > 0
@@ -714,13 +768,13 @@ export const KpiCards = ({
                 className="shrink-0"
               >
                 <polygon
-                  fill={networkHealthInsights.sparklineFill}
+                  fill="#10B981"
                   points={networkHealthInsights.sparklineAreaPoints}
                   opacity={0.25}
                 />
                 <polyline
                   fill="none"
-                  stroke={networkHealthInsights.color}
+                  stroke="#10B981"
                   strokeWidth={2.5}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -733,11 +787,11 @@ export const KpiCards = ({
                 <UptimeIcon
                   className="w-3.5 h-3.5"
                   strokeWidth={2.2}
-                  style={{ color: networkUptimeStats.color }}
+                  style={{ color: "#10B981" }}
                 />
                 <span
                   className="font-semibold"
-                  style={{ color: networkUptimeStats.color }}
+                  style={{ color: "#10B981" }}
                 >
                   {networkUptimeStats.badge}
                 </span>
@@ -1400,6 +1454,7 @@ export const KpiCards = ({
             networkGrowthRate={networkGrowthRate}
             totalNodes={totalNodes}
             isLight={isLight}
+            networkHistory={networkHistory}
           />
 
           {/* Leaderboard Modal */}
