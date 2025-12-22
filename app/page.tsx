@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import Image from "next/image";
-import { Search, List, LayoutGrid, MapPin, Download, RefreshCw, Settings, Loader2, CheckCircle, ChevronDown, Check } from "lucide-react";
+import { Search, List, LayoutGrid, MapPin, Download, RefreshCw, Settings, Loader2, CheckCircle, ChevronDown, Check, Star } from "lucide-react";
 import clsx from "clsx";
 import EnhancedHero from "@/components/EnhancedHero";
 import SkeletonLoader from "@/components/SkeletonLoader";
 import { useTheme } from "@/hooks/useTheme";
 import { usePnodeDashboard } from "@/hooks/usePnodeDashboard";
+import { useFavorites } from "@/hooks/useFavorites";
 import { SummaryHeader } from "@/components/Dashboard/SummaryHeader";
 import { DashboardContent } from "@/components/Dashboard/DashboardContent";
 import { AlertsModal } from "@/components/Dashboard/AlertsModal";
@@ -17,8 +18,12 @@ import { KpiCards } from "@/components/Dashboard/KpiCards";
 import { Toolbar } from "@/components/Dashboard/Toolbar";
 import { AdvancedFilters } from "@/components/Dashboard/AdvancedFilters";
 import { AboutPNodes } from "@/components/Dashboard/AboutPNodes";
+import { SelectionActionBar } from "@/components/SelectionActionBar";
+import { CompareNodesModal } from "@/components/Dashboard/CompareNodesModal";
+import { FavoritesModal } from "@/components/Dashboard/FavoritesModal";
 import { hexToRgba, getKpiColors, getStatusColors } from "@/lib/utils";
 import { generatePDFReport } from "@/lib/pdf-export";
+import { useToast } from "@/components/common/Toast";
 
 const TOOLTIP_STYLES = `
   .recharts-tooltip-wrapper { outline: none !important; }
@@ -105,6 +110,7 @@ export default function Page() {
     setGridLimit,
   } = usePnodeDashboard(theme);
 
+  const toast = useToast();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
@@ -112,12 +118,28 @@ export default function Page() {
   const [currentTime, setCurrentTime] = useState(Date.now());
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   
-  // Selection state for multi-node PDF reports
+  // Selection state for multi-node operations
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const selectedNodes = useMemo(() => 
     pnodes.filter(node => selectedNodeIds.has(node.ip)), 
     [pnodes, selectedNodeIds]
   );
+
+  // Favorites management
+  const {
+    favorites,
+    favoriteIds,
+    toggleFavorite,
+    addMultipleFavorites,
+    removeFavorite,
+    clearFavorites,
+    exportFavorites,
+    importFavorites,
+  } = useFavorites();
+
+  const [isFavoritesModalOpen, setIsFavoritesModalOpen] = useState(false);
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+  const [nodesToCompare, setNodesToCompare] = useState<typeof pnodes>([]);
 
   // Selection handlers
   const handleToggleSelection = useCallback((nodeIp: string) => {
@@ -139,6 +161,51 @@ export default function Page() {
   const handleClearSelection = useCallback(() => {
     setSelectedNodeIds(new Set());
   }, []);
+
+  // Favorites handlers
+  const handleToggleFavorite = useCallback((nodeIp: string) => {
+    const isAdded = toggleFavorite(nodeIp);
+    toast.success(isAdded ? `Added ${nodeIp} to favorites` : `Removed ${nodeIp} from favorites`);
+  }, [toggleFavorite, toast]);
+
+  const handleAddSelectedToFavorites = useCallback(() => {
+    const ipsToAdd = Array.from(selectedNodeIds);
+    addMultipleFavorites(ipsToAdd);
+    toast.success(`Added ${ipsToAdd.length} node${ipsToAdd.length > 1 ? 's' : ''} to favorites`);
+  }, [selectedNodeIds, addMultipleFavorites, toast]);
+
+  const handleCompareSelected = useCallback(() => {
+    const nodes = pnodes.filter(node => selectedNodeIds.has(node.ip));
+    setNodesToCompare(nodes);
+    setIsCompareModalOpen(true);
+  }, [selectedNodeIds, pnodes]);
+
+  const handleCompareFromModal = useCallback((ips: string[]) => {
+    const nodes = pnodes.filter(node => ips.includes(node.ip));
+    setNodesToCompare(nodes);
+    setIsCompareModalOpen(true);
+  }, [pnodes]);
+
+  const handleExportFavorites = useCallback(() => {
+    const jsonStr = exportFavorites();
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `pnode-favorites-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Favorites exported successfully');
+  }, [exportFavorites, toast]);
+
+  const handleClearAllFavorites = useCallback(() => {
+    if (confirm(`Are you sure you want to remove all ${favorites.length} favorites?`)) {
+      clearFavorites();
+      toast.success('All favorites cleared');
+    }
+  }, [favorites.length, clearFavorites, toast]);
 
   // Growth metrics from historical data
   const [networkGrowthRate, setNetworkGrowthRate] = useState(0);
@@ -271,18 +338,6 @@ export default function Page() {
     return parseInt(versionChart.latestPercentLabel) || 0;
   }, [versionChart]);
 
-  // Selection handlers
-  const toggleNodeSelection = useCallback((nodeIp: string) => {
-    setSelectedNodeIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(nodeIp)) {
-        newSet.delete(nodeIp);
-      } else {
-        newSet.add(nodeIp);
-      }
-      return newSet;
-    });
-  }, []);
 
   // Export PDF Report - Full Network
   const exportPdf = useCallback(() => {
@@ -445,6 +500,8 @@ export default function Page() {
             selectedHealthStatuses={selectedHealthStatuses}
             minCpu={minCpu}
             minStorage={minStorage}
+            favoritesCount={favorites.length}
+            onOpenFavorites={() => setIsFavoritesModalOpen(true)}
           />
 
           <AdvancedFilters
@@ -488,8 +545,21 @@ export default function Page() {
           onToggleSelection={handleToggleSelection}
           onSelectAll={handleSelectAll}
           onClearSelection={handleClearSelection}
+          favoriteIds={favoriteIds}
+          onToggleFavorite={handleToggleFavorite}
         />
       </section>
+
+      {/* SELECTION ACTION BAR */}
+      <SelectionActionBar
+        selectedCount={selectedNodeIds.size}
+        onAddToFavorites={handleAddSelectedToFavorites}
+        onCompare={handleCompareSelected}
+        onExport={exportSelectedPdf}
+        onClear={handleClearSelection}
+        canCompare={selectedNodeIds.size >= 2 && selectedNodeIds.size <= 4}
+        maxCompareNodes={4}
+      />
 
       {/* FOOTER */}
       <footer className="border-t border-border-app bg-bg-bg p-8 mt-auto w-full theme-transition">
@@ -548,6 +618,32 @@ export default function Page() {
         totalNodes={pnodes.length}
         countriesCount={countriesCount}
         isLight={isLight}
+      />
+
+      {/* FAVORITES MODAL */}
+      <FavoritesModal
+        isOpen={isFavoritesModalOpen}
+        onClose={() => setIsFavoritesModalOpen(false)}
+        favorites={favorites}
+        allNodes={pnodes}
+        onRemoveFavorite={removeFavorite}
+        onClearAll={handleClearAllFavorites}
+        onCompare={handleCompareFromModal}
+        onExport={handleExportFavorites}
+        onImport={importFavorites}
+        isLight={isLight}
+      />
+
+      {/* COMPARE NODES MODAL */}
+      <CompareNodesModal
+        isOpen={isCompareModalOpen}
+        onClose={() => setIsCompareModalOpen(false)}
+        nodes={nodesToCompare}
+        isLight={isLight}
+        onAddToFavorites={(ips) => {
+          addMultipleFavorites(ips);
+          toast.success(`Added ${ips.length} nodes to favorites`);
+        }}
       />
 
       {/* SEARCH MODAL */}

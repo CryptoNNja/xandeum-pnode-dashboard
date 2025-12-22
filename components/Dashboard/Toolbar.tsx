@@ -15,6 +15,7 @@ import {
   Check,
   SlidersHorizontal,
   RotateCcw,
+  Star,
 } from "lucide-react";
 import clsx from "clsx";
 import type { PNode } from "@/lib/types";
@@ -46,6 +47,13 @@ type ToolbarProps = {
   publicCount: number;
   privateCount: number;
   loading?: boolean;
+  resetFilters?: () => void;
+  selectedVersions?: string[];
+  selectedHealthStatuses?: string[];
+  minCpu?: number;
+  minStorage?: number;
+  favoritesCount?: number;
+  onOpenFavorites?: () => void;
 };
 
 export const Toolbar = ({
@@ -75,6 +83,8 @@ export const Toolbar = ({
   selectedHealthStatuses,
   minCpu,
   minStorage,
+  favoritesCount = 0,
+  onOpenFavorites,
 }: ToolbarProps & { 
   resetFilters?: () => void;
   selectedVersions?: string[];
@@ -310,6 +320,30 @@ export const Toolbar = ({
               </div>
             )}
           </div>
+
+          {/* Favorites Button */}
+          {onOpenFavorites && (
+            <Tooltip content="View Favorites">
+              <button
+                type="button"
+                onClick={onOpenFavorites}
+                className={clsx(
+                  TOOLBAR_BUTTON_BASE,
+                  favoritesCount > 0 ? "text-yellow-500 bg-yellow-500/10" : "text-text-soft"
+                )}
+                aria-label="Favorites"
+              >
+                <div className="relative">
+                  <Star className={clsx("w-5 h-5", favoritesCount > 0 && "fill-yellow-500")} />
+                  {favoritesCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-yellow-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-bg-card">
+                      {favoritesCount}
+                    </span>
+                  )}
+                </div>
+              </button>
+            </Tooltip>
+          )}
 
           {/* Advanced Filters Toggle */}
           <Tooltip content={isAdvancedFilterOpen ? "Hide Advanced Filters" : "Show Advanced Filters"}>

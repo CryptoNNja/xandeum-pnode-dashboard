@@ -46,6 +46,9 @@ type DashboardContentProps = {
   onToggleSelection?: (nodeIp: string) => void;
   onSelectAll?: () => void;
   onClearSelection?: () => void;
+  // Favorites props
+  favoriteIds?: Set<string>;
+  onToggleFavorite?: (nodeIp: string) => void;
 };
 
 const DashboardContentComponent = ({
@@ -69,6 +72,8 @@ const DashboardContentComponent = ({
   onToggleSelection,
   onSelectAll,
   onClearSelection,
+  favoriteIds,
+  onToggleFavorite,
 }: DashboardContentProps) => {
   const router = useRouter();
   const statusColors = getStatusColors();
@@ -123,6 +128,8 @@ const DashboardContentComponent = ({
           onToggleSelection={onToggleSelection}
           onSelectAll={onSelectAll}
           onClearSelection={onClearSelection}
+          favoriteIds={favoriteIds}
+          onToggleFavorite={onToggleFavorite}
         />
       </section>
     );

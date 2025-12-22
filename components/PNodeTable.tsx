@@ -2,7 +2,7 @@
 
 import React, { memo } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Star } from "lucide-react";
 import clsx from "clsx";
 import { calculateNodeScore, getScoreColor } from "@/lib/scoring";
 import { useTheme } from "@/hooks/useTheme";
@@ -28,6 +28,9 @@ interface PNodeTableProps {
   onToggleSelection?: (nodeIp: string) => void;
   onSelectAll?: () => void;
   onClearSelection?: () => void;
+  // Favorites props (optional)
+  favoriteIds?: Set<string>;
+  onToggleFavorite?: (nodeIp: string) => void;
 }
 
 const PNodeTableComponent = ({
@@ -45,6 +48,8 @@ const PNodeTableComponent = ({
   onToggleSelection,
   onSelectAll,
   onClearSelection,
+  favoriteIds,
+  onToggleFavorite,
 }: PNodeTableProps) => {
   const { theme, mounted: themeMounted } = useTheme();
   const router = useRouter();
@@ -58,7 +63,20 @@ const PNodeTableComponent = ({
   const formatUptime = (seconds: number) => {
     if (seconds === 0) return "-";
     const hours = Math.floor(seconds / 3600);
-    return hours + " h";
+    
+    // Dynamic formatting based on duration
+    if (hours < 24) {
+      return `${hours}h`;
+    } else if (hours < 24 * 30) {
+      const days = Math.floor(hours / 24);
+      return `${days}d`;
+    } else if (hours < 24 * 365) {
+      const months = Math.floor(hours / (24 * 30));
+      return `${months}mo`;
+    } else {
+      const years = Math.floor(hours / (24 * 365));
+      return `${years}y`;
+    }
   };
 
   const formatPacketValue = (value: number) => {
@@ -122,20 +140,21 @@ const PNodeTableComponent = ({
       )}
     >
       <div className="w-full overflow-x-auto">
-        <table className="w-full text-left border-collapse text-sm">
+        <table className="w-full text-left border-collapse text-sm table-fixed">
           <colgroup>
-            {onToggleSelection && <col style={{ width: '50px' }} />}
-            <col style={{ width: '60px' }} />
-            <col style={{ width: '140px' }} />
-            <col style={{ width: '100px' }} />
-            <col style={{ width: '90px' }} />
-            <col style={{ width: '100px' }} />
-            <col style={{ width: '130px' }} />
-            <col style={{ width: '100px' }} />
-            <col style={{ width: '140px' }} />
-            <col style={{ width: '80px' }} />
-            <col style={{ width: '100px' }} />
-            <col style={{ width: '90px' }} />
+            {onToggleSelection && <col className="w-[45px]" />}
+            {onToggleFavorite && <col className="w-[45px]" />}
+            <col className="w-[65px]" />
+            <col className="w-[135px]" />
+            <col className="w-[105px]" />
+            <col className="w-[85px]" />
+            <col className="w-[90px]" />
+            <col className="w-[125px]" />
+            <col className="w-[105px]" />
+            <col className="w-[130px]" />
+            <col className="w-[80px]" />
+            <col className="w-[95px]" />
+            <col className="w-[75px]" />
           </colgroup>
         <thead>
           <tr
@@ -157,6 +176,15 @@ const PNodeTableComponent = ({
                     className="w-4 h-4 rounded border-2 border-border-app bg-bg-card checked:bg-purple-500 checked:border-purple-500 focus:ring-2 focus:ring-purple-500/30 transition-all cursor-pointer hover:scale-110"
                     title={allSelected ? "Deselect all" : "Select all"}
                   />
+                </div>
+              </th>
+            )}
+
+            {/* Favorite star header */}
+            {onToggleFavorite && (
+              <th className="p-2 text-center bg-bg-bg2/50">
+                <div className="flex items-center justify-center">
+                  <Star className="w-4 h-4 text-yellow-500/50" />
                 </div>
               </th>
             )}
@@ -266,6 +294,35 @@ const PNodeTableComponent = ({
                         className="w-4 h-4 rounded border-2 border-border-app bg-bg-card checked:bg-purple-500 checked:border-purple-500 focus:ring-2 focus:ring-purple-500/30 transition-all cursor-pointer hover:scale-110"
                       />
                     </div>
+                  </td>
+                )}
+
+                {/* FAVORITE STAR */}
+                {onToggleFavorite && (
+                  <td 
+                    className="p-2 text-center align-middle"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleFavorite(pnode.ip);
+                      }}
+                      className={clsx(
+                        "flex items-center justify-center w-8 h-8 rounded-lg transition-all hover:scale-125 active:scale-95",
+                        favoriteIds?.has(pnode.ip)
+                          ? "text-yellow-500 hover:text-yellow-400"
+                          : "text-text-faint hover:text-yellow-500"
+                      )}
+                      title={favoriteIds?.has(pnode.ip) ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      <Star 
+                        className={clsx(
+                          "w-5 h-5 transition-all",
+                          favoriteIds?.has(pnode.ip) && "fill-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]"
+                        )} 
+                      />
+                    </button>
                   </td>
                 )}
                 
