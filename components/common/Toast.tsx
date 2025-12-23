@@ -155,7 +155,7 @@ export const ToastContainer = ({ toasts, onRemove }: ToastContainerProps) => {
   );
 };
 
-// Hook pour utiliser les toasts
+// Hook to use toasts
 let toastIdCounter = 0;
 const toastListeners = new Set<(toast: Toast) => void>();
 
@@ -178,7 +178,7 @@ export const useToast = () => {
   };
 };
 
-// Provider component pour gérer les toasts globalement
+// Provider component to manage toasts globally
 export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 

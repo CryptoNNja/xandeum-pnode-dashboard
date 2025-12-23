@@ -1,15 +1,15 @@
 import type { PNode, PNodeStats } from "./types";
 
 /**
- * Calcule un score de performance 0-100 pour un pNode
- * Basé sur:
+ * Calculate a 0-100 performance score for a pNode
+ * Based on:
  * - CPU efficiency (40%)
  * - RAM efficiency (25%)
  * - Uptime (20%)
  * - Network stability (15%)
  */
 export function calculateNodeScore(pnode: PNode): number {
-  // Nœuds privés = 0
+  // Private nodes = 0
   if (pnode.status === 'gossip_only' || pnode.stats.uptime === 0) {
     return 0;
   }
@@ -38,13 +38,13 @@ export function calculateNodeScore(pnode: PNode): number {
   const uptimeWeighted = uptimeScore * 0.2;
 
   // Network stability (15%)
-  // Basé sur le ratio packets_sent/received
-  // Idéal: ratio proche de 1 (balanced traffic)
+  // Based on packets_sent/received ratio
+  // Ideal: ratio close to 1 (balanced traffic)
   const totalPackets = pnode.stats.packets_sent + pnode.stats.packets_received;
   let stabilityScore = 50; // baseline
   if (totalPackets > 0) {
     const ratio = pnode.stats.packets_sent / (pnode.stats.packets_received || 1);
-    // Si ratio entre 0.5 et 2, c'est bon = 100
+    // If ratio between 0.5 and 2, it's good = 100
     if (ratio >= 0.5 && ratio <= 2) {
       stabilityScore = 100;
     } else if (ratio >= 0.3 && ratio <= 3.3) {
@@ -66,7 +66,7 @@ export function calculateNodeScore(pnode: PNode): number {
 }
 
 /**
- * Retourne une couleur basée sur le score
+ * Returns a color based on the score
  */
 export function getScoreColor(score: number): string {
   if (score === 0) return 'text-gray-400'; // Private/offline
@@ -78,7 +78,7 @@ export function getScoreColor(score: number): string {
 }
 
 /**
- * Retourne un label de rating basé sur le score
+ * Returns a rating label based on the score
  */
 export function getScoreLabel(score: number): string {
   if (score === 0) return 'N/A';
@@ -90,7 +90,7 @@ export function getScoreLabel(score: number): string {
 }
 
 /**
- * Retourne une couleur de badge (bg) basée sur le score
+ * Returns a badge background color based on the score
  */
 export function getScoreBadgeColor(score: number): string {
   if (score === 0) return 'bg-gray-900 border-gray-700';

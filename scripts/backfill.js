@@ -35,7 +35,7 @@ function loadEnv() {
     }
   });
   // Debug: print all env variables found
-  console.log('🔎 Variables trouvées dans .env.local :');
+  console.log('🔎 Variables found in .env.local:');
   Object.entries(env).forEach(([k, v]) => console.log(`  ${k} = ${v}`));
   return env;
 }

@@ -359,7 +359,7 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
     );
   }
 
-  // Bloc principal : map prête
+  // Main block: map ready
   return (
     <div 
       ref={wrapperRef}
@@ -373,7 +373,7 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
       }}
     >
       <style>{getMapStyles(isLight)}</style>
-      {/* Légende alignée avec le reste du dashboard */}
+      {/* Legend aligned with the rest of the dashboard */}
       <div className="absolute bottom-6 left-6 z-[1000] px-4 py-3 rounded border text-[10px] font-mono pointer-events-none" style={{
         background: isLight ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)',
         borderColor: isLight ? 'rgba(234, 88, 12, 0.3)' : 'rgba(0, 212, 170, 0.3)',
