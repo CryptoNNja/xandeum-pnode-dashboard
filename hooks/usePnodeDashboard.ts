@@ -508,8 +508,10 @@ export const usePnodeDashboard = (theme?: string) => {
     // Build sparkline: use historical data if available, otherwise create synthetic trend from yesterday/lastWeek scores
     let sparklineValues: number[];
     if (networkHealthHistory.length > 0) {
+      console.log("[NetworkHealth] Using history data:", networkHealthHistory);
       sparklineValues = networkHealthHistory;
     } else if (lastWeekScore !== null && yesterdayScore !== null) {
+      console.log("[NetworkHealth] Using week+yesterday:", { lastWeekScore, yesterdayScore, score });
       // Create 7-point trend from last week to today
       sparklineValues = [
         lastWeekScore,
@@ -521,9 +523,11 @@ export const usePnodeDashboard = (theme?: string) => {
         score
       ];
     } else if (yesterdayScore !== null) {
+      console.log("[NetworkHealth] Using yesterday only:", { yesterdayScore, score });
       // Create 3-point trend from yesterday to today
       sparklineValues = [yesterdayScore, (yesterdayScore + score) / 2, score];
     } else {
+      console.log("[NetworkHealth] No historical data, flat line at:", score);
       sparklineValues = [score];
     }
 
@@ -539,14 +543,31 @@ export const usePnodeDashboard = (theme?: string) => {
     const svgWidth = 120;
     const svgHeight = 36;
     const sampleCount = Math.max(1, sparklineValues.length);
+    
+    // Calculate min/max for better scaling (zoom on actual data range)
+    const minValue = Math.min(...sparklineValues);
+    const maxValue = Math.max(...sparklineValues);
+    const valueRange = maxValue - minValue;
+    
+    // Add padding (10% on each side) for better visualization
+    const padding = valueRange * 0.2 || 5; // Minimum 5 points padding
+    const scaledMin = Math.max(0, minValue - padding);
+    const scaledMax = Math.min(100, maxValue + padding);
+    const scaledRange = scaledMax - scaledMin;
+    
     const points = sparklineValues
       .map((value, index) => {
         const x = sampleCount === 1 ? svgWidth / 2 : (index / (sampleCount - 1)) * svgWidth;
-        const y = svgHeight - (value / 100) * svgHeight;
+        // Scale Y based on actual data range, not 0-100
+        const normalizedValue = scaledRange > 0 ? (value - scaledMin) / scaledRange : 0.5;
+        const y = svgHeight - (normalizedValue * svgHeight);
         return `${x.toFixed(2)},${y.toFixed(2)}`;
       })
       .join(" ");
     const areaPoints = `${points} ${svgWidth},${svgHeight} 0,${svgHeight}`;
+    
+    console.log("[NetworkHealth] Sparkline values:", sparklineValues, "min:", minValue, "max:", maxValue);
+    console.log("[NetworkHealth] SVG points (scaled):", points);
 
     return {
       score,
@@ -752,10 +773,12 @@ export const usePnodeDashboard = (theme?: string) => {
 
   const networkSyncMetrics = useMemo(() => calculateNetworkSyncMetrics(allPnodes), [allPnodes]);
 
-  useEffect(() => {
-    if (activeNodes.length === 0 || !lastUpdate) return;
-    setNetworkHealthHistory((prev) => [...prev, networkHealthScore].slice(-24));
-  }, [activeNodes.length, networkHealthScore, lastUpdate]);
+  // Disabled: This was creating duplicate values [85, 85, 85...] instead of real historical data
+  // We now use yesterday/lastWeek scores from API to build synthetic trend
+  // useEffect(() => {
+  //   if (activeNodes.length === 0 || !lastUpdate) return;
+  //   setNetworkHealthHistory((prev) => [...prev, networkHealthScore].slice(-24));
+  // }, [activeNodes.length, networkHealthScore, lastUpdate]);
 
   const refreshData = useCallback(() => loadData(true), [loadData]);
 
@@ -765,6 +788,7 @@ export const usePnodeDashboard = (theme?: string) => {
       if (!response.ok) return;
       const payload = await response.json();
       if (payload.networkHealthScore !== null) {
+        console.log("[NetworkHealth] Yesterday score loaded:", payload.networkHealthScore);
         setYesterdayScore(payload.networkHealthScore);
       }
     } catch (error) {
@@ -778,6 +802,7 @@ export const usePnodeDashboard = (theme?: string) => {
       if (!response.ok) return;
       const payload = await response.json();
       if (payload.networkHealthScore !== null) {
+        console.log("[NetworkHealth] Last week score loaded:", payload.networkHealthScore);
         setLastWeekScore(payload.networkHealthScore);
       }
     } catch (error) {
