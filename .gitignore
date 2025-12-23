@@ -130,3 +130,4 @@ $RECYCLE.BIN/
 
 .vercel
 .env*.local
+tmp_rovodev_*
