@@ -1,21 +1,21 @@
 name: Xandeum pNodes Crawler
 
 on:
-  # Exécute toutes les heures
+  # Run every hour
   schedule:
     - cron: '0 * * * *'
   
-  # Permet de lancer manuellement depuis l'interface GitHub
+  # Allow manual trigger from GitHub interface
   workflow_dispatch:
   
-  # Optionnel : Lance au push sur main (pour tester)
+  # Optional: Run on push to main (for testing)
   # push:
   #   branches: [ main ]
 
 jobs:
   crawl:
     runs-on: ubuntu-latest
-    timeout-minutes: 10  # Timeout de sécurité
+    timeout-minutes: 10  # Safety timeout
     
     steps:
       - name: Checkout code

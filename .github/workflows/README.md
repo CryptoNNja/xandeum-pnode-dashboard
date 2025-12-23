@@ -2,53 +2,53 @@
 
 ## 📋 Configuration
 
-Ce workflow exécute automatiquement le crawler Xandeum toutes les **10 minutes**.
+This workflow automatically runs the Xandeum crawler every **10 minutes**.
 
-### 🔐 Secrets requis
+### 🔐 Required Secrets
 
-Ajoute ces secrets dans ton repo GitHub :
+Add these secrets to your GitHub repository:
 
 1. **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
 
-2. Ajoute ces 2 secrets :
+2. Add these 2 secrets:
 
-| Nom | Valeur | Description |
-|-----|--------|-------------|
-| `SUPABASE_URL` | `https://xxx.supabase.co` | URL de ton projet Supabase |
-| `SUPABASE_ANON_KEY` | `eyJhbGc...` | Clé publique (anon) de Supabase |
+| Name | Value | Description |
+|------|-------|-------------|
+| `SUPABASE_URL` | `https://xxx.supabase.co` | Your Supabase project URL |
+| `SUPABASE_ANON_KEY` | `eyJhbGc...` | Supabase public (anon) key |
 
-### ⏱️ Fréquence du cron
+### ⏱️ Cron Frequency
 
-**Actuel :** Toutes les 10 minutes (`*/10 * * * *`)
+**Current:** Every 10 minutes (`*/10 * * * *`)
 
-**Pour changer la fréquence :**
+**To change the frequency:**
 
 ```yaml
-# Toutes les 5 minutes
+# Every 5 minutes
 - cron: '*/5 * * * *'
 
-# Toutes les 15 minutes
+# Every 15 minutes
 - cron: '*/15 * * * *'
 
-# Toutes les heures
+# Every hour
 - cron: '0 * * * *'
 ```
 
-### 🚀 Lancement manuel
+### 🚀 Manual Trigger
 
-Tu peux lancer le crawler manuellement :
+You can run the crawler manually:
 
-1. Va sur **Actions** dans GitHub
-2. Clique sur **Xandeum pNodes Crawler**
-3. Clique **Run workflow** → **Run workflow**
+1. Go to **Actions** in GitHub
+2. Click on **Xandeum pNodes Crawler**
+3. Click **Run workflow** → **Run workflow**
 
-### 📊 Voir les logs
+### 📊 View Logs
 
-1. **Actions** → Clique sur un run
-2. Clique sur **crawl** job
-3. Clique sur **Run pNodes crawler** step
+1. **Actions** → Click on a run
+2. Click on **crawl** job
+3. Click on **Run pNodes crawler** step
 
-Tu verras :
+You will see:
 ```
 🚀 Starting Xandeum pNodes crawler...
 📡 Discovering pNodes...
@@ -58,28 +58,28 @@ Tu verras :
 ✅ Crawler completed successfully!
 ```
 
-### 💰 Coût
+### 💰 Cost
 
-**100% GRATUIT** sur GitHub Actions (2000 minutes/mois incluses)
+**100% FREE** on GitHub Actions (2000 minutes/month included)
 
 - 1 run = ~2-3 minutes
-- 6 runs/heure × 24h × 30j = ~12,960 minutes/mois
-- **Largement dans la limite gratuite !**
+- 6 runs/hour × 24h × 30d = ~12,960 minutes/month
+- **Well within the free tier!**
 
-### ⚠️ Limites
+### ⚠️ Limits
 
-- **Timeout :** 10 minutes max par run
-- Si le crawler prend plus de 10 min, optimise-le ou augmente le timeout
+- **Timeout:** 10 minutes max per run
+- If the crawler takes more than 10 min, optimize it or increase the timeout
 
 ### 🔧 Troubleshooting
 
-**Erreur "Secrets not found" :**
-- Vérifie que tu as bien ajouté `SUPABASE_URL` et `SUPABASE_ANON_KEY` dans les secrets GitHub
+**"Secrets not found" error:**
+- Verify that you've added `SUPABASE_URL` and `SUPABASE_ANON_KEY` in GitHub secrets
 
-**Erreur "npm ci failed" :**
-- Vérifie que ton `package-lock.json` est à jour
-- Commit et push les changements
+**"npm ci failed" error:**
+- Verify that your `package-lock.json` is up to date
+- Commit and push changes
 
-**Crawler timeout :**
-- Augmente `timeout-minutes: 15` dans le workflow
-- Ou optimise le crawler pour aller plus vite
+**Crawler timeout:**
+- Increase `timeout-minutes: 15` in the workflow
+- Or optimize the crawler to run faster
