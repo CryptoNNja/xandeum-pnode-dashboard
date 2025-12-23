@@ -93,10 +93,10 @@ export const usePnodeDashboard = (theme?: string) => {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(50);
+  const [pageSize, setPageSize] = useState<number>(25);
 
   // Grid View Settings
-  const [gridLimit, setGridLimit] = useState<number>(100); // 50, 100, 200, or -1 for all
+  const [gridLimit, setGridLimit] = useState<number>(25); // 25, 50, 100, 200, or -1 for all
 
   // Other state
   const [autoRefreshOption, setAutoRefreshOption] = useState<AutoRefreshOption>("1m");

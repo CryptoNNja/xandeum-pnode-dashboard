@@ -136,13 +136,14 @@ const DashboardContentComponent = ({
   }
 
   const gridLimitOptions = [
+    { value: 25, label: "Top 25" },
     { value: 50, label: "Top 50" },
     { value: 100, label: "Top 100" },
     { value: 200, label: "Top 200" },
     { value: -1, label: "All" },
   ];
 
-  const currentGridLimitLabel = gridLimitOptions.find(opt => opt.value === gridLimit)?.label || "Top 100";
+  const currentGridLimitLabel = gridLimitOptions.find(opt => opt.value === gridLimit)?.label || "Top 25";
 
   return (
     <section className="max-w-7xl mx-auto px-6 space-y-4">
