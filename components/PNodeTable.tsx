@@ -145,15 +145,15 @@ const PNodeTableComponent = ({
             {onToggleSelection && <col className="w-[45px]" />}
             {onToggleFavorite && <col className="w-[45px]" />}
             <col className="w-[65px]" />
-            <col className="w-[135px]" />
+            <col className="w-[155px]" />
             <col className="w-[105px]" />
             <col className="w-[85px]" />
-            <col className="w-[90px]" />
+            <col className="w-[85px]" />
+            <col className="w-[120px]" />
+            <col className="w-[100px]" />
             <col className="w-[125px]" />
-            <col className="w-[105px]" />
-            <col className="w-[130px]" />
             <col className="w-[80px]" />
-            <col className="w-[95px]" />
+            <col className="w-[90px]" />
             <col className="w-[75px]" />
           </colgroup>
         <thead>
@@ -334,8 +334,8 @@ const PNodeTableComponent = ({
 
                 <td className="p-4 font-mono text-text-main font-medium group-hover:text-accent-aqua transition-colors whitespace-nowrap align-middle">
                   <div className="flex items-center gap-2">
-                    {pnode.ip}
-                    <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--accent-aqua)' }} />
+                    <span>{pnode.ip}</span>
+                    <ArrowRight className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0" style={{ color: 'var(--accent-aqua)' }} />
                   </div>
                 </td>
 

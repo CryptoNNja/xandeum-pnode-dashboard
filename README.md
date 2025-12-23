@@ -43,6 +43,54 @@ This platform goes **beyond basic pNode listing** to deliver a comprehensive ana
 | **Live Platform** | Deployed on Vercel with auto-refresh | ✅ Complete |
 | **Documentation** | Comprehensive setup and usage guide | ✅ Complete |
 
+### **⭐ Advanced Node Management**
+
+#### **Favorites System**
+
+![Favorites Management](screenshots/favorites-management.png)
+
+Persistent node bookmarking with localStorage:
+- **Quick Star Toggle** - Click ⭐ icon in any table row to instantly add/remove favorites
+- **Batch Add** - Select multiple nodes → "Add to Favorites" from action bar
+- **Favorites Modal** - Dedicated management interface with:
+  - **Dashboard Stats** - Average score, uptime, and best performer
+  - **Search & Filter** - Find specific favorites quickly
+  - **Multi-Select Compare** - Checkbox selection for comparison
+  - **Import/Export** - Share favorites across browsers (JSON format)
+  - **Quick Actions** - View details or remove favorites
+- **Persistent Storage** - Favorites saved in localStorage, survives browser restarts
+- **Visual Indicators** - Golden filled stars ⭐ for favorited nodes in table
+- **Badge Counter** - Toolbar button shows favorites count
+
+#### **Node Comparison**
+
+![Node Comparison](screenshots/compare-nodes.png)
+
+Side-by-side performance analysis:
+- **Selection Methods**:
+  - Select 2-4 nodes in table → Click "Compare" in floating action bar
+  - Or use Favorites Modal → Multi-select → "Compare"
+- **Comparison Modal Features**:
+  - **Radar Chart** - Visual overlay of all metrics (CPU, RAM, Storage, Uptime, Score)
+  - **Side-by-Side Metrics** - Detailed comparison table with color-coded values
+  - **AI Insights** - Automatic analysis highlighting best performers and anomalies
+  - **Export Options** - Download comparison as JSON
+  - **Quick Favorites** - "Add All to Favorites" button for winning nodes
+
+#### **Selection Action Bar**
+
+![Selection Action Bar](screenshots/selection-action-bar.png)
+
+Floating toolbar appears when nodes are selected:
+- **Add to Favorites** - Batch add selected nodes to favorites list
+- **Compare (2-4)** - Opens comparison modal (validates 2-4 nodes)
+- **Export PDF** - Generate custom report for selected nodes only
+- **Clear Selection** - Deselect all with one click
+- **Smart Validation** - Disables compare if < 2 or > 4 nodes selected
+- **Animations** - Smooth slide-up entrance, backdrop blur effect
+
+---
+
 ### **Core User Interface**
 
 #### **🎨 Dark/Light Theme System**
@@ -74,6 +122,8 @@ Three distinct ways to explore node data:
 **1. Table View (Default)**
 - **Sortable columns** - Click any header to sort (IP, Score, CPU, RAM, Storage, Uptime)
 - **Multi-select nodes** - Checkbox selection for batch operations and custom reports
+- **⭐ Favorites system** - Star icon per node to save favorites (persistent across sessions)
+- **Dynamic Uptime** - Adaptive format (23h, 15d, 3mo, 1y) for better readability
 - **Pagination** - Navigate through 235 nodes efficiently
 - **Search & Filters** - Instant filtering by IP, health status, version, location
 - **Row actions** - Click any node for detailed view
@@ -95,6 +145,7 @@ Three distinct ways to explore node data:
 Powerful controls for data exploration:
 - **View Toggle** - Switch between Table/Grid/Map instantly
 - **Search Bar** - Real-time IP address filtering
+- **⭐ Favorites Button** - Quick access to saved nodes with count badge (pulsing when favorites exist)
 - **Advanced Filters** - Multi-select dropdowns for Health, Version, CPU range, Storage range
 - **Public/Private Toggle** - Show/hide private nodes
 - **Auto-refresh** - 30-second updates + manual refresh button

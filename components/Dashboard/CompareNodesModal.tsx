@@ -118,7 +118,7 @@ const CompareNodesModalComponent = ({
     >
       <div
         className={clsx(
-          "w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl border shadow-2xl animate-scale-up",
+          "w-full max-w-6xl max-h-[85vh] overflow-y-auto rounded-2xl border shadow-2xl animate-scale-up",
           isLight ? "bg-white border-black/10" : "bg-bg-card border-border-app"
         )}
         onClick={(e) => e.stopPropagation()}
@@ -141,11 +141,11 @@ const CompareNodesModalComponent = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-4">
           {/* Radar Chart */}
-          <div className={clsx("p-6 rounded-xl border", isLight ? "bg-gray-50 border-black/5" : "bg-bg-bg2 border-border-app")}>
-            <h3 className="text-lg font-bold mb-4 text-text-main">Performance Overview</h3>
-            <ResponsiveContainer width="100%" height={400}>
+          <div className={clsx("p-4 rounded-xl border", isLight ? "bg-gray-50 border-black/5" : "bg-bg-bg2 border-border-app")}>
+            <h3 className="text-base font-bold mb-3 text-text-main">Performance Overview</h3>
+            <ResponsiveContainer width="100%" height={280}>
               <RadarChart data={radarData}>
                 <PolarGrid stroke={isLight ? "#00000020" : "#ffffff20"} />
                 <PolarAngleAxis 
@@ -181,17 +181,17 @@ const CompareNodesModalComponent = ({
           </div>
 
           {/* Nodes Comparison Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {nodes.map((node, index) => (
               <div
                 key={node.ip}
                 className={clsx(
-                  "p-4 rounded-xl border-2 transition-all",
+                  "p-3 rounded-xl border-2 transition-all",
                   isLight ? "bg-white border-black/10" : "bg-bg-bg2 border-border-app"
                 )}
                 style={{ borderColor: colors[index] + '40' }}
               >
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-2">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wider text-text-soft">Node {index + 1}</p>
                     <p className="text-sm font-mono font-bold text-text-main">{node.ip}</p>
@@ -245,12 +245,12 @@ const CompareNodesModalComponent = ({
           </div>
 
           {/* Insights */}
-          <div className={clsx("p-6 rounded-xl border", isLight ? "bg-blue-50 border-blue-200" : "bg-blue-900/10 border-blue-700/30")}>
-            <h3 className="text-lg font-bold mb-3 text-text-main flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-500" />
+          <div className={clsx("p-4 rounded-xl border", isLight ? "bg-blue-50 border-blue-200" : "bg-blue-900/10 border-blue-700/30")}>
+            <h3 className="text-base font-bold mb-2 text-text-main flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-blue-500" />
               Key Insights
             </h3>
-            <ul className="space-y-2 text-sm text-text-soft">
+            <ul className="space-y-1.5 text-sm text-text-soft">
               <li>• Best performer: <span className="font-semibold text-text-main">{nodes.reduce((best, node) => (node._score ?? 0) > (best._score ?? 0) ? node : best).ip}</span> ({nodes.reduce((best, node) => (node._score ?? 0) > (best._score ?? 0) ? node : best)._score}/100)</li>
               <li>• Lowest CPU usage: <span className="font-semibold text-text-main">{nodes.reduce((best, node) => (node.stats?.cpu_percent ?? 100) < (best.stats?.cpu_percent ?? 100) ? node : best).ip}</span></li>
               <li>• Highest storage capacity: <span className="font-semibold text-text-main">{nodes.reduce((best, node) => (node.stats?.storage_committed ?? 0) > (best.stats?.storage_committed ?? 0) ? node : best).ip}</span></li>
