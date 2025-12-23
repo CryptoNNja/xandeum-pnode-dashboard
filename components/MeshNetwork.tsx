@@ -23,18 +23,18 @@ export default function MeshNetwork({ theme }: MeshNetworkProps) {
 
   const isDark = theme === "dark";
   
-  // Couleurs adaptées au mode
-  // Couleurs CYAN/TEAL explicites
+  // Colors adapted to theme mode
+  // Explicit CYAN/TEAL colors
   const nodeColor = isDark 
-    ? "#14F195"  // Cyan Xandeum en dark
-    : "#0D9488";  // Teal foncé en light
+    ? "#14F195"  // Cyan Xandeum in dark mode
+    : "#0D9488";  // Dark teal in light mode
 
   const lineColor = isDark
-    ? "#14F195"  // Cyan pour lignes
+    ? "#14F195"  // Cyan for lines
     : "#0D9488";
 
   const glowColor = isDark
-    ? "#14F195"  // Cyan pour glow
+    ? "#14F195"  // Cyan for glow
     : "#0D9488";
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function MeshNetwork({ theme }: MeshNetworkProps) {
     updateSize();
     window.addEventListener("resize", updateSize);
 
-    // Initialiser 8 nodes avec positions aléatoires
+    // Initialize 8 nodes with random positions
     const initNodes = () => {
       const w = canvas.offsetWidth;
       const h = canvas.offsetHeight;
@@ -79,7 +79,7 @@ export default function MeshNetwork({ theme }: MeshNetworkProps) {
 
       const nodes = nodesRef.current;
 
-      // Mettre à jour positions (mouvement doux)
+      // Update positions (smooth movement)
       nodes.forEach((node) => {
         // Smooth interpolation vers target
         node.vx += (node.targetX - node.x) * 0.002;
@@ -92,29 +92,29 @@ export default function MeshNetwork({ theme }: MeshNetworkProps) {
         node.x += node.vx;
         node.y += node.vy;
 
-        // Nouvelle target aléatoire si proche
+        // New random target if close
         const dist = Math.hypot(node.targetX - node.x, node.targetY - node.y);
         if (dist < 20) {
           node.targetX = Math.random() * w;
           node.targetY = Math.random() * h;
         }
 
-        // Rebond sur les bords
+        // Bounce on edges
         if (node.x < 50) node.targetX = w - 100;
         if (node.x > w - 50) node.targetX = 100;
         if (node.y < 30) node.targetY = h - 60;
         if (node.y > h - 30) node.targetY = 60;
       });
 
-      // Dessiner les connexions (lignes)
+      // Draw connections (lines)
       nodes.forEach((nodeA, i) => {
         nodes.slice(i + 1).forEach((nodeB) => {
           const dist = Math.hypot(nodeB.x - nodeA.x, nodeB.y - nodeA.y);
-          // Connecter si distance < 250px
+          // Connect if distance < 250px
           if (dist < 250) {
-            const opacity = 1 - dist / 250; // Fade selon distance
+            const opacity = 1 - dist / 250; // Fade based on distance
             ctx.strokeStyle = isDark
-              ? `rgba(20, 241, 149, ${opacity * 0.15})` // Cyan avec opacity
+              ? `rgba(20, 241, 149, ${opacity * 0.15})` // Cyan with opacity
               : `rgba(13, 148, 136, ${opacity * 0.12})`;
             ctx.lineWidth = 1;
             ctx.beginPath();
@@ -125,7 +125,7 @@ export default function MeshNetwork({ theme }: MeshNetworkProps) {
         });
       });
 
-      // Dessiner les nodes (points)
+      // Draw nodes (points)
       nodes.forEach((node) => {
         // Glow
         ctx.shadowBlur = isDark ? 12 : 8;
@@ -135,7 +135,7 @@ export default function MeshNetwork({ theme }: MeshNetworkProps) {
 
         // Point
         ctx.fillStyle = isDark
-          ? "rgba(20, 241, 149, 0.8)" // Cyan opaque
+          ? "rgba(20, 241, 149, 0.8)" // Opaque cyan
           : "rgba(13, 148, 136, 0.6)";
         ctx.beginPath();
         ctx.arc(node.x, node.y, isDark ? 3 : 2.5, 0, Math.PI * 2);

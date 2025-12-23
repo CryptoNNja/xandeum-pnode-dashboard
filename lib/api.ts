@@ -16,7 +16,7 @@ export interface GossipPNode {
   pubkey: string;
 }
 
-// Fonction pour récupérer la liste des pNodes depuis le gossip
+// Function to retrieve the list of pNodes from gossip
 export async function getGossipPNodes(): Promise<string[]> {
   try {
     const response = await axios.get("http://159.69.221.189:5000/gossip", {
@@ -26,7 +26,7 @@ export async function getGossipPNodes(): Promise<string[]> {
     return pnodes.map((p) => p.ip);
   } catch (error) {
     console.error("Gossip error:", error);
-    // Fallback sur quelques IPs hardcodées
+    // Fallback to hardcoded IPs
     return [
       "173.212.203.145",
       "173.212.220.65",
@@ -41,7 +41,7 @@ export async function getGossipPNodes(): Promise<string[]> {
   }
 }
 
-// Fonction pour récupérer les stats d'un pNode
+// Function to retrieve stats from a single pNode
 export async function getPNodeStats(ip: string): Promise<PNodeStats | null> {
   try {
     const url = `http://${ip}:6000/rpc`;
@@ -53,7 +53,7 @@ export async function getPNodeStats(ip: string): Promise<PNodeStats | null> {
         id: 1,
       },
       {
-        timeout: 5000, // Timeout de 5 secondes
+        timeout: 5000, // 5 seconds timeout
       }
     );
 
@@ -63,16 +63,16 @@ export async function getPNodeStats(ip: string): Promise<PNodeStats | null> {
 
     return null;
   } catch (error) {
-    console.error(`Erreur pour ${ip}:`, error);
+    console.error(`Error for ${ip}:`, error);
     return null;
   }
 }
 
-// Fonction pour récupérer les stats de TOUS les pNodes
+// Function to retrieve stats from ALL pNodes
 export async function getAllPNodesStats(): Promise<
   { ip: string; stats: PNodeStats }[]
 > {
-  // D'abord, récupère la liste des IPs depuis le gossip
+  // First, retrieve the list of IPs from gossip
   const ips = await getGossipPNodes();
 
   const promises = ips.map(async (ip) => {
@@ -82,7 +82,7 @@ export async function getAllPNodesStats(): Promise<
 
   const results = await Promise.all(promises);
 
-  // Type guard pour garantir que `stats` n'est plus null dans le retour
+  // Type guard to ensure `stats` is not null in the return
   return results.filter(
     (r): r is { ip: string; stats: PNodeStats } => r.stats !== null
   );

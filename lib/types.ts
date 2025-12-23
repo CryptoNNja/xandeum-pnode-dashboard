@@ -1,6 +1,6 @@
 // lib/types.ts
 
-// Statistiques brutes retournées par le RPC pNode (`get-stats`)
+// Raw statistics returned by the pNode RPC (`get-stats`)
 export interface PNodeStats {
   active_streams: number;
   cpu_percent: number;
@@ -18,10 +18,10 @@ export interface PNodeStats {
   storage_used?: number; // From get-pods-with-stats (actual storage used)
 }
 
-// Statut "network" du node tel qu'on le déduit dans notre crawler
+// Network status of the node as determined by our crawler
 export type PNodeStatus = "active" | "gossip_only";
 
-// Modèle standard pour un pNode dans tout le front
+// Standard model for a pNode throughout the frontend
 export interface PNode {
   ip: string;
   status: PNodeStatus;
@@ -35,7 +35,7 @@ export interface PNode {
   country_code?: string | null;
 }
 
-// Stats vides par défaut pour éviter les `undefined` / `NaN`
+// Empty stats by default to avoid `undefined` / `NaN`
 export const EMPTY_STATS: PNodeStats = {
   active_streams: 0,
   cpu_percent: 0,
