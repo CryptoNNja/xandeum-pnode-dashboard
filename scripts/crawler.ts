@@ -368,7 +368,7 @@ export const main = async () => {
         
         // Create a copy of stats to avoid mutating shared EMPTY_STATS constant
         const stats: PNodeStats = hasStats
-            ? { ...statsResult.value }
+            ? { ...statsResult.value } as PNodeStats
             : { ...EMPTY_STATS };
 
         // Enrich stats with storage data from get-pods-with-stats (gossip)
