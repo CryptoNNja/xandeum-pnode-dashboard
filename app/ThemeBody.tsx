@@ -24,6 +24,7 @@ export default function ThemeBody({
     <body
       data-theme={themeId}
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      suppressHydrationWarning
     >
       {children}
     </body>
