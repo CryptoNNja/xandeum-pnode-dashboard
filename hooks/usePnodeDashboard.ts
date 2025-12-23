@@ -186,8 +186,9 @@ export const usePnodeDashboard = (theme?: string) => {
       
       if (payload.data && Array.isArray(payload.data)) {
         // Pre-calculate scores and health status once per load to optimize filtering/sorting performance
+        // Pass full node list for accurate version tier detection
         const pnodesWithScores = payload.data.map((p: PNode) => {
-          const score = calculateNodeScore(p);
+          const score = calculateNodeScore(p, payload.data); // ✨ NEW: Pass network context
           const healthStatus = getHealthStatus(p); // Use sophisticated health calculation
           
           return {
@@ -477,7 +478,7 @@ export const usePnodeDashboard = (theme?: string) => {
       const committedBytes = Number.isFinite(stats.storage_committed) ? (stats.storage_committed ?? 0) : 0;
       const usedBytes = Number.isFinite(stats.storage_used) ? (stats.storage_used ?? 0) : 0;
       const storagePercent = committedBytes > 0 ? (usedBytes / committedBytes) * 100 : 0;
-      const performanceScore = calculateNodeScore(pnode);
+      const performanceScore = calculateNodeScore(pnode, allPnodes);
 
       // CRITICAL ALERTS - Immediate action required
       if (healthStatus === "Critical") {
@@ -605,9 +606,9 @@ export const usePnodeDashboard = (theme?: string) => {
 
   const networkHealthScore = useMemo(() => {
     if (activeNodes.length === 0) return 0;
-    const totalScore = activeNodes.reduce((sum, p) => sum + calculateNodeScore(p), 0);
+    const totalScore = activeNodes.reduce((sum, p) => sum + calculateNodeScore(p, allPnodes), 0);
     return Math.round(totalScore / activeNodes.length);
-  }, [activeNodes]);
+  }, [activeNodes, allPnodes]);
 
   const networkHealthInsights = useMemo(() => {
     const score = networkHealthScore;

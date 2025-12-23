@@ -293,7 +293,7 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
         return nodes
             .map((node) => ({
                 node,
-                score: calculateNodeScore(node),
+                score: calculateNodeScore(node, nodes), // ✨ Pass network context
             }))
             .sort((a, b) => {
                 if (b.score === a.score) {

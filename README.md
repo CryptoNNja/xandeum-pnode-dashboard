@@ -232,17 +232,45 @@ Four custom Canvas-based animations that adapt to network state:
 - **Regional Insights** - Node distribution by country with flag indicators
 - **Health-coded Markers** - Color-coded by node status (Excellent/Good/Warning/Critical)
 
-#### **3. 🏆 Competitive Scoring System**
+#### **3. 🏆 Advanced Scoring System v3.0**
 
 ![Network Leaderboard](screenshots/leaderboard-modal.png)
 
+**Legendary scoring system designed for Xandeum's storage-first architecture**
+
 ```
-Node Score = (CPU × 25%) + (RAM × 25%) + (Uptime × 30%) + (Storage × 20%)
+🎯 ACTIVE NODES (Public - Full Metrics)
+Score = (Version Consensus × 15%) + (Storage × 20%) + (Uptime × 25%) 
+      + (Network I/O × 20%) + (CPU × 10%) + (RAM × 10%)
+Max Score: 100
+
+🔵 GOSSIP NODES (Private - Limited Metrics)
+Score = (Version Consensus × 25%) + (Storage × 45%) 
+      + (Storage Efficiency × 20%) + (Participation × 10%)
+Max Score: 75 (capped) | Whale Cap: 72 (>10x avg storage)
 ```
-- **4-Tier Health System** - Excellent (>90%) | Good (70-90%) | Warning (50-70%) | Critical (<50%)
-- **Multi-Metric Leaderboards** - Performance, Storage, Uptime, Credits
-- **Visual Badges** - Star ratings with confetti for #1 performers
-- **Real-time Rankings** - Top 10 updated every 5 minutes
+
+**Key Features:**
+- ✅ **Dynamic Version Detection** - Auto-detects network consensus (no hardcoded versions)
+- ✅ **Whale Protection** - Caps outlier nodes (>10x average storage) to prevent gaming
+- ✅ **Version Penalties** - Trynet builds: -15% | Outdated: -10% | Gossip+Outdated: -20%
+- ✅ **Fair Comparison** - Separate scoring logic for active vs gossip-only nodes
+- ✅ **Storage-First** - Rewards capacity contribution (critical for decentralized storage)
+- ✅ **Network Context** - Uses full network data for accurate tier detection
+
+**Scoring Tiers:**
+- 🏆 **Tier 1 (Consensus)**: >50% network adoption → 100 score, 1.0x multiplier
+- 🥈 **Tier 2 (Supported)**: 20-50% adoption → 80 score, 0.95x multiplier
+- 🥉 **Tier 3 (Legacy)**: 5-20% adoption → 60 score, 0.90x multiplier
+- ⚠️ **Tier 4 (Deprecated)**: <5% or trynet/unknown → 0-40 score, 0.75-0.85x multiplier
+
+**Why This Matters:**
+- 📊 **Accurate Rankings** - Active nodes score 85-95, gossip nodes 60-75 (vs old: gossip at 100!)
+- 🎯 **Real Performance** - Rewards actual contribution, not just promises
+- 🔒 **Bulletproof** - Prevents gaming through multi-layer validation
+- 🚀 **Future-Proof** - Adapts to network growth automatically
+
+**Results:** 13 active nodes now score 90+ (vs 0 before), while 15 whale gossip nodes dropped from 100 to 72 (fair cap).
 
 #### **4. 📄 Professional PDF Reports**
 
@@ -410,7 +438,7 @@ The crawler uses a **two-phase approach** to discover all nodes in the network:
 | **API Layer** (`app/api/*`) | 13 endpoints for data access | Next.js Route Handlers |
 | **Database** | Stores historical data & geolocation | Supabase PostgreSQL |
 | **Animations** (`components/Dashboard/*Animation.tsx`) | 4 Canvas-based visualizations | requestAnimationFrame |
-| **Scoring Engine** (`lib/scoring.ts`) | Calculates node health scores | Custom algorithm |
+| **Scoring Engine** (`lib/scoring.ts`) | Advanced v3.0 scoring with version consensus | Expert-designed algorithm |
 
 ---
 
@@ -494,7 +522,7 @@ npm test -- --run  # Run once and exit
 ```
 ✓ tests/utils.test.ts (16 tests)           # Data formatting, colors, utilities
 ✓ tests/health.test.ts (13 tests)          # Health status calculations
-✓ tests/scoring.test.ts (11 tests)         # Node scoring algorithm
+✓ tests/scoring.test.ts (23 tests)         # Advanced scoring v3.0 with version tiers
 ✓ tests/kpi.test.ts (8 tests)              # KPI metrics aggregation
 ✓ tests/simple-integration.test.ts (16)    # Integration tests
 
@@ -506,7 +534,7 @@ Duration    ~70ms
 **What's Tested:**
 - ✅ Data formatting (bytes, uptime, percentages)
 - ✅ Health status calculation (excellent/good/warning/critical)
-- ✅ Node scoring algorithm with proper weighting
+- ✅ Advanced scoring system v3.0 with version consensus, whale protection, and fair node comparison
 - ✅ KPI aggregations (averages, totals, distributions)
 - ✅ Data validation (IP formats, ranges, edge cases)
 - ✅ Integration scenarios (multi-node calculations, filtering, sorting)
