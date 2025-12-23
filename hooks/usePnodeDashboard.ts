@@ -452,44 +452,151 @@ export const usePnodeDashboard = (theme?: string) => {
   const publicCount = activeNodes.length;
   const privateCount = useMemo(() => allPnodes.filter((pnode) => pnode.status === "gossip_only").length, [allPnodes]);
   
+  // Alert system synchronized with Health Status
+  // Generates detailed, actionable alerts based on expert SRE thresholds
   const alerts = useMemo(() => {
     const generated: Alert[] = [];
+    
     allPnodes.forEach((pnode) => {
-        if (pnode.status !== "active") return;
-        const stats = pnode.stats;
-        if (!stats) return;
+      if (pnode.status !== "active") return;
+      const stats = pnode.stats;
+      if (!stats) return;
 
-        const cpuPercent = Number.isFinite(stats.cpu_percent) ? stats.cpu_percent : 0;
-        if (cpuPercent >= 90) generated.push({ ip: pnode.ip, severity: "critical", type: "CPU Overload", message: `Load at ${cpuPercent.toFixed(1)}%`, value: `${cpuPercent.toFixed(1)}%` });
-        else if (cpuPercent >= 75) generated.push({ ip: pnode.ip, severity: "warning", type: "CPU Pressure", message: `Load at ${cpuPercent.toFixed(1)}%`, value: `${cpuPercent.toFixed(1)}%` });
+      const healthStatus = pnode._healthStatus;
+      
+      // Only generate alerts for Warning and Critical nodes
+      if (healthStatus !== "Warning" && healthStatus !== "Critical") return;
 
-        const uptimeSeconds = Number.isFinite(stats.uptime) ? stats.uptime : 0;
-        const uptimeHours = uptimeSeconds / 3600;
-        if (uptimeHours < 1 && uptimeHours > 0) generated.push({ ip: pnode.ip, severity: "critical", type: "Recently Restarted", message: `Uptime ${Math.floor(uptimeSeconds / 60)}min`, value: `${Math.floor(uptimeSeconds / 60)}min` });
-        else if (uptimeHours < 6 && uptimeHours >= 1) generated.push({ ip: pnode.ip, severity: "warning", type: "Low Uptime", message: `Uptime ${uptimeHours.toFixed(1)}h`, value: `${uptimeHours.toFixed(1)}h` });
+      // Sanitize metrics
+      const cpuPercent = Number.isFinite(stats.cpu_percent) ? stats.cpu_percent : 0;
+      const uptimeSeconds = Number.isFinite(stats.uptime) ? stats.uptime : 0;
+      const uptimeHours = uptimeSeconds / 3600;
+      const ramTotal = Number.isFinite(stats.ram_total) ? stats.ram_total : 0;
+      const ramUsed = Number.isFinite(stats.ram_used) ? stats.ram_used : 0;
+      const ramPercent = ramTotal > 0 ? (ramUsed / ramTotal) * 100 : 0;
+      const committedBytes = Number.isFinite(stats.storage_committed) ? (stats.storage_committed ?? 0) : 0;
+      const usedBytes = Number.isFinite(stats.storage_used) ? (stats.storage_used ?? 0) : 0;
+      const storagePercent = committedBytes > 0 ? (usedBytes / committedBytes) * 100 : 0;
+      const performanceScore = calculateNodeScore(pnode);
 
-        const ramTotal = Number.isFinite(stats.ram_total) ? stats.ram_total : 0;
-        const ramUsed = Number.isFinite(stats.ram_used) ? stats.ram_used : 0;
-        if (ramTotal > 0) {
-            const ramPercent = (ramUsed / ramTotal) * 100;
-            if (ramPercent >= 90) generated.push({ ip: pnode.ip, severity: "critical", type: "RAM Saturation", message: `${ramPercent.toFixed(1)}% utilized`, value: `${ramPercent.toFixed(1)}%` });
-            else if (ramPercent >= 75) generated.push({ ip: pnode.ip, severity: "warning", type: "RAM Pressure", message: `${ramPercent.toFixed(1)}% utilized`, value: `${ramPercent.toFixed(1)}%` });
+      // CRITICAL ALERTS - Immediate action required
+      if (healthStatus === "Critical") {
+        // Uptime < 5 min = Recent crash/restart
+        if (uptimeSeconds < 300) {
+          const uptimeMin = Math.floor(uptimeSeconds / 60);
+          generated.push({
+            ip: pnode.ip,
+            severity: "critical",
+            type: "Node Crash Detected",
+            message: `Node restarted ${uptimeMin}min ago - investigate crash cause`,
+            value: `${uptimeMin}min uptime`
+          });
         }
 
-        const committedBytes = Number.isFinite(stats.storage_committed) ? (stats.storage_committed ?? 0) : 0;
-        const usedBytes = Number.isFinite(stats.storage_used) ? (stats.storage_used ?? 0) : 0;
-        if (committedBytes > 0) {
-            const storagePercent = (usedBytes / committedBytes) * 100;
-            if (storagePercent >= 95) generated.push({ ip: pnode.ip, severity: "critical", type: "Storage Full", message: `${storagePercent.toFixed(1)}% utilized`, value: `${storagePercent.toFixed(1)}%` });
-            else if (storagePercent >= 80) generated.push({ ip: pnode.ip, severity: "warning", type: "Storage High", message: `${storagePercent.toFixed(1)}% utilized`, value: `${storagePercent.toFixed(1)}%` });
+        // Storage ≥ 98% = Disk full imminent
+        if (storagePercent >= 98) {
+          generated.push({
+            ip: pnode.ip,
+            severity: "critical",
+            type: "Storage Critical",
+            message: `Disk almost full - data loss imminent, free space NOW`,
+            value: `${storagePercent.toFixed(1)}% used`
+          });
         }
 
-        const performanceScore = calculateNodeScore(pnode);
-        if (performanceScore > 0) {
-            if (performanceScore < 50) generated.push({ ip: pnode.ip, severity: "critical", type: "Low Performance Score", message: `Score ${performanceScore}/100`, value: `${performanceScore}/100` });
-            else if (performanceScore < 70) generated.push({ ip: pnode.ip, severity: "warning", type: "Degraded Performance", message: `Score ${performanceScore}/100`, value: `${performanceScore}/100` });
+        // RAM ≥ 98% = OOM kill risk
+        if (ramPercent >= 98) {
+          generated.push({
+            ip: pnode.ip,
+            severity: "critical",
+            type: "RAM Exhausted",
+            message: `Memory exhausted - OOM kill imminent, restart or add RAM`,
+            value: `${ramPercent.toFixed(1)}% used`
+          });
         }
+
+        // CPU ≥ 98% = Stuck/infinite loop
+        if (cpuPercent >= 98) {
+          generated.push({
+            ip: pnode.ip,
+            severity: "critical",
+            type: "CPU Stuck",
+            message: `CPU at maximum - possible infinite loop or deadlock`,
+            value: `${cpuPercent.toFixed(1)}% load`
+          });
+        }
+
+        // Performance Score < 20 = Multiple failures
+        if (performanceScore > 0 && performanceScore < 20) {
+          generated.push({
+            ip: pnode.ip,
+            severity: "critical",
+            type: "Multiple Failures",
+            message: `Critical performance degradation - multiple subsystems failing`,
+            value: `Score: ${performanceScore}/100`
+          });
+        }
+      }
+
+      // WARNING ALERTS - Monitor closely, action needed soon
+      if (healthStatus === "Warning") {
+        // Uptime < 24h = Recent restart (instability?)
+        if (uptimeHours < 24 && uptimeHours >= 0.083) { // 5min to 24h
+          generated.push({
+            ip: pnode.ip,
+            severity: "warning",
+            type: "Recent Restart",
+            message: `Node restarted ${uptimeHours.toFixed(1)}h ago - monitor for stability`,
+            value: `${uptimeHours.toFixed(1)}h uptime`
+          });
+        }
+
+        // Storage 85-98% = Filling up
+        if (storagePercent >= 85 && storagePercent < 98) {
+          generated.push({
+            ip: pnode.ip,
+            severity: "warning",
+            type: "Storage Filling",
+            message: `Disk space low - cleanup recommended within 7 days`,
+            value: `${storagePercent.toFixed(1)}% used`
+          });
+        }
+
+        // RAM 85-98% = High memory pressure
+        if (ramPercent >= 85 && ramPercent < 98) {
+          generated.push({
+            ip: pnode.ip,
+            severity: "warning",
+            type: "High Memory Usage",
+            message: `Memory pressure high - consider optimizing or adding RAM`,
+            value: `${ramPercent.toFixed(1)}% used`
+          });
+        }
+
+        // CPU 90-98% = High sustained load
+        if (cpuPercent >= 90 && cpuPercent < 98) {
+          generated.push({
+            ip: pnode.ip,
+            severity: "warning",
+            type: "High CPU Load",
+            message: `CPU load sustained high - verify workload is normal`,
+            value: `${cpuPercent.toFixed(1)}% load`
+          });
+        }
+
+        // Performance Score 20-50 = Underperforming
+        if (performanceScore > 0 && performanceScore >= 20 && performanceScore < 50) {
+          generated.push({
+            ip: pnode.ip,
+            severity: "warning",
+            type: "Degraded Performance",
+            message: `Node underperforming - review metrics and optimize`,
+            value: `Score: ${performanceScore}/100`
+          });
+        }
+      }
     });
+
     return generated;
   }, [allPnodes]);
 

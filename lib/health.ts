@@ -60,30 +60,40 @@ export function getHealthStatus(pnode?: PNode | null): HealthStatus {
   const performanceScore = calculateNodeScore(pnode);
   const hasScore = performanceScore > 0;
 
+  // CRITICAL - Service at risk, immediate action required
+  // Expert SRE thresholds for production monitoring
   const isCritical =
-    cpu >= 95 ||
-    uptimeHours < 1 ||
-    ramPercent >= 90 ||
-    storagePercent >= 95 ||
-    (hasScore && performanceScore < 50);
+    uptimeSeconds < 300 ||           // < 5min (recent crash/restart)
+    storagePercent >= 98 ||          // Disk almost full (data loss imminent)
+    ramPercent >= 98 ||              // RAM saturated (OOM kill risk)
+    cpu >= 98 ||                     // CPU stuck (possible infinite loop)
+    (hasScore && performanceScore < 20);  // Multiple critical failures
+
   if (isCritical) return "Critical";
 
+  // WARNING - Degraded performance, monitoring required
+  // Node is functional but needs attention
   const isWarning =
-    cpu >= 80 ||
-    uptimeHours < 6 ||
-    ramPercent >= 75 ||
-    storagePercent >= 80 ||
-    (hasScore && performanceScore < 70);
+    uptimeHours < 24 ||              // Restarted recently (stability concern)
+    storagePercent >= 85 ||          // Storage filling up
+    ramPercent >= 85 ||              // High memory pressure
+    cpu >= 90 ||                     // High sustained CPU load
+    (hasScore && performanceScore < 50);  // Underperforming
+
   if (isWarning) return "Warning";
 
+  // EXCELLENT - Optimal health
+  // Node operating at peak performance
   if (
-    cpu <= 25 &&
-    uptimeHours >= 48 &&
-    ramPercent < 50 &&
-    storagePercent < 70
+    cpu <= 60 &&
+    uptimeHours >= 168 &&            // > 7 days uptime
+    ramPercent < 70 &&
+    storagePercent < 70 &&
+    hasScore && performanceScore >= 85
   ) {
     return "Excellent";
   }
 
+  // GOOD - Normal operation (default)
   return "Good";
 }
