@@ -49,11 +49,13 @@ const CompareNodesModalComponent = ({
             break;
           case 'RAM':
             const ramTotal = node.stats?.ram_total ?? 1;
-            value = Math.min(100, ((node.stats?.ram_used ?? 0) / ramTotal) * 100);
+            const ramUsed = node.stats?.ram_used ?? 0;
+            value = ramTotal > 0 ? Math.min(100, (ramUsed / ramTotal) * 100) : 0;
             break;
           case 'Storage':
             const storageCommitted = node.stats?.storage_committed ?? 1;
-            value = Math.min(100, ((node.stats?.storage_used ?? 0) / storageCommitted) * 100);
+            const storageUsed = node.stats?.storage_used ?? 0;
+            value = storageCommitted > 0 ? Math.min(100, (storageUsed / storageCommitted) * 100) : 0;
             break;
           case 'Uptime':
             const uptimeHours = (node.stats?.uptime ?? 0) / 3600;
@@ -64,7 +66,8 @@ const CompareNodesModalComponent = ({
             break;
         }
         
-        dataPoint[`Node ${index + 1}`] = value;
+        // Ensure value is always a valid number
+        dataPoint[`Node ${index + 1}`] = Number.isFinite(value) ? value : 0;
       });
       
       return dataPoint;
