@@ -80,29 +80,29 @@ const TAB_META: Record<LeaderboardTab, LeaderboardMeta> = {
     performance: {
         label: "Performance",
         icon: Trophy,
-        accentBg: "rgba(255,215,0,0.15)", // Keep gold for performance
-        accentText: "#FFD700", // Keep gold for performance
+        accentBg: "rgba(255,215,0,0.15)", // Gold
+        accentText: "#FFD700", // Gold
         tooltip: "Composite score combining CPU, RAM, uptime and packet stability.",
     },
     storage: {
         label: "Storage",
         icon: HardDrive,
-        accentBg: hexToRgba(getCssVar("--accent", "#7B3FF2"), 0.15),
-        accentText: getCssVar("--accent", "#7B3FF2"),
+        accentBg: "rgba(123,63,242,0.15)", // Purple - hardcoded for consistency
+        accentText: "#7B3FF2", // Purple - hardcoded for consistency
         tooltip: "Nodes with the largest committed capacity and efficient utilization.",
     },
     uptime: {
         label: "Uptime",
         icon: Zap,
-        accentBg: hexToRgba(getCssVar("--kpi-excellent", "#10B981"), 0.15),
-        accentText: getCssVar("--kpi-excellent", "#10B981"),
+        accentBg: "rgba(16,185,129,0.15)", // Green - hardcoded for consistency
+        accentText: "#10B981", // Green - hardcoded for consistency
         tooltip: "Longest-running nodes measured by reported uptime and last seen timestamp.",
     },
     credits: {
         label: "Credits",
         icon: Coins,
-        accentBg: hexToRgba("#F59E0B", 0.15),
-        accentText: "#F59E0B",
+        accentBg: "rgba(245,158,11,0.15)", // Orange
+        accentText: "#F59E0B", // Orange
         tooltip: "Total credits earned by each pNode this cycle. Rewards reset monthly.",
     },
 };
