@@ -4,6 +4,85 @@ All notable changes to Xandeum pNode Analytics Dashboard.
 
 ## [Unreleased]
 
+### 🎯 MAJOR: Comprehensive pNode Detail View & Export System (2024-12-24)
+
+**Professional individual node analytics with expert-level UX/UI design**
+
+#### Added
+- 🎨 **Enhanced Visual Design**
+  - Country flags with intelligent fallback (30+ countries supported via name mapping)
+  - Geographic location display (city, country) in header
+  - Gradient cards with blur halo effects on all metrics
+  - Color-coded system metrics (CPU: green/orange, RAM: blue/red, Storage: purple)
+  - Color-coded blockchain metrics (Streams: green, Pages: purple, Index: blue, Packets: aqua/orange)
+  - Dynamic color thresholds (warning colors activate at >80% usage)
+  - LED indicators on all metric labels
+  - Hover animations with scale(1.02) and smooth transitions
+  - Text gradient effect on Total Packets (aqua→purple)
+
+- 📊 **New Information Sections**
+  - **Node Identity**: Pubkey with one-click copy button, first seen date (calculated from uptime), node type badge, geographic coordinates
+  - **Storage Analytics**: Committed capacity, actually used, available space, utilization gauge with gradient progress bar
+  - **Economic Metrics**: Total credits earned (XAN), network rank (#X / total nodes), performance tier (Top 10 Elite / Top 50 Performer / Active Earner)
+  - **Enhanced System Metrics**: CPU/RAM/Storage cards with gradients, blur halos, and progress bars
+  - **Enhanced Blockchain Metrics**: Individual color themes per metric with gradient effects
+
+- 🎯 **Floating Action Button (FAB)**
+  - Modern circular button with gradient design (aqua→purple when closed, red when open)
+  - Fixed position (bottom-right) with smooth spring animations
+  - Rotates 45° when opened with X icon
+  - Backdrop blur effect (glassmorphism) when menu displayed
+  - Three professional actions:
+    - 📄 **Export PDF Report** - Multi-page professional report
+    - 📊 **Export JSON Data** - Raw node data download
+    - 🔗 **Copy Share Link** - One-click URL sharing
+  - Toast notifications for instant feedback
+  - Stagger animations (0.05s delay per menu item)
+  - Responsive hover effects on each action
+
+- 📄 **Professional PDF Export System**
+  - Multi-page PDF reports with purple gradient header
+  - Comprehensive sections: Node Overview, Identity & Credentials, System Metrics, Storage Analytics, Blockchain Metrics, Economic Performance
+  - Smart pagination (auto-creates new page when content exceeds 80% height)
+  - Professional typography (Helvetica, section dividers, color coding)
+  - Section headers with purple accent bars
+  - Monospace font for IPs and pubkeys
+  - Footer with generation timestamp and dashboard URL (xandeum-dashboard-topaz.vercel.app)
+  - Auto-named downloads (pnode-{IP}-report.pdf)
+  - Economic section only shows if node has rewards data
+  - Tier badges: "Top 10 Elite", "Top 50 Performer", "Active Earner"
+
+- 🔍 **Enhanced Search Functionality**
+  - Multi-field search beyond IP filtering
+  - **Geographic search**: Country name (India, France), country code (IN, FR), city name (Paris, Surat)
+  - **Health status search**: excellent, good, warning, critical
+  - **Node status search**: User-friendly aliases (private, public, gossip) mapped to actual status
+  - **Technical search**: IP (partial match), version, pubkey
+  - **Interactive tooltip** on search bar with color-coded examples
+  - **Search modal** with 8 categorized example queries
+  - Real-time filtering with 300ms debounce
+  - Backward compatible with existing search functionality
+
+#### API Improvements
+- `/api/pnodes/[ip]` now returns `pubkey` and `country_code` fields
+- Automatic integration with `/api/pods-credits` for rewards matching
+- Economic metrics fetched via pubkey matching with rank calculation
+
+#### Technical Improvements
+- Created reusable `FloatingActionButton` component with Framer Motion
+- Created `pnode-pdf-export.ts` utility with jsPDF
+- Country code fallback mapping for 30+ countries
+- Memoized calculations for performance
+- TypeScript strict type checking maintained
+- Clean component architecture with separation of concerns
+
+#### Design Philosophy
+- **UX/UI Excellence**: Expert-crafted with attention to micro-interactions
+- **Color Psychology**: Purple (brand accent), Aqua (success), Orange (warning), Red (critical), Blue (info)
+- **Responsive Design**: Optimized for desktop, tablet, and mobile viewports
+- **Performance**: Lazy loading, optimized renders, efficient state management
+- **Accessibility**: Proper ARIA labels, keyboard navigation, screen reader support
+
 ### 🎯 MAJOR: Advanced Scoring System v3.0 (2024-12-23)
 
 **Revolutionary scoring system designed for storage-first blockchain networks**
@@ -103,12 +182,15 @@ All notable changes to Xandeum pNode Analytics Dashboard.
 
 ### Documentation
 - Complete README with performance & scalability section
+- **New: Individual pNode Detail View section** - Comprehensive documentation of all features
+- **Enhanced Search Functionality section** - Multi-field search capabilities documented
 - Network discovery process explained
 - Dark/Light mode showcase added
 - Toolbar documentation expanded
 - View modes details documented
 - Future enhancements roadmap
 - Advanced scoring system v3.0 fully documented
+- FAB and PDF export features fully documented with technical stack examples
 
 ## [0.2.0] - 2024-12-09
 
