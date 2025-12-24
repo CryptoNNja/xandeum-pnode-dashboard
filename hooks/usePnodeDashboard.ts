@@ -315,15 +315,34 @@ export const usePnodeDashboard = (theme?: string) => {
   const filteredAndSortedPNodes = useMemo(() => {
     let result = [...allPnodes];
 
-    // Search filter
+    // Enhanced Search filter with multiple field support
     if (debouncedSearchTerm) {
-      const q = debouncedSearchTerm.toLowerCase();
-      result = result.filter(p => 
-        p.ip.toLowerCase().includes(q) || 
-        p.version?.toLowerCase().includes(q) ||
-        p.status.toLowerCase().includes(q) ||
-        p.city?.toLowerCase().includes(q)
-      );
+      const q = debouncedSearchTerm.toLowerCase().trim();
+      result = result.filter(p => {
+        // Basic fields (backward compatible)
+        if (p.ip.toLowerCase().includes(q)) return true;
+        if (p.version?.toLowerCase().includes(q)) return true;
+        if (p.city?.toLowerCase().includes(q)) return true;
+        
+        // Status with user-friendly aliases
+        const status = p.status.toLowerCase();
+        if (status.includes(q)) return true;
+        if (q === "private" && status === "gossip_only") return true;
+        if (q === "public" && status === "active") return true;
+        if (q === "gossip" && status === "gossip_only") return true;
+        
+        // Geographic fields
+        if (p.country?.toLowerCase().includes(q)) return true;
+        if (p.country_code?.toLowerCase().includes(q)) return true;
+        
+        // Pubkey search
+        if (p.pubkey?.toLowerCase().includes(q)) return true;
+        
+        // Health status search
+        if (p._healthStatus?.toLowerCase().includes(q)) return true;
+        
+        return false;
+      });
     }
 
     // Visibility filter

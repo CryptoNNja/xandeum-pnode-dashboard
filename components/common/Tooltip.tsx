@@ -54,12 +54,12 @@ export const Tooltip = ({
                 : "0 10px 40px -10px rgba(123, 63, 242, 0.3), 0 4px 12px -2px rgba(0, 0, 0, 0.4)",
             }}
           >
-            <p 
+            <div 
               className="text-[13px] font-medium leading-relaxed"
               style={{ color: isLight ? "#1e293b" : "#e2e8f0" }}
             >
               {content}
-            </p>
+            </div>
             <TooltipPrimitive.Arrow 
               width={12} 
               height={6}

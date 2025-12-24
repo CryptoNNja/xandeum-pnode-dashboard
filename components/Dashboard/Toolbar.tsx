@@ -109,16 +109,30 @@ export const Toolbar = ({
         <div className="flex flex-wrap items-center gap-2">
           {/* Search Button/Input - simplified as just a button that might open a modal in Page, 
               but let's keep the logic consistent with what Page passed */}
-          <div id="search-button" className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-soft" />
-            <input
-              type="text"
-              placeholder="Search nodes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-bg-bg border border-border-app rounded-lg text-xs text-text-main outline-none focus:border-accent-aqua transition-colors w-40 md:w-64"
-            />
-          </div>
+          <Tooltip content={
+            <div className="text-xs space-y-2 max-w-xs">
+              <p className="font-bold text-accent-aqua mb-2">Search by:</p>
+              <div className="space-y-1">
+                <p>• <span className="text-accent-aqua">IP address</span> (192.168.1, 1.38.164)</p>
+                <p>• <span className="text-accent-aqua">Location</span> (India, Paris, FR, US)</p>
+                <p>• <span className="text-accent-purple">Version</span> (0.7.1, 0.8.0)</p>
+                <p>• <span className="text-accent-purple">Health</span> (excellent, good, warning, critical)</p>
+                <p>• <span className="text-green-400">Status</span> (active, private, public, gossip)</p>
+                <p>• <span className="text-blue-400">Pubkey</span> (AvJgd...)</p>
+              </div>
+            </div>
+          }>
+            <div id="search-button" className="relative group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-soft" />
+              <input
+                type="text"
+                placeholder="Search nodes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 pr-4 py-2 bg-bg-bg border border-border-app rounded-lg text-xs text-text-main outline-none focus:border-accent-aqua transition-colors w-40 md:w-64"
+              />
+            </div>
+          </Tooltip>
 
           <div className="h-6 w-px bg-border-app mx-1 hidden md:block" />
 

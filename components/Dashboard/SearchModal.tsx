@@ -38,9 +38,9 @@ export const SearchModal = ({
       >
         <div className="border-b border-border-app p-6 flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-bold text-text-main">Search</h3>
+            <h3 className="text-xl font-bold text-text-main">Search Nodes</h3>
             <p className="text-sm text-text-faint mt-2">
-              Search nodes (IP, version, status)
+              Search by IP, location, status, version, health, or pubkey
             </p>
           </div>
           <button
@@ -54,7 +54,7 @@ export const SearchModal = ({
             </svg>
           </button>
         </div>
-        <div className="p-6">
+        <div className="p-6 space-y-4">
           <div className="flex items-center gap-3 rounded-lg border border-border-app bg-bg-bg px-3 py-2">
             <Search className="w-5 h-5 text-text-soft" />
             <input
@@ -62,9 +62,60 @@ export const SearchModal = ({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by IP, version, status..."
-              className="w-full bg-transparent outline-none text-sm text-text-main"
+              placeholder="Try: India, 192.168, excellent, private, 0.7.1..."
+              className="w-full bg-transparent outline-none text-sm text-text-main placeholder:text-text-faint"
             />
+          </div>
+
+          {/* Search Examples */}
+          <div className="bg-bg-bg2 rounded-lg p-4 border border-border-app">
+            <p className="text-xs font-bold uppercase tracking-wider text-text-soft mb-3">Search Examples:</p>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-text-faint">•</span>
+                  <code className="text-accent-aqua">192.168.1</code>
+                  <span className="text-text-soft">IP address</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-text-faint">•</span>
+                  <code className="text-accent-aqua">India</code>
+                  <span className="text-text-soft">Country</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-text-faint">•</span>
+                  <code className="text-accent-aqua">FR</code>
+                  <span className="text-text-soft">Country code</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-text-faint">•</span>
+                  <code className="text-accent-aqua">Paris</code>
+                  <span className="text-text-soft">City</span>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-text-faint">•</span>
+                  <code className="text-accent-purple">excellent</code>
+                  <span className="text-text-soft">Health status</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-text-faint">•</span>
+                  <code className="text-accent-purple">private</code>
+                  <span className="text-text-soft">Node type</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-text-faint">•</span>
+                  <code className="text-accent-purple">0.7.1</code>
+                  <span className="text-text-soft">Version</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-text-faint">•</span>
+                  <code className="text-accent-purple">AvJgd...</code>
+                  <span className="text-text-soft">Pubkey</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div className="border-t border-border-app p-4 bg-bg-bg">
