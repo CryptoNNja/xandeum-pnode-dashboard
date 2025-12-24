@@ -1,5 +1,11 @@
 import type { PNode } from "./types";
-import { calculateNodeScore } from "./scoring";
+import { calculateNodeScore, setCachedNodes } from "./scoring";
+
+/**
+ * Set cached nodes for health calculations
+ * This allows components without direct access to allNodes to still benefit from network context
+ */
+export { setCachedNodes };
 
 export type HealthStatus =
   | "Excellent"
@@ -20,7 +26,17 @@ const sanitizeNumber = (value: number | undefined): number => {
   return value;
 };
 
-export function getHealthStatus(pnode?: PNode | null): HealthStatus {
+/**
+ * Determine health status of a pNode
+ * 
+ * @param pnode - The node to evaluate
+ * @param allNodes - Optional: Full network context for accurate performance scoring
+ * @returns HealthStatus - a 4-tier status (Excellent | Good | Warning | Critical | Private)
+ * 
+ * Note: Passing allNodes ensures the performance score uses accurate version tier detection,
+ * which impacts the health status calculation.
+ */
+export function getHealthStatus(pnode?: PNode | null, allNodes?: PNode[]): HealthStatus {
   if (!pnode || pnode.status === "gossip_only") {
     return "Private";
   }
@@ -57,7 +73,8 @@ export function getHealthStatus(pnode?: PNode | null): HealthStatus {
   const storagePercent =
     committedBytes > 0 ? clampPercent((usedBytes / committedBytes) * 100) : 0;
 
-  const performanceScore = calculateNodeScore(pnode);
+  // Performance score (0-100) - now with network context for accurate version tiers
+  const performanceScore = calculateNodeScore(pnode, allNodes);
   const hasScore = performanceScore > 0;
 
   // CRITICAL - Service at risk, immediate action required

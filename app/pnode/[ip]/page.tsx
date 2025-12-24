@@ -102,6 +102,8 @@ export default function PNodeDetailPage() {
     fetchNodeData();
   }, [ip]);
 
+  // Note: getHealthStatus will use cached network context from the main dashboard
+  // This ensures consistent health calculation even without direct access to allNodes
   const health = useMemo(() => pnode ? getHealthStatus(pnode) : 'Private', [pnode]);
   
   const ramPercent = useMemo(() => {

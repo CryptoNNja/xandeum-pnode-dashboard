@@ -186,10 +186,10 @@ export const usePnodeDashboard = (theme?: string) => {
       
       if (payload.data && Array.isArray(payload.data)) {
         // Pre-calculate scores and health status once per load to optimize filtering/sorting performance
-        // Pass full node list for accurate version tier detection
+        // Pass full node list for accurate version tier detection and health calculation
         const pnodesWithScores = payload.data.map((p: PNode) => {
-          const score = calculateNodeScore(p, payload.data); // ✨ NEW: Pass network context
-          const healthStatus = getHealthStatus(p); // Use sophisticated health calculation
+          const score = calculateNodeScore(p, payload.data); // ✨ Pass network context
+          const healthStatus = getHealthStatus(p, payload.data); // ✨ Pass network context for accurate health
           
           return {
             ...p,
@@ -779,7 +779,7 @@ export const usePnodeDashboard = (theme?: string) => {
   }, [allPnodes]);
 
   const networkUptimeStats = useMemo(() => {
-    const publicOnline = allPnodes.filter((pnode) => getHealthStatus(pnode) !== "Private" && pnode.status === "active").length;
+    const publicOnline = allPnodes.filter((pnode) => getHealthStatus(pnode, allPnodes) !== "Private" && pnode.status === "active").length;
     const publicTotal = publicCount || 0;
     const percent = publicTotal > 0 ? Number(((publicOnline / publicTotal) * 100).toFixed(1)) : 0;
     return { percent, publicOnline, publicTotal, ...getNetworkUptimeVisuals(percent) };

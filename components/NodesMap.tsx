@@ -182,7 +182,7 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
       if (nodesToFetch.length === 0 && newLocations.length > 0) {
         const merged = newLocations.map((loc) => {
           const n = nodes.find((node) => node.ip === loc.ip);
-          const newStatus = n ? getHealthStatus(n) : "Private";
+          const newStatus = n ? getHealthStatus(n, nodes) : "Private";
           return { ...loc, status: newStatus };
         });
         setLocations(merged);
@@ -201,7 +201,7 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
               lng: data.longitude,
               city: data.city ?? "Unknown",
               country: data.country ?? "Unknown",
-              status: getHealthStatus(node),
+              status: getHealthStatus(node, nodes),
             });
             updated = true;
           }
@@ -224,7 +224,7 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
           const n = nodes.find((node) => node.ip === loc.ip);
           return {
             ...loc,
-            status: n ? getHealthStatus(n) : "Private",
+            status: n ? getHealthStatus(n, nodes) : "Private",
           };
         });
         setLocations(merged);

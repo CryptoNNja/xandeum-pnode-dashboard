@@ -272,7 +272,55 @@ Max Score: 75 (capped) | Whale Cap: 72 (>10x avg storage)
 
 **Results:** 13 active nodes now score 90+ (vs 0 before), while 15 whale gossip nodes dropped from 100 to 72 (fair cap).
 
-#### **4. 📄 Professional PDF Reports**
+#### **4. 🏥 Intelligent Health System**
+
+**SRE-grade health monitoring with network-aware calculations**
+
+The health system provides operational status assessment using expert-defined thresholds:
+
+```
+🟢 EXCELLENT - Peak Performance
+  ✅ CPU ≤ 60%
+  ✅ Uptime ≥ 7 days
+  ✅ RAM < 70%
+  ✅ Storage < 70%
+  ✅ Performance Score ≥ 85
+
+🔵 GOOD - Normal Operation (Default)
+  • Stable performance
+  • No immediate concerns
+
+🟡 WARNING - Needs Attention
+  ⚠️ Uptime < 24 hours (recent restart)
+  ⚠️ Storage ≥ 85% (filling up)
+  ⚠️ RAM ≥ 85% (memory pressure)
+  ⚠️ CPU ≥ 90% (high load)
+  ⚠️ Performance Score < 50
+
+🔴 CRITICAL - Immediate Action Required
+  🚨 Uptime < 5 minutes (crash/restart)
+  🚨 Storage ≥ 98% (data loss risk)
+  🚨 RAM ≥ 98% (OOM kill risk)
+  🚨 CPU ≥ 98% (potentially hung)
+  🚨 Performance Score < 20
+
+⚪ PRIVATE - Gossip-Only Node
+  • Limited metrics available
+```
+
+**Key Features:**
+- ✅ **Network Context Integration** - Uses accurate performance scores with version tier detection
+- ✅ **Hierarchical Checks** - Critical → Warning → Excellent → Good (default)
+- ✅ **SRE Thresholds** - Based on production monitoring best practices (98% = critical, 85% = warning)
+- ✅ **Real-time Updates** - Health recalculated with every data refresh
+- ✅ **Visual Indicators** - Color-coded markers on map, table, and charts
+
+**Health vs Performance:**
+- **Health Status** = Operational state (system health)
+- **Performance Score** = Network contribution (efficiency & capacity)
+- Health uses performance score as one of its inputs for comprehensive assessment
+
+#### **5. 📄 Professional PDF Reports**
 
 Export comprehensive, production-ready PDF reports with customizable node selection:
 
@@ -439,6 +487,7 @@ The crawler uses a **two-phase approach** to discover all nodes in the network:
 | **Database** | Stores historical data & geolocation | Supabase PostgreSQL |
 | **Animations** (`components/Dashboard/*Animation.tsx`) | 4 Canvas-based visualizations | requestAnimationFrame |
 | **Scoring Engine** (`lib/scoring.ts`) | Advanced v3.0 scoring with version consensus | Expert-designed algorithm |
+| **Health System** (`lib/health.ts`) | SRE-grade health monitoring | Network-aware status assessment |
 
 ---
 
@@ -523,6 +572,7 @@ npm test -- --run  # Run once and exit
 ✓ tests/utils.test.ts (16 tests)           # Data formatting, colors, utilities
 ✓ tests/health.test.ts (13 tests)          # Health status calculations
 ✓ tests/scoring.test.ts (23 tests)         # Advanced scoring v3.0 with version tiers
+✓ tests/health.test.ts (14 tests)          # Health system with network context
 ✓ tests/kpi.test.ts (8 tests)              # KPI metrics aggregation
 ✓ tests/simple-integration.test.ts (16)    # Integration tests
 
@@ -654,8 +704,8 @@ xandeum-dashboard/
 │   └── ...
 ├── lib/
 │   ├── api.ts                        # pRPC integration
-│   ├── health.ts                     # Health scoring
-│   ├── scoring.ts                    # Node scoring algorithm
+│   ├── health.ts                     # Health system (network-aware)
+│   ├── scoring.ts                    # Performance scoring v3.0
 │   ├── kpi.ts                        # KPI calculations
 │   ├── utils.ts                      # Utility functions
 │   └── types.ts                      # TypeScript types
