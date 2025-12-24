@@ -90,6 +90,61 @@ Floating toolbar appears when nodes are selected:
 - **Smart Validation** - Disables compare if < 2 or > 4 nodes selected
 - **Animations** - Smooth slide-up entrance, backdrop blur effect
 
+#### **📊 System Alerts Analytics Dashboard**
+
+Advanced monitoring and analytics for network health issues:
+
+**Two Complementary Alert Views:**
+
+1. **Hero Section Quick View** (Top-right button)
+   - Fast access to critical alerts
+   - Simple list of issues with node IPs
+   - Click-through to individual node pages
+   - Perfect for rapid response and triage
+
+2. **System Alerts Analytics Modal** (Click "System Alerts" card)
+   - **Comprehensive analytics dashboard** for in-depth analysis
+   - **Interactive Charts**:
+     - Pie Chart - Alert distribution by type (Offline, Version Lag, High CPU, etc.)
+     - Bar Chart - Severity breakdown (Critical vs Warning)
+   - **4 KPI Cards**:
+     - Total Alerts count
+     - Critical issues requiring immediate attention
+     - Warnings to monitor closely
+     - Network Health status with percentage affected
+   - **Impact Summary**:
+     - Nodes affected count and percentage
+     - Alert categories (unique issue types)
+     - Real-time monitoring status
+   - **Recent Alerts Timeline** - Last 10 alerts with severity indicators
+   - **Custom Tooltips** - Readable in both dark/light modes with high contrast
+
+**Key Advantages:**
+- **Data-Driven Insights** - Visualize patterns and recurring issues
+- **Network Health Score** - Instant assessment (Excellent/Good/Fair/Critical)
+- **Scalable Design** - Works efficiently with 10 or 100+ alerts
+- **Professional UI** - Recharts integration with Xandeum design system
+- **Complementary Approach** - Quick view for action, analytics for analysis
+
+**Technical Implementation:**
+```typescript
+// Alert categorization and metrics calculation
+const alertCategories = alerts.reduce((acc, alert) => {
+  const type = alert.type;
+  acc[type] = { count: 0, critical: 0, warning: 0 };
+  // ... categorization logic
+}, {});
+
+// Custom tooltip for better readability
+const CustomTooltip = ({ active, payload }) => (
+  <div style={{ color: isLight ? '#0f172a' : '#f8fafc' }}>
+    {payload[0].name}: {payload[0].value}
+  </div>
+);
+```
+
+Perfect for network operators who need both quick alerts and deep analytics!
+
 #### **🎓 Interactive Onboarding Tour**
 
 Premium guided tour for new users powered by `react-joyride`:

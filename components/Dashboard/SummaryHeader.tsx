@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Radio, ShieldCheck, Network, LucideIcon, AlertCircle, Check, AlertTriangle } from "lucide-react";
 import { hexToRgba, getKpiColors, getStatusColors } from "@/lib/utils";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
+import { SystemAlertsAnalyticsModal } from "./SystemAlertsAnalyticsModal";
 
 type SummaryHeaderProps = {
   publicCount: number;
@@ -32,6 +34,7 @@ type SummaryHeaderProps = {
   alerts: any[];
   criticalCount: number;
   warningCount: number;
+  isLight: boolean;
 };
 
 export const SummaryHeader = ({
@@ -43,7 +46,9 @@ export const SummaryHeader = ({
   alerts,
   criticalCount,
   warningCount,
+  isLight,
 }: SummaryHeaderProps) => {
+  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const UptimeIcon = networkUptimeStats.Icon;
   const kpiColors = getKpiColors();
   const statusColors = getStatusColors();
@@ -135,12 +140,23 @@ export const SummaryHeader = ({
       </div>
 
       {/* System Alerts - Moved from Performance & Resources */}
-      <div className="kpi-card relative overflow-hidden p-6">
+      <div 
+        className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:border-red-500/50 hover:scale-[1.02] group"
+        onClick={() => setIsAnalyticsModalOpen(true)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setIsAnalyticsModalOpen(true);
+          }
+        }}
+      >
         <div className="flex items-start justify-between gap-6">
           <div>
             <div className="flex items-center gap-2">
               <p className="text-xs uppercase tracking-[0.35em] text-text-soft">System Alerts</p>
-              <InfoTooltip content="Real-time notifications about node offline status, version lag, or resource exhaustion." />
+              <InfoTooltip content="Real-time notifications about node offline status, version lag, or resource exhaustion. Click for detailed analytics." />
             </div>
             <p className="text-sm text-text-faint">Critical & warnings</p>
             <div className="flex items-baseline gap-2 mt-4">
@@ -156,7 +172,7 @@ export const SummaryHeader = ({
             </div>
           </div>
           <div
-            className="w-10 h-10 rounded-full flex items-center justify-center"
+            className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110"
             style={{ background: hexToRgba(kpiColors.alerts, 0.12) }}
           >
             <AlertCircle className="w-5 h-5" strokeWidth={2.3} style={{ color: kpiColors.alerts }} />
@@ -190,7 +206,21 @@ export const SummaryHeader = ({
             </div>
           </div>
         )}
+        
+        {/* Click indicator */}
+        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+          <span className="text-xs text-accent-aqua font-semibold">Click for details →</span>
+        </div>
       </div>
+      
+      {/* Analytics Modal */}
+      <SystemAlertsAnalyticsModal
+        isOpen={isAnalyticsModalOpen}
+        onClose={() => setIsAnalyticsModalOpen(false)}
+        alerts={alerts}
+        totalNodes={totalNodes}
+        isLight={isLight}
+      />
     </div>
   );
 };

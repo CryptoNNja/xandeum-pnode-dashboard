@@ -525,6 +525,7 @@ export default function Page() {
           alerts={alerts}
           criticalCount={criticalCount}
           warningCount={warningCount}
+          isLight={isLight}
         />
 
         {/* DETAILED KPI CARDS */}
