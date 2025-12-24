@@ -11,6 +11,7 @@ interface CollapsibleSectionProps {
   children: React.ReactNode;
   defaultOpen?: boolean;
   accentColor: string;
+  id?: string;
 }
 
 export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
@@ -20,11 +21,12 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   children,
   defaultOpen = true,
   accentColor,
+  id,
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" id={id}>
       {/* Section Header - Clickable */}
       <button
         onClick={() => setIsOpen(!isOpen)}

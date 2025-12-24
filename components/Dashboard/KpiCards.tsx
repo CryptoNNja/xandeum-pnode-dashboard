@@ -211,6 +211,7 @@ export const KpiCards = ({
         <div className="space-y-6">
           {/* Section 1: NETWORK STATUS */}
           <CollapsibleSection
+            id="network-status-section"
             title="NETWORK STATUS"
             icon={<Network className="w-5 h-5" strokeWidth={2.5} />}
             description="Core metrics and network composition"
@@ -728,6 +729,7 @@ export const KpiCards = ({
 
           {/* Section 2: SYSTEM HEALTH */}
           <CollapsibleSection
+            id="system-health-section"
             title="SYSTEM HEALTH"
             icon={<ShieldCheck className="w-5 h-5" strokeWidth={2.5} />}
             description="Performance, reliability, and network status"
@@ -1137,6 +1139,7 @@ export const KpiCards = ({
 
           {/* Section 3: DATA INSIGHTS */}
           <CollapsibleSection
+            id="data-insights-section"
             title="DATA INSIGHTS"
             icon={<Database className="w-5 h-5" strokeWidth={2.5} />}
             description="Storage, distribution, and performance analytics"

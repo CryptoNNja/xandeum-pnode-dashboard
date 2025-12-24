@@ -294,6 +294,75 @@ body {
 }
 
 /* ============================= */
+/*   JOYRIDE ONBOARDING CUSTOM   */
+/* ============================= */
+
+/* Fix text rendering for crisp display */
+.react-joyride__tooltip {
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+}
+
+/* Smooth fade in animation */
+.__floater__open {
+  animation: fadeIn 0.3s ease-out !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Next button hover effect */
+.react-joyride__tooltip button[data-action="primary"]:hover {
+  box-shadow: 0 0 30px rgba(20, 241, 149, 0.5) !important;
+  transform: translateY(-1px);
+}
+
+/* Progress bar styling */
+.react-joyride__tooltip .react-joyride__progress {
+  background: rgba(100, 116, 139, 0.2) !important;
+  height: 4px !important;
+  border-radius: 2px !important;
+  margin-top: 16px !important;
+}
+
+.react-joyride__tooltip .react-joyride__progress-bar {
+  background: linear-gradient(90deg, #14f195, #9945ff) !important;
+  border-radius: 2px !important;
+}
+
+/* Spotlight without animations for stability */
+.react-joyride__spotlight {
+  transition: none !important;
+}
+
+/* Beacon pulse animation */
+.react-joyride__beacon {
+  animation: beaconPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes beaconPulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ============================= */
 /*   LEAFLET MAP FIX             */
 /* ============================= */
 

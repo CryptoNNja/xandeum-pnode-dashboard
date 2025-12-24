@@ -8,6 +8,7 @@ import {
   LayoutGrid,
   MapPin,
   Download,
+  HelpCircle,
   RefreshCw,
   Loader2,
   CheckCircle,
@@ -85,7 +86,9 @@ export const Toolbar = ({
   minStorage,
   favoritesCount = 0,
   onOpenFavorites,
-}: ToolbarProps & { 
+  onResetTour,
+}: ToolbarProps & {
+  onResetTour?: () => void; 
   resetFilters?: () => void;
   selectedVersions?: string[];
   selectedHealthStatuses?: string[];
@@ -106,7 +109,7 @@ export const Toolbar = ({
         <div className="flex flex-wrap items-center gap-2">
           {/* Search Button/Input - simplified as just a button that might open a modal in Page, 
               but let's keep the logic consistent with what Page passed */}
-          <div className="relative group">
+          <div id="search-button" className="relative group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-soft" />
             <input
               type="text"
@@ -120,7 +123,7 @@ export const Toolbar = ({
           <div className="h-6 w-px bg-border-app mx-1 hidden md:block" />
 
           {/* Filter */}
-          <div className="relative">
+          <div id="filter-button" className="relative">
             <Tooltip content="Filter nodes by visibility">
               <button
                 type="button"
@@ -168,6 +171,7 @@ export const Toolbar = ({
           </div>
 
           {/* View modes */}
+          <div id="view-toggle">
           <Tooltip content="Table View">
             <button
               type="button"
@@ -209,11 +213,12 @@ export const Toolbar = ({
               <MapPin className="w-5 h-5" />
             </button>
           </Tooltip>
+          </div>
 
           <div className="h-6 w-px bg-border-app mx-1" />
 
           {/* Export */}
-          <div className="relative">
+          <div id="export-button" className="relative">
             <Tooltip content="Export data">
               <button
                 type="button"
@@ -390,6 +395,21 @@ export const Toolbar = ({
               <RefreshCw className={clsx("w-5 h-5 text-text-soft", refreshing ? "animate-spin" : "")} />
             </button>
           </Tooltip>
+
+          {/* Help / Tour */}
+          {onResetTour && (
+            <Tooltip content="Show tour guide">
+              <button
+                id="help-button"
+                type="button"
+                onClick={onResetTour}
+                className={TOOLBAR_BUTTON_BASE}
+                aria-label="Help"
+              >
+                <HelpCircle className="w-5 h-5 text-text-soft" />
+              </button>
+            </Tooltip>
+          )}
         </div>
 
         {/* Results counter & Live status */}
