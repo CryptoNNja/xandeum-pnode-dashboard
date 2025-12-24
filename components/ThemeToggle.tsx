@@ -17,62 +17,100 @@ const ThemeToggle: React.FC = () => {
 
   const isDark = theme === "dark";
 
+  const handleToggle = () => {
+    // Haptic feedback on mobile
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(10);
+    }
+    
+    toggleTheme();
+  };
+
   return (
     <motion.button
-      onClick={toggleTheme}
-      className="relative w-20 h-10 rounded-full backdrop-blur-md hover:bg-white/10 transition-all flex items-center justify-center group overflow-hidden"
+      onClick={handleToggle}
+      className="relative w-20 h-10 rounded-full backdrop-blur-md hover:bg-white/10 flex items-center justify-center group overflow-hidden"
       style={{
         background: theme === 'dark' ? 'var(--bg-card)' : 'rgb(240, 240, 245)',
         border: theme === 'dark' ? '1.5px solid var(--border-app)' : '1.5px solid rgb(210, 210, 215)',
         boxShadow: theme === 'dark'
-          ? 'inset 0 1px 2px rgba(255, 255, 255, 0.1), 0 0 16px rgba(147, 51, 234, 0.4)' // Stronger purple glow for dark
-          : 'inset 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 16px rgba(255, 193, 7, 0.3)', // Stronger yellow glow for light
+          ? 'inset 0 1px 2px rgba(255, 255, 255, 0.1), 0 0 16px rgba(147, 51, 234, 0.4)'
+          : 'inset 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 16px rgba(255, 193, 7, 0.3)',
       }}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
     >
       {/* Background glow on hover */}
-      <div
-        className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity blur-xl ${isDark ? "bg-purple-500/20" : "bg-amber-500/20" // Purple for dark, Amber for light
-          }`}
+      <motion.div
+        className={`absolute inset-0 blur-xl ${isDark ? "bg-purple-500/20" : "bg-amber-500/20"}`}
+        initial={{ opacity: 0 }}
+        whileHover={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
       />
 
-      {/* Icon container with sliding effect */}
+      {/* Icon container with sliding + rotation effect */}
       <motion.div
-        key={theme} // Key to trigger re-animation on theme change
-        initial={{ x: isDark ? -18 : 18, opacity: 0 }} // Initial position off-center
-        animate={{ x: 0, opacity: 1 }} // Animate to center
-        exit={{ x: isDark ? 18 : -18, opacity: 0 }} // Animate off-center on exit
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="absolute z-10 flex items-center justify-center w-8 h-8 rounded-full" // Fixed size for the sliding icon
+        key={theme}
+        initial={{ 
+          x: isDark ? -18 : 18, 
+          opacity: 0,
+          rotate: isDark ? -180 : 180,
+          scale: 0.5
+        }}
+        animate={{ 
+          x: 0, 
+          opacity: 1,
+          rotate: 0,
+          scale: 1
+        }}
+        exit={{ 
+          x: isDark ? 18 : -18, 
+          opacity: 0,
+          rotate: isDark ? 180 : -180,
+          scale: 0.5
+        }}
+        transition={{ 
+          duration: 0.5, 
+          ease: [0.34, 1.56, 0.64, 1], // Custom easing for bounce effect
+          opacity: { duration: 0.3 }
+        }}
+        className="absolute z-10 flex items-center justify-center w-8 h-8 rounded-full"
         style={{
-            left: isDark ? '6px' : 'auto', // Position left for dark mode
-            right: isDark ? 'auto' : '6px', // Position right for light mode
-            backgroundColor: isDark ? '#9333ea' : '#F59E0B', // Purple for dark, Amber for light
-            boxShadow: isDark ? '0 0 8px #9333ea' : '0 0 8px #F59E0B',
+            left: isDark ? '6px' : 'auto',
+            right: isDark ? 'auto' : '6px',
+            backgroundColor: isDark ? '#9333ea' : '#F59E0B',
+            boxShadow: isDark ? '0 0 12px #9333ea, inset 0 1px 2px rgba(255,255,255,0.2)' : '0 0 12px #F59E0B, inset 0 1px 2px rgba(255,255,255,0.3)',
         }}
       >
-        {isDark ? (
-          <Moon className="w-5 h-5 text-white" strokeWidth={2} /> // White icon for better contrast
-        ) : (
-          <Sun className="w-5 h-5 text-white" strokeWidth={2} /> // White icon for better contrast
-        )}
+        <motion.div
+          initial={{ rotate: 0 }}
+          animate={{ rotate: isDark ? 0 : 360 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+        >
+          {isDark ? (
+            <Moon className="w-5 h-5 text-white" strokeWidth={2} />
+          ) : (
+            <Sun className="w-5 h-5 text-white" strokeWidth={2} />
+          )}
+        </motion.div>
       </motion.div>
 
-      {/* Subtle shine effect */}
+      {/* Subtle shine effect - smoother */}
       <motion.div
-        className="absolute inset-0"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'linear-gradient(to bottom right, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0))',
+          background: 'linear-gradient(to bottom right, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0))',
         }}
         animate={{
           x: ["-100%", "100%"],
         }}
         transition={{
-          duration: 3,
+          duration: 2.5,
           repeat: Infinity,
-          repeatDelay: 1,
+          repeatDelay: 1.5,
+          ease: "easeInOut"
         }}
       />
     </motion.button>
