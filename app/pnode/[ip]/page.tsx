@@ -93,7 +93,6 @@ export default function PNodeDetailPage() {
         }
         const node: PNode = await res.json();
         setPNode(node);
-        toast.success(`Node ${ip} loaded successfully`);
       } catch (e: any) {
         const errorMessage = e.message || 'Failed to fetch node data';
         setError(errorMessage);
@@ -105,7 +104,8 @@ export default function PNodeDetailPage() {
     };
 
     fetchNodeData();
-  }, [ip]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ip]); // toast is stable, no need in deps
 
   // Fetch credits data if pubkey exists
   useEffect(() => {
