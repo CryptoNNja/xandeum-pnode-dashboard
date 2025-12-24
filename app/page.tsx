@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import Image from "next/image";
-import { Search, List, LayoutGrid, MapPin, Download, RefreshCw, Settings, Loader2, CheckCircle, ChevronDown, Check, Star } from "lucide-react";
+import { Search, List, LayoutGrid, MapPin, Download, RefreshCw, Settings, Loader2, CheckCircle, ChevronDown, Check, Star, Github, Twitter } from "lucide-react";
 import clsx from "clsx";
 import EnhancedHero from "@/components/EnhancedHero";
 import SkeletonLoader from "@/components/SkeletonLoader";
@@ -667,25 +667,51 @@ export default function Page() {
             </p>
             <p className="text-text-soft text-xs">Official pNode Analytics Dashboard v1.0</p>
           </div>
-          <a
-            href="https://x.com/Crypt0xNinja"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 px-5 py-2.5 rounded-full border border-border-app bg-bg-card shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-accent-aqua/10 hover:border-accent-aqua/50 hover:scale-105 group"
-          >
-            <div className="w-8 h-8 rounded-full border border-accent-aqua/30 flex items-center justify-center overflow-hidden group-hover:border-accent-aqua/60 transition-colors">
-              <Image
-                src="/avatar-ninja.png"
-                alt="Ninja0x Avatar"
-                width={32}
-                height={32}
-                className="object-cover"
-              />
+          
+          <div className="flex items-center gap-4">
+            {/* Social Icons */}
+            <div className="flex items-center gap-2">
+              <a
+                href="https://github.com/CryptoNNja"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full border border-border-app bg-bg-card flex items-center justify-center transition-all duration-300 hover:border-accent-purple hover:bg-accent-purple/10 hover:scale-110 group"
+                aria-label="GitHub"
+              >
+                <Github className="w-5 h-5 text-text-soft group-hover:text-accent-purple transition-colors" />
+              </a>
+              <a
+                href="https://x.com/Crypt0xNinja"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full border border-border-app bg-bg-card flex items-center justify-center transition-all duration-300 hover:border-accent-aqua hover:bg-accent-aqua/10 hover:scale-110 group"
+                aria-label="Twitter / X"
+              >
+                <Twitter className="w-5 h-5 text-text-soft group-hover:text-accent-aqua transition-colors" />
+              </a>
             </div>
-            <p className="text-xs text-text-soft group-hover:text-text-main transition-colors">
-              Built with <span className="text-red-400">❤️</span> by <span className="font-semibold text-text-main">Ninja0x</span>
-            </p>
-          </a>
+
+            {/* Author Card */}
+            <a
+              href="https://x.com/Crypt0xNinja"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-5 py-2.5 rounded-full border border-border-app bg-bg-card shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-accent-aqua/10 hover:border-accent-aqua/50 hover:scale-105 group"
+            >
+              <div className="w-8 h-8 rounded-full border border-accent-aqua/30 flex items-center justify-center overflow-hidden group-hover:border-accent-aqua/60 transition-colors">
+                <Image
+                  src="/avatar-ninja.png"
+                  alt="Ninja0x Avatar"
+                  width={32}
+                  height={32}
+                  className="object-cover"
+                />
+              </div>
+              <p className="text-xs text-text-soft group-hover:text-text-main transition-colors">
+                Built with <span className="text-red-400">❤️</span> by <span className="font-semibold text-text-main">Ninja0x</span>
+              </p>
+            </a>
+          </div>
         </div>
       </footer>
 
