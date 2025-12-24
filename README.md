@@ -308,12 +308,71 @@ Three distinct ways to explore node data:
 #### **🛠️ Advanced Toolbar**
 Powerful controls for data exploration:
 - **View Toggle** - Switch between Table/Grid/Map instantly
-- **Search Bar** - Real-time IP address filtering
+- **Search Bar** - Multi-field smart search with helpful tooltip
 - **⭐ Favorites Button** - Quick access to saved nodes with count badge (pulsing when favorites exist)
 - **Advanced Filters** - Multi-select dropdowns for Health, Version, CPU range, Storage range
 - **Public/Private Toggle** - Show/hide private nodes
 - **Auto-refresh** - 30-second updates + manual refresh button
 - **Export** - Download data as JSON, CSV, Excel, or comprehensive PDF reports
+
+#### **🔍 Enhanced Search Functionality**
+
+Intelligent multi-field search that goes beyond basic IP filtering:
+
+**Search Capabilities:**
+- **🌐 Geographic Search**
+  - Country name (e.g., `India`, `France`, `United States`)
+  - Country code (e.g., `IN`, `FR`, `US`)
+  - City name (e.g., `Paris`, `Surat`, `New York`)
+
+- **💚 Health Status Search**
+  - Health levels: `excellent`, `good`, `warning`, `critical`
+  - Quick filtering to focus on nodes needing attention
+
+- **🔐 Node Status Search**
+  - User-friendly aliases: `private`, `public`, `gossip`
+  - Status values: `active`, `gossip_only`
+
+- **🔑 Technical Search**
+  - IP address (partial match: `192.168`, `1.38`)
+  - Version number (e.g., `0.7.1`, `0.8.0`)
+  - Pubkey (node public key search)
+
+**User Experience Features:**
+- **Interactive Tooltip** - Hover over search bar to see all available search options with color-coded examples
+- **Search Modal** - Click search bar or press `/` for detailed search examples with 8 categorized options
+- **Real-time Filtering** - Debounced (300ms) for smooth performance
+- **Backward Compatible** - All previous search functionality preserved
+
+**Technical Implementation:**
+```typescript
+// Smart search with multiple field support
+const filteredNodes = nodes.filter(node => {
+  const query = searchTerm.toLowerCase().trim();
+  
+  // Geographic fields
+  if (node.country?.toLowerCase().includes(query)) return true;
+  if (node.country_code?.toLowerCase().includes(query)) return true;
+  if (node.city?.toLowerCase().includes(query)) return true;
+  
+  // Health and status with aliases
+  if (node._healthStatus?.toLowerCase().includes(query)) return true;
+  if (query === "private" && node.status === "gossip_only") return true;
+  
+  // Technical fields
+  if (node.ip.includes(query)) return true;
+  if (node.pubkey?.includes(query)) return true;
+  
+  return false;
+});
+```
+
+**Example Queries:**
+- Type `India` → Find all nodes in India 🇮🇳
+- Type `excellent` → Show only top-performing nodes ⭐
+- Type `private` → Filter private/gossip nodes 🔒
+- Type `FR` → Display French nodes 🇫🇷
+- Type `0.8` → Find nodes on version 0.8.x 📦
 
 ---
 
