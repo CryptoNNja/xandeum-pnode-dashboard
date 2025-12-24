@@ -117,6 +117,10 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("mapdebug") === "1";
 
+  // Memoize the GeoJSON style to prevent recreation on every render
+  const currentGeoJsonStyle = useMemo(() => getGeoJsonStyleForTheme(isLight), [isLight]);
+
+
   useEffect(() => {
     return () => {
       const map = mapRef.current;
@@ -159,7 +163,26 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
 
 
   useEffect(() => {
+    // Use lat/lng directly from nodes instead of fetching from external API
+    const nodesWithCoords = nodes.filter(
+      (n) => n.lat !== null && n.lat !== undefined && n.lng !== null && n.lng !== undefined
+    );
+    
+    const locs: NodeLocation[] = nodesWithCoords.map((n) => ({
+      ip: n.ip,
+      lat: n.lat!,
+      lng: n.lng!,
+      city: n.city || 'Unknown',
+      country: n.country || 'Unknown',
+      status: getHealthStatus(n, nodes),
+    }));
+    
+    setLocations(locs);
+    
+    // Old fetch code commented out - nodes already have lat/lng from API
+    /*
     const fetchLocations = async () => {
+      console.log('🗺️ fetchLocations started, nodes count:', nodes.length);
       const cachedRaw = localStorage.getItem("pnode_locations_v2");
       let cachedLocs: NodeLocation[] = [];
       if (cachedRaw) {
@@ -167,6 +190,7 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
           const parsed = JSON.parse(cachedRaw);
           if (Array.isArray(parsed)) {
             cachedLocs = parsed as NodeLocation[];
+            console.log('🗺️ Loaded cached locations:', cachedLocs.length);
           }
         } catch (error) {
           console.warn("Failed to parse cached node locations", error);
@@ -178,8 +202,10 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
       const nodesToFetch = nodes.filter(
         (n) => !newLocations.find((l) => l.ip === n.ip)
       );
+      console.log('🗺️ Nodes to fetch:', nodesToFetch.length);
 
       if (nodesToFetch.length === 0 && newLocations.length > 0) {
+        console.log('🗺️ Using cached locations only');
         const merged = newLocations.map((loc) => {
           const n = nodes.find((node) => node.ip === loc.ip);
           const newStatus = n ? getHealthStatus(n, nodes) : "Private";
@@ -188,6 +214,7 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
         setLocations(merged);
         return;
       }
+      console.log('🗺️ Fetching geolocation for new nodes...');
 
       for (const node of nodesToFetch) {
         try {
@@ -231,6 +258,7 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
       }
     };
     fetchLocations();
+    */
   }, [nodes]);
 
   const markers = useMemo(() => {
@@ -425,7 +453,7 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
           <GeoJSON
             key="static-world-map"
             data={geoJsonData}
-            style={getGeoJsonStyleForTheme(isLight)}
+            style={currentGeoJsonStyle}
             interactive={false}
           />
         ) : null}
