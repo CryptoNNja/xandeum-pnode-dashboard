@@ -27,6 +27,7 @@ This platform goes **beyond basic pNode listing** to deliver a comprehensive ana
 🗺️ **Geographic Intelligence** - Interactive map with IP geolocation and clustering  
 🏆 **Competitive Leaderboards** - Multi-metric rankings with performance badges  
 📊 **Blockchain Integration** - Network participation, epoch tracking, and credit monitoring  
+🎓 **Interactive Onboarding** - 25-step guided tour with premium UX and Lucide icons  
 ⚡ **Production Architecture** - Automated crawlers, database persistence, and optimized performance  
 
 ---
@@ -88,6 +89,58 @@ Floating toolbar appears when nodes are selected:
 - **Clear Selection** - Deselect all with one click
 - **Smart Validation** - Disables compare if < 2 or > 4 nodes selected
 - **Animations** - Smooth slide-up entrance, backdrop blur effect
+
+#### **🎓 Interactive Onboarding Tour**
+
+Premium guided tour for new users powered by `react-joyride`:
+- **25 Comprehensive Steps** - Covers every dashboard feature from hero section to advanced filters
+- **Lucide Icons** - Color-coded icons matching each section's theme (aqua, purple, blue, green)
+- **Rich Content** - Structured explanations with:
+  - Feature highlights in colored info boxes
+  - Bulleted lists for multi-step features
+  - Pro tips and best practices
+  - Visual indicators (badges, colors)
+- **Smart Targeting** - Precise element selection using IDs for stable navigation
+- **Smooth UX**:
+  - Crisp text rendering (optimized font smoothing)
+  - Fade-in animations (0.3s ease-out)
+  - Dynamic tooltip positioning that follows elements
+  - No blur or visual glitches
+- **Xandeum Design System** - Styled with:
+  - Aqua accent color (`#14f195`)
+  - Glassmorphism effects and subtle borders
+  - Gradient progress bar (aqua to purple)
+  - Custom button hover effects with glow
+- **User-Friendly Controls**:
+  - Progress indicator (Step X/25)
+  - Skip tour option at any time
+  - Restart anytime via Help button (?)
+  - Auto-scroll to highlighted elements
+- **Tour Sections**:
+  - Hero & System Controls (alerts, theme toggle)
+  - Educational Section & Quick Stats
+  - System Status Cards (public/private nodes, alerts)
+  - Collapsible Sections (Network Status, System Health, Data Insights)
+  - Table Features (sorting, selection, favorites, row navigation)
+  - Toolbar Actions (search, filters, view modes, export, advanced filters, refresh)
+
+**Technical Implementation:**
+```typescript
+// Custom hook with JSX content and Lucide icons
+const { steps, run } = useOnboarding();
+
+// Precise targeting with IDs
+<CollapsibleSection id="network-status-section" ... />
+
+// Premium Joyride styling
+styles={{
+  options: { primaryColor: '#14f195', ... },
+  tooltip: { borderRadius: '16px', boxShadow: '...' },
+  buttonNext: { boxShadow: '0 0 20px rgba(20, 241, 149, 0.3)' }
+}}
+```
+
+Perfect for first-time visitors to quickly understand all dashboard capabilities!
 
 ---
 
