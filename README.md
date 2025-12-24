@@ -616,6 +616,15 @@ cd xandeum-dashboard
 npm install
 ```
 
+**Key Dependencies Installed:**
+- `next` (15.x) - React framework with App Router
+- `react-joyride` - Interactive onboarding tour system
+- `lucide-react` - Modern icon library (500+ icons)
+- `recharts` - Composable charting library
+- `leaflet` / `react-leaflet` - Interactive map components
+- `@supabase/supabase-js` - Database client and real-time subscriptions
+- `jspdf` / `jspdf-autotable` - Professional PDF report generation
+
 ### **2. Environment Setup**
 
 Create `.env.local` with your Supabase credentials:
