@@ -17,19 +17,23 @@ export const supabase = createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!
 
 
 // Admin client for server-side operations
+// Note: This will only work server-side, as SUPABASE_SERVICE_ROLE_KEY is not exposed to the browser
 let supabaseAdmin: ReturnType<typeof createClient<Database>> | null = null;
-if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
-  supabaseAdmin = createClient<Database>(
-    SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY,
-    {
-      auth: { persistSession: false },
-    }
-  );
-} else {
-  console.warn(
-    "Supabase: missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY — history will be disabled"
-  );
+if (typeof window === 'undefined') {
+  // Server-side only
+  if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+    supabaseAdmin = createClient<Database>(
+      SUPABASE_URL,
+      SUPABASE_SERVICE_ROLE_KEY,
+      {
+        auth: { persistSession: false },
+      }
+    );
+  } else {
+    console.warn(
+      "Supabase: missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY — history will be disabled"
+    );
+  }
 }
 
 export async function recordNodeStats(ip: string, stats: Partial<PNodeStats>) {
