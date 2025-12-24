@@ -28,11 +28,13 @@ export async function GET(
       ip: data.ip,
       status: data.status as PNodeStatus,
       version: data.version,
+      pubkey: data.pubkey ?? undefined,
       stats: data.stats as unknown as import("@/lib/types").PNodeStats,
       lat: data.lat ?? null,
       lng: data.lng ?? null,
       city: data.city ?? null,
       country: data.country ?? null,
+      country_code: data.country_code ?? null,
     };
   
     return NextResponse.json(node, {

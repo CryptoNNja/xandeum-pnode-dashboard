@@ -374,6 +374,123 @@ const filteredNodes = nodes.filter(node => {
 - Type `FR` → Display French nodes 🇫🇷
 - Type `0.8` → Find nodes on version 0.8.x 📦
 
+#### **📍 Individual pNode Detail View**
+
+Deep-dive analytics for individual nodes with comprehensive metrics and professional export capabilities:
+
+**Access Methods:**
+- Click any node row in Table view
+- Navigate to `/pnode/[IP_ADDRESS]` directly
+- Click node markers in Map view
+
+**Enhanced Header:**
+- 🌍 **Country Flag** - Auto-detected from country code or name (30+ countries supported)
+- 📍 **Geographic Location** - City, Country display
+- 💚 **Health Status Badge** - Color-coded status (Excellent/Good/Warning/Critical)
+- 🔄 **Real-time Data** - Live metrics updated every 30 seconds
+
+**Information Sections:**
+
+1. **Node Status Overview**
+   - Health score with visual indicator
+   - Node type (Public/Private)
+   - Current status and last seen timestamp
+   - Quick metrics grid (CPU, RAM, Storage, Uptime)
+
+2. **System Metrics with Visual Enhancements** 🎨
+   - **CPU Card** - Gradient gauge (green→orange based on usage), blur halo effects
+   - **RAM Card** - Blue gradient with utilization percentage and progress bar
+   - **Storage Card** - Purple gradient showing committed capacity
+   - **Hover Effects** - Cards scale on hover with smooth transitions
+   - **Color Intelligence** - Dynamic colors based on thresholds (>80% = warning)
+
+3. **Blockchain Metrics with Gradients** 🌈
+   - **Active Streams** - Green card with real-time channel count
+   - **Total Pages** - Purple card with indexed blockchain data
+   - **Current Index** - Blue card with indexing position
+   - **Packets Sent** - Aqua card with outbound network traffic
+   - **Packets Received** - Orange card with inbound traffic
+   - **Total Packets** - Gradient text (aqua→purple) for combined metrics
+   - **Visual Design** - Each card features blur halos, LED indicators, and hover animations
+
+4. **Node Identity** 🔑
+   - **Public Key** - Copiable pubkey with one-click copy button
+   - **First Seen Date** - Calculated from uptime (e.g., "Dec 15, 2024 - 9 days ago")
+   - **Node Type** - Public/Private with color-coded badges
+   - **Coordinates** - Geographic lat/lng if available
+   - **Fallback** - "Not available" display for missing data
+
+5. **Storage Analytics** 💾
+   - **Committed Capacity** - Total storage promised to network
+   - **Actually Used** - Current storage utilization
+   - **Available Space** - Remaining capacity
+   - **Utilization Gauge** - Visual progress bar with gradient (aqua→purple)
+   - **Efficiency Score** - Percentage breakdown with smooth animations
+
+6. **Economic Metrics** 💰 (if pubkey matches rewards data)
+   - **Total Credits Earned** - XAN rewards with formatted numbers
+   - **Network Rank** - Position among all earning nodes (e.g., "#1 / 235 nodes")
+   - **Performance Tier** - Badge indicating tier (Top 10 Elite / Top 50 Performer / Active Earner)
+   - **Auto-Detection** - Automatically fetches from `/api/pods-credits` via pubkey matching
+
+7. **History Timeline** ⏱️
+   - **Flexible Time Ranges** - 1h, 6h, 24h, 7d, 30d selector
+   - **Multi-Metric Charts** - CPU, RAM, Packets (sent/received) with Recharts
+   - **Interactive Graphs** - Hover for precise values, zoom/pan support
+   - **Responsive Design** - Adapts to screen size with smooth rendering
+
+**🎯 Floating Action Button (FAB)**
+
+Modern circular button (bottom-right) with gradient design:
+- **Gradient Design** - Aqua→Purple (closed), Red gradient (open)
+- **Smooth Animations** - Rotates 45° when opened, spring physics
+- **Backdrop Blur** - Professional glassmorphism effect when menu open
+- **Three Actions**:
+  1. **📄 Export PDF Report** - Professional multi-page PDF with all metrics
+  2. **📊 Export JSON Data** - Raw node data for analysis
+  3. **🔗 Copy Share Link** - Share direct URL to this node
+- **Toast Notifications** - Instant feedback for each action
+
+**PDF Report Features:**
+- **Professional Layout** - Multi-page report with purple gradient header
+- **Comprehensive Sections**:
+  - Node Overview (IP, location, status, version)
+  - Identity & Credentials (pubkey, first seen, coordinates)
+  - System Metrics (CPU, RAM, uptime)
+  - Storage Analytics (committed/used/available/utilization)
+  - Blockchain Metrics (streams, pages, packets)
+  - Economic Performance (credits, rank, tier - if available)
+- **Smart Pagination** - Auto-creates new pages when content exceeds height
+- **Footer** - Generated timestamp and dashboard URL
+- **Auto-Named** - Downloads as `pnode-{IP}-report.pdf`
+
+**Design Philosophy:**
+- **UX/UI Excellence** - Expert-crafted with attention to detail
+- **Color Psychology** - Purple (accent), Aqua (success), Orange (warning), Red (critical)
+- **Micro-interactions** - Hover effects, blur halos, smooth transitions
+- **Responsive** - Optimized for desktop, tablet, and mobile
+- **Performance** - Memoized calculations, lazy loading, optimized renders
+
+**Technical Stack:**
+```typescript
+// FAB with Framer Motion animations
+<FloatingActionButton actions={[
+  { id: 'pdf', label: 'Export PDF Report', color: '#7B3FF2', onClick: exportPDF },
+  { id: 'json', label: 'Export JSON Data', color: '#14f195', onClick: exportJSON },
+  { id: 'share', label: 'Copy Share Link', color: '#3B82F6', onClick: copyLink }
+]} />
+
+// PDF Export with jsPDF
+exportPNodeToPDF(pnode, health, credits, creditsRank);
+```
+
+**API Integration:**
+- `/api/pnodes/[ip]` - Fetches node data with pubkey and country_code
+- `/api/pnodes/[ip]/history` - Historical metrics for charts
+- `/api/pods-credits` - Matches pubkey for rewards data
+
+This view transforms individual node inspection into a **comprehensive analytics experience** with professional export capabilities!
+
 ---
 
 ### **Innovation & Advanced Features**
