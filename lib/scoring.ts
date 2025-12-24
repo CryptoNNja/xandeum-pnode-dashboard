@@ -1,10 +1,10 @@
 import type { PNode } from "./types";
 
 /**
- * 🎯 Xandeum pNode Scoring System v3.0 - LEGENDARY EDITION
+ * 🎯 Xandeum pNode Scoring System v3.0
  * 
- * Expert-designed scoring system for Xandeum's decentralized storage network
- * Built to win the bounty with fair, accurate, and bulletproof scoring.
+ * Advanced scoring system for Xandeum's decentralized storage network
+ * Fair, accurate, and production-tested evaluation logic.
  * 
  * CORE PHILOSOPHY:
  * ================

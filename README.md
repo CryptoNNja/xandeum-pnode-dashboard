@@ -7,7 +7,7 @@
 **Professional-grade analytics platform for Xandeum pNodes with real-time monitoring, intelligent scoring, and interactive visualizations.**
 
 [![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Visit_Dashboard-7B3FF2?style=for-the-badge)](https://xandeum-dashboard-topaz.vercel.app)
-[![Tests](https://img.shields.io/badge/✓_Tests-64_Passing-10B981?style=for-the-badge)](tests/)
+[![Tests](https://img.shields.io/badge/✓_Tests-77_Passing-10B981?style=for-the-badge)](tests/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-100%25-3178C6?style=for-the-badge&logo=typescript)](.)
 [![Next.js](https://img.shields.io/badge/Next.js_15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 
@@ -236,7 +236,7 @@ Four custom Canvas-based animations that adapt to network state:
 
 ![Network Leaderboard](screenshots/leaderboard-modal.png)
 
-**Legendary scoring system designed for Xandeum's storage-first architecture**
+**Advanced scoring system designed for Xandeum's storage-first architecture**
 
 ```
 🎯 ACTIVE NODES (Public - Full Metrics)
@@ -271,6 +271,62 @@ Max Score: 75 (capped) | Whale Cap: 72 (>10x avg storage)
 - 🚀 **Future-Proof** - Adapts to network growth automatically
 
 **Results:** 13 active nodes now score 90+ (vs 0 before), while 15 whale gossip nodes dropped from 100 to 72 (fair cap).
+
+---
+
+### **🏆 Innovation Highlights**
+
+This platform goes beyond basic requirements to deliver a comprehensive analytics solution designed specifically for Xandeum's storage-first architecture.
+
+#### **Advanced Scoring System v3.0**
+
+**Sophisticated storage-first evaluation system** with 700+ lines of logic and 23 comprehensive tests:
+
+**Key Features:**
+1. ✅ **Network-aware version compliance** - Dynamic tier detection based on adoption rates
+2. ✅ **Whale protection** - Fair caps for outlier storage commitments (>10x average)
+3. ✅ **Dual scoring logic** - Separate algorithms for active (0-100) vs gossip nodes (0-75)
+4. ✅ **Storage-first weights** - Reflects Xandeum's decentralized storage mission
+5. ✅ **Production-tested** - 23 tests covering edge cases and network scenarios
+
+**Why it matters:**
+- **Fair evaluation** - Prevents gaming through multi-layer validation
+- **Xandeum-specific** - Tailored for storage network requirements
+- **Transparent** - Clear score breakdown for operators
+- **Adaptive** - Evolves with network maturity
+
+#### **Additional Platform Features**
+
+Beyond core bounty requirements, this platform includes:
+
+| Feature | Description | Impact |
+|---------|-------------|--------|
+| **Advanced Scoring** | Network-aware evaluation system | Fair node ranking |
+| **Favorites System** | Persistent bookmarking with bulk ops | Operator productivity |
+| **Node Comparison** | Radar charts for 2-5 nodes | Performance analysis |
+| **PDF Export** | Professional multi-node reports | Executive summaries |
+| **SRE Alerts** | Expert-grade monitoring thresholds | Proactive maintenance |
+| **4 Animations** | Canvas-based real-time visualizations | Network insights |
+| **Selection Actions** | Bulk operations on multiple nodes | Batch management |
+| **12 Analysis Modals** | Deep-dive charts and breakdowns | Detailed analytics |
+| **Historical Data** | 30+ days network evolution | Trend analysis |
+| **Geographic Intel** | Interactive map with clustering | Network coverage |
+| **77 Tests** | Comprehensive test coverage | Production quality |
+| **Dark/Light Mode** | Complete theme system | User preference |
+
+**All features are production-ready, tested, and documented.**
+
+#### **Production Quality**
+
+Built for long-term ecosystem value:
+- ✅ **77 tests passing** - Comprehensive coverage (utils, scoring, health, KPI, integration)
+- ✅ **TypeScript strict** - Type safety throughout
+- ✅ **Clean architecture** - Scalable Next.js App Router structure
+- ✅ **Comprehensive docs** - README, CHANGELOG, inline comments
+- ✅ **Live deployment** - Running 24/7 with automated crawlers
+- ✅ **Open-source ready** - Well-structured for community contributions
+
+---
 
 #### **4. 🏥 Intelligent Health System**
 
@@ -410,7 +466,7 @@ Charts:      Recharts + Canvas API (custom animations)
 Maps:        Leaflet + React Leaflet Cluster
 Database:    Supabase (PostgreSQL)
 Deployment:  Vercel (Edge Functions + ISR)
-Testing:     Vitest (64 tests, 100% pass rate)
+Testing:     Vitest (77 tests, 100% pass rate)
 ```
 
 ### **System Design**
@@ -502,7 +558,7 @@ The crawler uses a **two-phase approach** to discover all nodes in the network:
 ### **1. Clone & Install**
 
 ```bash
-git clone https://github.com/yourusername/xandeum-dashboard.git
+git clone https://github.com/CryptoNNja/xandeum-dashboard.git
 cd xandeum-dashboard
 npm install
 ```
@@ -570,15 +626,14 @@ npm test -- --run  # Run once and exit
 
 ```
 ✓ tests/utils.test.ts (16 tests)           # Data formatting, colors, utilities
-✓ tests/health.test.ts (13 tests)          # Health status calculations
-✓ tests/scoring.test.ts (23 tests)         # Advanced scoring v3.0 with version tiers
 ✓ tests/health.test.ts (14 tests)          # Health system with network context
+✓ tests/scoring.test.ts (23 tests)         # Advanced scoring v3.0 with version tiers
 ✓ tests/kpi.test.ts (8 tests)              # KPI metrics aggregation
 ✓ tests/simple-integration.test.ts (16)    # Integration tests
 
 Test Files  5 passed (5)
-Tests      64 passed (64) ✅
-Duration    ~70ms
+Tests      77 passed (77) ✅
+```
 ```
 
 **What's Tested:**
@@ -712,7 +767,7 @@ xandeum-dashboard/
 ├── scripts/
 │   ├── crawler.ts                    # Main data collection script
 │   └── ...
-├── tests/                            # 64 tests across 5 files
+├── tests/                            # 77 tests across 5 files
 ├── supabase/migrations/              # Database schema
 ├── public/                           # Static assets
 ├── .github/workflows/crawler.yml     # Cron job config
@@ -727,7 +782,7 @@ xandeum-dashboard/
 
 ### **Deploy to Vercel (Recommended)**
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/xandeum-dashboard)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/CryptoNNja/xandeum-dashboard)
 
 **Manual deployment:**
 
@@ -800,7 +855,7 @@ npm run type-check   # TypeScript type checking
 | **Time to Interactive** | < 3s | < 4s |
 | **Bundle Size (gzip)** | ~180KB | < 250KB |
 | **API Response Time** | < 200ms | < 500ms |
-| **Test Coverage** | 64/64 pass | 100% |
+| **Test Coverage** | 77/77 pass | 100% |
 
 ### **Optimization Techniques Used**
 
@@ -1029,7 +1084,7 @@ This rare combination allows me to build products that are not only technically 
 I built this platform to prove a point: **great tools don't compromise**. They're:
 - **Fast** - Optimized from the ground up (sub-200ms API responses)
 - **Beautiful** - Animations that serve a purpose, not just decoration
-- **Rigorous** - 64 tests, comprehensive documentation, production-ready code
+- **Rigorous** - 77 tests, comprehensive documentation, production-ready code
 - **Smart** - Every feature solves a real problem
 
 This dashboard isn't just about meeting requirements—it's about **exceeding expectations** and setting a new standard for developer tools in the Xandeum ecosystem.
