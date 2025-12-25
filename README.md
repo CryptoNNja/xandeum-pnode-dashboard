@@ -17,6 +17,24 @@
 
 ---
 
+## 🎥 Demo Video
+
+<div align="center">
+
+**Watch the Full Platform Demo (3 minutes)**
+
+[![Xandeum pNode Analytics Demo](https://img.shields.io/badge/▶️_Watch_Demo_Video-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/qB98qc_P8fM)
+
+*Showcasing real-time monitoring, interactive visualizations, and all key features*
+
+**Alternative Links:**
+- 🎬 [Watch on YouTube](https://youtu.be/qB98qc_P8fM)
+- 📹 [Direct MP4 Download](https://xandeum-dashboard-topaz.vercel.app/xand_ux.mp4)
+
+</div>
+
+---
+
 ## 🎯 Executive Summary
 
 This platform goes **beyond basic pNode listing** to deliver a comprehensive analytics solution that combines real-time data collection, intelligent health scoring, and engaging visualizations. Built with production-ready architecture and tested to enterprise standards.
