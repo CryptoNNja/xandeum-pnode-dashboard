@@ -394,19 +394,19 @@ export const main = async () => {
             }
         }
 
-        if (status === 'active') {
-            historyToInsert.push({
-                ip,
-                ts: Math.floor(Date.now() / 1000),
-                cpu_percent: stats.cpu_percent,
-                ram_used: stats.ram_used,
-                ram_total: stats.ram_total,
-                file_size: stats.file_size,
-                uptime: stats.uptime,
-                packets_sent: stats.packets_sent,
-                packets_received: stats.packets_received
-            });
-        }
+        // Save history for ALL nodes (active and gossip_only)
+        // This ensures continuity in charts even when nodes go offline temporarily
+        historyToInsert.push({
+            ip,
+            ts: Math.floor(Date.now() / 1000),
+            cpu_percent: stats.cpu_percent ?? null,
+            ram_used: stats.ram_used ?? null,
+            ram_total: stats.ram_total ?? null,
+            file_size: stats.file_size ?? null,
+            uptime: stats.uptime ?? null,
+            packets_sent: stats.packets_sent ?? null,
+            packets_received: stats.packets_received ?? null
+        });
 
         const geo = allGeo[i];
 
