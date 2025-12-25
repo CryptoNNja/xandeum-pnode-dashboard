@@ -406,7 +406,7 @@ export default function Page() {
   const statusColors = getStatusColors();
 
   return (
-    <main className="min-h-screen bg-bg-app text-text-main pb-20 theme-transition flex flex-col space-y-8">
+    <main className="min-h-screen bg-bg-app text-text-main pb-20 theme-transition flex flex-col">
       <style>{TOOLTIP_STYLES}</style>
 
       {/* Onboarding Tour */}
@@ -505,16 +505,18 @@ export default function Page() {
       />
 
       {/* ABOUT PNODES - Educational Section */}
-      <AboutPNodes
-        totalStorageCommitted={totalStorageCommitted}
-        totalStorageUsedPods={totalStorageUsedPods}
-        totalStorageUsedStats={totalStorageUsedStats}
-        networkMetadata={networkMetadata}
-        countriesCount={countriesCount}
-        totalNodes={pnodes.length}
-      />
+      <div className="mt-8">
+          <AboutPNodes
+          totalStorageCommitted={totalStorageCommitted}
+          totalStorageUsedPods={totalStorageUsedPods}
+          totalStorageUsedStats={totalStorageUsedStats}
+          networkMetadata={networkMetadata}
+          countriesCount={countriesCount}
+          totalNodes={pnodes.length}
+        />
+      </div>
 
-      <section className="max-w-7xl mx-auto px-6 space-y-8 w-full">
+      <section className="max-w-7xl mx-auto px-6 space-y-8 w-full mt-8">
         {/* TOP LEVEL KPIs */}
         <SummaryHeader
           publicCount={publicCount}
