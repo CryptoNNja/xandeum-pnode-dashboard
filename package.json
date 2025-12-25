@@ -10,6 +10,12 @@
     "test": "vitest",
     "backfill": "node scripts/backfill.js"
   },
+  "overrides": {
+    "react-joyride": {
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0"
+    }
+  },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-slider": "^1.3.6",
