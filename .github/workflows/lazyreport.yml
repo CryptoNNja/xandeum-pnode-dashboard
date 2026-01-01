@@ -37,9 +37,13 @@ jobs:
 
       # Optional: Send to LazyReport dashboard
       - name: Send to LazyReport
-        if: ${{ secrets.LAZYREPORT_API_KEY }}
+        if: secrets.LAZYREPORT_API_KEY != ''
+        env:
+          API_KEY: ${{ secrets.LAZYREPORT_API_KEY }}
         run: |
-          curl -X POST https://api.lazyreport.com/reports \
-            -H "Authorization: Bearer ${{ secrets.LAZYREPORT_API_KEY }}" \
-            -F "report=@reports/report.pdf" \
-            -F "repository=CryptoNNja/xandeum-pnode-dashboard"
+          if [ -n "$API_KEY" ]; then
+            curl -X POST https://api.lazyreport.com/reports \
+              -H "Authorization: Bearer $API_KEY" \
+              -F "report=@reports/report.pdf" \
+              -F "repository=CryptoNNja/xandeum-pnode-dashboard"
+          fi
