@@ -24,7 +24,6 @@ jobs:
       - name: Generate report
         run: |
           echo "Generating activity report for Weekly Activity Report..."
-          echo "Report for last 7 days" > reports/report.txt
           mkdir -p reports
           echo "# Weekly Activity Report" > reports/report.md
           echo "" >> reports/report.md
@@ -32,6 +31,7 @@ jobs:
           echo "Generated at: $(date)" >> reports/report.md
           echo "" >> reports/report.md
           echo "TODO: Implement actual report generation" >> reports/report.md
+          echo "Report placeholder created successfully"
           
       - name: Upload report artifact
         uses: actions/upload-artifact@v4
