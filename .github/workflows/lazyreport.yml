@@ -1,0 +1,45 @@
+name: LazyReport - Automated Activity Report
+
+on:
+  schedule:
+    - cron: '0 9 * * 5'  # Configurable schedule
+  workflow_dispatch:  # Allow manual triggers
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    name: Generate Activity Report
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate report
+        uses: your-org/lazyreport-action@v1
+        with:
+          days: '7'
+          report_title: 'Weekly Activity Report'
+          output_dir: 'reports'
+          
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: activity-report-${{ github.run_number }}
+          path: reports/
+          retention-days: 90
+
+      # Optional: Send to LazyReport dashboard
+      - name: Send to LazyReport
+        if: ${{ secrets.LAZYREPORT_API_KEY }}
+        run: |
+          curl -X POST https://api.lazyreport.com/reports \
+            -H "Authorization: Bearer ${{ secrets.LAZYREPORT_API_KEY }}" \
+            -F "report=@reports/report.pdf" \
+            -F "repository=CryptoNNja/xandeum-pnode-dashboard"
