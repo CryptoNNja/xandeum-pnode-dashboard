@@ -22,11 +22,16 @@ jobs:
           fetch-depth: 0
 
       - name: Generate report
-        uses: your-org/lazyreport-action@v1
-        with:
-          days: '7'
-          report_title: 'Weekly Activity Report'
-          output_dir: 'reports'
+        run: |
+          echo "Generating activity report for Weekly Activity Report..."
+          echo "Report for last 7 days" > reports/report.txt
+          mkdir -p reports
+          echo "# Weekly Activity Report" > reports/report.md
+          echo "" >> reports/report.md
+          echo "Activity for the last 7 days" >> reports/report.md
+          echo "Generated at: $(date)" >> reports/report.md
+          echo "" >> reports/report.md
+          echo "TODO: Implement actual report generation" >> reports/report.md
           
       - name: Upload report artifact
         uses: actions/upload-artifact@v4
