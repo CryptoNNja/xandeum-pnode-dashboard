@@ -37,7 +37,6 @@ jobs:
 
       # Optional: Send to LazyReport dashboard
       - name: Send to LazyReport
-        if: secrets.LAZYREPORT_API_KEY != ''
         env:
           API_KEY: ${{ secrets.LAZYREPORT_API_KEY }}
         run: |
@@ -46,4 +45,6 @@ jobs:
               -H "Authorization: Bearer $API_KEY" \
               -F "report=@reports/report.pdf" \
               -F "repository=CryptoNNja/xandeum-pnode-dashboard"
+          else
+            echo "LAZYREPORT_API_KEY not configured - skipping dashboard sync"
           fi
