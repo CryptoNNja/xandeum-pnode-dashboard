@@ -860,8 +860,8 @@ The crawler uses a **two-phase approach** to discover all nodes in the network:
 ### **1. Clone & Install**
 
 ```bash
-git clone https://github.com/CryptoNNja/xandeum-dashboard.git
-cd xandeum-dashboard
+git clone https://github.com/CryptoNNja/xandeum-pnode-dashboard.git
+cd xandeum-pnode-dashboard
 npm install
 ```
 
