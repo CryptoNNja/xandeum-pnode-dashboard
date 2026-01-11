@@ -410,11 +410,12 @@ export const main = async () => {
 
         const geo = allGeo[i];
 
-        // Explicitly ensure storage_used is in the final stats object
+        // Explicitly ensure storage_used and is_public are in the final stats object
         const finalStats = {
             ...stats,
             storage_committed: stats.storage_committed || 0,
-            storage_used: stats.storage_used || 0
+            storage_used: stats.storage_used || 0,
+            is_public: isPublicMap.get(ip) ?? null  // Add is_public to stats
         };
 
         pnodesToUpsert.push({
@@ -461,6 +462,50 @@ export const main = async () => {
         console.log(`🧹 Removed ${duplicatesRemoved} duplicate nodes (${deduplicatedNodes.length} unique nodes remaining)`);
     }
 
+    // Update failed_checks for all nodes
+    // - Reset to 0 for nodes successfully crawled
+    // - Increment for nodes that failed to respond
+    console.log(`🔄 Updating failed_checks counters...`);
+    
+    const { data: existingNodesForFailCheck } = await supabaseAdmin
+        .from('pnodes')
+        .select('ip, failed_checks');
+    
+    const existingIpsMap = new Map(
+        (existingNodesForFailCheck || []).map((n: any) => [n.ip, n.failed_checks ?? 0])
+    );
+    
+    const successfulIps = new Set(deduplicatedNodes.map(n => n.ip));
+    
+    // For each node we're upserting, set failed_checks based on whether it responded
+    deduplicatedNodes.forEach((node: any) => {
+        // If node responded successfully (has version/pubkey from get-pods-with-stats), reset failed_checks
+        const hasMetadata = versionMap.has(node.ip) || pubkeyMap.has(node.ip);
+        node.failed_checks = hasMetadata ? 0 : (existingIpsMap.get(node.ip) ?? 0) + 1;
+    });
+    
+    // For existing nodes NOT in this crawl, increment their failed_checks
+    const nodesToIncrementFailures: any[] = [];
+    existingIpsMap.forEach((failedChecks, ip) => {
+        if (!successfulIps.has(ip)) {
+            nodesToIncrementFailures.push({
+                ip: ip,
+                failed_checks: failedChecks + 1
+            });
+        }
+    });
+    
+    if (nodesToIncrementFailures.length > 0) {
+        console.log(`   ⚠️  Incrementing failed_checks for ${nodesToIncrementFailures.length} unreachable nodes`);
+        // Update failed_checks for nodes not in this crawl
+        for (const node of nodesToIncrementFailures) {
+            await supabaseAdmin
+                .from('pnodes')
+                .update({ failed_checks: node.failed_checks })
+                .eq('ip', node.ip);
+        }
+    }
+    
     console.log(`💾 Saving ${deduplicatedNodes.length} unique nodes to the database...`);
     const { error: pnodesError } = await supabaseAdmin
         .from('pnodes')
@@ -505,43 +550,34 @@ export const main = async () => {
         }
     }
 
-    // Auto-cleanup: Remove stale nodes that haven't been seen in 7+ days
-    const STALE_DAYS = 7;
-    console.log('\n🧹 Checking for stale nodes to cleanup...');
+    // Auto-cleanup: Remove zombie nodes (consistently inaccessible)
+    // A node is a zombie if it has failed_checks >= 3 (3 consecutive crawl failures)
+    console.log('\n🧹 Checking for zombie nodes (failed_checks >= 3)...');
     
-    const { data: allDbNodes, error: fetchError } = await supabaseAdmin
+    const { data: zombieNodes, error: zombieError } = await supabaseAdmin
         .from('pnodes')
-        .select('ip, updated_at');
+        .select('ip, failed_checks')
+        .gte('failed_checks', 3);
     
-    if (!fetchError && allDbNodes) {
-        const crawledIpsSet = new Set(allIps);
-        const staleThreshold = Date.now() - (STALE_DAYS * 24 * 60 * 60 * 1000);
+    if (!zombieError && zombieNodes && zombieNodes.length > 0) {
+        const zombieIps = zombieNodes.map((n: any) => n.ip);
+        console.log(`🗑️  Found ${zombieIps.length} zombie nodes (consistently inaccessible):`);
+        zombieIps.forEach((ip: string) => console.log(`   🧟 ${ip}`));
         
-        const staleNodes = allDbNodes
-            .filter((node: any) => {
-                const notSeenInThisCrawl = !crawledIpsSet.has(node.ip);
-                const isOld = new Date(node.updated_at).getTime() < staleThreshold;
-                return notSeenInThisCrawl && isOld;
-            })
-            .map((n: any) => n.ip);
+        const { error: deleteError } = await supabaseAdmin
+            .from('pnodes')
+            .delete()
+            .in('ip', zombieIps);
         
-        if (staleNodes.length > 0) {
-            console.log(`🗑️  Found ${staleNodes.length} stale nodes (not seen for ${STALE_DAYS}+ days)`);
-            const { error: deleteError } = await supabaseAdmin
-                .from('pnodes')
-                .delete()
-                .in('ip', staleNodes);
-            
-            if (deleteError) {
-                console.error('Error deleting stale nodes:', deleteError);
-            } else {
-                console.log(`✅ Removed ${staleNodes.length} stale nodes`);
-            }
+        if (deleteError) {
+            console.error('Error deleting zombie nodes:', deleteError);
         } else {
-            console.log('✅ No stale nodes found');
+            console.log(`✅ Successfully removed ${zombieIps.length} zombie nodes`);
         }
-    } else if (fetchError) {
-        console.error('Error fetching nodes for cleanup:', fetchError);
+    } else if (!zombieError) {
+        console.log('✅ No zombie nodes found');
+    } else {
+        console.error('Error checking for zombies:', zombieError);
     }
 
     console.log('\n✨ Crawl finished.');
