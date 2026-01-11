@@ -57,7 +57,7 @@ This platform goes **beyond basic pNode listing** to deliver a comprehensive ana
 | Requirement | Implementation | Status |
 |------------|----------------|--------|
 | **pRPC Integration** | `getStats()` and `getPodsWithStats()` calls via crawler | ✅ Complete |
-| **pNode Listing** | Real-time data from **235 nodes** (55 public + 180 private) | ✅ Complete |
+| **pNode Listing** | Real-time data from nodes discovery | ✅ Complete |
 | **Data Display** | 3 view modes (Table, Grid, Map) with filtering | ✅ Complete |
 | **Live Platform** | Deployed on Vercel with auto-refresh | ✅ Complete |
 | **Documentation** | Comprehensive setup and usage guide | ✅ Complete |
