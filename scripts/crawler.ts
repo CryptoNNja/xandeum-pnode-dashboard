@@ -527,16 +527,17 @@ export const main = async () => {
     
     if (nodesToIncrementFailures.length > 0) {
         console.log(`   ⚠️  Incrementing failed_checks for ${nodesToIncrementFailures.length} unreachable nodes`);
-        // Batch update failed_checks for nodes not in this crawl (1 query instead of N)
-        const nodesToUpdate = nodesToIncrementFailures.map(node => ({
-            ip: node.ip,
-            failed_checks: node.failed_checks,
-            last_crawled_at: new Date().toISOString()
-        }));
-        
-        await supabaseAdmin
-            .from('pnodes')
-            .upsert(nodesToUpdate, { onConflict: 'ip' });
+        // Batch update failed_checks for nodes not in this crawl
+        // Use individual updates since we only want to update specific fields
+        for (const node of nodesToIncrementFailures) {
+            await supabaseAdmin
+                .from('pnodes')
+                .update({ 
+                    failed_checks: node.failed_checks,
+                    last_crawled_at: new Date().toISOString()
+                })
+                .eq('ip', node.ip);
+        }
     }
     
     console.log(`💾 Saving ${deduplicatedNodes.length} unique nodes to the database...`);
