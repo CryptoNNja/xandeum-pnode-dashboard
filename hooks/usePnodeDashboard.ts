@@ -112,19 +112,20 @@ export const usePnodeDashboard = (theme?: string) => {
   const [networkParticipation, setNetworkParticipation] = useState<NetworkParticipationMetrics | null>(null);
 
   // Network metadata (gossip discovery stats)
-  const [networkMetadata, setNetworkMetadata] = useState<{
-    networkTotal: number;
-    crawledNodes: number;
-    activeNodes: number;
-    coveragePercent: number;
-    lastUpdated: string | null;
-  }>({
-    networkTotal: 0,
-    crawledNodes: 0,
-    activeNodes: 0,
-    coveragePercent: 0,
-    lastUpdated: null
-  });
+  // Calculate networkMetadata from deduplicated allPnodes instead of fetching from API
+  // This ensures consistency with the deduplicated data shown everywhere
+  const networkMetadata = useMemo(() => {
+    const totalNodes = allPnodes.length;
+    const activeNodes = allPnodes.filter(p => p.status === "active").length;
+    
+    return {
+      networkTotal: totalNodes,
+      crawledNodes: totalNodes, // Same as total since we crawled all we know about
+      activeNodes: activeNodes,
+      coveragePercent: 100, // We show 100% of nodes we've discovered
+      lastUpdated: lastUpdate?.toISOString() || null
+    };
+  }, [allPnodes, lastUpdate]);
 
   const loadData = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true);
@@ -185,11 +186,35 @@ export const usePnodeDashboard = (theme?: string) => {
       const payload = await response.json();
       
       if (payload.data && Array.isArray(payload.data)) {
-        // Pre-calculate scores and health status once per load to optimize filtering/sorting performance
+        // STEP 1: Deduplicate nodes by pubkey FIRST
+        // Some nodes use multiple IPs (e.g., tunneling) but have the same pubkey
+        // We keep only the node with the highest storage_committed for each unique pubkey
+        const uniqueNodesMap = new Map<string, PNode>();
+        
+        payload.data.forEach((pnode: PNode) => {
+          const uniqueId = pnode.pubkey || pnode.ip;
+          const existing = uniqueNodesMap.get(uniqueId);
+          
+          if (!existing) {
+            uniqueNodesMap.set(uniqueId, pnode);
+          } else {
+            // Keep the node with higher storage_committed (more complete data)
+            const existingCommitted = existing.stats?.storage_committed ?? 0;
+            const currentCommitted = pnode.stats?.storage_committed ?? 0;
+            
+            if (currentCommitted > existingCommitted) {
+              uniqueNodesMap.set(uniqueId, pnode);
+            }
+          }
+        });
+        
+        const uniqueNodes = Array.from(uniqueNodesMap.values());
+        
+        // STEP 2: Pre-calculate scores and health status on deduplicated nodes
         // Pass full node list for accurate version tier detection and health calculation
-        const pnodesWithScores = payload.data.map((p: PNode) => {
-          const score = calculateNodeScore(p, payload.data); // ✨ Pass network context
-          const healthStatus = getHealthStatus(p, payload.data); // ✨ Pass network context for accurate health
+        const pnodesWithScores = uniqueNodes.map((p: PNode) => {
+          const score = calculateNodeScore(p, uniqueNodes); // ✨ Pass network context
+          const healthStatus = getHealthStatus(p, uniqueNodes); // ✨ Pass network context for accurate health
           
           return {
             ...p,
@@ -201,7 +226,12 @@ export const usePnodeDashboard = (theme?: string) => {
         setAllPnodes(pnodesWithScores);
         setLastUpdate(new Date());
         if (isManual) {
-          toast.success(`Loaded ${payload.data.length} nodes`);
+          const duplicatesRemoved = payload.data.length - uniqueNodes.length;
+          if (duplicatesRemoved > 0) {
+            toast.success(`Loaded ${uniqueNodes.length} unique nodes (${duplicatesRemoved} duplicates removed)`);
+          } else {
+            toast.success(`Loaded ${uniqueNodes.length} nodes`);
+          }
         }
       }
     } catch (error) {
@@ -717,8 +747,8 @@ export const usePnodeDashboard = (theme?: string) => {
     let totalCommitted = 0;
     let totalUsed = 0;
 
+    // allPnodes is already deduplicated by pubkey in loadData()
     // Storage committed: ALL nodes (even gossip_only)
-    // Use storage_committed from get-pods-with-stats API
     allPnodes.forEach((pnode) => {
       const stats = pnode.stats;
       if (!stats) return;
@@ -726,15 +756,11 @@ export const usePnodeDashboard = (theme?: string) => {
       totalCommitted += Number.isFinite(committed) ? committed : 0;
     });
 
-    // Storage used: only ACTIVE nodes
-    // IMPORTANT: use total_bytes (from get-stats) for "storage used" because storage_used
-    // (from get-pods-with-stats) is often tiny/incomplete. This matches the real disk usage.
+    // Storage used: ALL nodes (to match storage_committed scope)
     allPnodes.forEach((pnode) => {
-      if (pnode.status !== "active") return;
       const stats = pnode.stats;
       if (!stats) return;
-      // Prefer total_bytes for actual usage; fallback to storage_used if needed.
-      const used = stats.total_bytes ?? stats.storage_used ?? 0;
+      const used = stats.storage_used ?? 0;
       totalUsed += Number.isFinite(used) ? used : 0;
     });
 
@@ -744,7 +770,7 @@ export const usePnodeDashboard = (theme?: string) => {
     const percent = totalCommitted > 0 ? (totalUsed / totalCommitted) * 100 : 0;
     const percentClamped = Math.min(100, percent);
 
-    // Use decimal formatting (KB=1e3, MB=1e6, etc.) to match AboutPNodes display
+    // Use decimal formatting (KB=1e3, MB=1e6, etc.) to match AboutPNodes display and reduce confusion
     const KB = 1e3;
     const MB = 1e6;
     const GB = 1e9;
@@ -764,7 +790,7 @@ export const usePnodeDashboard = (theme?: string) => {
       available,
       percent: percentClamped,
       formattedUsed: formatAdaptive(totalUsed),
-      formattedTotal: `${(totalCommitted / TB_IN_BYTES).toFixed(1)} TB`,
+      formattedTotal: `${(totalCommitted / TB).toFixed(1)} TB`,
       formattedAvailable: formatAdaptive(available),
       availabilityLabel: percentClamped > 80 ? "remaining" : "available",
     };
@@ -958,26 +984,8 @@ export const usePnodeDashboard = (theme?: string) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Load network metadata (gossip discovery stats)
-  useEffect(() => {
-    const loadNetworkMetadata = async () => {
-      try {
-        const response = await fetch('/api/network-metadata', { cache: 'no-store' });
-        if (response.ok) {
-          const data = await response.json();
-          setNetworkMetadata(data);
-        }
-      } catch (error) {
-        console.error('Error fetching network metadata:', error);
-      }
-    };
-
-    loadNetworkMetadata();
-
-    // Refresh every 5 minutes (in sync with participation)
-    const interval = setInterval(loadNetworkMetadata, 300_000);
-    return () => clearInterval(interval);
-  }, []);
+  // networkMetadata is now calculated from allPnodes (see useMemo above)
+  // No need to fetch from API - this ensures consistency with deduplicated data
 
   const exportData = useCallback(() => {
     const dataStr = JSON.stringify(allPnodes, null, 2);

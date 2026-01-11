@@ -295,6 +295,7 @@ export default function Page() {
     return Array.from(countriesMap, ([name, code]) => ({ name, code }));
   }, [pnodes]);
 
+  // pnodes is already deduplicated by pubkey in usePnodeDashboard hook
   // Calculate total storage committed (from ALL nodes, not just active)
   // Use storage_committed which comes from get-pods-with-stats API
   const totalStorageCommitted = useMemo(() => {

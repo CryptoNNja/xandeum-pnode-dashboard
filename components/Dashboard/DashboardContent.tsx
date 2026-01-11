@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Cpu, HardDrive, Zap, MapPin, Activity, ShieldCheck, Globe, ChevronDown, Check, LayoutGrid } from "lucide-react";
 import PNodeTable from "@/components/PNodeTable";
-import { GB_IN_BYTES, TB_IN_BYTES, getStatusColors, hexToRgba, formatBytesAdaptive } from "@/lib/utils";
+import { getStatusColors, hexToRgba, formatBytesAdaptive } from "@/lib/utils";
 import type { PNode } from "@/lib/types";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
 import clsx from "clsx";

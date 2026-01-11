@@ -4,7 +4,6 @@ import { memo, useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Database, Radio, Globe, Zap, ChevronRight, ChevronDown, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
-import { TB_IN_BYTES } from "@/lib/utils";
 
 interface TokenData {
   price: number;
@@ -72,22 +71,26 @@ const AboutPNodesComponent = ({
   const tokenData = useTokenPrice();
 
   const storageCommittedTB = useMemo(() => {
-    return (totalStorageCommitted / TB_IN_BYTES).toFixed(1);
+    // Use decimal TB (1e12) to match other storage displays
+    const TB = 1e12;
+    return (totalStorageCommitted / TB).toFixed(1);
   }, [totalStorageCommitted]);
 
   const storageUsedPodsFormatted = useMemo(() => {
-    // Format adaptively based on size
-    const MB_IN_BYTES = 1024 * 1024;
-    const GB_IN_BYTES = 1024 * 1024 * 1024;
+    // Use decimal units (1e6, 1e9, etc.) to match AboutPNodes display
+    const KB = 1e3;
+    const MB = 1e6;
+    const GB = 1e9;
+    const TB = 1e12;
     
-    if (totalStorageUsedPods >= TB_IN_BYTES) {
-      return `${(totalStorageUsedPods / TB_IN_BYTES).toFixed(2)} TB`;
-    } else if (totalStorageUsedPods >= GB_IN_BYTES) {
-      return `${(totalStorageUsedPods / GB_IN_BYTES).toFixed(2)} GB`;
-    } else if (totalStorageUsedPods >= MB_IN_BYTES) {
-      return `${(totalStorageUsedPods / MB_IN_BYTES).toFixed(2)} MB`;
-    } else if (totalStorageUsedPods >= 1024) {
-      return `${(totalStorageUsedPods / 1024).toFixed(2)} KB`;
+    if (totalStorageUsedPods >= TB) {
+      return `${(totalStorageUsedPods / TB).toFixed(2)} TB`;
+    } else if (totalStorageUsedPods >= GB) {
+      return `${(totalStorageUsedPods / GB).toFixed(2)} GB`;
+    } else if (totalStorageUsedPods >= MB) {
+      return `${(totalStorageUsedPods / MB).toFixed(2)} MB`;
+    } else if (totalStorageUsedPods >= KB) {
+      return `${(totalStorageUsedPods / KB).toFixed(2)} KB`;
     } else {
       return `${totalStorageUsedPods} bytes`;
     }
@@ -120,17 +123,21 @@ const AboutPNodesComponent = ({
     if (totalNodes === 0) return "0 bytes";
     
     const avgBytes = totalStorageCommitted / totalNodes;
-    const GB_IN_BYTES = 1024 * 1024 * 1024;
+    // Use decimal units (1e9, 1e12, etc.) for consistency
+    const KB = 1e3;
+    const MB = 1e6;
+    const GB = 1e9;
+    const TB = 1e12;
     
     // Adaptive formatting
-    if (avgBytes >= TB_IN_BYTES) {
-      return `${(avgBytes / TB_IN_BYTES).toFixed(2)} TB`;
-    } else if (avgBytes >= GB_IN_BYTES) {
-      return `${(avgBytes / GB_IN_BYTES).toFixed(2)} GB`;
-    } else if (avgBytes >= 1024 * 1024) {
-      return `${(avgBytes / (1024 * 1024)).toFixed(2)} MB`;
-    } else if (avgBytes >= 1024) {
-      return `${(avgBytes / 1024).toFixed(2)} KB`;
+    if (avgBytes >= TB) {
+      return `${(avgBytes / TB).toFixed(2)} TB`;
+    } else if (avgBytes >= GB) {
+      return `${(avgBytes / GB).toFixed(2)} GB`;
+    } else if (avgBytes >= MB) {
+      return `${(avgBytes / MB).toFixed(2)} MB`;
+    } else if (avgBytes >= KB) {
+      return `${(avgBytes / KB).toFixed(2)} KB`;
     } else {
       return `${avgBytes.toFixed(0)} bytes`;
     }
@@ -146,7 +153,7 @@ const AboutPNodesComponent = ({
     },
     {
       icon: Database,
-      value: storageUsedStatsFormatted,
+      value: storageUsedPodsFormatted,
       label: "Storage Used",
       color: "#14F195", // Xandeum Green
     },
