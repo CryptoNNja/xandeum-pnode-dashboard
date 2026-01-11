@@ -33,6 +33,8 @@ export interface PNode {
   city?: string | null;
   country?: string | null;
   country_code?: string | null;
+  failed_checks?: number; // Number of consecutive crawl failures (for zombie detection)
+  last_crawled_at?: string; // Timestamp of last crawl attempt
 }
 
 // Empty stats by default to avoid `undefined` / `NaN`

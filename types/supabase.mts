@@ -27,6 +27,7 @@ export type Database = {
           city: string | null;
           country: string | null;
           country_code: string | null;
+          failed_checks: number | null;
         };
         Insert: {
           ip: string;
@@ -40,6 +41,7 @@ export type Database = {
           city?: string | null;
           country?: string | null;
           country_code?: string | null;
+          failed_checks?: number | null;
         };
         Update: {
           ip?: string;
@@ -53,6 +55,7 @@ export type Database = {
           city?: string | null;
           country?: string | null;
           country_code?: string | null;
+          failed_checks?: number | null;
         };
         Relationships: [];
       };
