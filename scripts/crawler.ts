@@ -505,7 +505,46 @@ export const main = async () => {
         }
     }
 
-    console.log('✨ Crawl finished.');
+    // Auto-cleanup: Remove stale nodes that haven't been seen in 7+ days
+    const STALE_DAYS = 7;
+    console.log('\n🧹 Checking for stale nodes to cleanup...');
+    
+    const { data: allDbNodes, error: fetchError } = await supabaseAdmin
+        .from('pnodes')
+        .select('ip, updated_at');
+    
+    if (!fetchError && allDbNodes) {
+        const crawledIpsSet = new Set(allIps);
+        const staleThreshold = Date.now() - (STALE_DAYS * 24 * 60 * 60 * 1000);
+        
+        const staleNodes = allDbNodes
+            .filter((node: any) => {
+                const notSeenInThisCrawl = !crawledIpsSet.has(node.ip);
+                const isOld = new Date(node.updated_at).getTime() < staleThreshold;
+                return notSeenInThisCrawl && isOld;
+            })
+            .map((n: any) => n.ip);
+        
+        if (staleNodes.length > 0) {
+            console.log(`🗑️  Found ${staleNodes.length} stale nodes (not seen for ${STALE_DAYS}+ days)`);
+            const { error: deleteError } = await supabaseAdmin
+                .from('pnodes')
+                .delete()
+                .in('ip', staleNodes);
+            
+            if (deleteError) {
+                console.error('Error deleting stale nodes:', deleteError);
+            } else {
+                console.log(`✅ Removed ${staleNodes.length} stale nodes`);
+            }
+        } else {
+            console.log('✅ No stale nodes found');
+        }
+    } else if (fetchError) {
+        console.error('Error fetching nodes for cleanup:', fetchError);
+    }
+
+    console.log('\n✨ Crawl finished.');
 };
 
 main().catch(error => {
