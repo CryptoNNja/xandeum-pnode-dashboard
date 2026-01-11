@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest",
-    "backfill": "node scripts/backfill.js"
+    "backfill": "node scripts/backfill.js",
+    "crawler": "tsx scripts/crawler.ts"
   },
   "overrides": {
     "react-joyride": {

@@ -27,14 +27,26 @@ const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE
 
 
 const BOOTSTRAP_NODES = [
+    // Original bootstrap nodes
     "192.190.136.36", "192.190.136.28", "192.190.136.29", "192.190.136.37", 
     "192.190.136.38", "173.212.203.145", "161.97.97.41", "207.244.255.1", 
     "159.69.221.189", "178.18.250.133", "37.120.167.241", "173.249.36.181",
     "213.199.44.36", "62.84.180.238", "154.38.169.212", "152.53.248.235",
-    "173.212.217.77", "195.26.241.159"
+    "173.212.217.77", "195.26.241.159",
+    // Additional nodes discovered (34 missing nodes with ~228 TB storage)
+    "194.238.24.95", "194.238.24.87", "194.238.24.88", "194.238.24.89",
+    "194.238.24.90", "194.238.24.91", "194.238.24.92", "194.238.24.86",
+    "95.217.178.17", "195.26.241.115", "136.115.243.45", "192.190.136.26",
+    "100.79.135.83", "94.255.130.90", "89.58.27.200", "62.84.180.246",
+    "66.94.98.124", "62.84.180.244", "51.159.232.252", "51.159.232.250",
+    "62.84.180.247", "62.84.180.245", "62.84.180.239", "51.159.232.251",
+    "66.94.98.125", "62.84.180.243", "62.84.180.242", "62.84.180.241",
+    "207.244.255.10", "66.94.98.126", "62.84.180.240", "51.15.234.234",
+    "51.15.234.233", "51.15.234.232"
 ];
 
-const TIMEOUT = 2000;
+// Increased timeout from 2000ms to 5000ms to catch slower nodes
+const TIMEOUT = 5000;
 
 // --- Helper Functions (copied from the old API route) ---
 
@@ -98,7 +110,7 @@ async function getRpcPeers(ip: string): Promise<string[]> {
 
 async function getStats(ip: string): Promise<PNodeStats | null> {
     try {
-        const res = await axios.post<RpcStatsResponse>(`http://${ip}:6000/rpc`, { jsonrpc: '2.0', method: 'get-stats', id: 1 }, { timeout: 2500 });
+        const res = await axios.post<RpcStatsResponse>(`http://${ip}:6000/rpc`, { jsonrpc: '2.0', method: 'get-stats', id: 1 }, { timeout: 5000 });
         const stats = res.data?.result;
         if (!stats) return null;
 
@@ -132,7 +144,7 @@ async function getPodsWithStats(ip: string): Promise<PodWithStats[]> {
       const res = await axios.post<PodsWithStatsResponse>(
         `http://${ip}:6000/rpc`,
         { jsonrpc: "2.0", method: "get-pods-with-stats", id: 1 },
-        { timeout: 3000 }
+        { timeout: 5000 }
       );
 
       return res.data?.result?.pods ?? [];
@@ -209,25 +221,43 @@ export const main = async () => {
     const processed = new Set<string>();
     const queue: string[] = [...BOOTSTRAP_NODES];
 
-    // --- PHASE 1: DISCOVERY ---
+    // --- PHASE 1: DISCOVERY (Parallelized) ---
+    const DISCOVERY_CONCURRENCY = 10; // Process 10 nodes at a time
+    
     while (queue.length > 0) {
-        const ip = queue.shift();
-        if (!ip || processed.has(ip)) {
-            continue;
-        }
-        processed.add(ip);
-        console.log(`🔍 Querying node: ${ip}`);
-
-        const [gossipPeers, rpcPeers] = await Promise.all([
-            getGossipPeers(ip),
-            getRpcPeers(ip)
-        ]);
-
-        [...gossipPeers, ...rpcPeers].forEach(peerIp => {
-            if (peerIp && !discovered.has(peerIp)) {
-                discovered.add(peerIp);
-                queue.push(peerIp);
+        // Take up to DISCOVERY_CONCURRENCY nodes from queue
+        const batch: string[] = [];
+        while (batch.length < DISCOVERY_CONCURRENCY && queue.length > 0) {
+            const ip = queue.shift();
+            if (ip && !processed.has(ip)) {
+                batch.push(ip);
+                processed.add(ip);
             }
+        }
+        
+        if (batch.length === 0) break;
+        
+        console.log(`🔍 Querying ${batch.length} nodes in parallel...`);
+        
+        // Query all nodes in batch simultaneously
+        const batchResults = await Promise.all(
+            batch.map(async (ip) => {
+                const [gossipPeers, rpcPeers] = await Promise.all([
+                    getGossipPeers(ip),
+                    getRpcPeers(ip)
+                ]);
+                return { ip, peers: [...gossipPeers, ...rpcPeers] };
+            })
+        );
+        
+        // Add discovered peers to queue
+        batchResults.forEach(({ peers }) => {
+            peers.forEach(peerIp => {
+                if (peerIp && !discovered.has(peerIp)) {
+                    discovered.add(peerIp);
+                    queue.push(peerIp);
+                }
+            });
         });
     }
 
@@ -246,8 +276,8 @@ export const main = async () => {
     const isPublicMap = new Map<string, boolean>();
     console.log('📡 Fetching versions, pubkeys, storage commitments, and public status...');
     
-    // Batch metadata calls for speed (50 concurrent at a time)
-    const METADATA_BATCH_SIZE = 50;
+    // Batch metadata calls for speed (100 concurrent at a time for faster crawling)
+    const METADATA_BATCH_SIZE = 100;
     const metadataResults: PromiseSettledResult<PodWithStats[]>[] = [];
     
     for (let i = 0; i < allIps.length; i += METADATA_BATCH_SIZE) {
@@ -303,8 +333,8 @@ export const main = async () => {
     
     const existingMap = new Map(existingNodes?.map(n => [n.ip, n]) || []);
     
-    // Batch RPC calls for speed (50 concurrent requests at a time to avoid overwhelming)
-    const BATCH_SIZE = 50;
+    // Batch RPC calls for speed (100 concurrent requests at a time)
+    const BATCH_SIZE = 100;
     const allStats: PromiseSettledResult<PNodeStats | null>[] = [];
     
     for (let i = 0; i < allIps.length; i += BATCH_SIZE) {
@@ -433,19 +463,19 @@ export const main = async () => {
         });
     }
 
-    // DEDUPLICATION: Keep only unique nodes by pubkey (fallback to IP if no pubkey)
-    // If a node has multiple IPs, keep the one with highest storage_committed
-    console.log(`🔄 Deduplicating ${pnodesToUpsert.length} nodes by pubkey...`);
+    // DEDUPLICATION: Keep only unique nodes by IP (each IP = one physical node)
+    // Note: Multiple IPs can have the same pubkey (multi-node operators) - this is normal
+    console.log(`🔄 Deduplicating ${pnodesToUpsert.length} nodes by IP...`);
     const uniqueNodesMap = new Map<string, typeof pnodesToUpsert[0]>();
     
     pnodesToUpsert.forEach((node) => {
-        const uniqueId = node.pubkey || node.ip;
+        const uniqueId = node.ip; // Deduplicate by IP only - one IP = one physical node
         const existing = uniqueNodesMap.get(uniqueId);
         
         if (!existing) {
             uniqueNodesMap.set(uniqueId, node);
         } else {
-            // Keep the node with higher storage_committed (more complete data)
+            // If duplicate IP (shouldn't happen), keep the node with higher storage_committed
             const existingCommitted = (existing.stats as any)?.storage_committed ?? 0;
             const currentCommitted = (node.stats as any)?.storage_committed ?? 0;
             
@@ -459,7 +489,7 @@ export const main = async () => {
     const duplicatesRemoved = pnodesToUpsert.length - deduplicatedNodes.length;
     
     if (duplicatesRemoved > 0) {
-        console.log(`🧹 Removed ${duplicatesRemoved} duplicate nodes (${deduplicatedNodes.length} unique nodes remaining)`);
+        console.log(`🧹 Removed ${duplicatesRemoved} duplicate IPs (${deduplicatedNodes.length} unique nodes remaining)`);
     }
 
     // Update failed_checks for all nodes
@@ -497,13 +527,16 @@ export const main = async () => {
     
     if (nodesToIncrementFailures.length > 0) {
         console.log(`   ⚠️  Incrementing failed_checks for ${nodesToIncrementFailures.length} unreachable nodes`);
-        // Update failed_checks for nodes not in this crawl
-        for (const node of nodesToIncrementFailures) {
-            await supabaseAdmin
-                .from('pnodes')
-                .update({ failed_checks: node.failed_checks })
-                .eq('ip', node.ip);
-        }
+        // Batch update failed_checks for nodes not in this crawl (1 query instead of N)
+        const nodesToUpdate = nodesToIncrementFailures.map(node => ({
+            ip: node.ip,
+            failed_checks: node.failed_checks,
+            last_crawled_at: new Date().toISOString()
+        }));
+        
+        await supabaseAdmin
+            .from('pnodes')
+            .upsert(nodesToUpdate, { onConflict: 'ip' });
     }
     
     console.log(`💾 Saving ${deduplicatedNodes.length} unique nodes to the database...`);

@@ -186,19 +186,19 @@ export const usePnodeDashboard = (theme?: string) => {
       const payload = await response.json();
       
       if (payload.data && Array.isArray(payload.data)) {
-        // STEP 1: Deduplicate nodes by pubkey FIRST
-        // Some nodes use multiple IPs (e.g., tunneling) but have the same pubkey
-        // We keep only the node with the highest storage_committed for each unique pubkey
+        // STEP 1: Deduplicate nodes by IP only (each IP = one physical node)
+        // Note: Multiple IPs can have the same pubkey (multi-node operators) - this is normal
+        // We only deduplicate by IP to remove actual duplicates from the API response
         const uniqueNodesMap = new Map<string, PNode>();
         
         payload.data.forEach((pnode: PNode) => {
-          const uniqueId = pnode.pubkey || pnode.ip;
+          const uniqueId = pnode.ip; // Deduplicate by IP only - one IP = one node
           const existing = uniqueNodesMap.get(uniqueId);
           
           if (!existing) {
             uniqueNodesMap.set(uniqueId, pnode);
           } else {
-            // Keep the node with higher storage_committed (more complete data)
+            // If duplicate IP (shouldn't happen), keep the node with higher storage_committed
             const existingCommitted = existing.stats?.storage_committed ?? 0;
             const currentCommitted = pnode.stats?.storage_committed ?? 0;
             
