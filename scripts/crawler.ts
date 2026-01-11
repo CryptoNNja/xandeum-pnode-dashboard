@@ -432,10 +432,39 @@ export const main = async () => {
         });
     }
 
-    console.log(`💾 Saving ${pnodesToUpsert.length} nodes to the database...`);
+    // DEDUPLICATION: Keep only unique nodes by pubkey (fallback to IP if no pubkey)
+    // If a node has multiple IPs, keep the one with highest storage_committed
+    console.log(`🔄 Deduplicating ${pnodesToUpsert.length} nodes by pubkey...`);
+    const uniqueNodesMap = new Map<string, typeof pnodesToUpsert[0]>();
+    
+    pnodesToUpsert.forEach((node) => {
+        const uniqueId = node.pubkey || node.ip;
+        const existing = uniqueNodesMap.get(uniqueId);
+        
+        if (!existing) {
+            uniqueNodesMap.set(uniqueId, node);
+        } else {
+            // Keep the node with higher storage_committed (more complete data)
+            const existingCommitted = (existing.stats as any)?.storage_committed ?? 0;
+            const currentCommitted = (node.stats as any)?.storage_committed ?? 0;
+            
+            if (currentCommitted > existingCommitted) {
+                uniqueNodesMap.set(uniqueId, node);
+            }
+        }
+    });
+    
+    const deduplicatedNodes = Array.from(uniqueNodesMap.values());
+    const duplicatesRemoved = pnodesToUpsert.length - deduplicatedNodes.length;
+    
+    if (duplicatesRemoved > 0) {
+        console.log(`🧹 Removed ${duplicatesRemoved} duplicate nodes (${deduplicatedNodes.length} unique nodes remaining)`);
+    }
+
+    console.log(`💾 Saving ${deduplicatedNodes.length} unique nodes to the database...`);
     const { error: pnodesError } = await supabaseAdmin
         .from('pnodes')
-        .upsert(pnodesToUpsert, { onConflict: 'ip' });
+        .upsert(deduplicatedNodes, { onConflict: 'ip' });
 
     if (pnodesError) {
         console.error('Error saving pnodes:', pnodesError);
@@ -444,14 +473,15 @@ export const main = async () => {
     }
 
     // Save network metadata (total discovered vs crawled)
-    const activeNodesCount = pnodesToUpsert.filter(p => p.status === 'active').length;
-    console.log(`📊 Updating network metadata: ${networkTotal} total, ${allIps.length} crawled, ${activeNodesCount} active`);
+    // Use deduplicated count for accurate metadata
+    const activeNodesCount = deduplicatedNodes.filter(p => p.status === 'active').length;
+    console.log(`📊 Updating network metadata: ${networkTotal} total, ${deduplicatedNodes.length} crawled (deduplicated), ${activeNodesCount} active`);
     const { error: metadataError } = await (supabaseAdmin as any)
         .from('network_metadata')
         .upsert({
             id: 1, // Singleton record
             network_total: networkTotal,
-            crawled_nodes: allIps.length,
+            crawled_nodes: deduplicatedNodes.length, // Use deduplicated count
             active_nodes: activeNodesCount,
             last_updated: new Date().toISOString()
         }, { onConflict: 'id' });

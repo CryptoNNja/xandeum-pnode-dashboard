@@ -108,24 +108,34 @@ export const formatBytesToTB = (bytes: number) => {
 };
 
 // Adaptive formatter: chooses best unit automatically (MB, GB, or TB)
+// Updated to use DECIMAL units (1e12, 1e9, etc.) for consistency across the dashboard
 export const formatBytesAdaptive = (bytes: number) => {
   if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
 
-  const MB_IN_BYTES = 1024 ** 2;
+  // Use decimal units to match storage capacity displays
+  const KB = 1e3;
+  const MB = 1e6;
+  const GB = 1e9;
+  const TB = 1e12;
 
-  if (bytes >= TB_IN_BYTES) {
-    const tbValue = bytes / TB_IN_BYTES;
+  if (bytes >= TB) {
+    const tbValue = bytes / TB;
     return tbValue >= 10 ? `${tbValue.toFixed(0)} TB` : `${tbValue.toFixed(1)} TB`;
   }
 
-  if (bytes >= GB_IN_BYTES) {
-    const gbValue = bytes / GB_IN_BYTES;
+  if (bytes >= GB) {
+    const gbValue = bytes / GB;
     return gbValue >= 10 ? `${gbValue.toFixed(0)} GB` : `${gbValue.toFixed(1)} GB`;
   }
 
-  if (bytes >= MB_IN_BYTES) {
-    const mbValue = bytes / MB_IN_BYTES;
+  if (bytes >= MB) {
+    const mbValue = bytes / MB;
     return mbValue >= 10 ? `${mbValue.toFixed(0)} MB` : `${mbValue.toFixed(1)} MB`;
+  }
+
+  if (bytes >= KB) {
+    const kbValue = bytes / KB;
+    return `${kbValue.toFixed(1)} KB`;
   }
 
   // Less than 1 MB - show in KB
