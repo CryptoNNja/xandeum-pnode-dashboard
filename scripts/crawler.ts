@@ -556,7 +556,7 @@ export const main = async () => {
     
     const { data: zombieNodes, error: zombieError } = await supabaseAdmin
         .from('pnodes')
-        .select('ip, failed_checks')
+        .select('ip, failed_checks, last_crawled_at')
         .gte('failed_checks', 3);
     
     if (!zombieError && zombieNodes && zombieNodes.length > 0) {
