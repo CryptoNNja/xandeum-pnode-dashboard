@@ -17,10 +17,16 @@ const useTokenPrice = () => {
     const fetchTokenPrice = async () => {
       try {
         const response = await fetch(
-          'https://api.coingecko.com/api/v3/simple/price?ids=xandeum&vs_currencies=usd&include_24hr_change=true'
+          'https://api.coingecko.com/api/v3/simple/price?ids=xandeum&vs_currencies=usd&include_24hr_change=true',
+          {
+            next: { revalidate: 300 } // Cache for 5 minutes
+          }
         );
         
-        if (!response.ok) throw new Error('Failed to fetch');
+        if (!response.ok) {
+          console.warn('CoinGecko API unavailable, skipping token price');
+          return;
+        }
         
         const data = await response.json();
         
@@ -31,7 +37,8 @@ const useTokenPrice = () => {
           });
         }
       } catch (err) {
-        console.error('Error fetching token price:', err);
+        console.warn('Token price fetch failed (API may be rate-limited)');
+        // Silently fail - token price is optional
       }
     };
 

@@ -29,12 +29,13 @@ export async function GET() {
       });
     }
 
-    // Format data for the chart
+    // Format data for the chart with both public and total nodes
     const formattedHistory = snapshots.map(snapshot => {
       const date = new Date(snapshot.snapshot_date);
       return {
         date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        nodes: snapshot.active_nodes || snapshot.total_nodes || 0,
+        publicNodes: snapshot.active_nodes || 0,
+        totalNodes: snapshot.total_nodes || 0,
         fullDate: snapshot.snapshot_date
       };
     });

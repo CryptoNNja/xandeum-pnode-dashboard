@@ -15,7 +15,7 @@ type NetworkCoverageModalProps = {
   networkGrowthRate: number;
   totalNodes: number;
   isLight: boolean;
-  networkHistory?: Array<{ date: string; nodes: number }>;
+  networkHistory?: Array<{ date: string; publicNodes?: number; totalNodes?: number; nodes?: number }>;
 };
 
 export const NetworkCoverageModal = ({
@@ -38,14 +38,53 @@ export const NetworkCoverageModal = ({
 
   // Use real historical data if available, otherwise use mock data as fallback
   const growthData = networkHistory && networkHistory.length > 0
-    ? networkHistory
+    ? networkHistory.map(entry => ({
+        date: entry.date,
+        publicNodes: entry.publicNodes ?? entry.nodes ?? 0,
+        totalNodes: entry.totalNodes ?? entry.nodes ?? 0,
+        privateNodes: (entry.totalNodes ?? entry.nodes ?? 0) - (entry.publicNodes ?? entry.nodes ?? 0)
+      }))
     : [
-        { date: "Week 1", nodes: Math.max(0, totalNodes - 40) },
-        { date: "Week 2", nodes: Math.max(0, totalNodes - 30) },
-        { date: "Week 3", nodes: Math.max(0, totalNodes - 20) },
-        { date: "Week 4", nodes: Math.max(0, totalNodes - 10) },
-        { date: "Now", nodes: totalNodes }
+        { date: "Week 1", publicNodes: Math.max(0, totalNodes - 40), totalNodes: Math.max(0, totalNodes - 40), privateNodes: 0 },
+        { date: "Week 2", publicNodes: Math.max(0, totalNodes - 30), totalNodes: Math.max(0, totalNodes - 30), privateNodes: 0 },
+        { date: "Week 3", publicNodes: Math.max(0, totalNodes - 20), totalNodes: Math.max(0, totalNodes - 20), privateNodes: 0 },
+        { date: "Week 4", publicNodes: Math.max(0, totalNodes - 10), totalNodes: Math.max(0, totalNodes - 10), privateNodes: 0 },
+        { date: "Now", publicNodes: totalNodes, totalNodes: totalNodes, privateNodes: 0 }
       ];
+
+  // Calculate growth rates for each segment
+  const calculateGrowthRate = (values: number[]) => {
+    if (values.length < 2) return 0;
+    const oldValue = values[0];
+    const newValue = values[values.length - 1];
+    if (oldValue === 0) return 0;
+    return ((newValue - oldValue) / oldValue) * 100;
+  };
+
+  const totalGrowthRate = calculateGrowthRate(growthData.map(d => d.totalNodes));
+  const publicGrowthRate = calculateGrowthRate(growthData.map(d => d.publicNodes));
+  const privateGrowthRate = calculateGrowthRate(growthData.map(d => d.privateNodes));
+
+  // Current values
+  const currentTotal = growthData[growthData.length - 1]?.totalNodes || totalNodes;
+  const currentPublic = growthData[growthData.length - 1]?.publicNodes || networkMetadata.activeNodes;
+  const currentPrivate = currentTotal - currentPublic;
+
+  // Calculate period and format intelligently
+  const periodDays = growthData.length > 1 ? growthData.length - 1 : 1;
+  const formatPeriod = (days: number) => {
+    if (days === 0 || days === 1) return '1 day';
+    if (days < 30) return `${days} days`;
+    if (days < 60) return '1 month';
+    const months = Math.round(days / 30);
+    return `${months} months`;
+  };
+  const periodLabel = formatPeriod(periodDays);
+  const periodShort = periodDays < 30 ? `${periodDays}d` : periodDays < 60 ? '1mo' : `${Math.round(periodDays / 30)}mo`;
+
+  // Daily growth rates (for Growth Analysis text)
+  const dailyTotalGrowth = periodDays > 0 ? totalGrowthRate / periodDays : 0;
+  const dailyPublicGrowth = periodDays > 0 ? publicGrowthRate / periodDays : 0;
 
   return (
     <div
@@ -156,10 +195,10 @@ export const NetworkCoverageModal = ({
                 Growth Rate
               </p>
               <p className="text-3xl font-bold" style={{ color: growthColor }}>
-                {networkGrowthRate > 0 ? "+" : ""}{networkGrowthRate.toFixed(1)}%
+                {totalGrowthRate > 0 ? "+" : ""}{totalGrowthRate.toFixed(1)}%
               </p>
               <p className="text-[10px] mt-1" style={{ color: isLight ? "#64748b" : "#94a3b8" }}>
-                recent trend
+                total network
               </p>
             </div>
 
@@ -198,11 +237,68 @@ export const NetworkCoverageModal = ({
                   className="w-5 h-5" 
                   style={{ 
                     color: "#10B981",
-                    transform: networkGrowthRate < 0 ? "rotate(180deg)" : "none"
+                    transform: totalGrowthRate < 0 ? "rotate(180deg)" : "none"
                   }} 
                 />
                 Network Growth Trend
               </h3>
+
+              {/* Growth Rate Breakdown Cards */}
+              <div className="grid grid-cols-3 gap-3 mb-5">
+                <div className="text-center p-3 rounded-lg" style={{
+                  background: isLight ? "rgba(59, 130, 246, 0.05)" : "rgba(59, 130, 246, 0.1)",
+                  border: `1px solid ${isLight ? "rgba(59, 130, 246, 0.2)" : "rgba(59, 130, 246, 0.3)"}`
+                }}>
+                  <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: isLight ? "#64748b" : "#94a3b8" }}>
+                    Total Nodes
+                  </p>
+                  <p className="text-2xl font-bold mb-1" style={{ color: "#3B82F6" }}>
+                    {currentTotal}
+                  </p>
+                  <p className="text-xs font-semibold mb-0.5" style={{ color: totalGrowthRate > 0 ? "#10B981" : totalGrowthRate < 0 ? "#EF4444" : "#6B7280" }}>
+                    {totalGrowthRate > 0 ? "↗" : totalGrowthRate < 0 ? "↘" : "→"} {totalGrowthRate > 0 ? "+" : ""}{totalGrowthRate.toFixed(1)}%
+                  </p>
+                  <p className="text-[9px]" style={{ color: isLight ? "#94a3b8" : "#64748b" }}>
+                    {periodShort}
+                  </p>
+                </div>
+
+                <div className="text-center p-3 rounded-lg" style={{
+                  background: isLight ? "rgba(16, 185, 129, 0.05)" : "rgba(16, 185, 129, 0.1)",
+                  border: `1px solid ${isLight ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.3)"}`
+                }}>
+                  <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: isLight ? "#64748b" : "#94a3b8" }}>
+                    Public Nodes
+                  </p>
+                  <p className="text-2xl font-bold mb-1" style={{ color: "#10B981" }}>
+                    {currentPublic}
+                  </p>
+                  <p className="text-xs font-semibold mb-0.5" style={{ color: publicGrowthRate > 0 ? "#10B981" : publicGrowthRate < 0 ? "#EF4444" : "#6B7280" }}>
+                    {publicGrowthRate > 0 ? "↗" : publicGrowthRate < 0 ? "↘" : "→"} {publicGrowthRate > 0 ? "+" : ""}{publicGrowthRate.toFixed(1)}%
+                  </p>
+                  <p className="text-[9px]" style={{ color: isLight ? "#94a3b8" : "#64748b" }}>
+                    {periodShort}
+                  </p>
+                </div>
+
+                <div className="text-center p-3 rounded-lg" style={{
+                  background: isLight ? "rgba(139, 92, 246, 0.05)" : "rgba(139, 92, 246, 0.1)",
+                  border: `1px solid ${isLight ? "rgba(139, 92, 246, 0.2)" : "rgba(139, 92, 246, 0.3)"}`
+                }}>
+                  <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: isLight ? "#64748b" : "#94a3b8" }}>
+                    Private Nodes
+                  </p>
+                  <p className="text-2xl font-bold mb-1" style={{ color: "#8B5CF6" }}>
+                    {currentPrivate}
+                  </p>
+                  <p className="text-xs font-semibold mb-0.5" style={{ color: privateGrowthRate > 0 ? "#10B981" : privateGrowthRate < 0 ? "#EF4444" : "#6B7280" }}>
+                    {privateGrowthRate > 0 ? "↗" : privateGrowthRate < 0 ? "↘" : "→"} {privateGrowthRate > 0 ? "+" : ""}{privateGrowthRate.toFixed(1)}%
+                  </p>
+                  <p className="text-[9px]" style={{ color: isLight ? "#94a3b8" : "#64748b" }}>
+                    {periodShort}
+                  </p>
+                </div>
+              </div>
 
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -215,6 +311,8 @@ export const NetworkCoverageModal = ({
                       dataKey="date" 
                       stroke={isLight ? "#64748b" : "#94a3b8"}
                       fontSize={11}
+                      interval="preserveStartEnd"
+                      minTickGap={40}
                     />
                     <YAxis 
                       stroke={isLight ? "#64748b" : "#94a3b8"}
@@ -227,17 +325,64 @@ export const NetworkCoverageModal = ({
                         borderRadius: "8px",
                         color: isLight ? "#0F172A" : "#F8FAFC",
                       }}
+                      formatter={(value: any, name: string) => {
+                        if (name === 'publicNodes') return [value, 'Public Nodes'];
+                        if (name === 'totalNodes') return [value, 'Total Nodes'];
+                        if (name === 'privateNodes') return [value, 'Private Nodes'];
+                        return [value, name];
+                      }}
                     />
                     <Line 
                       type="monotone" 
-                      dataKey="nodes" 
+                      dataKey="totalNodes" 
+                      stroke="#3B82F6" 
+                      strokeWidth={2.5}
+                      dot={{ fill: "#3B82F6", r: 4 }}
+                      activeDot={{ r: 6 }}
+                      name="Total Nodes"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="privateNodes" 
+                      stroke="#8B5CF6" 
+                      strokeWidth={2.5}
+                      dot={{ fill: "#8B5CF6", r: 4 }}
+                      activeDot={{ r: 6 }}
+                      name="Private Nodes"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="publicNodes" 
                       stroke="#10B981" 
-                      strokeWidth={3}
-                      dot={{ fill: "#10B981", r: 5 }}
-                      activeDot={{ r: 7 }}
+                      strokeWidth={2.5}
+                      dot={{ fill: "#10B981", r: 4 }}
+                      activeDot={{ r: 6 }}
+                      name="Public Nodes"
                     />
                   </LineChart>
                 </ResponsiveContainer>
+              </div>
+              
+              {/* Legend */}
+              <div className="flex items-center justify-center gap-6 mt-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#3B82F6" }} />
+                  <span className="text-xs" style={{ color: isLight ? "#64748b" : "#94a3b8" }}>
+                    Total Nodes
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#8B5CF6" }} />
+                  <span className="text-xs" style={{ color: isLight ? "#64748b" : "#94a3b8" }}>
+                    Private Nodes
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#10B981" }} />
+                  <span className="text-xs" style={{ color: isLight ? "#64748b" : "#94a3b8" }}>
+                    Public Nodes
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -293,10 +438,10 @@ export const NetworkCoverageModal = ({
                   : "Stable network size"}
               </p>
               <p className="text-[11px] leading-relaxed" style={{ color: isLight ? "#64748b" : "#94a3b8" }}>
-                {networkGrowthRate > 0 
-                  ? `Network expanding at ${networkGrowthRate.toFixed(1)}% based on recent snapshots.`
-                  : networkGrowthRate < 0
-                  ? `Network size decreased by ${Math.abs(networkGrowthRate).toFixed(1)}%.`
+                {totalGrowthRate > 0 
+                  ? `Network expanding at +${dailyTotalGrowth.toFixed(1)}% per day (+${totalGrowthRate.toFixed(1)}% over ${periodLabel}).`
+                  : totalGrowthRate < 0
+                  ? `Network size decreased by ${Math.abs(totalGrowthRate).toFixed(1)}% over ${periodLabel}.`
                   : "Network size remains stable with minimal changes."}
               </p>
             </div>
