@@ -6,6 +6,8 @@ import ThemeBody from "./ThemeBody";
 import { ToastProvider } from "@/components/common/Toast";
 import { TooltipProvider } from "@/components/common/Tooltip";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ChatbotWidget } from "@/components/Chat";
+import { DashboardProvider } from "@/lib/dashboard-context";
 
 export const metadata: Metadata = {
   title: "Xandeum P-Node Analytics",
@@ -24,7 +26,10 @@ export default function RootLayout({
           <ErrorBoundary>
             <ToastProvider>
               <TooltipProvider>
-                {children}
+                <DashboardProvider>
+                  {children}
+                  <ChatbotWidget />
+                </DashboardProvider>
               </TooltipProvider>
             </ToastProvider>
           </ErrorBoundary>
