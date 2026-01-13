@@ -204,7 +204,7 @@ const PNodeTableComponent = ({
               >
                 <div className={clsx("flex items-center", header.icon ? "justify-center" : "")}>
                   {header.icon ? (
-                    <Globe className="w-4 h-4 text-blue-400/70" strokeWidth={2} title="Network" />
+                    <Globe className="w-4 h-4 text-blue-400/70" strokeWidth={2} aria-label="Network" />
                   ) : (
                     <>
                       {header.label}
