@@ -1,9 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import dotenv from 'dotenv';
-import type { PNode, PNodeStats, PNodeStatus } from '../lib/types';
+import type { PNode, PNodeStats, PNodeStatus, NetworkType } from '../lib/types';
 import { EMPTY_STATS } from '../lib/types';
 import type { Database, Json } from '../types/supabase.mjs';
+import { getNetworkDetector } from '../lib/network-detector';
+import { fetchOfficialRegistries, getCreditsForPubkey } from '../lib/official-apis';
+import { calculateConfidence, type PNodeForScoring } from '../lib/confidence-scoring';
 
 // Load environment variables from .env.local (for local development only)
 // In production/CI, variables are already in process.env from GitHub Actions
@@ -215,7 +218,40 @@ async function getGeolocation(ip: string): Promise<GeolocationData | null> {
 }
 
 export const main = async () => {
-    console.log('🕷️ Starting network crawl...');
+    console.log('🕷️ Starting network crawl (Next-Level Discovery)...');
+    console.log('=' .repeat(70));
+
+    // ═══════════════════════════════════════════════════════════════
+    // PHASE 0: FETCH OFFICIAL REGISTRIES
+    // ═══════════════════════════════════════════════════════════════
+    console.log('\n📡 PHASE 0: Fetching Official Registries...');
+    let officialRegistries;
+    try {
+        officialRegistries = await fetchOfficialRegistries();
+        console.log(`✅ MAINNET: ${officialRegistries.mainnetCount} official nodes`);
+        console.log(`✅ DEVNET:  ${officialRegistries.devnetCount} official nodes`);
+    } catch (err) {
+        console.error('⚠️ Failed to fetch official registries:', err);
+        officialRegistries = {
+            mainnetPubkeys: new Set<string>(),
+            devnetPubkeys: new Set<string>(),
+            mainnetCredits: new Map<string, number>(),
+            devnetCredits: new Map<string, number>(),
+            mainnetCount: 0,
+            devnetCount: 0
+        };
+    }
+
+    // Initialize network detector and refresh registry
+    console.log('\n🌐 Initializing network detector...');
+    const networkDetector = getNetworkDetector();
+    try {
+        await networkDetector.refreshFromAPI();
+        const stats = networkDetector.getRegistryStats();
+        console.log(`✅ Network registry loaded: ${stats?.mainnet.pubkeys} MAINNET nodes, ${stats?.devnet.pubkeys} DEVNET nodes`);
+    } catch (err) {
+        console.warn('⚠️ Failed to refresh network registry, using local fallback');
+    }
 
     const discovered = new Set<string>(BOOTSTRAP_NODES);
     const processed = new Set<string>();
@@ -386,6 +422,12 @@ export const main = async () => {
     const pnodesToUpsert: Database['public']['Tables']['pnodes']['Insert'][] = [];
     const historyToInsert: Database['public']['Tables']['pnode_history']['Insert'][] = [];
 
+    // Detect network for each node
+    console.log('🌐 Detecting network (MAINNET/DEVNET) for all nodes...');
+    let mainnetCount = 0;
+    let devnetCount = 0;
+    let unknownCount = 0;
+
     for (let i = 0; i < allIps.length; i++) {
         const ip = allIps[i];
         const statsResult = allStats[i];
@@ -424,6 +466,25 @@ export const main = async () => {
             }
         }
 
+        // Detect network (MAINNET/DEVNET) - fully independent detection
+        const pubkey = pubkeyMap.get(ip);
+        const version = versionMap.get(ip);
+        // storageCommitted already declared above at line 422
+        
+        const detectionResult = await networkDetector.detectNetwork(
+            pubkey || null,
+            ip,
+            version || null,
+            stats.uptime || null,
+            null, // port - we could extract from RPC but not critical for now
+            storageCommitted || null // storage pour analyse de patterns
+        );
+
+        // Count network types for logging
+        if (detectionResult.network === 'MAINNET') mainnetCount++;
+        else if (detectionResult.network === 'DEVNET') devnetCount++;
+        else unknownCount++;
+
         // Save history for ALL nodes (active and gossip_only)
         // This ensures continuity in charts even when nodes go offline temporarily
         historyToInsert.push({
@@ -459,8 +520,18 @@ export const main = async () => {
             city: geo?.city,
             country: geo?.country,
             country_code: geo?.country_code,
+            network: detectionResult.network as string, // 🆕 Network type
+            network_confidence: detectionResult.confidence as string, // 🆕 Confidence level
+            network_detection_method: detectionResult.method as string, // 🆕 Detection method
             last_crawled_at: new Date().toISOString()
-        });
+        } as any);
+    }
+
+    console.log(`✅ Network detection complete:`);
+    console.log(`   🟢 MAINNET: ${mainnetCount} nodes`);
+    console.log(`   🟡 DEVNET: ${devnetCount} nodes`);
+    if (unknownCount > 0) {
+        console.log(`   ⚪ UNKNOWN: ${unknownCount} nodes`);
     }
 
     // DEDUPLICATION: Keep only unique nodes by IP (each IP = one physical node)
@@ -491,6 +562,54 @@ export const main = async () => {
     if (duplicatesRemoved > 0) {
         console.log(`🧹 Removed ${duplicatesRemoved} duplicate IPs (${deduplicatedNodes.length} unique nodes remaining)`);
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    // PHASE 3: CONFIDENCE SCORING & CREDITS
+    // ═══════════════════════════════════════════════════════════════
+    console.log('\n🎯 PHASE 3: Calculating Confidence Scores & Credits...');
+    
+    deduplicatedNodes.forEach((node: any) => {
+        // Calculate confidence score
+        const nodeForScoring: PNodeForScoring = {
+            ip: node.ip,
+            pubkey: node.pubkey,
+            network: node.network,
+            stats: node.stats,
+            storage_committed: (node.stats as any)?.storage_committed,
+            storage_used: (node.stats as any)?.storage_used
+        };
+
+        const confidence = calculateConfidence(
+            nodeForScoring,
+            officialRegistries.mainnetPubkeys,
+            officialRegistries.devnetPubkeys
+        );
+
+        // Add confidence fields to node
+        node.confidence_score = confidence.score;
+        node.sources = confidence.sources;
+        node.verified_by_rpc = confidence.verified;
+
+        // Get credits from official API
+        const pubkey = node.pubkey || '';
+        if (pubkey) {
+            const mainnetCredits = officialRegistries.mainnetCredits.get(pubkey);
+            const devnetCredits = officialRegistries.devnetCredits.get(pubkey);
+            node.credits = mainnetCredits || devnetCredits || 0;
+        } else {
+            node.credits = 0;
+        }
+    });
+
+    const avgConfidence = deduplicatedNodes.reduce((sum: number, n: any) => sum + n.confidence_score, 0) / deduplicatedNodes.length;
+    const confirmedCount = deduplicatedNodes.filter((n: any) => n.confidence_score >= 85).length;
+    const validatedCount = deduplicatedNodes.filter((n: any) => n.confidence_score >= 70 && n.confidence_score < 85).length;
+    const discoveredCount = deduplicatedNodes.filter((n: any) => n.confidence_score >= 50 && n.confidence_score < 70).length;
+    
+    console.log(`✅ Average confidence score: ${avgConfidence.toFixed(1)}/100`);
+    console.log(`   🟢 Confirmed (85-100): ${confirmedCount} nodes`);
+    console.log(`   🟡 Validated (70-84):  ${validatedCount} nodes`);
+    console.log(`   🔵 Discovered (50-69): ${discoveredCount} nodes`);
 
     // Update failed_checks for all nodes
     // - Reset to 0 for nodes successfully crawled
@@ -586,6 +705,7 @@ export const main = async () => {
 
     // Auto-cleanup: Remove zombie nodes (consistently inaccessible)
     // A node is a zombie if it has failed_checks >= 3 (3 consecutive crawl failures)
+    // BUT: Exclude private nodes (IP starting with PRIVATE-) since they can't respond to RPC
     console.log('\n🧹 Checking for zombie nodes (failed_checks >= 3)...');
     
     const { data: zombieNodes, error: zombieError } = await supabaseAdmin
@@ -594,19 +714,32 @@ export const main = async () => {
         .gte('failed_checks', 3);
     
     if (!zombieError && zombieNodes && zombieNodes.length > 0) {
-        const zombieIps = zombieNodes.map((n: any) => n.ip);
-        console.log(`🗑️  Found ${zombieIps.length} zombie nodes (consistently inaccessible):`);
-        zombieIps.forEach((ip: string) => console.log(`   🧟 ${ip}`));
+        // Filter out private nodes - they are NOT zombies, just unreachable by design
+        const actualZombies = zombieNodes.filter((n: any) => !n.ip.startsWith('PRIVATE-'));
+        const privateNodes = zombieNodes.filter((n: any) => n.ip.startsWith('PRIVATE-'));
         
-        const { error: deleteError } = await supabaseAdmin
-            .from('pnodes')
-            .delete()
-            .in('ip', zombieIps);
+        if (privateNodes.length > 0) {
+            console.log(`ℹ️  Skipping ${privateNodes.length} private nodes (unreachable by design):`);
+            privateNodes.forEach((n: any) => console.log(`   🔒 ${n.ip}`));
+        }
         
-        if (deleteError) {
-            console.error('Error deleting zombie nodes:', deleteError);
+        if (actualZombies.length > 0) {
+            const zombieIps = actualZombies.map((n: any) => n.ip);
+            console.log(`🗑️  Found ${zombieIps.length} actual zombie nodes (consistently inaccessible):`);
+            zombieIps.forEach((ip: string) => console.log(`   🧟 ${ip}`));
+            
+            const { error: deleteError } = await supabaseAdmin
+                .from('pnodes')
+                .delete()
+                .in('ip', zombieIps);
+            
+            if (deleteError) {
+                console.error('Error deleting zombie nodes:', deleteError);
+            } else {
+                console.log(`✅ Successfully removed ${zombieIps.length} zombie nodes`);
+            }
         } else {
-            console.log(`✅ Successfully removed ${zombieIps.length} zombie nodes`);
+            console.log('✅ No actual zombie nodes to remove (only private nodes)');
         }
     } else if (!zombieError) {
         console.log('✅ No zombie nodes found');
