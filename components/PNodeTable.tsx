@@ -2,7 +2,7 @@
 
 import React, { memo } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Star } from "lucide-react";
+import { ArrowRight, Star, Lock, Globe } from "lucide-react";
 import clsx from "clsx";
 import { calculateNodeScore, getScoreColor } from "@/lib/scoring";
 import { useTheme } from "@/hooks/useTheme";
@@ -10,6 +10,7 @@ import { getHealthStatus } from "@/lib/health";
 import type { PNode } from "@/lib/types";
 import { formatBytesAdaptive } from "@/lib/utils";
 import { Pagination } from "@/components/common/Pagination";
+import { NetworkBadge } from "@/components/common/NetworkBadge";
 
 interface PNodeTableProps {
   data: PNode[];
@@ -117,6 +118,7 @@ const PNodeTableComponent = ({
   };
 
   const headers = [
+    { key: "network", label: "Network", icon: true }, // Icon column for network - AFTER favorites
     { key: "score", label: "Score" },
     { key: "ip", label: "IP Address" },
     { key: "health", label: "Status" },
@@ -144,6 +146,7 @@ const PNodeTableComponent = ({
           <colgroup>
             {onToggleSelection && <col className="w-[45px]" />}
             {onToggleFavorite && <col className="w-[45px]" />}
+            <col className="w-[60px]" />
             <col className="w-[65px]" />
             <col className="w-[155px]" />
             <col className="w-[105px]" />
@@ -195,12 +198,19 @@ const PNodeTableComponent = ({
                 onClick={() => onSort(header.key)}
                 className={clsx(
                   "p-4 text-[11px] font-bold uppercase tracking-wider cursor-pointer transition-colors select-none group whitespace-nowrap",
+                  header.icon ? "text-center" : "",
                   isLight ? "text-black/60" : "text-text-soft"
                 )}
               >
-                <div className="flex items-center">
-                  {header.label}
-                  <SortIcon columnKey={header.key} />
+                <div className={clsx("flex items-center", header.icon ? "justify-center" : "")}>
+                  {header.icon ? (
+                    <Globe className="w-4 h-4 text-blue-400/70" strokeWidth={2} title="Network" />
+                  ) : (
+                    <>
+                      {header.label}
+                      <SortIcon columnKey={header.key} />
+                    </>
+                  )}
                 </div>
               </th>
             ))}
@@ -318,7 +328,7 @@ const PNodeTableComponent = ({
                     >
                       <Star 
                         className={clsx(
-                          "w-5 h-5 transition-all",
+                          "w-4 h-4 transition-all",
                           favoriteIds?.has(pnode.ip) && "fill-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]"
                         )} 
                       />
@@ -326,6 +336,16 @@ const PNodeTableComponent = ({
                   </td>
                 )}
                 
+                {/* Network indicator - Dedicated column RIGHT AFTER favorites */}
+                <td className="p-4 align-middle text-center">
+                  <span 
+                    className={`inline-block w-2 h-2 rounded-full ${
+                      pnode.network === "MAINNET" ? "bg-green-500" : "bg-yellow-500"
+                    }`}
+                    title={pnode.network}
+                  />
+                </td>
+
                 <td className="p-4 text-center align-middle">
                   <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm ${getScoreColor((pnode as any)._score)}`}>
                     {(pnode as any)._score}
@@ -334,14 +354,23 @@ const PNodeTableComponent = ({
 
                 <td className="p-4 font-mono text-text-main font-medium group-hover:text-accent-aqua transition-colors whitespace-nowrap align-middle">
                   <div className="flex items-center gap-2">
+                    {/* Show lock icon for private nodes (IP starts with PRIVATE-) */}
+                    {pnode.ip.startsWith('PRIVATE-') && (
+                      <Lock 
+                        className="w-3.5 h-3.5 text-text-faint flex-shrink-0" 
+                        strokeWidth={2.5}
+                        title="Private node - no public services"
+                      />
+                    )}
                     <span>{pnode.ip}</span>
                     <ArrowRight className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0" style={{ color: 'var(--accent-aqua)' }} />
                   </div>
                 </td>
 
                 <td className="p-4 align-middle">
+                  {/* Status badge - cleaner without network dot */}
                   <span
-                    className="px-4 py-2 rounded-full text-[10px] font-bold border uppercase tracking-wide"
+                    className="px-4 py-2 rounded-full text-[10px] font-bold border uppercase tracking-wide whitespace-nowrap"
                     style={badgeStyle}
                   >
                     {status}
@@ -367,8 +396,18 @@ const PNodeTableComponent = ({
                   </span>
                 </td>
 
-                <td className="p-4 text-sm font-semibold whitespace-nowrap align-middle" style={{ color: 'var(--accent)' }}>
-                  {formatBytesAdaptive(committedBytes)}
+                <td className="p-4 text-sm font-semibold whitespace-nowrap align-middle">
+                  <div className="flex flex-col gap-1">
+                    {/* Storage Committed (capacity) - Main value in purple */}
+                    <span className="text-sm font-bold" style={{ color: isLight ? '#9945ff' : '#a855f7' }}>
+                      {formatBytesAdaptive(committedBytes)}
+                    </span>
+                    {/* Storage Used (actual) - Secondary info */}
+                    <span className="text-[10px] text-text-faint">
+                      {formatBytesAdaptive(usedBytes)}
+                      <span className="ml-1 opacity-60">used</span>
+                    </span>
+                  </div>
                 </td>
 
                 <td className="p-4 text-sm text-text-main font-mono whitespace-nowrap align-middle">
