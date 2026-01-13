@@ -131,3 +131,12 @@ $RECYCLE.BIN/
 .vercel
 .env*.local
 tmp_rovodev_*
+
+# ============================================
+# Internal Dev Notes (not for repo)
+# ============================================
+# Ignore all markdown files except important ones
+*.md
+!README.md
+!CHANGELOG.md
+!.github/**/*.md
