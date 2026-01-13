@@ -359,7 +359,7 @@ const PNodeTableComponent = ({
                       <Lock 
                         className="w-3.5 h-3.5 text-text-faint flex-shrink-0" 
                         strokeWidth={2.5}
-                        title="Private node - no public services"
+                        aria-label="Private node - no public services"
                       />
                     )}
                     <span>{pnode.ip}</span>
