@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Trash2, Settings, Zap } from 'lucide-react';
+import { X, Trash2, Settings, Bot } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { SuggestedPrompts } from './SuggestedPrompts';
@@ -164,29 +164,27 @@ export function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
         />
       )}
 
-      {/* Side Panel - Glass morphism effect */}
+      {/* Side Panel - Fully opaque */}
       <div
         className={`
           fixed right-0 top-0 h-screen w-[420px] max-w-[90vw]
-          bg-background/80 dark:bg-background/85
-          backdrop-blur-md
-          border-l border-border/50
-          shadow-2xl shadow-black/10
+          bg-white dark:bg-gray-950
+          border-l border-border
+          shadow-2xl
           transform transition-all duration-300 ease-out
           ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}
           flex flex-col
           z-50
         `}
       >
-        {/* Header - Frosted glass effect */}
+        {/* Header */}
         <div className="
           flex items-center justify-between
-          px-4 py-3 border-b border-border/50
-          bg-gradient-to-r from-purple-500/5 to-blue-500/5
-          backdrop-blur-sm
+          px-4 py-3 border-b border-border
+          bg-gradient-to-r from-purple-500/10 to-blue-500/10
         ">
           <div className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-purple-400" />
+            <Bot className="w-5 h-5 text-purple-400" />
             <h2 className="font-semibold text-lg">Ronin AI</h2>
             <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
               Online
@@ -229,7 +227,7 @@ export function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
           <div className="p-6 space-y-4">
             <div className="text-center space-y-2">
               <div className="w-12 h-12 mx-auto rounded-full bg-gradient-to-r from-purple-500/20 to-blue-500/20 flex items-center justify-center">
-                <Zap className="w-6 h-6 text-purple-400" />
+                <Bot className="w-7 h-7 text-purple-400" />
               </div>
               <h3 className="font-semibold text-lg">Welcome to Ronin AI</h3>
               <p className="text-sm text-muted-foreground">
