@@ -21,6 +21,9 @@ export interface PNodeStats {
 // Network status of the node as determined by our crawler
 export type PNodeStatus = "active" | "gossip_only";
 
+// Network type: MAINNET, DEVNET, or UNKNOWN
+export type NetworkType = "MAINNET" | "DEVNET" | "UNKNOWN";
+
 // Standard model for a pNode throughout the frontend
 export interface PNode {
   ip: string;
@@ -28,6 +31,8 @@ export interface PNode {
   stats: PNodeStats;
   version?: string;
   pubkey?: string; // Xandeum node public key (for credits matching)
+  network?: NetworkType; // 🆕 MAINNET vs DEVNET classification
+  network_confidence?: "high" | "medium" | "low"; // 🆕 Confidence level of network detection
   lat?: number | null;
   lng?: number | null;
   city?: string | null;
