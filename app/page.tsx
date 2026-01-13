@@ -21,6 +21,7 @@ import { AboutPNodes } from "@/components/Dashboard/AboutPNodes";
 import { SelectionActionBar } from "@/components/SelectionActionBar";
 import { CompareNodesModal } from "@/components/Dashboard/CompareNodesModal";
 import { FavoritesModal } from "@/components/Dashboard/FavoritesModal";
+import { NetworkToggle } from "@/components/Dashboard/NetworkToggle"; // 🆕
 import { hexToRgba, getKpiColors, getStatusColors } from "@/lib/utils";
 import { generatePDFReport } from "@/lib/pdf-export";
 import { useToast } from "@/components/common/Toast";
@@ -122,6 +123,59 @@ export default function Page() {
   const [isGeographicModalOpen, setIsGeographicModalOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  
+  // 🆕 Network filter state (MAINNET/DEVNET/ALL)
+  const [networkFilter, setNetworkFilter] = useState<"MAINNET" | "DEVNET" | "all">("all");
+  
+  // 🆕 Apply network filter to pnodes
+  const networkFilteredPNodes = useMemo(() => {
+    if (networkFilter === "all") return filteredAndSortedPNodes;
+    return filteredAndSortedPNodes.filter(node => node.network === networkFilter);
+  }, [filteredAndSortedPNodes, networkFilter]);
+
+  // Network-specific stats for breakdown display
+  const mainnetNodes = useMemo(() => pnodes.filter(n => n.network === "MAINNET"), [pnodes]);
+  const devnetNodes = useMemo(() => pnodes.filter(n => n.network === "DEVNET"), [pnodes]);
+  
+  const mainnetCount = mainnetNodes.length;
+  const devnetCount = devnetNodes.length;
+  
+  // Breakdown by public/private for each network
+  const mainnetPublic = useMemo(() => 
+    mainnetNodes.filter(n => n.status === "active").length,
+    [mainnetNodes]
+  );
+  const mainnetPrivate = useMemo(() => 
+    mainnetNodes.filter(n => n.status !== "active").length,
+    [mainnetNodes]
+  );
+  const devnetPublic = useMemo(() => 
+    devnetNodes.filter(n => n.status === "active").length,
+    [devnetNodes]
+  );
+  const devnetPrivate = useMemo(() => 
+    devnetNodes.filter(n => n.status !== "active").length,
+    [devnetNodes]
+  );
+
+  // Recalculate publicCount and privateCount based on active network filter
+  const filteredPublicCount = useMemo(() => {
+    return networkFilteredPNodes.filter(n => n.status === "active").length;
+  }, [networkFilteredPNodes]);
+
+  const filteredPrivateCount = useMemo(() => {
+    return networkFilteredPNodes.filter(n => n.status !== "active").length;
+  }, [networkFilteredPNodes]);
+  
+  const mainnetStorage = useMemo(() => 
+    mainnetNodes.reduce((sum, n) => sum + (n.stats?.storage_committed ?? 0), 0),
+    [mainnetNodes]
+  );
+  
+  const devnetStorage = useMemo(() => 
+    devnetNodes.reduce((sum, n) => sum + (n.stats?.storage_committed ?? 0), 0),
+    [devnetNodes]
+  );
   
   // Selection state for multi-node operations
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
@@ -591,9 +645,9 @@ export default function Page() {
             isAdvancedFilterOpen={isAdvancedFilterOpen}
             setIsAdvancedFilterOpen={setIsAdvancedFilterOpen}
             lastUpdateText={getTimeAgo()}
-            pnodesCount={pnodes.length}
-            publicCount={publicCount}
-            privateCount={privateCount}
+            pnodesCount={networkFilteredPNodes.length}
+            publicCount={filteredPublicCount}
+            privateCount={filteredPrivateCount}
             resetFilters={resetFilters}
             selectedVersions={selectedVersions}
             selectedHealthStatuses={selectedHealthStatuses}
@@ -602,6 +656,10 @@ export default function Page() {
             favoritesCount={favorites.length}
             onOpenFavorites={() => setIsFavoritesModalOpen(true)}
             onResetTour={resetTour}
+            mainnetCount={mainnetCount}
+            devnetCount={devnetCount}
+            networkFilter={networkFilter}
+            setNetworkFilter={setNetworkFilter}
           />
 
           <AdvancedFilters
@@ -626,19 +684,19 @@ export default function Page() {
         {/* MAIN CONTENT */}
         <DashboardContent
           viewMode={viewMode}
-          filteredAndSortedPNodes={filteredAndSortedPNodes}
+          filteredAndSortedPNodes={networkFilteredPNodes}
           sortKey={sortKey}
           sortDirection={sortDirection}
           onSort={handleSort}
           loading={loading}
           isLight={isLight}
-          paginatedPNodes={paginatedPNodes}
+          paginatedPNodes={networkFilteredPNodes.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
           currentPage={currentPage}
-          totalPages={totalPages}
+          totalPages={Math.ceil(networkFilteredPNodes.length / pageSize)}
           pageSize={pageSize}
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}
-          gridPNodes={gridPNodes}
+          gridPNodes={networkFilteredPNodes.slice(0, gridLimit === -1 ? networkFilteredPNodes.length : gridLimit)}
           gridLimit={gridLimit}
           setGridLimit={setGridLimit}
           selectedNodeIds={selectedNodeIds}
