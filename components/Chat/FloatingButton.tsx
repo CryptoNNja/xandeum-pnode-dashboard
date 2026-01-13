@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Zap } from 'lucide-react';
+import { Bot } from 'lucide-react';
 
 interface FloatingButtonProps {
   onClick: () => void;
@@ -30,9 +30,9 @@ export function FloatingButton({ onClick, isOpen }: FloatingButtonProps) {
         "
         aria-label="Open Ronin AI"
       >
-        <Zap 
+        <Bot 
           className={`
-            w-6 h-6 text-white
+            w-7 h-7 text-white
             transition-transform duration-300
             ${isOpen ? 'rotate-180' : 'rotate-0'}
           `}

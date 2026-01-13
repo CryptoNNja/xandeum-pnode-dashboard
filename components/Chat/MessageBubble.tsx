@@ -1,6 +1,6 @@
 'use client';
 
-import { User, Copy, ThumbsUp, ThumbsDown, Zap } from 'lucide-react';
+import { User, Copy, ThumbsUp, ThumbsDown, Bot } from 'lucide-react';
 import { Message } from 'ai';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -37,7 +37,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         {isUser ? (
           <User className="w-5 h-5 text-white" />
         ) : (
-          <Zap className="w-5 h-5 text-white" />
+          <Bot className="w-5 h-5 text-white" />
         )}
       </div>
 
