@@ -43,7 +43,7 @@ export function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
     const privateNodes = pnodes.filter(p => p.status === 'gossip_only').length;
     const onlineNodes = publicNodes + privateNodes;
     const offlineNodes = pnodes.length - onlineNodes;
-    const totalStorage = storageCapacityStats?.total || 0;
+    const totalStorage = storageCapacityStats?.totalCommitted || 0;
     
     return {
       totalNodes: pnodes.length,
