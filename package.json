@@ -18,11 +18,15 @@
     }
   },
   "dependencies": {
+    "@ai-sdk/groq": "1.0.8",
+    "@ai-sdk/provider": "1.0.2",
     "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-slider": "^1.3.6",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@supabase/supabase-js": "^2.30.0",
     "@types/leaflet": "^1.9.21",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "ai": "3.4.33",
     "axios": "^1.13.2",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
@@ -38,8 +42,11 @@
     "react-joyride": "^2.9.3",
     "react-leaflet": "^5.0.0",
     "react-leaflet-cluster": "^4.0.0",
+    "react-markdown": "^10.1.0",
+    "react-syntax-highlighter": "^16.1.0",
     "recharts": "^3.5.1",
-    "use-debounce": "^10.0.6"
+    "use-debounce": "^10.0.6",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
