@@ -333,7 +333,9 @@ export default function Page() {
     pnodes.forEach((p) => {
       // Include both public and private nodes for geographic diversity
       if (p.country && p.country !== "Unknown") {
-        countries.add(p.country);
+        // Normalize country names
+        const normalizedCountry = p.country === "The Netherlands" ? "Netherlands" : p.country;
+        countries.add(normalizedCountry);
       }
     });
     return countries.size;
