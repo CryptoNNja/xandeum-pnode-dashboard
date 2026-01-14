@@ -225,12 +225,13 @@ export const usePnodeDashboard = (theme?: string) => {
         
         setAllPnodes(pnodesWithScores);
         setLastUpdate(new Date());
+        // Silent refresh for auto-updates, only log duplicates if significant
         if (isManual) {
           const duplicatesRemoved = payload.data.length - uniqueNodes.length;
           if (duplicatesRemoved > 0) {
-            toast.success(`Loaded ${uniqueNodes.length} unique nodes (${duplicatesRemoved} duplicates removed)`);
+            console.log(`✅ Loaded ${uniqueNodes.length} unique nodes (${duplicatesRemoved} duplicates removed)`);
           } else {
-            toast.success(`Loaded ${uniqueNodes.length} nodes`);
+            console.log(`✅ Loaded ${uniqueNodes.length} nodes`);
           }
         }
       }

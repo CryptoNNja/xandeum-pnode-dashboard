@@ -17,6 +17,9 @@ import {
   SlidersHorizontal,
   RotateCcw,
   Star,
+  Layers,
+  Globe,
+  TestTube,
 } from "lucide-react";
 import clsx from "clsx";
 import type { PNode } from "@/lib/types";
@@ -48,6 +51,10 @@ type ToolbarProps = {
   publicCount: number;
   privateCount: number;
   loading?: boolean;
+  mainnetCount?: number;
+  devnetCount?: number;
+  networkFilter?: "MAINNET" | "DEVNET" | "all";
+  setNetworkFilter?: (filter: "MAINNET" | "DEVNET" | "all") => void;
   resetFilters?: () => void;
   selectedVersions?: string[];
   selectedHealthStatuses?: string[];
@@ -87,6 +94,10 @@ export const Toolbar = ({
   favoritesCount = 0,
   onOpenFavorites,
   onResetTour,
+  mainnetCount,
+  devnetCount,
+  networkFilter,
+  setNetworkFilter,
 }: ToolbarProps & {
   onResetTour?: () => void; 
   resetFilters?: () => void;
@@ -97,6 +108,7 @@ export const Toolbar = ({
 }) => {
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [networkMenuOpen, setNetworkMenuOpen] = useState(false);
 
   const activeFiltersCount = (selectedVersions?.length || 0) + 
                              (selectedHealthStatuses?.length || 0) + 
@@ -136,9 +148,9 @@ export const Toolbar = ({
 
           <div className="h-6 w-px bg-border-app mx-1 hidden md:block" />
 
-          {/* Filter */}
+          {/* Combined Filter: Visibility + Network */}
           <div id="filter-button" className="relative">
-            <Tooltip content="Filter nodes by visibility">
+            <Tooltip content="Filter by visibility and network">
               <button
                 type="button"
                 onClick={() => setFilterMenuOpen((prev) => !prev)}
@@ -151,35 +163,92 @@ export const Toolbar = ({
             </Tooltip>
 
             {filterMenuOpen && (
-              <div className="absolute left-0 mt-3 w-56 rounded-xl border border-border-app bg-bg-card/95 backdrop-blur-md shadow-2xl z-[60] overflow-hidden">
-                {(
-                  [
-                    { key: "all" as const, label: `All (${pnodesCount})` },
-                    { key: "public" as const, label: `Public (${publicCount})` },
-                    { key: "private" as const, label: `Private (${privateCount})` },
-                  ] as const
-                ).map((option) => {
-                  const isActive = option.key === nodeFilter;
-                  return (
-                    <button
-                      key={option.key}
-                      type="button"
-                      onClick={() => {
-                        setNodeFilter(option.key);
-                        setFilterMenuOpen(false);
-                      }}
-                      className={clsx(
-                        "w-full px-4 py-3 text-sm flex items-center justify-between transition-colors",
-                        isActive
-                          ? "bg-accent-aqua/15 text-accent-aqua"
-                          : "text-text-main hover:bg-bg-bg2"
-                      )}
-                    >
-                      <span>{option.label}</span>
-                      {isActive && <Check className="w-4 h-4" />}
-                    </button>
-                  );
-                })}
+              <div className="absolute left-0 mt-3 w-64 rounded-xl border border-border-app bg-bg-card/95 backdrop-blur-md shadow-2xl z-[60] overflow-hidden">
+                {/* Visibility Section */}
+                <div className="px-4 py-3 border-b border-border-app">
+                  <p className="text-xs font-semibold text-text-soft uppercase tracking-wider mb-3">Visibility</p>
+                  <div className="space-y-2">
+                    {(
+                      [
+                        { key: "all" as const, label: "All", count: pnodesCount },
+                        { key: "public" as const, label: "Public", count: publicCount },
+                        { key: "private" as const, label: "Private", count: privateCount },
+                      ] as const
+                    ).map((option) => {
+                      const isActive = option.key === nodeFilter;
+                      return (
+                        <label
+                          key={option.key}
+                          className="flex items-center gap-3 cursor-pointer group"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isActive}
+                            onChange={() => setNodeFilter(option.key)}
+                            className="w-4 h-4 rounded border-2 border-border-app bg-bg-bg checked:bg-accent-aqua checked:border-accent-aqua cursor-pointer transition-colors"
+                          />
+                          <span className="text-sm text-text-main group-hover:text-accent-aqua transition-colors flex-1">
+                            {option.label}
+                          </span>
+                          <span className="text-xs font-mono text-text-faint">{option.count}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Network Section */}
+                {setNetworkFilter && (
+                  <div className="px-4 py-3">
+                    <p className="text-xs font-semibold text-text-soft uppercase tracking-wider mb-3">Network</p>
+                    <div className="space-y-2">
+                      {[
+                        { 
+                          key: "all" as const, 
+                          label: "All Networks", 
+                          count: pnodesCount, 
+                          icon: Layers,
+                          color: "text-blue-400"
+                        },
+                        { 
+                          key: "MAINNET" as const, 
+                          label: "Mainnet", 
+                          count: mainnetCount || 0, 
+                          icon: Globe,
+                          color: "text-green-400"
+                        },
+                        { 
+                          key: "DEVNET" as const, 
+                          label: "Devnet", 
+                          count: devnetCount || 0, 
+                          icon: TestTube,
+                          color: "text-yellow-400"
+                        },
+                      ].map((option) => {
+                        const isActive = option.key === networkFilter;
+                        const Icon = option.icon;
+                        return (
+                          <label
+                            key={option.key}
+                            className="flex items-center gap-3 cursor-pointer group"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isActive}
+                              onChange={() => setNetworkFilter(option.key)}
+                              className="w-4 h-4 rounded border-2 border-border-app bg-bg-bg checked:bg-accent-aqua checked:border-accent-aqua cursor-pointer transition-colors"
+                            />
+                            <span className="text-sm text-text-main group-hover:text-accent-aqua transition-colors flex-1 flex items-center gap-2">
+                              <Icon className={`w-3.5 h-3.5 ${option.color}`} strokeWidth={2.5} />
+                              {option.label}
+                            </span>
+                            <span className="text-xs font-mono text-text-faint">{option.count}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -428,34 +497,40 @@ export const Toolbar = ({
 
         {/* Results counter & Live status */}
         <div className="flex items-center gap-4">
-          {/* Results Counter */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-bg rounded-lg border border-border-app">
-            <Eye className="w-4 h-4 text-accent-aqua" />
-            <span className="text-xs font-bold text-text-main">
-              {pnodesCount}
-            </span>
-            <span className="text-[10px] text-text-soft">nodes</span>
-            <div className="w-px h-4 bg-border-app" />
-            <span className="text-[10px] text-text-soft">
-              <span className="font-semibold text-green-400">{publicCount}</span> public
-            </span>
-            <span className="text-[10px] text-text-soft">•</span>
-            <span className="text-[10px] text-text-soft">
-              <span className="font-semibold text-blue-400">{privateCount}</span> private
-            </span>
+          {/* Results Counter - Compact and Smart with Fixed Width */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-bg rounded-lg border border-border-app min-w-[140px]">
+            <Eye className="w-4 h-4 text-accent-aqua flex-shrink-0" />
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="text-xs font-bold text-text-main whitespace-nowrap">
+                {pnodesCount}
+              </span>
+              <span className="text-[10px] text-text-soft whitespace-nowrap">nodes</span>
+              {(nodeFilter !== "all" || networkFilter !== "all") && (
+                <>
+                  <div className="w-px h-4 bg-border-app flex-shrink-0" />
+                  <span className="text-[10px] text-text-soft whitespace-nowrap">
+                    <span className="font-semibold text-green-400">{publicCount}</span> pub
+                  </span>
+                  <span className="text-[10px] text-text-soft">•</span>
+                  <span className="text-[10px] text-text-soft whitespace-nowrap">
+                    <span className="font-semibold text-blue-400">{privateCount}</span> priv
+                  </span>
+                </>
+              )}
+            </div>
           </div>
 
-          {/* Live status */}
-          <div className="flex items-center gap-2">
+          {/* Live status - Fixed width to prevent layout shift */}
+          <div className="flex items-center gap-2 min-w-[100px]">
             {loading || refreshing ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin text-text-soft" />
-                <span className="text-[11px] text-text-soft font-mono">Updating...</span>
+                <Loader2 className="w-4 h-4 animate-spin text-text-soft flex-shrink-0" />
+                <span className="text-[11px] text-text-soft font-mono whitespace-nowrap">Updating...</span>
               </>
             ) : (
               <>
-                <CheckCircle className="w-4 h-4 text-green-400" />
-                <span className="text-[11px] text-text-soft font-mono">{lastUpdateText || "—"}</span>
+                <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                <span className="text-[11px] text-text-soft font-mono whitespace-nowrap">{lastUpdateText || "—"}</span>
               </>
             )}
           </div>
