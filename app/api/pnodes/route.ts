@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { type PNode, type PNodeStatus } from "@/lib/types";
+import { type PNode, type PNodeStatus, type NetworkType } from "@/lib/types";
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const sortDir = searchParams.get("sortDir") || "asc";
     const query = searchParams.get("query")?.toLowerCase() || "";
     const statusFilter = searchParams.get("status") as PNodeStatus | "all" || "all";
+    const networkFilter = searchParams.get("network") as NetworkType | "all" || "all"; // 🆕 Network filter
 
     // Build Supabase query
     let supaQuery = supabase
@@ -20,6 +21,11 @@ export async function GET(request: NextRequest) {
 
     if (statusFilter !== "all") {
       supaQuery = supaQuery.eq("status", statusFilter);
+    }
+
+    // 🆕 Filter by network (MAINNET/DEVNET)
+    if (networkFilter !== "all") {
+      supaQuery = supaQuery.eq("network", networkFilter);
     }
     
     if (query) {
@@ -57,6 +63,8 @@ export async function GET(request: NextRequest) {
       version: row.version,
       pubkey: row.pubkey ?? undefined,
       stats: row.stats as unknown as import("@/lib/types").PNodeStats,
+      network: (row as any).network as NetworkType, // 🆕 Network type
+      network_confidence: (row as any).network_confidence, // 🆕 Confidence
       lat: row.lat,
       lng: row.lng,
       city: row.city,
