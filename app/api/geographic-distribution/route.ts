@@ -25,12 +25,28 @@ export async function GET() {
       );
     }
 
-    // Count nodes per country
+    // Normalize country names
+    const normalizeCountryName = (name: string): string => {
+      const normalized = name.trim();
+      // Handle common variations
+      if (normalized === "The Netherlands") return "Netherlands";
+      if (normalized === "United States") return "United States";
+      if (normalized === "United Kingdom") return "United Kingdom";
+      return normalized;
+    };
+
+    // Count nodes per country (group by normalized name)
     const countryMap = new Map<string, { country: string; country_code: string; count: number }>();
     
     pnodes.forEach((node) => {
-      const country = node.country || "Unknown";
-      const countryCode = node.country_code || "XX";
+      const rawCountry = node.country || "Unknown";
+      const country = normalizeCountryName(rawCountry);
+      let countryCode = node.country_code || "XX";
+      
+      // If "The Netherlands", force NL code
+      if (rawCountry === "The Netherlands") {
+        countryCode = "NL";
+      }
       
       if (countryMap.has(country)) {
         countryMap.get(country)!.count++;
