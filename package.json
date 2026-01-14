@@ -26,6 +26,7 @@
     "@supabase/supabase-js": "^2.30.0",
     "@types/leaflet": "^1.9.21",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@vercel/analytics": "^1.6.1",
     "ai": "3.4.33",
     "axios": "^1.13.2",
     "canvas-confetti": "^1.9.4",

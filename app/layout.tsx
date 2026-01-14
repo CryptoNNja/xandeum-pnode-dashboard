@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/common/Tooltip";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ChatbotWidget } from "@/components/Chat";
 import { DashboardProvider } from "@/lib/dashboard-context";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Xandeum P-Node Analytics",
@@ -33,6 +34,7 @@ export default function RootLayout({
               </TooltipProvider>
             </ToastProvider>
           </ErrorBoundary>
+          <Analytics />
         </ThemeBody>
       </ThemeProvider>
     </html>
