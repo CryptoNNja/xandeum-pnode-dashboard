@@ -9,6 +9,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ChatbotWidget } from "@/components/Chat";
 import { DashboardProvider } from "@/lib/dashboard-context";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: "Xandeum P-Node Analytics",
@@ -35,6 +36,7 @@ export default function RootLayout({
             </ToastProvider>
           </ErrorBoundary>
           <Analytics />
+          <SpeedInsights />
         </ThemeBody>
       </ThemeProvider>
     </html>
