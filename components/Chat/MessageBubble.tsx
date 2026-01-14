@@ -4,8 +4,9 @@ import { User, Copy, ThumbsUp, ThumbsDown, Bot } from 'lucide-react';
 import { Message } from 'ai';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { useState } from 'react';
+import { vscDarkPlus, prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useState, useEffect } from 'react';
+import { useTheme } from '@/lib/theme';
 
 interface MessageBubbleProps {
   message: Message;
@@ -14,6 +15,9 @@ interface MessageBubbleProps {
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
+  const { themeId, mounted } = useTheme();
+
+  const isDark = mounted ? (themeId === 'dark') : true;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -102,10 +106,10 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                     return (
                       <div className="my-3">
                         <SyntaxHighlighter
-                          style={vscDarkPlus}
+                          style={isDark ? vscDarkPlus : prism}
                           language={language}
                           PreTag="div"
-                          className="!bg-gray-900 !rounded-lg !text-sm !m-0 relative group"
+                          className={`!rounded-lg !text-sm !m-0 relative group ${isDark ? '!bg-gray-900' : '!bg-gray-100'}`}
                           customStyle={{
                             padding: '1rem',
                             borderRadius: '0.5rem',

@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useChatHistory } from '@/hooks/useChatHistory';
 import { useDashboardContext } from '@/lib/dashboard-context';
 import { usePnodeDashboard } from '@/hooks/usePnodeDashboard';
+import { useTheme } from '@/lib/theme';
 
 interface ChatPanelProps {
   isOpen: boolean;
@@ -21,6 +22,8 @@ export function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
   const { loadHistory, saveHistory, clearHistory } = useChatHistory();
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   const { currentPage, selectedNodes, activeFilters } = useDashboardContext();
+  const { themeId } = useTheme();
+  const isDark = themeId === 'dark';
   const { 
     pnodes, 
     filteredAndSortedPNodes,
@@ -160,16 +163,19 @@ export function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
       {/* Backdrop - Ultra subtle, keeps dashboard visible, non-clickable */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/5 dark:bg-black/20 z-40 transition-opacity duration-300 pointer-events-none"
+          className="fixed inset-0 bg-gray-900/5 dark:bg-black/20 z-40 transition-opacity duration-300 pointer-events-none"
         />
       )}
 
       {/* Side Panel - Fully opaque */}
       <div
+        style={{
+          backgroundColor: isDark ? 'rgb(3, 7, 18)' : 'rgb(249, 250, 251)',
+          color: isDark ? 'rgb(243, 244, 246)' : 'rgb(17, 24, 39)',
+          borderLeft: isDark ? '1px solid rgb(31, 41, 55)' : '1px solid rgb(229, 231, 235)',
+        }}
         className={`
           fixed right-0 top-0 h-screen w-[340px] max-w-[85vw]
-          bg-white dark:bg-gray-950
-          border-l border-border
           shadow-2xl
           transform transition-all duration-300 ease-out
           ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}
@@ -180,7 +186,7 @@ export function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
         {/* Header */}
         <div className="
           flex items-center justify-between
-          px-4 py-3 border-b border-border
+          px-4 py-3 border-b border-gray-200 dark:border-gray-800
           bg-gradient-to-r from-purple-500/10 to-blue-500/10
         ">
           <div className="flex items-center gap-2">

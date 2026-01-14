@@ -1,16 +1,33 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: ['class', '[data-theme="dark"]'], // Enable dark mode with class strategy and data-theme
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  safelist: [
+    'bg-gray-50',
+    'bg-gray-950',
+    'text-gray-900',
+    'text-gray-100',
+    'border-gray-200',
+    'border-gray-800',
+    'dark:bg-gray-950',
+    'dark:text-gray-100',
+    'dark:border-gray-800',
+  ],
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        background: "var(--bg-app)",
+        foreground: "var(--text-main)",
+        muted: {
+          DEFAULT: "var(--bg-bg2)",
+          foreground: "var(--text-soft)",
+        },
+        border: "var(--border-app)",
         "bg-app": "var(--bg-app)",
         "bg-bg": "var(--bg-bg)",
         "bg-bg2": "var(--bg-bg2)",
