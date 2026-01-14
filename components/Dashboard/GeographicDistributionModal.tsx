@@ -250,7 +250,7 @@ export const GeographicDistributionModal = ({
                   
                   return (
                   <tr
-                    key={country.country_code}
+                    key={`${country.country_code}-${index}`}
                     className="border-t transition-colors hover:bg-opacity-50"
                     style={{
                       borderColor: isLight ? "rgba(15, 23, 42, 0.08)" : "rgba(255, 255, 255, 0.08)",

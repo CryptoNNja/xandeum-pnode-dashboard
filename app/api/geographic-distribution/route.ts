@@ -43,6 +43,11 @@ export async function GET() {
       const country = normalizeCountryName(rawCountry);
       let countryCode = node.country_code || "XX";
       
+      // Debug Netherlands
+      if (rawCountry.toLowerCase().includes('nether')) {
+        console.log('Netherlands node:', { rawCountry, normalized: country, code: countryCode, nodeCode: node.country_code });
+      }
+      
       // If "The Netherlands", force NL code
       if (rawCountry === "The Netherlands") {
         countryCode = "NL";
@@ -58,6 +63,9 @@ export async function GET() {
         });
       }
     });
+    
+    console.log('Final countryMap size:', countryMap.size);
+    console.log('Netherlands in map:', countryMap.get('Netherlands'));
 
     // Calculate percentages and prepare response
     const totalNodes = pnodes.length;
