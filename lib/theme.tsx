@@ -61,6 +61,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem("xandeum-theme-id", themeId);
     window.localStorage.setItem("xandeum-theme", themeId);
     document.documentElement.setAttribute("data-theme", themeId);
+    
+    // Add/remove dark class for Tailwind
+    if (themeId === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
   }, [themeId]);
 
   return (
