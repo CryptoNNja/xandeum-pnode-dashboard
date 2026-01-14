@@ -160,19 +160,14 @@ export function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
 
   return (
     <>
-      {/* Backdrop - Ultra subtle, keeps dashboard visible, non-clickable */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-gray-900/5 dark:bg-black/20 z-40 transition-opacity duration-300 pointer-events-none"
-        />
-      )}
+      {/* No backdrop - dashboard stays fully visible */}
 
-      {/* Side Panel - Fully opaque */}
+      {/* Side Panel - Matches dashboard theme */}
       <div
         style={{
-          backgroundColor: isDark ? 'rgb(3, 7, 18)' : 'rgb(249, 250, 251)',
-          color: isDark ? 'rgb(243, 244, 246)' : 'rgb(17, 24, 39)',
-          borderLeft: isDark ? '1px solid rgb(31, 41, 55)' : '1px solid rgb(229, 231, 235)',
+          backgroundColor: 'var(--bg-card)',
+          color: 'var(--text-main)',
+          borderLeft: '1px solid var(--border-app)',
         }}
         className={`
           fixed right-0 top-0 h-screen w-[340px] max-w-[85vw]
