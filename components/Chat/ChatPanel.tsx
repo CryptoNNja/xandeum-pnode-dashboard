@@ -167,7 +167,7 @@ export function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
       {/* Side Panel - Fully opaque */}
       <div
         className={`
-          fixed right-0 top-0 h-screen w-[420px] max-w-[90vw]
+          fixed right-0 top-0 h-screen w-[340px] max-w-[85vw]
           bg-white dark:bg-gray-950
           border-l border-border
           shadow-2xl
