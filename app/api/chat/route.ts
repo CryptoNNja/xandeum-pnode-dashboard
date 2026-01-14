@@ -1,5 +1,6 @@
 import { createGroq } from '@ai-sdk/groq';
 import { streamText } from 'ai';
+import { rateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limiter';
 
 // Initialize Groq
 const groq = createGroq({
@@ -10,6 +11,20 @@ export const runtime = 'edge';
 
 export async function POST(req: Request) {
   try {
+    // Rate limiting: 20 messages per hour per IP
+    const clientIp = getClientIp(req);
+    const rateLimitResult = rateLimit(clientIp, {
+      maxRequests: 20,
+      windowMs: 60 * 60 * 1000, // 1 hour
+    });
+
+    if (!rateLimitResult.success) {
+      console.warn(`Rate limit exceeded for IP: ${clientIp}`);
+      return rateLimitResponse(rateLimitResult);
+    }
+
+    console.log(`Chat request from ${clientIp} - ${rateLimitResult.remaining}/${rateLimitResult.limit} remaining`);
+
     const { messages, dashboardContext } = await req.json();
 
     console.log('🤖 Ronin AI received dashboard context:', dashboardContext);
