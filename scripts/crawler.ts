@@ -820,11 +820,60 @@ export const main = async () => {
     // --- Summary (for GitHub Actions comparisons) ---
     const statsFail = Math.max(0, statsCalls - statsSuccess);
     const portsSorted = Object.entries(statsPortUsage).sort((a, b) => Number(a[0]) - Number(b[0]));
+
+    // Status + network breakdown (based on final nodes we upsert)
+    const summaryCounts = {
+      active: 0,
+      gossip_only: 0,
+      MAINNET: 0,
+      DEVNET: 0,
+      UNKNOWN: 0,
+      MAINNET_active: 0,
+      MAINNET_gossip_only: 0,
+      DEVNET_active: 0,
+      DEVNET_gossip_only: 0,
+      UNKNOWN_active: 0,
+      UNKNOWN_gossip_only: 0,
+    };
+
+    for (const n of deduplicatedNodes as any[]) {
+      if (n.status === 'active') summaryCounts.active++;
+      else summaryCounts.gossip_only++;
+
+      const net = n.network;
+      if (net === 'MAINNET') {
+        summaryCounts.MAINNET++;
+        if (n.status === 'active') summaryCounts.MAINNET_active++;
+        else summaryCounts.MAINNET_gossip_only++;
+      } else if (net === 'DEVNET') {
+        summaryCounts.DEVNET++;
+        if (n.status === 'active') summaryCounts.DEVNET_active++;
+        else summaryCounts.DEVNET_gossip_only++;
+      } else {
+        summaryCounts.UNKNOWN++;
+        if (n.status === 'active') summaryCounts.UNKNOWN_active++;
+        else summaryCounts.UNKNOWN_gossip_only++;
+      }
+    }
+
     console.log('\n📊 CRAWL SUMMARY');
     console.log('='.repeat(70));
     console.log(`Mode: CRAWLER_PORT_FALLBACKS=${process.env.CRAWLER_PORT_FALLBACKS ?? '0'} (default ports: ${DEFAULT_PRPC_PORTS.join(',')})`);
     console.log(`Discovered IPs (raw): ${discovered.size}`);
     console.log(`Processing IPs (filtered): ${allIps.length}`);
+    console.log(`Final nodes upserted (deduplicated): ${deduplicatedNodes.length}`);
+
+    console.log(`Status breakdown:`);
+    console.log(`  - active (public):      ${summaryCounts.active}`);
+    console.log(`  - gossip_only (private): ${summaryCounts.gossip_only}`);
+
+    console.log(`Network breakdown:`);
+    console.log(`  - MAINNET:  ${summaryCounts.MAINNET} (active ${summaryCounts.MAINNET_active}, gossip_only ${summaryCounts.MAINNET_gossip_only})`);
+    console.log(`  - DEVNET:   ${summaryCounts.DEVNET} (active ${summaryCounts.DEVNET_active}, gossip_only ${summaryCounts.DEVNET_gossip_only})`);
+    if (summaryCounts.UNKNOWN > 0) {
+      console.log(`  - UNKNOWN:  ${summaryCounts.UNKNOWN} (active ${summaryCounts.UNKNOWN_active}, gossip_only ${summaryCounts.UNKNOWN_gossip_only})`);
+    }
+
     console.log(`get-stats calls: ${statsCalls}`);
     console.log(`get-stats success: ${statsSuccess}`);
     console.log(`get-stats failed: ${statsFail}`);
