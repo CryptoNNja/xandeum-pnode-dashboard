@@ -5,6 +5,7 @@ import { Radio, ShieldCheck, Network, LucideIcon, AlertCircle, Check, AlertTrian
 import { hexToRgba, getKpiColors, getStatusColors } from "@/lib/utils";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
 import { SystemAlertsAnalyticsModal } from "./SystemAlertsAnalyticsModal";
+import { NetworkBadge } from "@/components/common/NetworkBadge";
 
 type SummaryHeaderProps = {
   publicCount: number;
@@ -35,6 +36,12 @@ type SummaryHeaderProps = {
   criticalCount: number;
   warningCount: number;
   isLight: boolean;
+  mainnetPublic?: number;
+  mainnetPrivate?: number;
+  mainnetCount?: number;
+  devnetPublic?: number;
+  devnetPrivate?: number;
+  devnetCount?: number;
 };
 
 export const SummaryHeader = ({
@@ -47,6 +54,12 @@ export const SummaryHeader = ({
   criticalCount,
   warningCount,
   isLight,
+  mainnetPublic = 0,
+  mainnetPrivate = 0,
+  mainnetCount = 0,
+  devnetPublic = 0,
+  devnetPrivate = 0,
+  devnetCount = 0,
 }: SummaryHeaderProps) => {
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const UptimeIcon = networkUptimeStats.Icon;
@@ -68,6 +81,25 @@ export const SummaryHeader = ({
             <p className="text-4xl font-bold text-text-main mt-2">
               {publicCount}
             </p>
+            
+            {/* Network Breakdown - Clean Typography */}
+            {(mainnetPublic > 0 || devnetPublic > 0) && (
+              <div className="flex items-center gap-3 mt-3 text-sm">
+                {mainnetPublic > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <span className="text-text-soft font-medium">{mainnetPublic}</span>
+                  </div>
+                )}
+                {devnetPublic > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                    <span className="text-text-soft font-medium">{devnetPublic}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <p className="text-sm text-text-soft mt-2">Public storage network</p>
           </div>
           <div
@@ -96,6 +128,25 @@ export const SummaryHeader = ({
             <p className="text-4xl font-bold text-text-main mt-2">
               {privateCount}
             </p>
+            
+            {/* Network Breakdown - Clean Typography */}
+            {(mainnetPrivate > 0 || devnetPrivate > 0) && (
+              <div className="flex items-center gap-3 mt-3 text-sm">
+                {mainnetPrivate > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <span className="text-text-soft font-medium">{mainnetPrivate}</span>
+                  </div>
+                )}
+                {devnetPrivate > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                    <span className="text-text-soft font-medium">{devnetPrivate}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <p className="text-sm text-text-soft mt-2">Private storage network</p>
           </div>
           <div
@@ -124,6 +175,25 @@ export const SummaryHeader = ({
             <p className="text-4xl font-bold text-text-main mt-2">
               {totalNodes}
             </p>
+            
+            {/* Network Breakdown - Clean Typography */}
+            {(mainnetCount > 0 || devnetCount > 0) && (
+              <div className="flex items-center gap-3 mt-3 text-sm">
+                {mainnetCount > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <span className="text-text-soft font-medium">{mainnetCount}</span>
+                  </div>
+                )}
+                {devnetCount > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                    <span className="text-text-soft font-medium">{devnetCount}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <p className="text-sm text-text-soft mt-2">Total network size</p>
           </div>
           <div
