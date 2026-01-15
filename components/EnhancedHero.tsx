@@ -1,7 +1,6 @@
 "use client";
 
 
-import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -42,23 +41,8 @@ const EnhancedHero: React.FC<EnhancedHeroProps> = ({
 
   const effectiveTheme = hasHydrated ? theme : "dark";
   const isLight = effectiveTheme === "light";
-  const logoSrc = isLight ? "/xandeum_light.png" : "/xandeum_dark.png";
+  const logoSrc = isLight ? "/logo_ronin_light.png" : "/logo_ronin_dark.png";
   const gradientOpacity = isLight ? 0.04 : 0.09;
-  const titleColorClass = isLight ? "text-gray-900" : "text-white";
-  const titleGlowStyle = useMemo(
-    () => ({
-      filter: isLight
-        ? "drop-shadow(0 0 6px rgba(20, 241, 149, 0.10))"
-        : "drop-shadow(0 0 14px rgba(20, 241, 149, 0.18))",
-      textShadow: isLight
-        ? "0 2px 6px rgba(15,23,42,0.13)"
-        : "0 4px 14px rgba(0,0,0,0.38)",
-      WebkitTextStroke: isLight
-        ? "0.2px rgba(15,23,42,0.13)"
-        : "0.3px rgba(255,255,255,0.18)",
-    }),
-    [isLight]
-  );
   const gridOpacity = isLight ? 0.025 : 0.012;
 
   const heroLightGradient = `linear-gradient(135deg, ${hexToRgba(
@@ -137,27 +121,18 @@ const EnhancedHero: React.FC<EnhancedHeroProps> = ({
 
       {/* Content */}
       <div className="relative z-10">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between gap-8">
-            <Link href="/" className="flex items-center gap-6 group hover:opacity-90 transition-opacity">
+        <div className="max-w-7xl mx-auto px-6 flex items-center" style={{ height: '140px' }}>
+          <div className="flex items-center justify-between gap-8 w-full">
+            <Link href="/" className="flex items-center group hover:opacity-90 transition-opacity">
               <Image
                 src={logoSrc}
-                alt="Xandeum Logo"
+                alt="Ronin pNode Analytics"
                 className="object-contain"
-                width={256}
-                height={64}
-                style={{ width: 256, height: 64 }}
+                width={800}
+                height={145}
+                style={{ width: 'auto', height: 145 }}
                 priority
               />
-              <div>
-                <h1
-                  className={`text-3xl font-bold ${titleColorClass}`}
-                  style={titleGlowStyle}
-                >
-                  pNode Analytics
-                </h1>
-                <p className="text-sm text-gray-400 mt-1">Real-time Network Monitoring</p>
-              </div>
             </Link>
             <div className="flex items-center gap-3">
               <motion.button
