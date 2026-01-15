@@ -1,3 +1,9 @@
+<div align="center">
+
+![Ronin - Powered by Xandeum](public/ronin_logo_dark.png)
+
+</div>
+
 # 🌐 Xandeum pNode Analytics Platform
 
 > 🏆 **Superteam Bounty Submission** | Deadline: Dec 25, 2025 ✅  
