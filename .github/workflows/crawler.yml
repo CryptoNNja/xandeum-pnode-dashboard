@@ -7,6 +7,15 @@ on:
   
   # Allow manual trigger from GitHub interface
   workflow_dispatch:
+    inputs:
+      enable_port_fallbacks:
+        description: 'Enable pRPC port fallbacks (tests rpc_port, 6000, 9000)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
   
   # Optional: Run on push to main (for testing)
   # push:
@@ -46,11 +55,17 @@ jobs:
           export NODE_ENV=production
           export SUPABASE_URL="${{ secrets.SUPABASE_URL }}"
           export SUPABASE_SERVICE_ROLE_KEY="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+          # Enable optional pRPC port fallbacks only when manually requested
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.enable_port_fallbacks }}" = "true" ]; then
+            export CRAWLER_PORT_FALLBACKS=1
+          else
+            export CRAWLER_PORT_FALLBACKS=0
+          fi
           echo "Environment check before running:"
-          echo "SUPABASE_URL is set: $([ -n "$SUPABASE_URL" ] && echo 'YES' || echo 'NO')"
-          echo "SUPABASE_SERVICE_ROLE_KEY is set: $([ -n "$SUPABASE_SERVICE_ROLE_KEY" ] && echo 'YES' || echo 'NO')"
+          echo "SUPABASE_URL is set: $([ -n \"$SUPABASE_URL\" ] && echo 'YES' || echo 'NO')"
+          echo "SUPABASE_SERVICE_ROLE_KEY is set: $([ -n \"$SUPABASE_SERVICE_ROLE_KEY\" ] && echo 'YES' || echo 'NO')"
           echo "NODE_ENV: $NODE_ENV"
-          # (Do not print secret lengths)
+          echo "CRAWLER_PORT_FALLBACKS: $CRAWLER_PORT_FALLBACKS"
           npx tsx scripts/crawler.ts
           echo "✅ Crawler completed successfully!"
 
