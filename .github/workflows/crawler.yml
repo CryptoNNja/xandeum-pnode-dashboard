@@ -24,7 +24,7 @@ on:
 jobs:
   crawl:
     concurrency:
-      group: crawler
+      group: crawler-${{ github.event_name }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 10  # Safety timeout
