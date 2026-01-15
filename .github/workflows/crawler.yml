@@ -50,8 +50,7 @@ jobs:
           echo "SUPABASE_URL is set: $([ -n "$SUPABASE_URL" ] && echo 'YES' || echo 'NO')"
           echo "SUPABASE_SERVICE_ROLE_KEY is set: $([ -n "$SUPABASE_SERVICE_ROLE_KEY" ] && echo 'YES' || echo 'NO')"
           echo "NODE_ENV: $NODE_ENV"
-          echo "SUPABASE_URL length: ${#SUPABASE_URL}"
-          echo "SUPABASE_SERVICE_ROLE_KEY length: ${#SUPABASE_SERVICE_ROLE_KEY}"
+          # (Do not print secret lengths)
           npx tsx scripts/crawler.ts
           echo "✅ Crawler completed successfully!"
 

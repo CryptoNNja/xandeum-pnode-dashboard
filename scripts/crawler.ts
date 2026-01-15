@@ -61,6 +61,29 @@ const BOOTSTRAP_NODES = [
 // Increased timeout from 2000ms to 5000ms to catch slower nodes
 const TIMEOUT = 5000;
 
+// Optional port fallback strategy (to improve reachability on networks where pRPC port varies)
+// Default is strict :6000 only.
+const ENABLE_PORT_FALLBACKS = process.env.CRAWLER_PORT_FALLBACKS === '1';
+const DEFAULT_PRPC_PORTS = ENABLE_PORT_FALLBACKS ? [6000, 9000] : [6000];
+
+const buildRpcUrl = (ip: string, port: number) => `http://${ip}:${port}/rpc`;
+
+async function tryPorts<T>(
+  ip: string,
+  ports: number[],
+  fn: (url: string) => Promise<T>,
+): Promise<{ value: T; port: number } | null> {
+  for (const port of ports) {
+    try {
+      const value = await fn(buildRpcUrl(ip, port));
+      return { value, port };
+    } catch {
+      // try next port
+    }
+  }
+  return null;
+}
+
 // --- Helper Functions (copied from the old API route) ---
 
 interface GossipPeer { ip: string; }
@@ -113,37 +136,46 @@ async function getGossipPeers(ip: string): Promise<string[]> {
 }
 
 async function getRpcPeers(ip: string): Promise<string[]> {
-    try {
-        const res = await axios.post<RpcPodsResponse>(`http://${ip}:6000/rpc`, { jsonrpc: '2.0', method: 'get-pods', id: 1 }, { timeout: TIMEOUT });
-        return res.data?.result?.pods?.map(p => p.address.split(':')[0]).filter((peerIp): peerIp is string => !!peerIp) || [];
-    } catch {
-        return [];
-    }
+  const result = await tryPorts(ip, DEFAULT_PRPC_PORTS, async (url) => {
+    const res = await axios.post<RpcPodsResponse>(
+      url,
+      { jsonrpc: '2.0', method: 'get-pods', id: 1 },
+      { timeout: TIMEOUT },
+    );
+    return res.data;
+  });
+
+  const data = result?.value;
+  return data?.result?.pods?.map((p) => p.address.split(':')[0]).filter((peerIp): peerIp is string => !!peerIp) || [];
 }
 
-async function getStats(ip: string): Promise<PNodeStats | null> {
-    try {
-        const res = await axios.post<RpcStatsResponse>(`http://${ip}:6000/rpc`, { jsonrpc: '2.0', method: 'get-stats', id: 1 }, { timeout: 5000 });
-        const stats = res.data?.result;
-        if (!stats) return null;
+async function getStats(ip: string, ports: number[] = DEFAULT_PRPC_PORTS): Promise<PNodeStats | null> {
+  const result = await tryPorts(ip, ports, async (url) => {
+    const res = await axios.post<RpcStatsResponse>(
+      url,
+      { jsonrpc: '2.0', method: 'get-stats', id: 1 },
+      { timeout: 5000 },
+    );
+    return res.data;
+  });
 
-        return {
-            active_streams: coerceNumber(stats.active_streams),
-            cpu_percent: coerceNumber(stats.cpu_percent),
-            current_index: coerceNumber(stats.current_index),
-            file_size: coerceNumber(stats.file_size),
-            last_updated: coerceNumber(stats.last_updated),
-            packets_received: coerceNumber(stats.packets_received),
-            packets_sent: coerceNumber(stats.packets_sent),
-            ram_total: coerceNumber(stats.ram_total),
-            ram_used: coerceNumber(stats.ram_used),
-            total_bytes: coerceNumber(stats.total_bytes),
-            total_pages: coerceNumber(stats.total_pages),
-            uptime: coerceNumber(stats.uptime),
-        };
-    } catch {
-        return null;
-    }
+  const stats = result?.value?.result;
+  if (!stats) return null;
+
+  return {
+    active_streams: coerceNumber(stats.active_streams),
+    cpu_percent: coerceNumber(stats.cpu_percent),
+    current_index: coerceNumber(stats.current_index),
+    file_size: coerceNumber(stats.file_size),
+    last_updated: coerceNumber(stats.last_updated),
+    packets_received: coerceNumber(stats.packets_received),
+    packets_sent: coerceNumber(stats.packets_sent),
+    ram_total: coerceNumber(stats.ram_total),
+    ram_used: coerceNumber(stats.ram_used),
+    total_bytes: coerceNumber(stats.total_bytes),
+    total_pages: coerceNumber(stats.total_pages),
+    uptime: coerceNumber(stats.uptime),
+  };
 }
 
 const extractIp = (address?: string): string | undefined => {
@@ -152,18 +184,17 @@ const extractIp = (address?: string): string | undefined => {
     return candidate && candidate.length > 0 ? candidate : undefined;
 }
 
-async function getPodsWithStats(ip: string): Promise<PodWithStats[]> {
-    try {
-      const res = await axios.post<PodsWithStatsResponse>(
-        `http://${ip}:6000/rpc`,
-        { jsonrpc: "2.0", method: "get-pods-with-stats", id: 1 },
-        { timeout: 5000 }
-      );
+async function getPodsWithStats(ip: string, ports: number[] = DEFAULT_PRPC_PORTS): Promise<PodWithStats[]> {
+  const result = await tryPorts(ip, ports, async (url) => {
+    const res = await axios.post<PodsWithStatsResponse>(
+      url,
+      { jsonrpc: '2.0', method: 'get-pods-with-stats', id: 1 },
+      { timeout: 5000 },
+    );
+    return res.data;
+  });
 
-      return res.data?.result?.pods ?? [];
-    } catch {
-      return [];
-    }
+  return result?.value?.result?.pods ?? [];
 }
 
 interface GeolocationData {
@@ -322,6 +353,7 @@ export const main = async () => {
     const storageCommittedMap = new Map<string, number>();
     const storageUsedMap = new Map<string, number>();
     const isPublicMap = new Map<string, boolean>();
+    const rpcPortMap = new Map<string, number>();
     console.log('📡 Fetching versions, pubkeys, storage commitments, and public status...');
     
     // Batch metadata calls for speed (100 concurrent at a time for faster crawling)
@@ -367,6 +399,11 @@ export const main = async () => {
                 if (ip && pod.is_public !== undefined) {
                     isPublicMap.set(ip, pod.is_public);
                 }
+
+                // Capture rpc_port when advertised so we can prioritize it for get-stats
+                if (ip && typeof pod.rpc_port === 'number' && Number.isFinite(pod.rpc_port) && pod.rpc_port > 0) {
+                    rpcPortMap.set(ip, pod.rpc_port);
+                }
             })
         }
     });
@@ -387,7 +424,11 @@ export const main = async () => {
     
     for (let i = 0; i < allIps.length; i += BATCH_SIZE) {
         const batch = allIps.slice(i, i + BATCH_SIZE);
-        const batchResults = await Promise.allSettled(batch.map(ip => getStats(ip)));
+        const batchResults = await Promise.allSettled(batch.map(ip => {
+            const preferred = rpcPortMap.get(ip);
+            const ports = preferred ? [preferred, ...DEFAULT_PRPC_PORTS.filter(p => p !== preferred)] : DEFAULT_PRPC_PORTS;
+            return getStats(ip, ports);
+        }));
         allStats.push(...batchResults);
         console.log(`  Fetched stats for ${Math.min(i + BATCH_SIZE, allIps.length)}/${allIps.length} nodes...`);
     }
