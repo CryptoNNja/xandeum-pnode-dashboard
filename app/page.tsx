@@ -75,6 +75,7 @@ export default function Page() {
     autoRefreshOption,
     setAutoRefreshOption,
     lastUpdate,
+    pnodesSummary,
     healthFilter,
     setHealthFilter,
     networkHealthInsights,
@@ -134,29 +135,17 @@ export default function Page() {
   }, [filteredAndSortedPNodes, networkFilter]);
 
   // Network-specific stats for breakdown display
+  // Use polled summary counters when available (cheap "live"), fall back to derived counts from full dataset.
   const mainnetNodes = useMemo(() => pnodes.filter(n => n.network === "MAINNET"), [pnodes]);
   const devnetNodes = useMemo(() => pnodes.filter(n => n.network === "DEVNET"), [pnodes]);
-  
-  const mainnetCount = mainnetNodes.length;
-  const devnetCount = devnetNodes.length;
-  
-  // Breakdown by public/private for each network
-  const mainnetPublic = useMemo(() => 
-    mainnetNodes.filter(n => n.status === "active").length,
-    [mainnetNodes]
-  );
-  const mainnetPrivate = useMemo(() => 
-    mainnetNodes.filter(n => n.status !== "active").length,
-    [mainnetNodes]
-  );
-  const devnetPublic = useMemo(() => 
-    devnetNodes.filter(n => n.status === "active").length,
-    [devnetNodes]
-  );
-  const devnetPrivate = useMemo(() => 
-    devnetNodes.filter(n => n.status !== "active").length,
-    [devnetNodes]
-  );
+
+  const mainnetCount = pnodesSummary?.mainnet ?? mainnetNodes.length;
+  const devnetCount = pnodesSummary?.devnet ?? devnetNodes.length;
+
+  const mainnetPublic = pnodesSummary?.mainnetPublic ?? mainnetNodes.filter(n => n.status === "active").length;
+  const mainnetPrivate = pnodesSummary?.mainnetPrivate ?? mainnetNodes.filter(n => n.status !== "active").length;
+  const devnetPublic = pnodesSummary?.devnetPublic ?? devnetNodes.filter(n => n.status === "active").length;
+  const devnetPrivate = pnodesSummary?.devnetPrivate ?? devnetNodes.filter(n => n.status !== "active").length;
 
   // Recalculate publicCount and privateCount based on active network filter
   const filteredPublicCount = useMemo(() => {

@@ -107,40 +107,38 @@ export const formatBytesToTB = (bytes: number) => {
     return tbValue >= 10 ? `${tbValue.toFixed(0)} TB` : `${tbValue.toFixed(1)} TB`;
 };
 
-// Adaptive formatter: chooses best unit automatically (MB, GB, or TB)
-// Updated to use DECIMAL units (1e12, 1e9, etc.) for consistency across the dashboard
+// Adaptive formatter: chooses best unit automatically (KB/MB/GB/TB)
+// Uses binary units (1024) to match pRPC stats + existing tests/UX expectations.
 export const formatBytesAdaptive = (bytes: number) => {
   if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
 
-  // Use decimal units to match storage capacity displays
-  const KB = 1e3;
-  const MB = 1e6;
-  const GB = 1e9;
-  const TB = 1e12;
+  const KB = 1024;
+  const MB = 1024 ** 2;
+  const GB = 1024 ** 3;
+  const TB = 1024 ** 4;
 
   if (bytes >= TB) {
-    const tbValue = bytes / TB;
-    return tbValue >= 10 ? `${tbValue.toFixed(0)} TB` : `${tbValue.toFixed(1)} TB`;
+    const v = bytes / TB;
+    return v >= 10 ? `${v.toFixed(0)} TB` : `${v.toFixed(1)} TB`;
   }
 
   if (bytes >= GB) {
-    const gbValue = bytes / GB;
-    return gbValue >= 10 ? `${gbValue.toFixed(0)} GB` : `${gbValue.toFixed(1)} GB`;
+    const v = bytes / GB;
+    return v >= 10 ? `${v.toFixed(0)} GB` : `${v.toFixed(1)} GB`;
   }
 
   if (bytes >= MB) {
-    const mbValue = bytes / MB;
-    return mbValue >= 10 ? `${mbValue.toFixed(0)} MB` : `${mbValue.toFixed(1)} MB`;
+    const v = bytes / MB;
+    return v >= 10 ? `${v.toFixed(0)} MB` : `${v.toFixed(1)} MB`;
   }
 
-  if (bytes >= KB) {
-    const kbValue = bytes / KB;
-    return `${kbValue.toFixed(1)} KB`;
+  // For small values, prefer showing KB once we cross 0.5 KB for nicer UX (and to match tests)
+  if (bytes >= 512) {
+    const v = bytes / KB;
+    return `${v.toFixed(1)} KB`;
   }
 
-  // Less than 1 MB - show in KB
-  const kbValue = bytes / 1024;
-  return kbValue >= 10 ? `${kbValue.toFixed(0)} KB` : `${kbValue.toFixed(1)} KB`;
+  return `${bytes.toFixed(0)} B`;
 };
 
 export const formatUptime = (seconds: number) => {
