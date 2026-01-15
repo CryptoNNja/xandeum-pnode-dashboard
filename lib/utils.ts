@@ -11,7 +11,7 @@ export const TB_IN_BYTES_DECIMAL = 1e12;
 
 export const KPI_COLORS = {
     public: "#06B6D4",
-    private: "#94A3B8",
+    private: "#F97316",
     total: "#6366F1",
     cpu: "#10B981",
     ram: "#F472B6",
@@ -49,7 +49,7 @@ export const getCssVar = (varName: string, fallback: string = "#000000"): string
 
 export const getKpiColors = () => ({
     public: getCssVar("--accent-aqua", "#06B6D4"),
-    private: getCssVar("--kpi-private", "#94A3B8"),
+    private: getCssVar("--kpi-private", "#F97316"),
     total: getCssVar("--accent", "#6366F1"),
     cpu: getCssVar("--kpi-excellent", "#10B981"),
     ram: getCssVar("--accent-ram", "#3B82F6"),
