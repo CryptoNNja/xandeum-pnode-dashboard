@@ -8,25 +8,35 @@ import { getNetworkDetector } from '../lib/network-detector';
 import { fetchOfficialRegistries, getCreditsForPubkey } from '../lib/official-apis';
 import { calculateConfidence, type PNodeForScoring } from '../lib/confidence-scoring';
 
-// Load environment variables from .env.local (for local development only)
-// In production/CI, variables are already in process.env from GitHub Actions
-if (process.env.NODE_ENV !== 'production') {
-  dotenv.config({ path: './.env.local' });
-}
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const IPWHO_API_KEY = process.env.IPWHO_API_KEY; // Keep this for geolocation
+// IMPORTANT: this file is imported by Next.js API routes.
+// It must be "import-safe": no env validation, no network calls, and no crawl execution at module load.
+// We only initialize env + clients inside `main()`.
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('Environment check failed:');
-  console.error('SUPABASE_URL present:', !!SUPABASE_URL);
-  console.error('SUPABASE_SERVICE_ROLE_KEY present:', !!SUPABASE_SERVICE_ROLE_KEY);
-  throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
-}
+let supabaseAdmin: ReturnType<typeof createClient<Database>>;
+let IPWHO_API_KEY: string | undefined;
 
-const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
+function initCrawlerEnv() {
+  // Load environment variables from .env.local (for local development only)
+  // In production/CI, variables are already in process.env from GitHub Actions / Vercel env.
+  if (process.env.NODE_ENV !== 'production') {
+    dotenv.config({ path: './.env.local' });
+  }
+
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  IPWHO_API_KEY = process.env.IPWHO_API_KEY;
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('Environment check failed:');
+    console.error('SUPABASE_URL present:', !!SUPABASE_URL);
+    console.error('SUPABASE_SERVICE_ROLE_KEY present:', !!SUPABASE_SERVICE_ROLE_KEY);
+    throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+  }
+
+  supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+  });
+}
 
 
 const BOOTSTRAP_NODES = [
@@ -218,6 +228,8 @@ async function getGeolocation(ip: string): Promise<GeolocationData | null> {
 }
 
 export const main = async () => {
+    initCrawlerEnv();
+
     console.log('🕷️ Starting network crawl (Next-Level Discovery)...');
     console.log('=' .repeat(70));
 
@@ -750,7 +762,15 @@ export const main = async () => {
     console.log('\n✨ Crawl finished.');
 };
 
-main().catch(error => {
+// Run only when executed directly (CLI). Avoid triggering during Next.js build/import.
+const isDirectRun = (() => {
+  const argv1 = process.argv?.[1] || '';
+  return argv1.includes('scripts/crawler') || argv1.endsWith('crawler.ts') || argv1.endsWith('crawler.js');
+})();
+
+if (isDirectRun) {
+  main().catch((error) => {
     console.error('An unexpected error occurred during the crawl:', error);
     process.exit(1);
-});
+  });
+}
