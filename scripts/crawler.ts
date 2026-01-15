@@ -15,6 +15,11 @@ import { calculateConfidence, type PNodeForScoring } from '../lib/confidence-sco
 let supabaseAdmin: ReturnType<typeof createClient<Database>>;
 let IPWHO_API_KEY: string | undefined;
 
+// Runtime counters for logs (reset at each `main()` run)
+let statsCalls = 0;
+let statsSuccess = 0;
+let statsPortUsage: Record<string, number> = {};
+
 function initCrawlerEnv() {
   // Load environment variables from .env.local (for local development only)
   // In production/CI, variables are already in process.env from GitHub Actions / Vercel env.
@@ -150,6 +155,7 @@ async function getRpcPeers(ip: string): Promise<string[]> {
 }
 
 async function getStats(ip: string, ports: number[] = DEFAULT_PRPC_PORTS): Promise<PNodeStats | null> {
+  statsCalls++;
   const result = await tryPorts(ip, ports, async (url) => {
     const res = await axios.post<RpcStatsResponse>(
       url,
@@ -161,6 +167,12 @@ async function getStats(ip: string, ports: number[] = DEFAULT_PRPC_PORTS): Promi
 
   const stats = result?.value?.result;
   if (!stats) return null;
+
+  statsSuccess++;
+  if (result?.port) {
+    const key = String(result.port);
+    statsPortUsage[key] = (statsPortUsage[key] || 0) + 1;
+  }
 
   return {
     active_streams: coerceNumber(stats.active_streams),
@@ -259,6 +271,11 @@ async function getGeolocation(ip: string): Promise<GeolocationData | null> {
 }
 
 export const main = async () => {
+    // Reset counters
+    statsCalls = 0;
+    statsSuccess = 0;
+    statsPortUsage = {};
+
     initCrawlerEnv();
 
     console.log('🕷️ Starting network crawl (Next-Level Discovery)...');
@@ -798,6 +815,26 @@ export const main = async () => {
         console.log('✅ No zombie nodes found');
     } else {
         console.error('Error checking for zombies:', zombieError);
+    }
+
+    // --- Summary (for GitHub Actions comparisons) ---
+    const statsFail = Math.max(0, statsCalls - statsSuccess);
+    const portsSorted = Object.entries(statsPortUsage).sort((a, b) => Number(a[0]) - Number(b[0]));
+    console.log('\n📊 CRAWL SUMMARY');
+    console.log('='.repeat(70));
+    console.log(`Mode: CRAWLER_PORT_FALLBACKS=${process.env.CRAWLER_PORT_FALLBACKS ?? '0'} (default ports: ${DEFAULT_PRPC_PORTS.join(',')})`);
+    console.log(`Discovered IPs (raw): ${discovered.size}`);
+    console.log(`Processing IPs (filtered): ${allIps.length}`);
+    console.log(`get-stats calls: ${statsCalls}`);
+    console.log(`get-stats success: ${statsSuccess}`);
+    console.log(`get-stats failed: ${statsFail}`);
+    if (portsSorted.length) {
+      console.log('get-stats port usage:');
+      for (const [port, count] of portsSorted) {
+        console.log(`  - ${port}: ${count}`);
+      }
+    } else {
+      console.log('get-stats port usage: (none)');
     }
 
     console.log('\n✨ Crawl finished.');
