@@ -585,6 +585,12 @@ export default function Page() {
           criticalCount={criticalCount}
           warningCount={warningCount}
           isLight={isLight}
+          mainnetPublic={mainnetPublic}
+          mainnetPrivate={mainnetPrivate}
+          mainnetCount={mainnetCount}
+          devnetPublic={devnetPublic}
+          devnetPrivate={devnetPrivate}
+          devnetCount={devnetCount}
         />
 
         {/* DETAILED KPI CARDS */}
@@ -722,13 +728,13 @@ export default function Page() {
       />
 
       {/* FOOTER */}
-      <footer className="border-t border-border-app bg-bg-bg p-8 mt-auto w-full theme-transition">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+      <footer className="border-t border-border-app bg-bg-bg px-6 py-5 mt-10 w-full theme-transition">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-3">
           <div className="text-center md:text-left">
             <p className="text-text-faint text-sm mb-1">
               Built for <span className="text-accent-aqua font-semibold">Xandeum</span> • Superteam Earn Bounty
             </p>
-            <p className="text-text-soft text-xs">Official pNode Analytics Dashboard v1.0</p>
+            <p className="text-text-soft text-xs">Ronin v1.0 - pNode Analytics Dashboard</p>
           </div>
           
           <div className="flex items-center gap-4">
@@ -738,7 +744,7 @@ export default function Page() {
                 href="https://github.com/CryptoNNja"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full border border-border-app bg-bg-card flex items-center justify-center transition-all duration-300 hover:border-accent-purple hover:bg-accent-purple/10 hover:scale-110 group"
+                className="w-9 h-9 rounded-full border border-border-app bg-bg-card flex items-center justify-center transition-all duration-300 hover:border-accent-purple hover:bg-accent-purple/10 hover:scale-110 group"
                 aria-label="GitHub"
               >
                 <Github className="w-5 h-5 text-text-soft group-hover:text-accent-purple transition-colors" />
@@ -747,26 +753,26 @@ export default function Page() {
                 href="https://x.com/Crypt0xNinja"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full border border-border-app bg-bg-card flex items-center justify-center transition-all duration-300 hover:border-accent-aqua hover:bg-accent-aqua/10 hover:scale-110 group"
+                className="w-9 h-9 rounded-full border border-border-app bg-bg-card flex items-center justify-center transition-all duration-300 hover:border-accent-aqua hover:bg-accent-aqua/10 hover:scale-110 group"
                 aria-label="Twitter / X"
               >
                 <Twitter className="w-5 h-5 text-text-soft group-hover:text-accent-aqua transition-colors" />
               </a>
             </div>
 
-            {/* Author Card */}
+            {/* Author */}
             <a
               href="https://x.com/Crypt0xNinja"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 px-5 py-2.5 rounded-full border border-border-app bg-bg-card shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-accent-aqua/10 hover:border-accent-aqua/50 hover:scale-105 group"
+              className="flex items-center gap-2 group"
             >
-              <div className="w-8 h-8 rounded-full border border-accent-aqua/30 flex items-center justify-center overflow-hidden group-hover:border-accent-aqua/60 transition-colors">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-110">
                 <Image
                   src="/avatar-ninja.png"
                   alt="Ninja0x Avatar"
-                  width={32}
-                  height={32}
+                  width={36}
+                  height={36}
                   className="object-cover"
                 />
               </div>
