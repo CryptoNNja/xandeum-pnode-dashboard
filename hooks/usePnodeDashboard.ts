@@ -27,6 +27,7 @@ export type SortDirection = "asc" | "desc";
 export type NodeFilter = "all" | "public" | "private";
 export type HealthFilter = "all" | "public" | "private";
 export type AlertSeverity = "critical" | "warning";
+// Auto refresh now targets *summary counters* (cheap) rather than full /api/pnodes payload.
 export type AutoRefreshOption = "off" | "30s" | "1m" | "5m";
 
 type HealthTrendKey = "excellent" | "good" | "warning" | "critical";
@@ -99,8 +100,24 @@ export const usePnodeDashboard = (theme?: string) => {
   const [gridLimit, setGridLimit] = useState<number>(25); // 25, 50, 100, 200, or -1 for all
 
   // Other state
-  const [autoRefreshOption, setAutoRefreshOption] = useState<AutoRefreshOption>("1m");
+  // Default to 30s for near-real-time counters without hammering /api/pnodes
+  const [autoRefreshOption, setAutoRefreshOption] = useState<AutoRefreshOption>("30s");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+
+  // Lightweight server-updated counters (polled) to avoid hammering /api/pnodes
+  const [pnodesSummary, setPnodesSummary] = useState<null | {
+    total: number;
+    public: number;
+    private: number;
+    mainnet: number;
+    mainnetPublic: number;
+    mainnetPrivate: number;
+    devnet: number;
+    devnetPublic: number;
+    devnetPrivate: number;
+    unknownNetwork: number;
+    lastCrawledAt: string | null;
+  }>(null);
   const [healthFilter, setHealthFilter] = useState<HealthFilter>("all");
   const [networkHealthHistory, setNetworkHealthHistory] = useState<number[]>([]);
 
@@ -126,6 +143,21 @@ export const usePnodeDashboard = (theme?: string) => {
       lastUpdated: lastUpdate?.toISOString() || null
     };
   }, [allPnodes, lastUpdate]);
+
+  const loadSummary = useCallback(async () => {
+    try {
+      const res = await fetch("/api/pnodes/summary", { cache: "no-store" });
+      if (!res.ok) return;
+      const summary = await res.json();
+      setPnodesSummary(summary);
+      // Align "last update" text with crawler freshness when available
+      if (summary?.lastCrawledAt) {
+        setLastUpdate(new Date(summary.lastCrawledAt));
+      }
+    } catch {
+      // silent: summary is best-effort
+    }
+  }, []);
 
   const loadData = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true);
@@ -245,31 +277,13 @@ export const usePnodeDashboard = (theme?: string) => {
     }
   }, []);
 
-  // Real-time subscription
+  // Initial load: fetch full dataset once (for table/map/charts) + start summary polling.
   useEffect(() => {
     loadData();
+    loadSummary();
+  }, [loadData, loadSummary]);
 
-    const channel = supabase
-        .channel('pnodes-db-changes')
-        .on(
-            'postgres_changes',
-            {
-                event: '*',
-                schema: 'public',
-                table: 'pnodes'
-            },
-            () => {
-                // For simplicity and correctness of derived states, refetch all on change
-                loadData();
-            }
-        )
-        .subscribe();
-
-    return () => {
-        supabase.removeChannel(channel);
-    };
-  }, [loadData]);
-  
+  // Auto-refresh: poll only the lightweight summary endpoint.
   useEffect(() => {
     const ms =
       autoRefreshOption === "off"
@@ -280,9 +294,9 @@ export const usePnodeDashboard = (theme?: string) => {
             ? 60_000
             : 300_000;
     if (ms <= 0) return;
-    const interval = setInterval(() => loadData(true), ms);
+    const interval = setInterval(() => loadSummary(), ms);
     return () => clearInterval(interval);
-  }, [autoRefreshOption, loadData]);
+  }, [autoRefreshOption, loadSummary]);
 
   const handleSort = useCallback(
     (key: SortKey | string) => {
@@ -934,7 +948,10 @@ export const usePnodeDashboard = (theme?: string) => {
   //   setNetworkHealthHistory((prev) => [...prev, networkHealthScore].slice(-24));
   // }, [activeNodes.length, networkHealthScore, lastUpdate]);
 
-  const refreshData = useCallback(() => loadData(true), [loadData]);
+  const refreshData = useCallback(async () => {
+    await loadData(true);
+    await loadSummary();
+  }, [loadData, loadSummary]);
 
   const loadYesterdayScore = useCallback(async () => {
     try {
@@ -1063,6 +1080,7 @@ export const usePnodeDashboard = (theme?: string) => {
     autoRefreshOption,
     setAutoRefreshOption,
     lastUpdate,
+    pnodesSummary,
     healthFilter,
     setHealthFilter,
     networkHealthHistory,
@@ -1126,6 +1144,6 @@ export const usePnodeDashboard = (theme?: string) => {
     },
     exportData,
     exportCsv,
-    exportExcel
+    exportExcel,
   };
 };
