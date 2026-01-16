@@ -29,7 +29,7 @@ async function saveDailySnapshot() {
     const pnodes: PNode[] = (pnodesData || []).map((row) => ({
       ip: row.ip,
       status: row.status,
-      version: row.version,
+      version: row.version ?? undefined,
       pubkey: row.pubkey ?? undefined,
       stats: row.stats,
       lat: row.lat,
@@ -45,6 +45,15 @@ async function saveDailySnapshot() {
     const totalNodes = pnodes.length;
     const activeNodes = pnodes.filter(p => p.status === "active");
     const privateNodes = pnodes.filter(p => p.status === "gossip_only");
+
+    // 🆕 Calculate network-specific breakdown
+    const mainnetNodes = pnodes.filter(p => (p as any).network === "MAINNET");
+    const devnetNodes = pnodes.filter(p => (p as any).network === "DEVNET");
+    
+    const mainnetPublic = mainnetNodes.filter(p => p.status === "active").length;
+    const mainnetPrivate = mainnetNodes.filter(p => p.status === "gossip_only").length;
+    const devnetPublic = devnetNodes.filter(p => p.status === "active").length;
+    const devnetPrivate = devnetNodes.filter(p => p.status === "gossip_only").length;
 
     const totalStorageBytes = activeNodes.reduce(
       (sum, p) => sum + (p.stats?.file_size ?? 0),
@@ -107,6 +116,11 @@ async function saveDailySnapshot() {
         avg_ram_percent: Math.round(avgRamPercent * 100) / 100,
         avg_uptime_hours: Math.round(avgUptimeHours * 100) / 100,
         network_health_score: networkHealthScore,
+        // 🆕 Network-specific breakdown
+        mainnet_public: mainnetPublic,
+        mainnet_private: mainnetPrivate,
+        devnet_public: devnetPublic,
+        devnet_private: devnetPrivate,
       }, {
         onConflict: 'snapshot_date'
       });
@@ -121,6 +135,8 @@ async function saveDailySnapshot() {
     console.log(`   - Total Nodes: ${totalNodes}`);
     console.log(`   - Active Nodes: ${activeNodes.length}`);
     console.log(`   - Private Nodes: ${privateNodes.length}`);
+    console.log(`   - MAINNET: ${mainnetPublic} public, ${mainnetPrivate} private`);
+    console.log(`   - DEVNET: ${devnetPublic} public, ${devnetPrivate} private`);
     console.log(`   - Total Storage: ${(totalStorageBytes / 1e9).toFixed(2)} GB`);
     console.log(`   - Total Pages: ${totalPages.toLocaleString()}`);
     console.log(`   - Avg CPU: ${avgCpuPercent.toFixed(1)}%`);

@@ -165,11 +165,11 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
   useEffect(() => {
     // Use lat/lng directly from nodes instead of fetching from external API
     const nodesWithCoords = nodes.filter(
-      (n) => n.lat !== null && n.lat !== undefined && n.lng !== null && n.lng !== undefined
+      (n) => n.ip && n.lat !== null && n.lat !== undefined && n.lng !== null && n.lng !== undefined
     );
     
     const locs: NodeLocation[] = nodesWithCoords.map((n) => ({
-      ip: n.ip,
+      ip: n.ip!,
       lat: n.lat!,
       lng: n.lng!,
       city: n.city || 'Unknown',

@@ -41,7 +41,7 @@ async function resetToRealSnapshot() {
   const pnodes: PNode[] = (pnodesData || []).map((row) => ({
     ip: row.ip,
     status: row.status,
-    version: row.version,
+    version: row.version ?? undefined,
     pubkey: row.pubkey ?? undefined,
     stats: row.stats,
     lat: row.lat,

@@ -69,6 +69,7 @@ export async function GET() {
 
       return {
         ip: record.ip,
+        pubkey: undefined, // 🆕 Historical data doesn't have pubkey yet
         status: "active" as const, // Historical records are only saved for active nodes
         version: "unknown",
         stats,

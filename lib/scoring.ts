@@ -561,7 +561,7 @@ export function calculateNodeScore(pnode: PNode, allNodes?: PNode[]): number {
 
 export interface ScoreBreakdown {
   totalScore: number;
-  nodeType: 'active' | 'gossip_only' | 'stale';
+  nodeType: 'active' | 'gossip_only' | 'stale' | 'registry_only';
   components: {
     version?: { score: number; weight: string; tier: VersionTier };
     storage?: { score: number; weight: string; value: string };

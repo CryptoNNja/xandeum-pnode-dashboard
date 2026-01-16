@@ -43,6 +43,26 @@ import { calculateNodeScore } from "@/lib/scoring";
 
 import type { NetworkParticipationMetrics } from "@/lib/blockchain-metrics";
 
+type OperatorsMetrics = {
+    uniqueManagers: number;
+    multiNodeOperators: number;
+    topOperator: {
+        pubkey: string;
+        nodeCount: number;
+        nodes: any[];
+        totalStorage: number;
+        avgStorage: number;
+    } | null;
+    singleNodeOperators: number;
+    operators: Array<{
+        pubkey: string;
+        nodeCount: number;
+        nodes: any[];
+        totalStorage: number;
+        avgStorage: number;
+    }>;
+};
+
 type KpiCardsProps = {
     publicCount: number;
     privateCount: number;
@@ -92,6 +112,10 @@ type KpiCardsProps = {
     storageDistribution: any[];
     pagesDistribution: any[];
     pnodes: any[];
+    mainnetCount: number;
+    mainnetOfficialCount: number;
+    mainnetRegistryCoverage: number;
+    operatorsMetrics: OperatorsMetrics;
 };
 
 export const KpiCards = ({
@@ -130,7 +154,11 @@ export const KpiCards = ({
     cpuDistribution,
     storageDistribution,
     pagesDistribution,
-    pnodes
+    pnodes,
+    mainnetCount,
+    mainnetOfficialCount,
+    mainnetRegistryCoverage,
+    operatorsMetrics
 }: KpiCardsProps) => {
     // Use real props instead of hardcoded test data
     const alerts = _alerts;
@@ -183,7 +211,7 @@ export const KpiCards = ({
     // Carousel for champion rotation with transition state
     const [activeChampionIndex, setActiveChampionIndex] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
-    const championCategories = ['performance', 'storage', 'uptime', 'credits'] as const;
+    const championCategories = ['performance', 'storage', 'uptime', 'credits', 'operators'] as const;
     
     useEffect(() => {
       const interval = setInterval(() => {
@@ -220,38 +248,15 @@ export const KpiCards = ({
           >
           {/* Network Participation Card */}
           <div className="kpi-card relative overflow-hidden p-6 flex flex-col">
-            <div className="flex items-start justify-between gap-6">
+            <div className="flex items-start justify-between gap-6 mb-6">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
                     Network Participation
                   </p>
-                  <InfoTooltip content="Shows how many pNodes are earning rewards in Xandeum's credit system this cycle. This may differ from discovered nodes as not all nodes participate in rewards." />
+                  <InfoTooltip content="Credit rewards across all networks (MAINNET + DEVNET) and official MAINNET registry coverage." />
                 </div>
-                <p className="text-sm text-text-faint">Credit system participants</p>
-
-                {networkParticipation ? (
-                  <>
-                    <div className="flex items-baseline gap-2 mt-4">
-                      <span 
-                        className="text-4xl font-bold tracking-tight"
-                        style={{ 
-                          color: "#3B82F6"
-                        }}
-                      >
-                        {networkParticipation.podsEarning}
-                      </span>
-                      <span className="text-lg text-text-soft font-semibold">
-                        / {networkParticipation.totalPods}
-                      </span>
-                      <span className="text-sm text-text-faint ml-1">pods</span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex items-baseline gap-2 mt-4">
-                    <span className="text-4xl font-bold tracking-tight text-text-faint">—</span>
-                  </div>
-                )}
+                <p className="text-sm text-text-faint">Credit rewards & Registry coverage</p>
               </div>
 
               <div
@@ -266,74 +271,129 @@ export const KpiCards = ({
               </div>
             </div>
 
+            {/* Dual Metrics Display */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              {/* Left: Credits System */}
+              <div className="relative p-4 rounded-lg border" style={{ 
+                background: isLight 
+                  ? "linear-gradient(135deg, rgba(123, 63, 242, 0.03) 0%, rgba(20, 241, 149, 0.03) 100%)"
+                  : "linear-gradient(135deg, rgba(123, 63, 242, 0.08) 0%, rgba(20, 241, 149, 0.08) 100%)",
+                borderColor: "var(--border-default)"
+              }}>
+                <p className="text-xs uppercase tracking-wider text-text-soft mb-2">Credit Rewards</p>
+                {networkParticipation ? (
+                  <>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-3xl font-bold tracking-tight" style={{ color: "#7B3FF2" }}>
+                        {networkParticipation.podsEarning}
+                      </span>
+                      <span className="text-sm text-text-soft font-semibold">
+                        / {networkParticipation.totalPods}
+                      </span>
+                    </div>
+                    <p className="text-xs text-text-faint mt-1">
+                      {networkParticipation.participationRate.toFixed(1)}% earning
+                    </p>
+                  </>
+                ) : (
+                  <span className="text-3xl font-bold text-text-faint">—</span>
+                )}
+              </div>
+
+              {/* Right: MAINNET Registry */}
+              <div className="relative p-4 rounded-lg border" style={{ 
+                background: isLight 
+                  ? "linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(16, 185, 129, 0.03) 100%)"
+                  : "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%)",
+                borderColor: "var(--border-default)"
+              }}>
+                <p className="text-xs uppercase tracking-wider text-text-soft mb-2">Mainnet Registry</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-bold tracking-tight" style={{ color: "#3B82F6" }}>
+                    {mainnetCount}
+                  </span>
+                  <span className="text-sm text-text-soft font-semibold">nodes</span>
+                </div>
+                <p className="text-xs text-text-faint mt-1">
+                  {mainnetOfficialCount} official ({mainnetRegistryCoverage.toFixed(0)}%)
+                </p>
+              </div>
+            </div>
+
             {networkParticipation ? (
               <>
-                <div className="mt-6">
-                  <div
-                    className="w-full h-2 rounded-full overflow-hidden border"
-                    style={{ 
-                      background: isLight ? "rgba(15,23,42,0.06)" : "rgba(255,255,255,0.05)", 
-                      borderColor: "var(--border-default)" 
-                    }}
-                  >
+                {/* Dual Progress Bars */}
+                <div className="space-y-4 mb-5">
+                  {/* Credits Progress */}
+                  <div>
+                    <div className="flex items-center justify-between text-xs text-text-soft mb-1.5">
+                      <span>Credit Rewards</span>
+                      <span className="font-medium">{networkParticipation.participationRate.toFixed(1)}%</span>
+                    </div>
                     <div
-                      className="h-full rounded-full transition-all duration-500 ease-out"
-                      style={{
-                        width: `${networkParticipation.participationRate}%`,
-                        background: "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)",
+                      className="w-full h-2 rounded-full overflow-hidden border"
+                      style={{ 
+                        background: isLight ? "rgba(15,23,42,0.06)" : "rgba(255,255,255,0.05)", 
+                        borderColor: "var(--border-default)" 
                       }}
-                    />
+                    >
+                      <div
+                        className="h-full rounded-full transition-all duration-500 ease-out"
+                        style={{
+                          width: `${networkParticipation.participationRate}%`,
+                          background: "linear-gradient(90deg, #7B3FF2 0%, #14F195 100%)",
+                        }}
+                      />
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs text-text-soft mt-2">
-                    <span>{networkParticipation.participationRate.toFixed(1)}% earning rewards</span>
-                    <span className="font-medium">
-                      {networkParticipation.totalPods} eligible in rewards system
-                    </span>
+                  {/* Registry Coverage Progress */}
+                  <div>
+                    <div className="flex items-center justify-between text-xs text-text-soft mb-1.5">
+                      <span>Registry Coverage</span>
+                      <span className="font-medium">{mainnetRegistryCoverage.toFixed(1)}%</span>
+                    </div>
+                    <div
+                      className="w-full h-2 rounded-full overflow-hidden border"
+                      style={{ 
+                        background: isLight ? "rgba(15,23,42,0.06)" : "rgba(255,255,255,0.05)", 
+                        borderColor: "var(--border-default)" 
+                      }}
+                    >
+                      <div
+                        className="h-full rounded-full transition-all duration-500 ease-out"
+                        style={{
+                          width: `${mainnetRegistryCoverage}%`,
+                          background: "linear-gradient(90deg, #3B82F6 0%, #10B981 100%)",
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-4">
-                  {(() => {
-                    const nodesNotEligible = totalNodes - networkParticipation.totalPods;
-                    const podsInactive = networkParticipation.podsInactive;
-                    
-                    if (nodesNotEligible === 0 && podsInactive === 0) {
-                      return (
-                        <p 
-                          className="text-sm font-medium flex items-center gap-2"
-                          style={{ color: "#10B981" }}
-                        >
-                          <span className="text-base">✓</span>
-                          All nodes eligible and earning
-                        </p>
-                      );
-                    }
-                    
-                    const parts = [];
-                    if (nodesNotEligible > 0) {
-                      parts.push(`${nodesNotEligible} not yet eligible`);
-                    }
-                    if (podsInactive > 0) {
-                      parts.push(`${podsInactive} inactive`);
-                    }
-                    
-                    return (
-                      <p 
-                        className="text-sm font-medium"
-                        style={{ 
-                          color: networkParticipation.participationRate >= 70 ? "#F59E0B" : "#EF4444" 
-                        }}
-                      >
-                        {parts.join(', ')}
-                      </p>
-                    );
-                  })()}
+                {/* Breakdown */}
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-text-soft">Official MAINNET</span>
+                    <span className="font-semibold"><span style={{ color: "#06B6D4" }}>{mainnetOfficialCount}</span> verified</span>
+                  </div>
+                  {networkParticipation.podsInactive > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-soft">Inactive pods</span>
+                      <span className="font-semibold" style={{ color: "#F59E0B" }}>{networkParticipation.podsInactive}</span>
+                    </div>
+                  )}
+                  {(totalNodes - networkParticipation.totalPods) > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-soft">Not yet eligible</span>
+                      <span className="font-semibold" style={{ color: "#EF4444" }}>{totalNodes - networkParticipation.totalPods}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Rewards Visualization Zone */}
-                <div className="mt-auto pt-4 border-t border-border-app-soft">
-                  <div className="flex items-center justify-between mb-3">
+                <div className="mt-auto pt-3 border-t border-border-app-soft">
+                  <div className="flex items-center justify-between mb-2">
                     <p className="text-xs uppercase tracking-[0.25em] text-text-soft/70">
                       Reward Distribution
                     </p>
@@ -725,6 +785,7 @@ export const KpiCards = ({
               </div>
             </div>
           </div>
+
           </CollapsibleSection>
 
           {/* Section 2: SYSTEM HEALTH */}
@@ -1497,6 +1558,19 @@ export const KpiCards = ({
                         unit: 'earned',
                         status: creditsLeader?.status || 'active',
                         showElite: false,
+                      };
+                    case 'operators':
+                      return {
+                        icon: '👥',
+                        label: 'Network Operator',
+                        color: '#3B82F6',
+                        ip: operatorsMetrics.topOperator 
+                          ? `${operatorsMetrics.topOperator.pubkey.slice(0, 8)}...${operatorsMetrics.topOperator.pubkey.slice(-4)}`
+                          : 'N/A',
+                        value: operatorsMetrics.topOperator?.nodeCount || 0,
+                        unit: `node${operatorsMetrics.topOperator?.nodeCount !== 1 ? 's' : ''}`,
+                        status: operatorsMetrics.topOperator?.nodes[0]?.status || 'active',
+                        showElite: (operatorsMetrics.topOperator?.nodeCount || 0) >= 5,
                       };
                   }
                 };
