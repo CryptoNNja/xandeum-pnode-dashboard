@@ -264,7 +264,7 @@ const CompareNodesModalComponent = ({
           <div className="flex items-center justify-end gap-3">
             {onAddToFavorites && (
               <button
-                onClick={() => onAddToFavorites(nodes.map(n => n.ip))}
+                onClick={() => onAddToFavorites(nodes.filter(n => n.ip).map(n => n.ip!))}
                 className={clsx(
                   "flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all",
                   "hover:scale-105 active:scale-95",

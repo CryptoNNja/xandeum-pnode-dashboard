@@ -62,6 +62,8 @@ type ToolbarProps = {
   minStorage?: number;
   favoritesCount?: number;
   onOpenFavorites?: () => void;
+  activeFiltersCount?: number; // 🆕 From hook
+  registryOnlyCount?: number; // 🆕 For registry filter count
 };
 
 export const Toolbar = ({
@@ -98,6 +100,8 @@ export const Toolbar = ({
   devnetCount,
   networkFilter,
   setNetworkFilter,
+  activeFiltersCount: activeFiltersCountProp,
+  registryOnlyCount = 0,
 }: ToolbarProps & {
   onResetTour?: () => void; 
   resetFilters?: () => void;
@@ -110,10 +114,13 @@ export const Toolbar = ({
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [networkMenuOpen, setNetworkMenuOpen] = useState(false);
 
-  const activeFiltersCount = (selectedVersions?.length || 0) + 
-                             (selectedHealthStatuses?.length || 0) + 
-                             (minCpu ? 1 : 0) + 
-                             (minStorage ? 1 : 0);
+  // Use prop if provided, otherwise calculate (backward compatibility)
+  const activeFiltersCount = activeFiltersCountProp ?? (
+    (selectedVersions?.length || 0) + 
+    (selectedHealthStatuses?.length || 0) + 
+    (minCpu ? 1 : 0) + 
+    (minStorage ? 1 : 0)
+  );
 
   return (
     <section className="w-full">
@@ -173,6 +180,7 @@ export const Toolbar = ({
                         { key: "all" as const, label: "All", count: pnodesCount },
                         { key: "public" as const, label: "Public", count: publicCount },
                         { key: "private" as const, label: "Private", count: privateCount },
+                        { key: "registry" as const, label: "Registry Only", count: registryOnlyCount }, // 🆕 Registry filter
                       ] as const
                     ).map((option) => {
                       const isActive = option.key === nodeFilter;

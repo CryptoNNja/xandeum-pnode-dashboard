@@ -81,7 +81,7 @@ export async function exportPNodeToPDF(
   doc.setTextColor(COLORS.textLight);
   
   const overviewData = [
-    ['IP Address:', pnode.ip],
+    ['IP Address:', pnode.ip || 'Unknown'],
     ['Location:', [pnode.city, pnode.country].filter(Boolean).join(', ') || 'Unknown'],
     ['Status:', `${health} (${pnode.status === 'active' ? 'Public' : 'Private'} Node)`],
     ['Version:', pnode.version || 'Unknown'],
