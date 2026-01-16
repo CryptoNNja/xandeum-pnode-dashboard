@@ -561,7 +561,7 @@ export function calculateNodeScore(pnode: PNode, allNodes?: PNode[]): number {
 
 export interface ScoreBreakdown {
   totalScore: number;
-  nodeType: 'active' | 'gossip_only';
+  nodeType: 'active' | 'gossip_only' | 'stale';
   components: {
     version?: { score: number; weight: string; tier: VersionTier };
     storage?: { score: number; weight: string; value: string };
@@ -594,7 +594,7 @@ export function getScoreBreakdown(pnode: PNode, allNodes: PNode[]): ScoreBreakdo
     penalties: {
       versionMultiplier: versionTier.multiplier,
       isWhale,
-      globalCap: pnode.status === 'gossip_only' ? (isWhale ? 72 : 75) : null
+      globalCap: (pnode.status === 'gossip_only' || pnode.status === 'stale') ? (isWhale ? 72 : 75) : null
     }
   };
   

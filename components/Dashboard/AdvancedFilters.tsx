@@ -22,6 +22,8 @@ type AdvancedFiltersProps = {
   sliderToBytes: (val: number) => number;
   onReset: () => void;
   resultsCount: number;
+  staleFilter: "hide" | "include";
+  setStaleFilter: (v: "hide" | "include") => void;
 };
 
 const HEALTH_STATUSES = ["Excellent", "Good", "Warning", "Critical", "Private"];
@@ -42,6 +44,8 @@ export const AdvancedFilters = ({
   sliderToBytes,
   onReset,
   resultsCount,
+  staleFilter,
+  setStaleFilter,
 }: AdvancedFiltersProps) => {
   const statusColors = getStatusColors();
 
@@ -119,6 +123,29 @@ export const AdvancedFilters = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+              {/* Stale nodes */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-text-main uppercase tracking-wider">Stale Nodes</h3>
+                </div>
+                <div className="flex items-center justify-between bg-bg-bg/40 border border-border-app rounded-xl p-3">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-text-soft">Include stale (unreachable)</span>
+                    <span className="text-[10px] text-text-faint">Kept for coverage, hidden by default</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setStaleFilter(staleFilter === "hide" ? "include" : "hide")}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors border ${
+                      staleFilter === "include"
+                        ? "bg-accent-purple/15 border-accent-purple text-text-main"
+                        : "bg-bg-card border-border-app text-text-soft"
+                    }`}
+                  >
+                    {staleFilter === "include" ? "On" : "Off"}
+                  </button>
+                </div>
+              </div>
               {/* Health Status */}
               <div className="space-y-5">
                 <div className="flex items-center gap-2">

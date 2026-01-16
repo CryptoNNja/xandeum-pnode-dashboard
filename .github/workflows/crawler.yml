@@ -16,6 +16,14 @@ on:
         options:
           - 'false'
           - 'true'
+      keep_zombies:
+        description: 'Keep unreachable nodes (mark as stale) instead of deleting them'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
   
   # Optional: Run on push to main (for testing)
   # push:
@@ -61,11 +69,18 @@ jobs:
           else
             export CRAWLER_PORT_FALLBACKS=0
           fi
+          # Keep zombies (mark as stale) only when manually requested
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.keep_zombies }}" = "true" ]; then
+            export CRAWLER_KEEP_ZOMBIES=1
+          else
+            export CRAWLER_KEEP_ZOMBIES=0
+          fi
           echo "Environment check before running:"
           echo "SUPABASE_URL is set: $([ -n \"$SUPABASE_URL\" ] && echo 'YES' || echo 'NO')"
           echo "SUPABASE_SERVICE_ROLE_KEY is set: $([ -n \"$SUPABASE_SERVICE_ROLE_KEY\" ] && echo 'YES' || echo 'NO')"
           echo "NODE_ENV: $NODE_ENV"
           echo "CRAWLER_PORT_FALLBACKS: $CRAWLER_PORT_FALLBACKS"
+          echo "CRAWLER_KEEP_ZOMBIES: $CRAWLER_KEEP_ZOMBIES"
           npx tsx scripts/crawler.ts
           echo "✅ Crawler completed successfully!"
 

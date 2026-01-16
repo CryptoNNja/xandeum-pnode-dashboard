@@ -66,6 +66,10 @@ const BOOTSTRAP_NODES = [
 // Increased timeout from 2000ms to 5000ms to catch slower nodes
 const TIMEOUT = 5000;
 
+// Keep "zombie" nodes for coverage (mark as stale instead of deleting)
+// Default is the legacy behavior: delete.
+const KEEP_ZOMBIES = process.env.CRAWLER_KEEP_ZOMBIES === '1';
+
 // Optional port fallback strategy (to improve reachability on networks where pRPC port varies)
 // Default is strict :6000 only.
 const ENABLE_PORT_FALLBACKS = process.env.CRAWLER_PORT_FALLBACKS === '1';
@@ -798,15 +802,28 @@ export const main = async () => {
             console.log(`🗑️  Found ${zombieIps.length} actual zombie nodes (consistently inaccessible):`);
             zombieIps.forEach((ip: string) => console.log(`   🧟 ${ip}`));
             
-            const { error: deleteError } = await supabaseAdmin
-                .from('pnodes')
-                .delete()
-                .in('ip', zombieIps);
-            
-            if (deleteError) {
-                console.error('Error deleting zombie nodes:', deleteError);
+            if (KEEP_ZOMBIES) {
+                const { error: staleError } = await supabaseAdmin
+                    .from('pnodes')
+                    .update({ status: 'stale' })
+                    .in('ip', zombieIps);
+
+                if (staleError) {
+                    console.error('Error marking zombie nodes as stale:', staleError);
+                } else {
+                    console.log(`✅ Marked ${zombieIps.length} nodes as stale (kept for coverage)`);
+                }
             } else {
-                console.log(`✅ Successfully removed ${zombieIps.length} zombie nodes`);
+                const { error: deleteError } = await supabaseAdmin
+                    .from('pnodes')
+                    .delete()
+                    .in('ip', zombieIps);
+                
+                if (deleteError) {
+                    console.error('Error deleting zombie nodes:', deleteError);
+                } else {
+                    console.log(`✅ Successfully removed ${zombieIps.length} zombie nodes`);
+                }
             }
         } else {
             console.log('✅ No actual zombie nodes to remove (only private nodes)');
@@ -825,33 +842,41 @@ export const main = async () => {
     const summaryCounts = {
       active: 0,
       gossip_only: 0,
+      stale: 0,
       MAINNET: 0,
       DEVNET: 0,
       UNKNOWN: 0,
       MAINNET_active: 0,
       MAINNET_gossip_only: 0,
+      MAINNET_stale: 0,
       DEVNET_active: 0,
       DEVNET_gossip_only: 0,
+      DEVNET_stale: 0,
       UNKNOWN_active: 0,
       UNKNOWN_gossip_only: 0,
+      UNKNOWN_stale: 0,
     };
 
     for (const n of deduplicatedNodes as any[]) {
       if (n.status === 'active') summaryCounts.active++;
+      else if (n.status === 'stale') summaryCounts.stale++;
       else summaryCounts.gossip_only++;
 
       const net = n.network;
       if (net === 'MAINNET') {
         summaryCounts.MAINNET++;
         if (n.status === 'active') summaryCounts.MAINNET_active++;
+        else if (n.status === 'stale') summaryCounts.MAINNET_stale++;
         else summaryCounts.MAINNET_gossip_only++;
       } else if (net === 'DEVNET') {
         summaryCounts.DEVNET++;
         if (n.status === 'active') summaryCounts.DEVNET_active++;
+        else if (n.status === 'stale') summaryCounts.DEVNET_stale++;
         else summaryCounts.DEVNET_gossip_only++;
       } else {
         summaryCounts.UNKNOWN++;
         if (n.status === 'active') summaryCounts.UNKNOWN_active++;
+        else if (n.status === 'stale') summaryCounts.UNKNOWN_stale++;
         else summaryCounts.UNKNOWN_gossip_only++;
       }
     }
@@ -864,14 +889,15 @@ export const main = async () => {
     console.log(`Final nodes upserted (deduplicated): ${deduplicatedNodes.length}`);
 
     console.log(`Status breakdown:`);
-    console.log(`  - active (public):      ${summaryCounts.active}`);
+    console.log(`  - active (public):       ${summaryCounts.active}`);
     console.log(`  - gossip_only (private): ${summaryCounts.gossip_only}`);
+    console.log(`  - stale (kept):          ${summaryCounts.stale}`);
 
     console.log(`Network breakdown:`);
-    console.log(`  - MAINNET:  ${summaryCounts.MAINNET} (active ${summaryCounts.MAINNET_active}, gossip_only ${summaryCounts.MAINNET_gossip_only})`);
-    console.log(`  - DEVNET:   ${summaryCounts.DEVNET} (active ${summaryCounts.DEVNET_active}, gossip_only ${summaryCounts.DEVNET_gossip_only})`);
+    console.log(`  - MAINNET:  ${summaryCounts.MAINNET} (active ${summaryCounts.MAINNET_active}, gossip_only ${summaryCounts.MAINNET_gossip_only}, stale ${summaryCounts.MAINNET_stale})`);
+    console.log(`  - DEVNET:   ${summaryCounts.DEVNET} (active ${summaryCounts.DEVNET_active}, gossip_only ${summaryCounts.DEVNET_gossip_only}, stale ${summaryCounts.DEVNET_stale})`);
     if (summaryCounts.UNKNOWN > 0) {
-      console.log(`  - UNKNOWN:  ${summaryCounts.UNKNOWN} (active ${summaryCounts.UNKNOWN_active}, gossip_only ${summaryCounts.UNKNOWN_gossip_only})`);
+      console.log(`  - UNKNOWN:  ${summaryCounts.UNKNOWN} (active ${summaryCounts.UNKNOWN_active}, gossip_only ${summaryCounts.UNKNOWN_gossip_only}, stale ${summaryCounts.UNKNOWN_stale})`);
     }
 
     console.log(`get-stats calls: ${statsCalls}`);
