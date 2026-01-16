@@ -101,26 +101,62 @@ export const SummaryHeader = ({
         isLight={isLight}
         hexToRgba={hexToRgba}
         backContent={
-          <div className="space-y-3">
-            <div className="flex items-center justify-between py-2.5 border-b border-border-app-soft">
-              <span className="text-text-soft flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                <span className="font-medium">MAINNET</span>
-              </span>
-              <span className="font-bold text-text-main text-xl">{mainnetPublic}</span>
-            </div>
-            <div className="flex items-center justify-between py-2.5 border-b border-border-app-soft">
-              <span className="text-text-soft flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
-                <span className="font-medium">DEVNET</span>
-              </span>
-              <span className="font-bold text-text-main text-xl">{devnetPublic}</span>
-            </div>
-            {mainnetCount > 0 && (
-              <div className="pt-2 text-xs text-text-faint">
-                {((mainnetPublic / mainnetCount) * 100).toFixed(0)}% of MAINNET nodes are public
+          <div className="space-y-2.5">
+            {/* MAINNET Section */}
+            <div className="relative p-2.5 rounded-lg" style={{ 
+              background: isLight 
+                ? "linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(16, 185, 129, 0.08) 100%)"
+                : "linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(16, 185, 129, 0.12) 100%)",
+              border: '1px solid',
+              borderColor: hexToRgba("#10B981", 0.2)
+            }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-text-soft">Mainnet</span>
+                </div>
+                <span className="text-2xl font-bold" style={{ color: "#10B981" }}>{mainnetPublic}</span>
               </div>
-            )}
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <div className="flex-1 h-1 rounded-full bg-border-default overflow-hidden">
+                  <div 
+                    className="h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-400"
+                    style={{ width: mainnetCount > 0 ? `${(mainnetPublic / mainnetCount) * 100}%` : '0%' }}
+                  />
+                </div>
+                <span className="text-xs font-medium" style={{ color: "#10B981" }}>
+                  {mainnetCount > 0 ? ((mainnetPublic / mainnetCount) * 100).toFixed(0) : 0}%
+                </span>
+              </div>
+            </div>
+
+            {/* DEVNET Section */}
+            <div className="relative p-2.5 rounded-lg" style={{ 
+              background: isLight 
+                ? "linear-gradient(135deg, rgba(234, 179, 8, 0.05) 0%, rgba(245, 158, 11, 0.08) 100%)"
+                : "linear-gradient(135deg, rgba(234, 179, 8, 0.08) 0%, rgba(245, 158, 11, 0.12) 100%)",
+              border: '1px solid',
+              borderColor: hexToRgba("#F59E0B", 0.2)
+            }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-text-soft">Devnet</span>
+                </div>
+                <span className="text-2xl font-bold" style={{ color: "#F59E0B" }}>{devnetPublic}</span>
+              </div>
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <div className="flex-1 h-1 rounded-full bg-border-default overflow-hidden">
+                  <div 
+                    className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-amber-400"
+                    style={{ width: devnetCount > 0 ? `${(devnetPublic / devnetCount) * 100}%` : '0%' }}
+                  />
+                </div>
+                <span className="text-xs font-medium" style={{ color: "#F59E0B" }}>
+                  {devnetCount > 0 ? ((devnetPublic / devnetCount) * 100).toFixed(0) : 0}%
+                </span>
+              </div>
+            </div>
           </div>
         }
       />
@@ -135,26 +171,62 @@ export const SummaryHeader = ({
         isLight={isLight}
         hexToRgba={hexToRgba}
         backContent={
-          <div className="space-y-3">
-            <div className="flex items-center justify-between py-2.5 border-b border-border-app-soft">
-              <span className="text-text-soft flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                <span className="font-medium">MAINNET</span>
-              </span>
-              <span className="font-bold text-text-main text-xl">{mainnetPrivate}</span>
-            </div>
-            <div className="flex items-center justify-between py-2.5 border-b border-border-app-soft">
-              <span className="text-text-soft flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
-                <span className="font-medium">DEVNET</span>
-              </span>
-              <span className="font-bold text-text-main text-xl">{devnetPrivate}</span>
-            </div>
-            {mainnetCount > 0 && (
-              <div className="pt-2 text-xs text-text-faint">
-                {((mainnetPrivate / mainnetCount) * 100).toFixed(0)}% of MAINNET nodes are private
+          <div className="space-y-2.5">
+            {/* MAINNET Section */}
+            <div className="relative p-2.5 rounded-lg" style={{ 
+              background: isLight 
+                ? "linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(16, 185, 129, 0.08) 100%)"
+                : "linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(16, 185, 129, 0.12) 100%)",
+              border: '1px solid',
+              borderColor: hexToRgba("#10B981", 0.2)
+            }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-text-soft">Mainnet</span>
+                </div>
+                <span className="text-2xl font-bold" style={{ color: "#10B981" }}>{mainnetPrivate}</span>
               </div>
-            )}
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <div className="flex-1 h-1 rounded-full bg-border-default overflow-hidden">
+                  <div 
+                    className="h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-400"
+                    style={{ width: mainnetCount > 0 ? `${(mainnetPrivate / mainnetCount) * 100}%` : '0%' }}
+                  />
+                </div>
+                <span className="text-xs font-medium" style={{ color: "#10B981" }}>
+                  {mainnetCount > 0 ? ((mainnetPrivate / mainnetCount) * 100).toFixed(0) : 0}%
+                </span>
+              </div>
+            </div>
+
+            {/* DEVNET Section */}
+            <div className="relative p-2.5 rounded-lg" style={{ 
+              background: isLight 
+                ? "linear-gradient(135deg, rgba(234, 179, 8, 0.05) 0%, rgba(245, 158, 11, 0.08) 100%)"
+                : "linear-gradient(135deg, rgba(234, 179, 8, 0.08) 0%, rgba(245, 158, 11, 0.12) 100%)",
+              border: '1px solid',
+              borderColor: hexToRgba("#F59E0B", 0.2)
+            }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-text-soft">Devnet</span>
+                </div>
+                <span className="text-2xl font-bold" style={{ color: "#F59E0B" }}>{devnetPrivate}</span>
+              </div>
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <div className="flex-1 h-1 rounded-full bg-border-default overflow-hidden">
+                  <div 
+                    className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-amber-400"
+                    style={{ width: devnetCount > 0 ? `${(devnetPrivate / devnetCount) * 100}%` : '0%' }}
+                  />
+                </div>
+                <span className="text-xs font-medium" style={{ color: "#F59E0B" }}>
+                  {devnetCount > 0 ? ((devnetPrivate / devnetCount) * 100).toFixed(0) : 0}%
+                </span>
+              </div>
+            </div>
           </div>
         }
       />
@@ -169,29 +241,50 @@ export const SummaryHeader = ({
         isLight={isLight}
         hexToRgba={hexToRgba}
         backContent={
-          <div className="space-y-3">
-            <div className="flex items-center justify-between py-2.5 border-b border-border-app-soft">
-              <span className="text-text-soft flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                <span className="font-medium">MAINNET</span>
-              </span>
-              <span className="font-bold text-text-main text-xl">{mainnetCount}</span>
-            </div>
-            <div className="flex items-center justify-between py-2.5 border-b border-border-app-soft">
-              <span className="text-text-soft flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
-                <span className="font-medium">DEVNET</span>
-              </span>
-              <span className="font-bold text-text-main text-xl">{devnetCount}</span>
-            </div>
-            <div className="pt-2 space-y-1.5 text-sm">
-              <div className="flex justify-between">
-                <span className="text-text-faint">Public:</span>
-                <span className="font-semibold text-text-main">{publicCount}</span>
+          <div className="space-y-2">
+            {/* Network Distribution */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-2 rounded-lg text-center" style={{ 
+                background: isLight 
+                  ? "linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(16, 185, 129, 0.12) 100%)"
+                  : "linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(16, 185, 129, 0.16) 100%)",
+                border: '1px solid',
+                borderColor: hexToRgba("#10B981", 0.25)
+              }}>
+                <div className="text-xs font-semibold uppercase tracking-wider text-text-soft mb-1">Mainnet</div>
+                <div className="text-xl font-bold" style={{ color: "#10B981" }}>{mainnetCount}</div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-text-faint">Private:</span>
-                <span className="font-semibold text-text-main">{privateCount}</span>
+              <div className="p-2 rounded-lg text-center" style={{ 
+                background: isLight 
+                  ? "linear-gradient(135deg, rgba(234, 179, 8, 0.08) 0%, rgba(245, 158, 11, 0.12) 100%)"
+                  : "linear-gradient(135deg, rgba(234, 179, 8, 0.12) 0%, rgba(245, 158, 11, 0.16) 100%)",
+                border: '1px solid',
+                borderColor: hexToRgba("#F59E0B", 0.25)
+              }}>
+                <div className="text-xs font-semibold uppercase tracking-wider text-text-soft mb-1">Devnet</div>
+                <div className="text-xl font-bold" style={{ color: "#F59E0B" }}>{devnetCount}</div>
+              </div>
+            </div>
+
+            {/* Type Distribution */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between py-1.5 px-2 rounded" style={{ 
+                background: isLight ? "rgba(59, 130, 246, 0.05)" : "rgba(59, 130, 246, 0.08)" 
+              }}>
+                <span className="text-xs text-text-soft flex items-center gap-1.5">
+                  <Radio className="w-3 h-3" style={{ color: kpiColors.public }} />
+                  <span>Public</span>
+                </span>
+                <span className="text-sm font-bold text-text-main">{publicCount}</span>
+              </div>
+              <div className="flex items-center justify-between py-1.5 px-2 rounded" style={{ 
+                background: isLight ? "rgba(139, 92, 246, 0.05)" : "rgba(139, 92, 246, 0.08)" 
+              }}>
+                <span className="text-xs text-text-soft flex items-center gap-1.5">
+                  <ShieldCheck className="w-3 h-3" style={{ color: kpiColors.private }} />
+                  <span>Private</span>
+                </span>
+                <span className="text-sm font-bold text-text-main">{privateCount}</span>
               </div>
             </div>
           </div>
@@ -208,26 +301,55 @@ export const SummaryHeader = ({
         isLight={isLight}
         hexToRgba={hexToRgba}
         backContent={
-          <div className="space-y-3">
-            <div className="flex items-center justify-between py-2.5 border-b border-border-app-soft">
-              <span className="text-text-soft font-medium">Multi-node</span>
-              <span className="font-bold text-text-main text-xl">{operatorsMetrics.multiNodeOperators}</span>
+          <div className="space-y-2">
+            {/* Operator Types */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-2 rounded-lg text-center" style={{ 
+                background: isLight 
+                  ? "linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.12) 100%)"
+                  : "linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.16) 100%)",
+                border: '1px solid',
+                borderColor: hexToRgba("#10B981", 0.25)
+              }}>
+                <div className="text-xs font-semibold uppercase tracking-wider text-text-soft mb-1">Multi</div>
+                <div className="text-xl font-bold" style={{ color: "#10B981" }}>{operatorsMetrics.multiNodeOperators}</div>
+              </div>
+              <div className="p-2 rounded-lg text-center" style={{ 
+                background: isLight 
+                  ? "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.12) 100%)"
+                  : "linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(37, 99, 235, 0.16) 100%)",
+                border: '1px solid',
+                borderColor: hexToRgba("#3B82F6", 0.25)
+              }}>
+                <div className="text-xs font-semibold uppercase tracking-wider text-text-soft mb-1">Single</div>
+                <div className="text-xl font-bold" style={{ color: "#3B82F6" }}>{operatorsMetrics.singleNodeOperators}</div>
+              </div>
             </div>
-            <div className="flex items-center justify-between py-2.5 border-b border-border-app-soft">
-              <span className="text-text-soft font-medium">Single-node</span>
-              <span className="font-bold text-text-main text-xl">{operatorsMetrics.singleNodeOperators}</span>
-            </div>
-            <div className="pt-2 space-y-1.5 text-sm">
-              <div className="flex justify-between">
-                <span className="text-text-faint">Top operator:</span>
-                <span className="font-semibold" style={{ color: "#10B981" }}>
+
+            {/* Stats */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between py-1.5 px-2 rounded" style={{ 
+                background: isLight ? "rgba(16, 185, 129, 0.05)" : "rgba(16, 185, 129, 0.08)" 
+              }}>
+                <span className="text-xs text-text-soft">🏆 Top operator</span>
+                <span className="text-sm font-bold" style={{ color: "#10B981" }}>
                   {operatorsMetrics.topOperator?.nodeCount || 0} nodes
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-text-faint">Avg per manager:</span>
-                <span className="font-semibold text-text-main">
-                  {(totalNodes / operatorsMetrics.uniqueManagers).toFixed(1)}
+              <div className="flex items-center justify-between py-1.5 px-2 rounded" style={{ 
+                background: isLight ? "rgba(59, 130, 246, 0.05)" : "rgba(59, 130, 246, 0.08)" 
+              }}>
+                <span className="text-xs text-text-soft">📊 Avg/manager</span>
+                <span className="text-sm font-bold text-text-main">
+                  {operatorsMetrics.uniqueManagers > 0 ? (totalNodes / operatorsMetrics.uniqueManagers).toFixed(1) : '0'} nodes
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-1.5 px-2 rounded" style={{ 
+                background: isLight ? "rgba(168, 85, 247, 0.05)" : "rgba(168, 85, 247, 0.08)" 
+              }}>
+                <span className="text-xs text-text-soft">🎯 Multi-node rate</span>
+                <span className="text-sm font-bold" style={{ color: "#A855F7" }}>
+                  {operatorsMetrics.uniqueManagers > 0 ? ((operatorsMetrics.multiNodeOperators / operatorsMetrics.uniqueManagers) * 100).toFixed(0) : '0'}%
                 </span>
               </div>
             </div>
