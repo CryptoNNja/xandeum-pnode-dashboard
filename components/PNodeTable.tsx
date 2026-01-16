@@ -230,7 +230,7 @@ const PNodeTableComponent = ({
             isLight ? "divide-black/10" : "divide-border-app"
           )}
         >
-          {data.map((pnode) => {
+          {data.map((pnode, index) => {
             const status = (pnode as any)._healthStatus || "Private";
 
             // Helper to get CSS variable value
@@ -281,7 +281,7 @@ const PNodeTableComponent = ({
             const committedBytes = Math.max(pnode.stats.storage_committed ?? 0, 0);
             const usedBytes = Math.max(pnode.stats.storage_used ?? 0, 0);
 
-            const isSelected = selectedNodeIds?.has(pnode.ip);
+            const isSelected = pnode.ip ? selectedNodeIds?.has(pnode.ip) : false;
             const isRegistryOnly = pnode.status === "registry_only";
             const canNavigate = pnode.ip && !isRegistryOnly;
             

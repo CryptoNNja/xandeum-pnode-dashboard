@@ -291,13 +291,14 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
     const performanceRanking = useMemo<PerformanceEntry[]>(() => {
         if (!nodes || nodes.length === 0) return [];
         return nodes
+            .filter((node) => node.ip) // Filter out nodes without IP
             .map((node) => ({
                 node,
                 score: calculateNodeScore(node, nodes), // ✨ Pass network context
             }))
             .sort((a, b) => {
                 if (b.score === a.score) {
-                    return a.node.ip.localeCompare(b.node.ip);
+                    return (a.node.ip || '').localeCompare(b.node.ip || '');
                 }
                 return b.score - a.score;
             });
@@ -306,6 +307,7 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
     const storageRanking = useMemo<StorageEntry[]>(() => {
         if (!nodes || nodes.length === 0) return [];
         return nodes
+            .filter((node) => node.ip) // Filter out nodes without IP
             .map((node) => {
                 // Use storage_committed for capacity, storage_used for actual usage
                 const committed = Math.max(node.stats.storage_committed ?? 0, 0);
@@ -315,7 +317,7 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
             .filter((entry) => entry.committed > 0)
             .sort((a, b) => {
                 if (b.committed === a.committed) {
-                    return a.node.ip.localeCompare(b.node.ip);
+                    return (a.node.ip || '').localeCompare(b.node.ip || '');
                 }
                 return b.committed - a.committed;
             });
@@ -324,6 +326,7 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
     const uptimeRanking = useMemo<UptimeEntry[]>(() => {
         if (!nodes || nodes.length === 0) return [];
         return nodes
+            .filter((node) => node.ip) // Filter out nodes without IP
             .map((node) => ({
                 node,
                 uptime: Math.max(node.stats.uptime, 0),
@@ -332,7 +335,7 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
             .filter((entry) => entry.uptime > 0)
             .sort((a, b) => {
                 if (b.uptime === a.uptime) {
-                    return a.node.ip.localeCompare(b.node.ip);
+                    return (a.node.ip || '').localeCompare(b.node.ip || '');
                 }
                 return b.uptime - a.uptime;
             });
@@ -391,7 +394,8 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
     const visibleEntries = activeRanking.slice(0, displayCount);
     const activeTabLabel = TAB_META[activeTab].label;
 
-    const handleRowClick = (ip: string, closeModal = false) => {
+    const handleRowClick = (ip: string | null, closeModal = false) => {
+        if (!ip) return;
         if (onSelectNode) {
             onSelectNode(ip);
         } else if (typeof window !== "undefined") {
@@ -402,7 +406,7 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
         }
     };
 
-    const handleRowKeyDown = (ip: string, closeModal: boolean) =>
+    const handleRowKeyDown = (ip: string | null, closeModal: boolean) =>
         (event: KeyboardEvent<HTMLDivElement>) => {
             if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
@@ -623,7 +627,7 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
         closeModal: boolean
     ) => {
         const formattedCredits = entry.credits.toLocaleString();
-        const hasMatchedNode = entry.node.ip.includes('.'); // Check if it's a real IP
+        const hasMatchedNode = entry.node.ip?.includes('.') ?? false; // Check if it's a real IP
         
         return (
             <div
