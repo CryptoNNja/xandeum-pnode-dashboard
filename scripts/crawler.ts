@@ -20,6 +20,10 @@ let statsCalls = 0;
 let statsSuccess = 0;
 let statsPortUsage: Record<string, number> = {};
 
+let podsWithStatsCalls = 0;
+let podsWithStatsSuccess = 0;
+let podsWithStatsPodsReturned = 0;
+
 function initCrawlerEnv() {
   // Load environment variables from .env.local (for local development only)
   // In production/CI, variables are already in process.env from GitHub Actions / Vercel env.
@@ -201,6 +205,7 @@ const extractIp = (address?: string): string | undefined => {
 }
 
 async function getPodsWithStats(ip: string, ports: number[] = DEFAULT_PRPC_PORTS): Promise<PodWithStats[]> {
+  podsWithStatsCalls++;
   const result = await tryPorts(ip, ports, async (url) => {
     const res = await axios.post<PodsWithStatsResponse>(
       url,
@@ -210,7 +215,12 @@ async function getPodsWithStats(ip: string, ports: number[] = DEFAULT_PRPC_PORTS
     return res.data;
   });
 
-  return result?.value?.result?.pods ?? [];
+  const pods = result?.value?.result?.pods ?? [];
+  if (pods.length > 0) {
+    podsWithStatsSuccess++;
+    podsWithStatsPodsReturned += pods.length;
+  }
+  return pods;
 }
 
 interface GeolocationData {
@@ -279,6 +289,9 @@ export const main = async () => {
     statsCalls = 0;
     statsSuccess = 0;
     statsPortUsage = {};
+    podsWithStatsCalls = 0;
+    podsWithStatsSuccess = 0;
+    podsWithStatsPodsReturned = 0;
 
     initCrawlerEnv();
 
@@ -428,7 +441,17 @@ export const main = async () => {
             })
         }
     });
-    console.log(`✅ Metadata discovery complete. Found ${versionMap.size} versions, ${pubkeyMap.size} pubkeys, ${storageCommittedMap.size} commitments, ${storageUsedMap.size} used stats, and ${isPublicMap.size} public flags.`);
+    console.log(`✅ Metadata discovery complete.`);
+    console.log(`   get-pods-with-stats calls: ${podsWithStatsCalls}`);
+    console.log(`   get-pods-with-stats successes (pods>0): ${podsWithStatsSuccess}`);
+    console.log(`   total pods returned (sum): ${podsWithStatsPodsReturned}`);
+    console.log(`   extracted unique IP metadata:`);
+    console.log(`     - versions: ${versionMap.size}`);
+    console.log(`     - pubkeys: ${pubkeyMap.size}`);
+    console.log(`     - storage_committed: ${storageCommittedMap.size}`);
+    console.log(`     - storage_used: ${storageUsedMap.size}`);
+    console.log(`     - is_public flags: ${isPublicMap.size}`);
+    console.log(`     - rpc_port hints: ${rpcPortMap.size}`);
 
     console.log('📊 Fetching stats and geolocation...');
     
@@ -733,10 +756,33 @@ export const main = async () => {
         }
     }
     
+    // Build zombie IP set BEFORE upsert so we can avoid overwriting their status.
+    // Definition: failed_checks >= 3 and not PRIVATE-*.
+    const zombieIpsSet = new Set<string>();
+    if (KEEP_ZOMBIES) {
+      for (const n of deduplicatedNodes as any[]) {
+        if ((n.failed_checks ?? 0) >= 3 && typeof n.ip === 'string' && !n.ip.startsWith('PRIVATE-')) {
+          zombieIpsSet.add(n.ip);
+        }
+      }
+    }
+
+    // Prevent overwriting `status` for zombie IPs when KEEP_ZOMBIES is enabled.
+    // We want `status='stale'` to survive the upsert.
+    const nodesForUpsert = (KEEP_ZOMBIES && zombieIpsSet.size > 0)
+      ? (deduplicatedNodes.map((n: any) => {
+          if (zombieIpsSet.has(n.ip)) {
+            const { status, ...rest } = n;
+            return rest;
+          }
+          return n;
+        }) as any[])
+      : (deduplicatedNodes as any[]);
+
     console.log(`💾 Saving ${deduplicatedNodes.length} unique nodes to the database...`);
     const { error: pnodesError } = await supabaseAdmin
         .from('pnodes')
-        .upsert(deduplicatedNodes, { onConflict: 'ip' });
+        .upsert(nodesForUpsert, { onConflict: 'ip' });
 
     if (pnodesError) {
         console.error('Error saving pnodes:', pnodesError);
@@ -787,6 +833,8 @@ export const main = async () => {
         .select('ip, failed_checks, last_crawled_at')
         .gte('failed_checks', 3);
     
+    // Track zombies for reporting/cleanup (already computed before upsert)
+
     if (!zombieError && zombieNodes && zombieNodes.length > 0) {
         // Filter out private nodes - they are NOT zombies, just unreachable by design
         const actualZombies = zombieNodes.filter((n: any) => !n.ip.startsWith('PRIVATE-'));
@@ -799,6 +847,7 @@ export const main = async () => {
         
         if (actualZombies.length > 0) {
             const zombieIps = actualZombies.map((n: any) => n.ip);
+            zombieIps.forEach((ip: string) => zombieIpsSet.add(ip));
             console.log(`🗑️  Found ${zombieIps.length} actual zombie nodes (consistently inaccessible):`);
             zombieIps.forEach((ip: string) => console.log(`   🧟 ${ip}`));
             
