@@ -147,7 +147,7 @@ export default function Page() {
 
   // 🆕 Calculate MAINNET registry metrics
   const mainnetOfficialCount = useMemo(() => 
-    mainnetNodes.filter(n => n.is_official === true).length,
+    mainnetNodes.filter(n => n.is_official === true || n.source === 'both' || n.source === 'registry').length,
     [mainnetNodes]
   );
   const mainnetRegistryCoverage = useMemo(() => 
