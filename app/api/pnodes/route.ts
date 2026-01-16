@@ -65,6 +65,8 @@ export async function GET(request: NextRequest) {
       stats: row.stats as unknown as import("@/lib/types").PNodeStats,
       network: (row as any).network as NetworkType, // 🆕 Network type
       network_confidence: (row as any).network_confidence, // 🆕 Confidence
+      source: (row as any).source, // 🆕 Data source (crawler/registry/both)
+      is_official: (row as any).is_official, // 🆕 Official registry flag
       lat: row.lat,
       lng: row.lng,
       city: row.city,
