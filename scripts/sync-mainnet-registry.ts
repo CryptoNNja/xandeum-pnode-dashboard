@@ -7,6 +7,9 @@
  * - Maintains source tracking (crawler vs registry vs both)
  */
 
+import * as dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
 import { supabase } from '../lib/supabase';
 import { getMainnetRegistry } from '../lib/mainnet-registry';
 
