@@ -967,6 +967,27 @@ export const main = async () => {
     }
 
     console.log('\n✨ Crawl finished.');
+
+    // ═══════════════════════════════════════════════════════════════
+    // PHASE 5: SYNC OFFICIAL MAINNET REGISTRY
+    // ═══════════════════════════════════════════════════════════════
+    console.log('\n📋 PHASE 5: Syncing Official Mainnet Registry...');
+    
+    try {
+        const { syncMainnetRegistry } = await import('./sync-mainnet-registry');
+        const syncStats = await syncMainnetRegistry();
+        
+        console.log('✅ Registry sync completed:');
+        console.log(`   - Total official nodes: ${syncStats.totalRegistry}`);
+        console.log(`   - New registry-only: ${syncStats.newRegistryOnly}`);
+        console.log(`   - Marked as official: ${syncStats.markedAsOfficial}`);
+        if (syncStats.errors > 0) {
+            console.log(`   - Errors: ${syncStats.errors}`);
+        }
+    } catch (error) {
+        console.error('⚠️ Failed to sync mainnet registry:', error);
+        console.log('   Continuing anyway...');
+    }
 };
 
 // Run only when executed directly (CLI). Avoid triggering during Next.js build/import.
