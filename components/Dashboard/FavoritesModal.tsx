@@ -300,12 +300,12 @@ const FavoritesModalComponent = ({
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredFavorites.map(({ favorite, node }) => {
-                const isSelectedForCompare = selectedForCompare.has(favorite.ip);
+              {filteredFavorites.map(({ favorite, node }, index) => {
+                const isSelectedForCompare = favorite.ip ? selectedForCompare.has(favorite.ip) : false;
                 
                 return (
                   <div
-                    key={favorite.ip}
+                    key={favorite.ip || `favorite-${index}`}
                     className={clsx(
                       "p-4 rounded-xl border-2 transition-all",
                       isSelectedForCompare && "ring-2 ring-purple-500 ring-offset-2",
@@ -317,8 +317,9 @@ const FavoritesModalComponent = ({
                         <input
                           type="checkbox"
                           checked={isSelectedForCompare}
-                          onChange={() => handleToggleCompareSelection(favorite.ip)}
-                          className="mt-1 w-4 h-4 rounded border-2 border-border-app bg-bg-card checked:bg-purple-500 checked:border-purple-500 cursor-pointer"
+                          onChange={() => favorite.ip && handleToggleCompareSelection(favorite.ip)}
+                          disabled={!favorite.ip}
+                          className="mt-1 w-4 h-4 rounded border-2 border-border-app bg-bg-card checked:bg-purple-500 checked:border-purple-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Select for comparison"
                         />
                         <div>
@@ -360,9 +361,10 @@ const FavoritesModalComponent = ({
 
                     <div className="flex items-center gap-2 pt-3 border-t border-border-app/50">
                       <button
-                        onClick={() => router.push(`/pnode/${favorite.ip}`)}
+                        onClick={() => favorite.ip && router.push(`/pnode/${favorite.ip}`)}
+                        disabled={!favorite.ip}
                         className={clsx(
-                          "flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:scale-105",
+                          "flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed",
                           isLight
                             ? "bg-blue-50 text-blue-700 border border-blue-200"
                             : "bg-blue-900/20 text-blue-400 border border-blue-700/30"
@@ -372,9 +374,10 @@ const FavoritesModalComponent = ({
                         View
                       </button>
                       <button
-                        onClick={() => onRemoveFavorite(favorite.ip)}
+                        onClick={() => favorite.ip && onRemoveFavorite(favorite.ip)}
+                        disabled={!favorite.ip}
                         className={clsx(
-                          "flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:scale-105",
+                          "flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed",
                           isLight
                             ? "bg-red-50 text-red-700 border border-red-200"
                             : "bg-red-900/20 text-red-400 border border-red-700/30"
