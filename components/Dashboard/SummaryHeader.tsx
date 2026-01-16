@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Radio, ShieldCheck, Network, LucideIcon, AlertCircle, Check, AlertTriangle } from "lucide-react";
+import { Radio, ShieldCheck, Network, LucideIcon, AlertCircle, Check, AlertTriangle, Users } from "lucide-react";
 import { hexToRgba, getKpiColors, getStatusColors } from "@/lib/utils";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
 import { SystemAlertsAnalyticsModal } from "./SystemAlertsAnalyticsModal";
 import { NetworkBadge } from "@/components/common/NetworkBadge";
+import { FlipCard } from "@/components/common/FlipCard";
 
 type OperatorsMetrics = {
   uniqueManagers: number;
@@ -90,195 +91,149 @@ export const SummaryHeader = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {/* Public Nodes */}
-      <div className="kpi-card relative overflow-hidden p-6">
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
-                Public Nodes
-              </p>
-              <InfoTooltip content="Active pNodes reachable via pRPC, providing public storage and gossip services." />
-            </div>
-            <p className="text-4xl font-bold text-text-main mt-2">
-              {publicCount}
-            </p>
-            
-            {/* Network Breakdown - Clean Typography */}
-            {(mainnetPublic > 0 || devnetPublic > 0) && (
-              <div className="flex items-center gap-3 mt-3 text-sm">
-                {mainnetPublic > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                    <span className="text-text-soft font-medium">{mainnetPublic}</span>
-                  </div>
-                )}
-                {devnetPublic > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                    <span className="text-text-soft font-medium">{devnetPublic}</span>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            <p className="text-sm text-text-soft mt-2">Public storage network</p>
-          </div>
-          <div
-            className="w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: hexToRgba(kpiColors.public, 0.12) }}
-          >
-            <Radio
-              className="w-5 h-5"
-              strokeWidth={2.2}
-              style={{ color: kpiColors.public }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Private Nodes */}
-      <div className="kpi-card relative overflow-hidden p-6">
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
-                Private Nodes
-              </p>
-              <InfoTooltip content="Gossip-only nodes that participate in the network state but do not expose public services." />
-            </div>
-            <p className="text-4xl font-bold text-text-main mt-2">
-              {privateCount}
-            </p>
-            
-            {/* Network Breakdown - Clean Typography */}
-            {(mainnetPrivate > 0 || devnetPrivate > 0) && (
-              <div className="flex items-center gap-3 mt-3 text-sm">
-                {mainnetPrivate > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                    <span className="text-text-soft font-medium">{mainnetPrivate}</span>
-                  </div>
-                )}
-                {devnetPrivate > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                    <span className="text-text-soft font-medium">{devnetPrivate}</span>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            <p className="text-sm text-text-soft mt-2">Private storage network</p>
-          </div>
-          <div
-            className="w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: hexToRgba(kpiColors.private, 0.12) }}
-          >
-            <ShieldCheck
-              className="w-5 h-5"
-              strokeWidth={2.2}
-              style={{ color: kpiColors.private }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Total Nodes */}
-      <div className="kpi-card relative overflow-hidden p-6">
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
-                Total Nodes
-              </p>
-              <InfoTooltip content="Grand total of all nodes detected in the Xandeum network (Public + Private)." />
-            </div>
-            <p className="text-4xl font-bold text-text-main mt-2">
-              {totalNodes}
-            </p>
-            
-            {/* Network Breakdown - Clean Typography */}
-            {(mainnetCount > 0 || devnetCount > 0) && (
-              <div className="flex items-center gap-3 mt-3 text-sm">
-                {mainnetCount > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                    <span className="text-text-soft font-medium">{mainnetCount}</span>
-                  </div>
-                )}
-                {devnetCount > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                    <span className="text-text-soft font-medium">{devnetCount}</span>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            <p className="text-sm text-text-soft mt-2">Total network size</p>
-          </div>
-          <div
-            className="w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: hexToRgba(kpiColors.total, 0.12) }}
-          >
-            <Network
-              className="w-5 h-5"
-              strokeWidth={2.2}
-              style={{ color: kpiColors.total }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Network Operators */}
-      <div className="kpi-card relative overflow-hidden p-6 flex flex-col">
-        <div className="flex items-start justify-between gap-6">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
-                Network Operators
-              </p>
-              <InfoTooltip content="Unique wallet managers operating nodes. Shows network decentralization." />
-            </div>
-            <p className="text-sm text-text-faint">Infrastructure managers</p>
-
-            <div className="flex items-baseline gap-2 mt-4">
-              <span
-                className="text-4xl font-bold tracking-tight"
-                style={{ color: "#3B82F6" }}
-              >
-                {operatorsMetrics.uniqueManagers}
+      {/* Public Nodes - FlipCard */}
+      <FlipCard
+        icon={Radio}
+        iconColor={kpiColors.public}
+        title="Public Nodes"
+        mainValue={publicCount}
+        subtitle="Public storage network"
+        isLight={isLight}
+        hexToRgba={hexToRgba}
+        backContent={
+          <div className="space-y-3">
+            <div className="flex items-center justify-between py-2.5 border-b border-border-app-soft">
+              <span className="text-text-soft flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                <span className="font-medium">MAINNET</span>
               </span>
-              <span className="text-sm text-text-soft font-semibold">managers</span>
+              <span className="font-bold text-text-main text-xl">{mainnetPublic}</span>
             </div>
-
-            <div className="mt-4 space-y-1.5 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-text-soft">Multi-node</span>
-                <span className="font-semibold text-text-main">{operatorsMetrics.multiNodeOperators}</span>
+            <div className="flex items-center justify-between py-2.5 border-b border-border-app-soft">
+              <span className="text-text-soft flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
+                <span className="font-medium">DEVNET</span>
+              </span>
+              <span className="font-bold text-text-main text-xl">{devnetPublic}</span>
+            </div>
+            {mainnetCount > 0 && (
+              <div className="pt-2 text-xs text-text-faint">
+                {((mainnetPublic / mainnetCount) * 100).toFixed(0)}% of MAINNET nodes are public
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-text-soft">Top operator</span>
+            )}
+          </div>
+        }
+      />
+
+      {/* Private Nodes - FlipCard */}
+      <FlipCard
+        icon={ShieldCheck}
+        iconColor={kpiColors.private}
+        title="Private Nodes"
+        mainValue={privateCount}
+        subtitle="Private storage network"
+        isLight={isLight}
+        hexToRgba={hexToRgba}
+        backContent={
+          <div className="space-y-3">
+            <div className="flex items-center justify-between py-2.5 border-b border-border-app-soft">
+              <span className="text-text-soft flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                <span className="font-medium">MAINNET</span>
+              </span>
+              <span className="font-bold text-text-main text-xl">{mainnetPrivate}</span>
+            </div>
+            <div className="flex items-center justify-between py-2.5 border-b border-border-app-soft">
+              <span className="text-text-soft flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
+                <span className="font-medium">DEVNET</span>
+              </span>
+              <span className="font-bold text-text-main text-xl">{devnetPrivate}</span>
+            </div>
+            {mainnetCount > 0 && (
+              <div className="pt-2 text-xs text-text-faint">
+                {((mainnetPrivate / mainnetCount) * 100).toFixed(0)}% of MAINNET nodes are private
+              </div>
+            )}
+          </div>
+        }
+      />
+
+      {/* Total Nodes - FlipCard */}
+      <FlipCard
+        icon={Network}
+        iconColor={kpiColors.total}
+        title="Total Nodes"
+        mainValue={totalNodes}
+        subtitle="Total network size"
+        isLight={isLight}
+        hexToRgba={hexToRgba}
+        backContent={
+          <div className="space-y-3">
+            <div className="flex items-center justify-between py-2.5 border-b border-border-app-soft">
+              <span className="text-text-soft flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                <span className="font-medium">MAINNET</span>
+              </span>
+              <span className="font-bold text-text-main text-xl">{mainnetCount}</span>
+            </div>
+            <div className="flex items-center justify-between py-2.5 border-b border-border-app-soft">
+              <span className="text-text-soft flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
+                <span className="font-medium">DEVNET</span>
+              </span>
+              <span className="font-bold text-text-main text-xl">{devnetCount}</span>
+            </div>
+            <div className="pt-2 space-y-1.5 text-sm">
+              <div className="flex justify-between">
+                <span className="text-text-faint">Public:</span>
+                <span className="font-semibold text-text-main">{publicCount}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-text-faint">Private:</span>
+                <span className="font-semibold text-text-main">{privateCount}</span>
+              </div>
+            </div>
+          </div>
+        }
+      />
+
+      {/* Network Operators - FlipCard */}
+      <FlipCard
+        icon={Users}
+        iconColor="#3B82F6"
+        title="Network Operators"
+        mainValue={operatorsMetrics.uniqueManagers}
+        subtitle="Infrastructure managers"
+        isLight={isLight}
+        hexToRgba={hexToRgba}
+        backContent={
+          <div className="space-y-3">
+            <div className="flex items-center justify-between py-2.5 border-b border-border-app-soft">
+              <span className="text-text-soft font-medium">Multi-node</span>
+              <span className="font-bold text-text-main text-xl">{operatorsMetrics.multiNodeOperators}</span>
+            </div>
+            <div className="flex items-center justify-between py-2.5 border-b border-border-app-soft">
+              <span className="text-text-soft font-medium">Single-node</span>
+              <span className="font-bold text-text-main text-xl">{operatorsMetrics.singleNodeOperators}</span>
+            </div>
+            <div className="pt-2 space-y-1.5 text-sm">
+              <div className="flex justify-between">
+                <span className="text-text-faint">Top operator:</span>
                 <span className="font-semibold" style={{ color: "#10B981" }}>
                   {operatorsMetrics.topOperator?.nodeCount || 0} nodes
                 </span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-text-faint">Avg per manager:</span>
+                <span className="font-semibold text-text-main">
+                  {(totalNodes / operatorsMetrics.uniqueManagers).toFixed(1)}
+                </span>
+              </div>
             </div>
           </div>
-
-          <div
-            className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ background: hexToRgba("#3B82F6", 0.12) }}
-          >
-            <Network
-              className="w-6 h-6"
-              strokeWidth={2.2}
-              style={{ color: "#3B82F6" }}
-            />
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* System Alerts - Moved from Performance & Resources */}
       <div 
