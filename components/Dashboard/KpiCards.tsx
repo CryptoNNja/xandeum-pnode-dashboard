@@ -43,6 +43,26 @@ import { calculateNodeScore } from "@/lib/scoring";
 
 import type { NetworkParticipationMetrics } from "@/lib/blockchain-metrics";
 
+type OperatorsMetrics = {
+    uniqueManagers: number;
+    multiNodeOperators: number;
+    topOperator: {
+        pubkey: string;
+        nodeCount: number;
+        nodes: any[];
+        totalStorage: number;
+        avgStorage: number;
+    } | null;
+    singleNodeOperators: number;
+    operators: Array<{
+        pubkey: string;
+        nodeCount: number;
+        nodes: any[];
+        totalStorage: number;
+        avgStorage: number;
+    }>;
+};
+
 type KpiCardsProps = {
     publicCount: number;
     privateCount: number;
@@ -95,6 +115,7 @@ type KpiCardsProps = {
     mainnetCount: number;
     mainnetOfficialCount: number;
     mainnetRegistryCoverage: number;
+    operatorsMetrics: OperatorsMetrics;
 };
 
 export const KpiCards = ({
@@ -136,7 +157,8 @@ export const KpiCards = ({
     pnodes,
     mainnetCount,
     mainnetOfficialCount,
-    mainnetRegistryCoverage
+    mainnetRegistryCoverage,
+    operatorsMetrics
 }: KpiCardsProps) => {
     // Use real props instead of hardcoded test data
     const alerts = _alerts;
@@ -189,7 +211,7 @@ export const KpiCards = ({
     // Carousel for champion rotation with transition state
     const [activeChampionIndex, setActiveChampionIndex] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
-    const championCategories = ['performance', 'storage', 'uptime', 'credits'] as const;
+    const championCategories = ['performance', 'storage', 'uptime', 'credits', 'operators'] as const;
     
     useEffect(() => {
       const interval = setInterval(() => {
@@ -765,6 +787,138 @@ export const KpiCards = ({
                   }}
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Network Operators Card */}
+          <div className="kpi-card relative overflow-hidden p-6 flex flex-col">
+            <div className="flex items-start justify-between gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
+                    Network Operators
+                  </p>
+                  <InfoTooltip content="Infrastructure distribution across unique wallet managers. Shows decentralization and identifies multi-node operators." />
+                </div>
+                <p className="text-sm text-text-faint">Infrastructure distribution</p>
+              </div>
+
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: hexToRgba("#3B82F6", 0.12) }}
+              >
+                <Network 
+                  className="w-5 h-5" 
+                  strokeWidth={2.3} 
+                  style={{ color: "#3B82F6" }} 
+                />
+              </div>
+            </div>
+
+            {/* Dual Metrics Display */}
+            <div className="grid grid-cols-2 gap-4 mt-6 mb-6">
+              {/* Left: Unique Managers */}
+              <div className="relative p-4 rounded-lg border" style={{ 
+                background: isLight 
+                  ? "linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(16, 185, 129, 0.03) 100%)"
+                  : "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%)",
+                borderColor: "var(--border-default)"
+              }}>
+                <p className="text-xs uppercase tracking-wider text-text-soft mb-2">Unique Managers</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-bold tracking-tight" style={{ color: "#3B82F6" }}>
+                    {operatorsMetrics.uniqueManagers}
+                  </span>
+                </div>
+                <p className="text-xs text-text-faint mt-1">
+                  {operatorsMetrics.singleNodeOperators} single-node
+                </p>
+              </div>
+
+              {/* Right: Multi-Node Operators */}
+              <div className="relative p-4 rounded-lg border" style={{ 
+                background: isLight 
+                  ? "linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, rgba(59, 130, 246, 0.03) 100%)"
+                  : "linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)",
+                borderColor: "var(--border-default)"
+              }}>
+                <p className="text-xs uppercase tracking-wider text-text-soft mb-2">Multi-Node</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-bold tracking-tight" style={{ color: "#10B981" }}>
+                    {operatorsMetrics.multiNodeOperators}
+                  </span>
+                </div>
+                <p className="text-xs text-text-faint mt-1">
+                  {operatorsMetrics.uniqueManagers > 0 
+                    ? `${((operatorsMetrics.multiNodeOperators / operatorsMetrics.uniqueManagers) * 100).toFixed(0)}%`
+                    : '0%'} of total
+                </p>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mb-5">
+              <div className="flex items-center justify-between text-xs text-text-soft mb-1.5">
+                <span>Decentralization</span>
+                <span className="font-medium">
+                  {operatorsMetrics.uniqueManagers > 0 && operatorsMetrics.topOperator
+                    ? `${((operatorsMetrics.topOperator.nodeCount / totalNodes) * 100).toFixed(1)}% top operator`
+                    : 'N/A'}
+                </span>
+              </div>
+              <div
+                className="w-full h-2 rounded-full overflow-hidden border"
+                style={{ 
+                  background: isLight ? "rgba(15,23,42,0.06)" : "rgba(255,255,255,0.05)", 
+                  borderColor: "var(--border-default)" 
+                }}
+              >
+                <div
+                  className="h-full rounded-full transition-all duration-500 ease-out"
+                  style={{
+                    width: operatorsMetrics.uniqueManagers > 0
+                      ? `${Math.min((operatorsMetrics.singleNodeOperators / operatorsMetrics.uniqueManagers) * 100, 100)}%`
+                      : '0%',
+                    background: "linear-gradient(90deg, #3B82F6 0%, #10B981 100%)",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Breakdown */}
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-text-soft">Top operator</span>
+                <span className="font-semibold text-text-main">
+                  {operatorsMetrics.topOperator?.nodeCount || 0} nodes
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-text-soft">Avg per manager</span>
+                <span className="font-semibold text-text-main">
+                  {operatorsMetrics.uniqueManagers > 0
+                    ? (totalNodes / operatorsMetrics.uniqueManagers).toFixed(1)
+                    : '0'} nodes
+                </span>
+              </div>
+            </div>
+
+            {/* View Leaderboard Button */}
+            <div className="mt-auto pt-4 border-t border-border-app-soft">
+              <button
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all hover:scale-105"
+                style={{
+                  background: isLight
+                    ? "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%)"
+                    : "linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(16, 185, 129, 0.12) 100%)",
+                  border: '1px solid',
+                  borderColor: '#3B82F633',
+                  color: '#3B82F6'
+                }}
+              >
+                <Trophy className="w-4 h-4" />
+                View Leaderboard
+              </button>
             </div>
           </div>
           </CollapsibleSection>
@@ -1539,6 +1693,19 @@ export const KpiCards = ({
                         unit: 'earned',
                         status: creditsLeader?.status || 'active',
                         showElite: false,
+                      };
+                    case 'operators':
+                      return {
+                        icon: '👥',
+                        label: 'Network Operator',
+                        color: '#3B82F6',
+                        ip: operatorsMetrics.topOperator 
+                          ? `${operatorsMetrics.topOperator.pubkey.slice(0, 8)}...${operatorsMetrics.topOperator.pubkey.slice(-4)}`
+                          : 'N/A',
+                        value: operatorsMetrics.topOperator?.nodeCount || 0,
+                        unit: `node${operatorsMetrics.topOperator?.nodeCount !== 1 ? 's' : ''}`,
+                        status: operatorsMetrics.topOperator?.nodes[0]?.status || 'active',
+                        showElite: (operatorsMetrics.topOperator?.nodeCount || 0) >= 5,
                       };
                   }
                 };

@@ -155,6 +155,53 @@ export default function Page() {
     [mainnetOfficialCount, mainnetCount]
   );
 
+  // 🆕 Calculate Network Operators metrics
+  const operatorsMetrics = useMemo(() => {
+    const operatorMap = new Map<string, { count: number; nodes: typeof pnodes; totalStorage: number }>();
+    
+    pnodes.forEach(node => {
+      if (!node.pubkey) return;
+      
+      const existing = operatorMap.get(node.pubkey);
+      const storage = node.stats?.storage_committed || 0;
+      
+      if (existing) {
+        existing.count++;
+        existing.nodes.push(node);
+        existing.totalStorage += storage;
+      } else {
+        operatorMap.set(node.pubkey, {
+          count: 1,
+          nodes: [node],
+          totalStorage: storage
+        });
+      }
+    });
+
+    const operators = Array.from(operatorMap.entries()).map(([pubkey, data]) => ({
+      pubkey,
+      nodeCount: data.count,
+      nodes: data.nodes,
+      totalStorage: data.totalStorage,
+      avgStorage: data.totalStorage / data.count
+    }));
+
+    operators.sort((a, b) => b.nodeCount - a.nodeCount);
+
+    const uniqueManagers = operators.length;
+    const multiNodeOperators = operators.filter(op => op.nodeCount >= 2).length;
+    const topOperator = operators[0] || null;
+    const singleNodeOperators = operators.filter(op => op.nodeCount === 1).length;
+
+    return {
+      uniqueManagers,
+      multiNodeOperators,
+      topOperator,
+      singleNodeOperators,
+      operators
+    };
+  }, [pnodes]);
+
   // Recalculate publicCount and privateCount based on filtered nodes
   const filteredPublicCount = useMemo(() => {
     return filteredAndSortedPNodes.filter(n => n.status === "active").length;
@@ -631,6 +678,7 @@ export default function Page() {
           mainnetCount={mainnetCount}
           mainnetOfficialCount={mainnetOfficialCount}
           mainnetRegistryCoverage={mainnetRegistryCoverage}
+          operatorsMetrics={operatorsMetrics}
         />
 
         {/* TOOLBAR */}
