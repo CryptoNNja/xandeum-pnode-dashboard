@@ -27,7 +27,7 @@ export async function GET(
     const node: PNode = {
       ip: data.ip,
       status: data.status as PNodeStatus,
-      version: data.version,
+      version: data.version ?? undefined,
       pubkey: data.pubkey ?? undefined,
       stats: data.stats as unknown as import("@/lib/types").PNodeStats,
       lat: data.lat ?? null,
