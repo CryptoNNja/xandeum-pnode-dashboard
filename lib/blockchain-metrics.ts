@@ -12,7 +12,7 @@ export interface NetworkSyncMetrics {
   totalActive: number;
   syncPercent: number;
   laggingNodes: Array<{
-    ip: string;
+    ip: string | null;
     currentIndex: number;
     blocksBehind: number;
     syncPercent: number;

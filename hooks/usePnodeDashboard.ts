@@ -44,7 +44,7 @@ const createEmptyDistribution = (): Record<HealthTrendKey, number> => ({
 });
 
 export type Alert = {
-  ip: string;
+  ip: string | null;
   type: string;
   severity: "critical" | "warning";
   message: string;
@@ -446,7 +446,7 @@ export const usePnodeDashboard = (theme?: string) => {
       const q = debouncedSearchTerm.toLowerCase().trim();
       result = result.filter(p => {
         // Basic fields (backward compatible)
-        if (p.ip.toLowerCase().includes(q)) return true;
+        if (p.ip?.toLowerCase().includes(q)) return true;
         if (p.version?.toLowerCase().includes(q)) return true;
         if (p.city?.toLowerCase().includes(q)) return true;
         
@@ -547,7 +547,8 @@ export const usePnodeDashboard = (theme?: string) => {
       switch (sortKey) {
         case "ip":
           // Convert IP to comparable number for proper sorting
-          const ipToNumber = (ip: string) => {
+          const ipToNumber = (ip: string | null) => {
+            if (!ip) return 0;
             const parts = ip.split('.').map(Number);
             return (parts[0] || 0) * 16777216 + (parts[1] || 0) * 65536 + (parts[2] || 0) * 256 + (parts[3] || 0);
           };
