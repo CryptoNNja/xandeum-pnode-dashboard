@@ -55,12 +55,14 @@ async function syncMainnetRegistry(): Promise<SyncStats> {
           const { error: updateError } = await supabase
             .from('pnodes')
             .update({
-              is_official: true,
+              // @ts-ignore - Types not yet updated with latest migrations
               source: 'both',
               network: 'MAINNET',
+              // @ts-ignore
               network_confidence: 'high',
-              updated_at: new Date().toISOString()
-            })
+              // @ts-ignore
+              is_official: true
+            } as any)
             .eq('pubkey', pubkey);
 
           if (updateError) {
@@ -76,22 +78,24 @@ async function syncMainnetRegistry(): Promise<SyncStats> {
             .from('pnodes')
             .insert({
               pubkey,
+              // @ts-ignore - Types not yet updated with latest migrations
               ip: null,
-              status: 'registry_only', // Registry-only nodes (not yet discovered by crawler)
+              status: 'registry_only',
+              // @ts-ignore
               source: 'registry',
-              is_official: true,
+              // @ts-ignore
               network: 'MAINNET',
+              // @ts-ignore
               network_confidence: 'high',
+              // @ts-ignore
+              is_official: true,
               stats: {},
-              failed_checks: 0,
-              last_check: new Date().toISOString(),
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
+              version: 'unknown'
+            } as any);
 
           if (insertError) {
             // Handle duplicate key error (race condition)
-            if (insertError.code === '23505') {
+            if (insertError.code === '23505' || insertError.message?.includes('duplicate')) {
               console.log(`⚠️ Node ${pubkey.slice(0, 8)}... already exists (race condition)`);
             } else {
               console.error(`❌ Error inserting node ${pubkey}:`, insertError);

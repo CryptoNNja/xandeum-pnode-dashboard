@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     const pnodes: PNode[] = (data || []).map((row) => ({
       ip: row.ip,
       status: row.status as PNodeStatus,
-      version: row.version,
+      version: row.version ?? undefined,
       pubkey: row.pubkey ?? undefined,
       stats: row.stats as unknown as import("@/lib/types").PNodeStats,
       network: (row as any).network as NetworkType, // 🆕 Network type

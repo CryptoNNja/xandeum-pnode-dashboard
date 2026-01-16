@@ -16,11 +16,12 @@ export type Database = {
     Tables: {
       pnodes: {
         Row: {
-          ip: string;
+          id: number;
+          ip: string | null;
           status: string;
-          version: string;
+          version: string | null;
           stats: Json;
-          last_crawled_at: string;
+          last_crawled_at: string | null;
           pubkey: string | null;
           lat: number | null;
           lng: number | null;
@@ -28,13 +29,26 @@ export type Database = {
           country: string | null;
           country_code: string | null;
           failed_checks: number | null;
+          network: string | null;
+          network_confidence: string | null;
+          network_detection_method: string | null;
+          source: string | null;
+          is_official: boolean | null;
+          confidence_score: number | null;
+          last_seen_gossip: string | null;
+          last_seen_rpc: string | null;
+          seen_in_official_api: boolean | null;
+          created_at: string | null;
+          updated_at: string | null;
+          last_crawl_at: string | null;
         };
         Insert: {
-          ip: string;
+          id?: number;
+          ip?: string | null;
           status: string;
-          version: string;
+          version?: string | null;
           stats: Json;
-          last_crawled_at: string;
+          last_crawled_at?: string | null;
           pubkey?: string | null;
           lat?: number | null;
           lng?: number | null;
@@ -42,13 +56,26 @@ export type Database = {
           country?: string | null;
           country_code?: string | null;
           failed_checks?: number | null;
+          network?: string | null;
+          network_confidence?: string | null;
+          network_detection_method?: string | null;
+          source?: string | null;
+          is_official?: boolean | null;
+          confidence_score?: number | null;
+          last_seen_gossip?: string | null;
+          last_seen_rpc?: string | null;
+          seen_in_official_api?: boolean | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+          last_crawl_at?: string | null;
         };
         Update: {
-          ip?: string;
+          id?: number;
+          ip?: string | null;
           status?: string;
-          version?: string;
+          version?: string | null;
           stats?: Json;
-          last_crawled_at?: string;
+          last_crawled_at?: string | null;
           pubkey?: string | null;
           lat?: number | null;
           lng?: number | null;
@@ -56,6 +83,18 @@ export type Database = {
           country?: string | null;
           country_code?: string | null;
           failed_checks?: number | null;
+          network?: string | null;
+          network_confidence?: string | null;
+          network_detection_method?: string | null;
+          source?: string | null;
+          is_official?: boolean | null;
+          confidence_score?: number | null;
+          last_seen_gossip?: string | null;
+          last_seen_rpc?: string | null;
+          seen_in_official_api?: boolean | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+          last_crawl_at?: string | null;
         };
         Relationships: [];
       };

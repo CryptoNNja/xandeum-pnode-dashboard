@@ -637,6 +637,11 @@ export const main = async () => {
     const uniqueNodesMap = new Map<string, typeof pnodesToUpsert[0]>();
     
     pnodesToUpsert.forEach((node) => {
+        // Skip registry-only nodes without IP for now (they'll be handled by sync-mainnet-registry)
+        if (!node.ip) {
+            return;
+        }
+        
         const uniqueId = node.ip; // Deduplicate by IP only - one IP = one physical node
         const existing = uniqueNodesMap.get(uniqueId);
         
