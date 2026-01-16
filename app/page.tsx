@@ -145,6 +145,16 @@ export default function Page() {
   const devnetPublic = pnodesSummary?.devnetPublic ?? devnetNodes.filter(n => n.status === "active").length;
   const devnetPrivate = pnodesSummary?.devnetPrivate ?? devnetNodes.filter(n => n.status !== "active").length;
 
+  // 🆕 Calculate MAINNET registry metrics
+  const mainnetOfficialCount = useMemo(() => 
+    mainnetNodes.filter(n => n.is_official === true).length,
+    [mainnetNodes]
+  );
+  const mainnetRegistryCoverage = useMemo(() => 
+    mainnetCount > 0 ? (mainnetOfficialCount / mainnetCount) * 100 : 0,
+    [mainnetOfficialCount, mainnetCount]
+  );
+
   // Recalculate publicCount and privateCount based on filtered nodes
   const filteredPublicCount = useMemo(() => {
     return filteredAndSortedPNodes.filter(n => n.status === "active").length;
@@ -618,6 +628,9 @@ export default function Page() {
           storageDistribution={storageDistribution}
           pagesDistribution={pagesDistribution}
           pnodes={pnodes}
+          mainnetCount={mainnetCount}
+          mainnetOfficialCount={mainnetOfficialCount}
+          mainnetRegistryCoverage={mainnetRegistryCoverage}
         />
 
         {/* TOOLBAR */}
