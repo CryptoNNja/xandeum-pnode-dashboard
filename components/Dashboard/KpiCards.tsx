@@ -374,8 +374,8 @@ export const KpiCards = ({
                 </div>
 
                 {/* Rewards Visualization Zone */}
-                <div className="mt-6 pt-4 border-t border-border-app-soft">
-                  <div className="flex items-center justify-between mb-3">
+                <div className="mt-auto pt-3 border-t border-border-app-soft">
+                  <div className="flex items-center justify-between mb-2">
                     <p className="text-xs uppercase tracking-[0.25em] text-text-soft/70">
                       Reward Distribution
                     </p>
