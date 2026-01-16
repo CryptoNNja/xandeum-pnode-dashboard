@@ -59,7 +59,7 @@ const PNodeTableComponent = ({
   if (!data || !Array.isArray(data)) return null;
   
   const hasSelection = selectedNodeIds && selectedNodeIds.size > 0;
-  const allSelected = data.length > 0 && data.every(node => selectedNodeIds?.has(node.ip));
+  const allSelected = data.length > 0 && data.every(node => node.ip && selectedNodeIds?.has(node.ip));
 
   const formatUptime = (seconds: number) => {
     if (seconds === 0) return "-";
