@@ -374,12 +374,8 @@ export const KpiCards = ({
                 {/* Breakdown */}
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-text-soft">Earning credits</span>
-                    <span className="font-semibold text-text-main">{networkParticipation.podsEarning} pods</span>
-                  </div>
-                  <div className="flex items-center justify-between">
                     <span className="text-text-soft">Official MAINNET</span>
-                    <span className="font-semibold text-text-main">{mainnetOfficialCount} verified</span>
+                    <span className="font-semibold"><span style={{ color: "#06B6D4" }}>{mainnetOfficialCount}</span> verified</span>
                   </div>
                   {networkParticipation.podsInactive > 0 && (
                     <div className="flex items-center justify-between">
@@ -390,7 +386,7 @@ export const KpiCards = ({
                   {(totalNodes - networkParticipation.totalPods) > 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-text-soft">Not yet eligible</span>
-                      <span className="font-semibold text-text-faint">{totalNodes - networkParticipation.totalPods}</span>
+                      <span className="font-semibold" style={{ color: "#EF4444" }}>{totalNodes - networkParticipation.totalPods}</span>
                     </div>
                   )}
                 </div>
