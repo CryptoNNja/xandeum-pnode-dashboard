@@ -7,6 +7,26 @@ import { InfoTooltip } from "@/components/common/InfoTooltip";
 import { SystemAlertsAnalyticsModal } from "./SystemAlertsAnalyticsModal";
 import { NetworkBadge } from "@/components/common/NetworkBadge";
 
+type OperatorsMetrics = {
+  uniqueManagers: number;
+  multiNodeOperators: number;
+  topOperator: {
+    pubkey: string;
+    nodeCount: number;
+    nodes: any[];
+    totalStorage: number;
+    avgStorage: number;
+  } | null;
+  singleNodeOperators: number;
+  operators: Array<{
+    pubkey: string;
+    nodeCount: number;
+    nodes: any[];
+    totalStorage: number;
+    avgStorage: number;
+  }>;
+};
+
 type SummaryHeaderProps = {
   publicCount: number;
   privateCount: number;
@@ -42,6 +62,7 @@ type SummaryHeaderProps = {
   devnetPublic?: number;
   devnetPrivate?: number;
   devnetCount?: number;
+  operatorsMetrics: OperatorsMetrics;
 };
 
 export const SummaryHeader = ({
@@ -60,6 +81,7 @@ export const SummaryHeader = ({
   devnetPublic = 0,
   devnetPrivate = 0,
   devnetCount = 0,
+  operatorsMetrics,
 }: SummaryHeaderProps) => {
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const UptimeIcon = networkUptimeStats.Icon;
@@ -204,6 +226,55 @@ export const SummaryHeader = ({
               className="w-5 h-5"
               strokeWidth={2.2}
               style={{ color: kpiColors.total }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Network Operators */}
+      <div className="kpi-card relative overflow-hidden p-6 flex flex-col">
+        <div className="flex items-start justify-between gap-6">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
+                Network Operators
+              </p>
+              <InfoTooltip content="Unique wallet managers operating nodes. Shows network decentralization." />
+            </div>
+            <p className="text-sm text-text-faint">Infrastructure managers</p>
+
+            <div className="flex items-baseline gap-2 mt-4">
+              <span
+                className="text-4xl font-bold tracking-tight"
+                style={{ color: "#3B82F6" }}
+              >
+                {operatorsMetrics.uniqueManagers}
+              </span>
+              <span className="text-sm text-text-soft font-semibold">managers</span>
+            </div>
+
+            <div className="mt-4 space-y-1.5 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-text-soft">Multi-node</span>
+                <span className="font-semibold text-text-main">{operatorsMetrics.multiNodeOperators}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-text-soft">Top operator</span>
+                <span className="font-semibold" style={{ color: "#10B981" }}>
+                  {operatorsMetrics.topOperator?.nodeCount || 0} nodes
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: hexToRgba("#3B82F6", 0.12) }}
+          >
+            <Network
+              className="w-6 h-6"
+              strokeWidth={2.2}
+              style={{ color: "#3B82F6" }}
             />
           </div>
         </div>

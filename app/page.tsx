@@ -635,6 +635,7 @@ export default function Page() {
           devnetPublic={devnetPublic}
           devnetPrivate={devnetPrivate}
           devnetCount={devnetCount}
+          operatorsMetrics={operatorsMetrics}
         />
 
         {/* DETAILED KPI CARDS */}
