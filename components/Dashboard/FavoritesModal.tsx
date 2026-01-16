@@ -188,7 +188,7 @@ const FavoritesModalComponent = ({
               </div>
               <div className="text-center">
                 <p className="text-xs text-text-soft uppercase tracking-wider font-bold mb-1">Best</p>
-                <p className="text-lg font-black text-purple-500">{stats.bestPerformer?.ip.split('.').slice(-2).join('.')}</p>
+                <p className="text-lg font-black text-purple-500">{stats.bestPerformer?.ip?.split('.').slice(-2).join('.') || '—'}</p>
               </div>
             </div>
           </div>

@@ -2,9 +2,10 @@
 
 import React from "react";
 import * as Slider from "@radix-ui/react-slider";
-import { X, RotateCcw, Filter, Check, Cpu, HardDrive, Activity, Zap } from "lucide-react";
+import { X, RotateCcw, Filter, Check, Cpu, HardDrive, Activity, Zap, Users, Network } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getStatusColors } from "@/lib/utils";
+import type { OperatorFilter, NetworkStatusFilter } from "@/hooks/usePnodeDashboard";
 
 type AdvancedFiltersProps = {
   isOpen: boolean;
@@ -24,6 +25,19 @@ type AdvancedFiltersProps = {
   resultsCount: number;
   staleFilter: "hide" | "include";
   setStaleFilter: (v: "hide" | "include") => void;
+  // 🆕 Operator filters
+  operatorFilter?: OperatorFilter;
+  setOperatorFilter?: (filter: OperatorFilter) => void;
+  operatorStats?: {
+    total: number;
+    single: number;
+    multi: number;
+    noPubkey: number;
+    maxNodesPerOperator: number;
+  };
+  // 🆕 Network status filters
+  networkStatusFilters?: NetworkStatusFilter[];
+  setNetworkStatusFilters?: (filters: NetworkStatusFilter[]) => void;
 };
 
 const HEALTH_STATUSES = ["Excellent", "Good", "Warning", "Critical", "Private"];
@@ -46,6 +60,11 @@ export const AdvancedFilters = ({
   resultsCount,
   staleFilter,
   setStaleFilter,
+  operatorFilter,
+  setOperatorFilter,
+  operatorStats,
+  networkStatusFilters,
+  setNetworkStatusFilters,
 }: AdvancedFiltersProps) => {
   const statusColors = getStatusColors();
 
@@ -123,6 +142,83 @@ export const AdvancedFilters = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+              {/* 🆕 Operator Type */}
+              {operatorFilter && setOperatorFilter && operatorStats && (
+                <div className="space-y-5">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-3.5 h-3.5 text-text-faint" />
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-text-faint font-bold">Operator Type</p>
+                  </div>
+                  <div className="space-y-2">
+                    {[
+                      { key: "all" as const, label: "All Operators", count: operatorStats.total + operatorStats.noPubkey },
+                      { key: "single" as const, label: "Single-Node", count: operatorStats.single },
+                      { key: "multi" as const, label: "Multi-Node", count: operatorStats.multi },
+                      { key: "no_pubkey" as const, label: "Unknown", count: operatorStats.noPubkey },
+                    ].map((option) => {
+                      const isSelected = operatorFilter === option.key;
+                      return (
+                        <button
+                          key={option.key}
+                          onClick={() => setOperatorFilter(option.key)}
+                          className={`
+                            w-full px-3 py-2 rounded-lg text-xs font-semibold transition-all border flex items-center justify-between
+                            ${isSelected 
+                              ? "bg-purple-500/20 border-purple-500 text-purple-400 shadow-lg" 
+                              : "bg-bg-bg border-border-app text-text-soft hover:border-text-faint"}
+                          `}
+                        >
+                          <span>{option.label}</span>
+                          <span className="text-[10px] font-mono opacity-60">{option.count}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 🆕 Network Status */}
+              {networkStatusFilters && setNetworkStatusFilters && (
+                <div className="space-y-5">
+                  <div className="flex items-center gap-2">
+                    <Network className="w-3.5 h-3.5 text-text-faint" />
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-text-faint font-bold">Network Status</p>
+                  </div>
+                  <div className="space-y-2">
+                    {[
+                      { key: "active" as const, label: "Active (Observed)", icon: "🟢" },
+                      { key: "registry_only" as const, label: "Registry Only", icon: "🔵" },
+                      { key: "stale" as const, label: "Stale/Offline", icon: "🔴" },
+                    ].map((option) => {
+                      const isSelected = networkStatusFilters.includes(option.key);
+                      return (
+                        <label
+                          key={option.key}
+                          className="flex items-center gap-2 cursor-pointer group"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNetworkStatusFilters([...networkStatusFilters, option.key]);
+                              } else {
+                                setNetworkStatusFilters(networkStatusFilters.filter(f => f !== option.key));
+                              }
+                            }}
+                            className="w-4 h-4 rounded border-2 border-border-app bg-bg-bg checked:bg-blue-500 checked:border-blue-500 cursor-pointer transition-colors"
+                          />
+                          <span className="text-xs text-text-main group-hover:text-accent-aqua transition-colors flex items-center gap-1.5">
+                            <span>{option.icon}</span>
+                            {option.label}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Stale nodes */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
