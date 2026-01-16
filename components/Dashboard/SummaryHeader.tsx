@@ -100,6 +100,8 @@ export const SummaryHeader = ({
         subtitle="Public storage network"
         isLight={isLight}
         hexToRgba={hexToRgba}
+        showSparkline={true}
+        sparklineData={[]} // TODO: Pass real historical data once collected
         backContent={
           <div className="space-y-2.5">
             {/* MAINNET Section */}
@@ -121,11 +123,11 @@ export const SummaryHeader = ({
                 <div className="flex-1 h-1 rounded-full bg-border-default overflow-hidden">
                   <div 
                     className="h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-400"
-                    style={{ width: mainnetCount > 0 ? `${(mainnetPublic / mainnetCount) * 100}%` : '0%' }}
+                    style={{ width: publicCount > 0 ? `${(mainnetPublic / publicCount) * 100}%` : '0%' }}
                   />
                 </div>
                 <span className="text-xs font-medium" style={{ color: "#10B981" }}>
-                  {mainnetCount > 0 ? ((mainnetPublic / mainnetCount) * 100).toFixed(0) : 0}%
+                  {publicCount > 0 ? ((mainnetPublic / publicCount) * 100).toFixed(0) : 0}%
                 </span>
               </div>
             </div>
@@ -149,11 +151,11 @@ export const SummaryHeader = ({
                 <div className="flex-1 h-1 rounded-full bg-border-default overflow-hidden">
                   <div 
                     className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-amber-400"
-                    style={{ width: devnetCount > 0 ? `${(devnetPublic / devnetCount) * 100}%` : '0%' }}
+                    style={{ width: publicCount > 0 ? `${(devnetPublic / publicCount) * 100}%` : '0%' }}
                   />
                 </div>
                 <span className="text-xs font-medium" style={{ color: "#F59E0B" }}>
-                  {devnetCount > 0 ? ((devnetPublic / devnetCount) * 100).toFixed(0) : 0}%
+                  {publicCount > 0 ? ((devnetPublic / publicCount) * 100).toFixed(0) : 0}%
                 </span>
               </div>
             </div>
@@ -170,6 +172,8 @@ export const SummaryHeader = ({
         subtitle="Private storage network"
         isLight={isLight}
         hexToRgba={hexToRgba}
+        showSparkline={true}
+        sparklineData={[]} // TODO: Pass real historical data once collected
         backContent={
           <div className="space-y-2.5">
             {/* MAINNET Section */}
@@ -191,11 +195,11 @@ export const SummaryHeader = ({
                 <div className="flex-1 h-1 rounded-full bg-border-default overflow-hidden">
                   <div 
                     className="h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-400"
-                    style={{ width: mainnetCount > 0 ? `${(mainnetPrivate / mainnetCount) * 100}%` : '0%' }}
+                    style={{ width: privateCount > 0 ? `${(mainnetPrivate / privateCount) * 100}%` : '0%' }}
                   />
                 </div>
                 <span className="text-xs font-medium" style={{ color: "#10B981" }}>
-                  {mainnetCount > 0 ? ((mainnetPrivate / mainnetCount) * 100).toFixed(0) : 0}%
+                  {privateCount > 0 ? ((mainnetPrivate / privateCount) * 100).toFixed(0) : 0}%
                 </span>
               </div>
             </div>
@@ -219,11 +223,11 @@ export const SummaryHeader = ({
                 <div className="flex-1 h-1 rounded-full bg-border-default overflow-hidden">
                   <div 
                     className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-amber-400"
-                    style={{ width: devnetCount > 0 ? `${(devnetPrivate / devnetCount) * 100}%` : '0%' }}
+                    style={{ width: privateCount > 0 ? `${(devnetPrivate / privateCount) * 100}%` : '0%' }}
                   />
                 </div>
                 <span className="text-xs font-medium" style={{ color: "#F59E0B" }}>
-                  {devnetCount > 0 ? ((devnetPrivate / devnetCount) * 100).toFixed(0) : 0}%
+                  {privateCount > 0 ? ((devnetPrivate / privateCount) * 100).toFixed(0) : 0}%
                 </span>
               </div>
             </div>
@@ -240,6 +244,8 @@ export const SummaryHeader = ({
         subtitle="Total network size"
         isLight={isLight}
         hexToRgba={hexToRgba}
+        showSparkline={true}
+        sparklineData={[]} // TODO: Pass real historical data once collected
         backContent={
           <div className="space-y-2">
             {/* Network Distribution */}
@@ -295,11 +301,43 @@ export const SummaryHeader = ({
       <FlipCard
         icon={Users}
         iconColor="#3B82F6"
-        title="Network Operators"
+        title="Network Ops"
         mainValue={operatorsMetrics.uniqueManagers}
         subtitle="Infrastructure managers"
         isLight={isLight}
         hexToRgba={hexToRgba}
+        frontExtraContent={
+          <div>
+            {/* Decentralization Bar - Compact to match sparkline height */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-text-faint text-xs">Decentralization</span>
+                <span className="font-medium text-text-soft text-xs">
+                  {operatorsMetrics.uniqueManagers > 0 
+                    ? `${((operatorsMetrics.singleNodeOperators / operatorsMetrics.uniqueManagers) * 100).toFixed(0)}%`
+                    : '0%'}
+                </span>
+              </div>
+              <div className="relative h-1.5 rounded-full overflow-hidden" style={{ 
+                background: isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.08)" 
+              }}>
+                <div 
+                  className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+                  style={{ 
+                    width: operatorsMetrics.uniqueManagers > 0
+                      ? `${((operatorsMetrics.singleNodeOperators / operatorsMetrics.uniqueManagers) * 100)}%`
+                      : '0%',
+                    background: "linear-gradient(90deg, #3B82F6 0%, #10B981 100%)"
+                  }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-xs text-text-faint">
+                <span className="text-xs">🟢 {operatorsMetrics.singleNodeOperators} single</span>
+                <span className="text-xs">🔵 {operatorsMetrics.multiNodeOperators} multi</span>
+              </div>
+            </div>
+          </div>
+        }
         backContent={
           <div className="space-y-2">
             {/* Operator Types */}
@@ -357,9 +395,10 @@ export const SummaryHeader = ({
         }
       />
 
-      {/* System Alerts - Moved from Performance & Resources */}
+      {/* System Alerts - Premium Design */}
       <div 
         className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:border-red-500/50 hover:scale-[1.02] group"
+        style={{ height: '275px' }}
         onClick={() => setIsAnalyticsModalOpen(true)}
         role="button"
         tabIndex={0}
@@ -370,64 +409,84 @@ export const SummaryHeader = ({
           }
         }}
       >
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="text-xs uppercase tracking-[0.35em] text-text-soft">System Alerts</p>
-              <InfoTooltip content="Real-time notifications about node offline status, version lag, or resource exhaustion. Click for detailed analytics." />
-            </div>
-            <p className="text-sm text-text-faint">Critical & warnings</p>
-            <div className="flex items-baseline gap-2 mt-4">
-              <p
-                className="text-4xl font-bold tracking-tight"
-                style={{ color: alerts.length === 0 ? kpiColors.alertOk : kpiColors.alerts }}
-              >
-                {alerts.length}
+        <div className="h-full flex flex-col">
+          {/* Header - Title + Icon */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs uppercase tracking-[0.25em] font-semibold truncate" style={{ color: kpiColors.alerts }}>
+                System Alerts
               </p>
-              <span className="text-sm font-mono text-text-soft">
-                {alerts.length === 1 ? "alert" : "alerts"}
-              </span>
+              <p className="text-xs text-text-faint truncate">Critical & warnings</p>
+            </div>
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ml-2 transition-all duration-300 group-hover:scale-110"
+              style={{ background: hexToRgba(kpiColors.alerts, 0.15) }}
+            >
+              <AlertCircle className="w-4 h-4" strokeWidth={2.5} style={{ color: kpiColors.alerts }} />
             </div>
           </div>
-          <div
-            className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110"
-            style={{ background: hexToRgba(kpiColors.alerts, 0.12) }}
-          >
-            <AlertCircle className="w-5 h-5" strokeWidth={2.3} style={{ color: kpiColors.alerts }} />
-          </div>
-        </div>
-
-        {alerts.length === 0 ? (
-          <p className="text-sm mt-6 flex items-center gap-2" style={{ color: kpiColors.alertOk }}>
-            <Check className="w-4 h-4" strokeWidth={2.2} />
-            All systems normal
-          </p>
-        ) : (
-          <div className="mt-6 space-y-2 text-sm text-text-main">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2" style={{ color: statusColors.critical }}>
-                <AlertTriangle className="w-3.5 h-3.5" strokeWidth={2.2} />
-                <span className="text-xs uppercase tracking-wide text-text-soft">Critical</span>
+          
+          {/* Main value - in elegant box */}
+          <div className="flex-1 flex items-center justify-center py-2">
+            <div 
+              className="relative px-5 py-3 rounded-xl"
+              style={{ 
+                background: isLight
+                  ? `linear-gradient(135deg, ${hexToRgba(alerts.length === 0 ? kpiColors.alertOk : kpiColors.alerts, 0.06)} 0%, ${hexToRgba(alerts.length === 0 ? kpiColors.alertOk : kpiColors.alerts, 0.12)} 100%)`
+                  : `linear-gradient(135deg, ${hexToRgba(alerts.length === 0 ? kpiColors.alertOk : kpiColors.alerts, 0.12)} 0%, ${hexToRgba(alerts.length === 0 ? kpiColors.alertOk : kpiColors.alerts, 0.18)} 100%)`,
+                border: `1.5px solid ${hexToRgba(alerts.length === 0 ? kpiColors.alertOk : kpiColors.alerts, 0.2)}`,
+                boxShadow: `0 4px 16px ${hexToRgba(alerts.length === 0 ? kpiColors.alertOk : kpiColors.alerts, 0.12)}`,
+              }}
+            >
+              <div className="text-4xl font-bold tracking-tight" style={{ color: alerts.length === 0 ? kpiColors.alertOk : kpiColors.alerts }}>
+                {alerts.length}
               </div>
-              <span className="font-semibold" style={{ color: statusColors.critical }}>
-                {criticalCount}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2" style={{ color: statusColors.warning }}>
-                <AlertTriangle className="w-3.5 h-3.5" strokeWidth={2.2} />
-                <span className="text-xs uppercase tracking-wide text-text-soft">Warning</span>
-              </div>
-              <span className="font-semibold" style={{ color: statusColors.warning }}>
-                {warningCount}
-              </span>
             </div>
           </div>
-        )}
-        
-        {/* Click indicator */}
-        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-          <span className="text-xs text-accent-aqua font-semibold">Click for details →</span>
+          
+          {/* Bottom section */}
+          <div className="mt-auto">
+            {alerts.length === 0 ? (
+              <div 
+                className="p-3 rounded-lg border flex items-center justify-center gap-2"
+                style={{ 
+                  background: isLight ? "rgba(15,23,42,0.02)" : "rgba(255,255,255,0.02)",
+                  borderColor: "var(--border-default)"
+                }}
+              >
+                <Check className="w-4 h-4" strokeWidth={2.2} style={{ color: kpiColors.alertOk }} />
+                <span className="text-sm font-medium" style={{ color: kpiColors.alertOk }}>All systems normal</span>
+              </div>
+            ) : (
+              <div 
+                className="p-3 rounded-lg border space-y-2"
+                style={{ 
+                  background: isLight ? "rgba(15,23,42,0.02)" : "rgba(255,255,255,0.02)",
+                  borderColor: "var(--border-default)"
+                }}
+              >
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-text-soft flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5" style={{ color: statusColors.critical }} />
+                    Critical
+                  </span>
+                  <span className="font-bold" style={{ color: statusColors.critical }}>{criticalCount}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-text-soft flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5" style={{ color: statusColors.warning }} />
+                    Warning
+                  </span>
+                  <span className="font-bold" style={{ color: statusColors.warning }}>{warningCount}</span>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Call to action */}
+          <div className="text-center mt-3 text-xs text-text-faint opacity-50 group-hover:opacity-100 transition-opacity">
+            Click for details →
+          </div>
         </div>
       </div>
       

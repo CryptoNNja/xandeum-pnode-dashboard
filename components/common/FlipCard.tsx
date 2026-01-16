@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { LucideIcon } from 'lucide-react';
+import { Sparkline } from './Sparkline';
 
 type FlipCardProps = {
   // Front face
@@ -19,6 +20,13 @@ type FlipCardProps = {
   // Optional
   onClick?: () => void;
   disableFlip?: boolean;
+  
+  // Sparkline data (optional)
+  sparklineData?: Array<{ mainnet: number; devnet: number }>;
+  showSparkline?: boolean;
+  
+  // Extra content on front (optional, for custom widgets like decentralization bar)
+  frontExtraContent?: React.ReactNode;
 };
 
 export const FlipCard = ({
@@ -32,6 +40,9 @@ export const FlipCard = ({
   backContent,
   onClick,
   disableFlip = false,
+  sparklineData = [],
+  showSparkline = false,
+  frontExtraContent,
 }: FlipCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
 
@@ -50,7 +61,7 @@ export const FlipCard = ({
       className="flip-card-container"
       style={{ 
         perspective: '1000px',
-        height: '220px'
+        height: '275px'
       }}
     >
       <div
@@ -75,42 +86,89 @@ export const FlipCard = ({
             height: '100%',
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
-            padding: '1rem',
+            padding: '1.5rem',
           }}
         >
-          <div className="flex items-start justify-between gap-3 h-full">
-            <div className="flex-1 flex flex-col justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.30em] text-text-soft mb-1">
+          <div className="h-full flex flex-col">
+            {/* Header - Title + Icon on same line */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs uppercase tracking-[0.25em] font-semibold truncate" style={{ color: iconColor }}>
                   {title}
                 </p>
-                <p className="text-xs text-text-faint">{subtitle}</p>
+                <p className="text-xs text-text-faint truncate">{subtitle}</p>
               </div>
-              
-              <div className="mt-3">
-                <div className="text-3xl font-bold tracking-tight" style={{ color: iconColor }}>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ml-2"
+                style={{ background: hexToRgba(iconColor, 0.15) }}
+              >
+                <Icon 
+                  className="w-4 h-4" 
+                  strokeWidth={2.5} 
+                  style={{ color: iconColor }} 
+                />
+              </div>
+            </div>
+            
+            {/* Main value - in elegant box with glow */}
+            <div className="flex-1 flex items-center justify-center py-2">
+              <div 
+                className="relative px-5 py-3 rounded-xl"
+                style={{ 
+                  background: isLight
+                    ? `linear-gradient(135deg, ${hexToRgba(iconColor, 0.06)} 0%, ${hexToRgba(iconColor, 0.12)} 100%)`
+                    : `linear-gradient(135deg, ${hexToRgba(iconColor, 0.12)} 0%, ${hexToRgba(iconColor, 0.18)} 100%)`,
+                  border: `1.5px solid ${hexToRgba(iconColor, 0.2)}`,
+                  boxShadow: `0 4px 16px ${hexToRgba(iconColor, 0.12)}`,
+                }}
+              >
+                <div className="text-4xl font-bold tracking-tight" style={{ color: iconColor }}>
                   {mainValue}
                 </div>
               </div>
             </div>
-
-            <div
-              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: hexToRgba(iconColor, 0.12) }}
-            >
-              <Icon 
-                className="w-4 h-4" 
-                strokeWidth={2.5} 
-                style={{ color: iconColor }} 
-              />
+            
+            {/* Sparkline or extra content at bottom */}
+            <div className="mt-auto">
+              {showSparkline && (
+                <div 
+                  className="p-3 rounded-lg border"
+                  style={{ 
+                    background: isLight ? "rgba(15,23,42,0.02)" : "rgba(255,255,255,0.02)",
+                    borderColor: "var(--border-default)"
+                  }}
+                >
+                  <Sparkline
+                    data={sparklineData}
+                    mainnetColor="#10B981"
+                    devnetColor="#F59E0B"
+                    height={32}
+                    hasData={sparklineData.length >= 2}
+                    isLight={isLight}
+                  />
+                </div>
+              )}
+              
+              {frontExtraContent && (
+                <div 
+                  className="p-3 rounded-lg border"
+                  style={{ 
+                    background: isLight ? "rgba(15,23,42,0.02)" : "rgba(255,255,255,0.02)",
+                    borderColor: "var(--border-default)"
+                  }}
+                >
+                  {frontExtraContent}
+                </div>
+              )}
             </div>
+            
+            {/* Call to action */}
+            {!disableFlip && (
+              <div className="text-center mt-3 text-xs text-text-faint opacity-50">
+                Click to flip →
+              </div>
+            )}
           </div>
-          
-          {!disableFlip && (
-            <div className="absolute bottom-1.5 right-1.5 text-xs text-text-faint opacity-40">
-              Click to flip
-            </div>
-          )}
         </div>
 
         {/* BACK FACE */}
