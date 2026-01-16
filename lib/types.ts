@@ -19,7 +19,11 @@ export interface PNodeStats {
 }
 
 // Network status of the node as determined by our crawler
-export type PNodeStatus = "active" | "gossip_only";
+// Node status (current state)
+// - active: telemetry reachable (or explicitly public)
+// - gossip_only: discovered, but no telemetry
+// - stale: previously known, now consistently unreachable (kept for coverage)
+export type PNodeStatus = "active" | "gossip_only" | "stale";
 
 // Network type: MAINNET, DEVNET, or UNKNOWN
 export type NetworkType = "MAINNET" | "DEVNET" | "UNKNOWN";

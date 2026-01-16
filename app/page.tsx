@@ -58,6 +58,8 @@ export default function Page() {
     sortDirection,
     nodeFilter,
     setNodeFilter,
+    staleFilter,
+    setStaleFilter,
     isAdvancedFilterOpen,
     setIsAdvancedFilterOpen,
     selectedVersions,
@@ -675,6 +677,8 @@ export default function Page() {
             sliderToBytes={sliderToBytes}
             onReset={resetFilters}
             resultsCount={quickResultsCount}
+            staleFilter={staleFilter}
+            setStaleFilter={setStaleFilter}
           />
         </div>
 

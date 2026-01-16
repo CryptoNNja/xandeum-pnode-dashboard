@@ -25,6 +25,7 @@ export type ViewMode = "table" | "grid" | "map";
 export type SortKey = "ip" | "cpu" | "ram" | "storage" | "uptime" | "health" | "packets" | "active_streams" | "total_pages" | "score" | "version";
 export type SortDirection = "asc" | "desc";
 export type NodeFilter = "all" | "public" | "private";
+export type StaleFilter = "hide" | "include";
 export type HealthFilter = "all" | "public" | "private";
 export type AlertSeverity = "critical" | "warning";
 // Auto refresh now targets *summary counters* (cheap) rather than full /api/pnodes payload.
@@ -58,6 +59,7 @@ export const usePnodeDashboard = (theme?: string) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
   const [nodeFilter, setNodeFilter] = useState<NodeFilter>("all");
+  const [staleFilter, setStaleFilter] = useState<StaleFilter>("hide");
   
   // Advanced Filters
   const [isAdvancedFilterOpen, setIsAdvancedFilterOpen] = useState(false);
@@ -313,6 +315,7 @@ export const usePnodeDashboard = (theme?: string) => {
   const resetFilters = useCallback(() => {
     setSearchTerm("");
     setNodeFilter("all");
+    setStaleFilter("hide");
     setSelectedVersions([]);
     setSelectedHealthStatuses([]);
     setMinCpu(0);
@@ -390,9 +393,14 @@ export const usePnodeDashboard = (theme?: string) => {
       });
     }
 
+    // Stale filter (default: hide)
+    if (staleFilter === "hide") {
+      result = result.filter((p) => p.status !== "stale");
+    }
+
     // Visibility filter
     if (nodeFilter !== "all") {
-      result = result.filter(p => 
+      result = result.filter((p) =>
         nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only"
       );
     }
@@ -1063,6 +1071,8 @@ export const usePnodeDashboard = (theme?: string) => {
     setSortDirection,
     nodeFilter,
     setNodeFilter,
+    staleFilter,
+    setStaleFilter,
     isAdvancedFilterOpen,
     setIsAdvancedFilterOpen,
     selectedVersions,
