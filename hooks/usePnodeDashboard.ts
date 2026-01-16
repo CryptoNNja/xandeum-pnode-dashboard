@@ -22,12 +22,15 @@ import {
 } from "@/lib/utils";
 
 export type ViewMode = "table" | "grid" | "map";
-export type SortKey = "ip" | "cpu" | "ram" | "storage" | "uptime" | "health" | "packets" | "active_streams" | "total_pages" | "score" | "version";
+export type SortKey = "ip" | "cpu" | "ram" | "storage" | "uptime" | "health" | "packets" | "active_streams" | "total_pages" | "score" | "version" | "pubkey" | "credits";
 export type SortDirection = "asc" | "desc";
-export type NodeFilter = "all" | "public" | "private";
+export type NodeFilter = "all" | "public" | "private" | "registry";
+export type NetworkFilter = "all" | "MAINNET" | "DEVNET";
 export type StaleFilter = "hide" | "include";
 export type HealthFilter = "all" | "public" | "private";
 export type AlertSeverity = "critical" | "warning";
+export type OperatorFilter = "all" | "single" | "multi" | "no_pubkey";
+export type NetworkStatusFilter = "active" | "registry_only" | "stale";
 // Auto refresh now targets *summary counters* (cheap) rather than full /api/pnodes payload.
 export type AutoRefreshOption = "off" | "30s" | "1m" | "5m";
 
@@ -55,6 +58,9 @@ export const usePnodeDashboard = (theme?: string) => {
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   
+  // 🆕 Credits data from official API
+  const [creditsMap, setCreditsMap] = useState<Map<string, number>>(new Map());
+  
   // Search and Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
@@ -67,6 +73,11 @@ export const usePnodeDashboard = (theme?: string) => {
   const [selectedHealthStatuses, setSelectedHealthStatuses] = useState<string[]>([]);
   const [minCpu, setMinCpu] = useState<number>(0);
   const [minStorage, setMinStorage] = useState<number>(0); // 0-100 for non-linear scale
+  
+  // 🆕 Operator and Network Status Filters
+  const [operatorFilter, setOperatorFilter] = useState<OperatorFilter>("all");
+  const [networkStatusFilters, setNetworkStatusFilters] = useState<NetworkStatusFilter[]>(["active", "registry_only", "stale"]); // 🆕 Par défaut: montrer TOUS les types
+  const [networkFilter, setNetworkFilter] = useState<NetworkFilter>("all"); // 🆕 Network filter (MAINNET/DEVNET)
 
   // Max storage in the network for auto-calibration
   const maxStorageBytes = useMemo(() => {
@@ -146,6 +157,37 @@ export const usePnodeDashboard = (theme?: string) => {
     };
   }, [allPnodes, lastUpdate]);
 
+  // 🆕 Nodes grouped by pubkey (for multi-node operator detection)
+  const nodesByPubkey = useMemo(() => {
+    const map = new Map<string, (PNode & { _score: number; _healthStatus: string })[]>();
+    allPnodes.forEach(node => {
+      if (node.pubkey) {
+        const existing = map.get(node.pubkey) || [];
+        map.set(node.pubkey, [...existing, node]);
+      }
+    });
+    return map;
+  }, [allPnodes]);
+
+  // 🆕 Operator statistics
+  const operatorStats = useMemo(() => {
+    const total = nodesByPubkey.size;
+    const single = Array.from(nodesByPubkey.values()).filter(nodes => nodes.length === 1).length;
+    const multi = Array.from(nodesByPubkey.values()).filter(nodes => nodes.length > 1).length;
+    const noPubkey = allPnodes.filter(node => !node.pubkey).length;
+    const maxNodesPerOperator = nodesByPubkey.size > 0 
+      ? Math.max(...Array.from(nodesByPubkey.values()).map(nodes => nodes.length))
+      : 0;
+    
+    return { 
+      total, 
+      single, 
+      multi, 
+      noPubkey, 
+      maxNodesPerOperator 
+    };
+  }, [allPnodes, nodesByPubkey]);
+
   const loadSummary = useCallback(async () => {
     try {
       const res = await fetch("/api/pnodes/summary", { cache: "no-store" });
@@ -220,19 +262,20 @@ export const usePnodeDashboard = (theme?: string) => {
       const payload = await response.json();
       
       if (payload.data && Array.isArray(payload.data)) {
-        // STEP 1: Deduplicate nodes by IP only (each IP = one physical node)
-        // Note: Multiple IPs can have the same pubkey (multi-node operators) - this is normal
-        // We only deduplicate by IP to remove actual duplicates from the API response
+        // STEP 1: Deduplicate nodes by IP or pubkey
+        // - If IP exists, deduplicate by IP (physical node)
+        // - If IP is null (registry-only), deduplicate by pubkey
+        // - Multiple IPs can have the same pubkey (multi-node operators) - this is normal
         const uniqueNodesMap = new Map<string, PNode>();
         
         payload.data.forEach((pnode: PNode) => {
-          const uniqueId = pnode.ip; // Deduplicate by IP only - one IP = one node
+          const uniqueId = pnode.ip || pnode.pubkey || `unknown-${Math.random()}`; // Use IP, fallback to pubkey
           const existing = uniqueNodesMap.get(uniqueId);
           
           if (!existing) {
             uniqueNodesMap.set(uniqueId, pnode);
           } else {
-            // If duplicate IP (shouldn't happen), keep the node with higher storage_committed
+            // If duplicate (shouldn't happen), keep the node with higher storage_committed
             const existingCommitted = existing.stats?.storage_committed ?? 0;
             const currentCommitted = pnode.stats?.storage_committed ?? 0;
             
@@ -250,8 +293,12 @@ export const usePnodeDashboard = (theme?: string) => {
           const score = calculateNodeScore(p, uniqueNodes); // ✨ Pass network context
           const healthStatus = getHealthStatus(p, uniqueNodes); // ✨ Pass network context for accurate health
           
+          // 🆕 Enrich with credits from creditsMap
+          const credits = p.pubkey ? creditsMap.get(p.pubkey) : undefined;
+          
           return {
             ...p,
+            credits, // 🆕 Add credits to node
             _score: score,
             _healthStatus: healthStatus
           };
@@ -277,6 +324,34 @@ export const usePnodeDashboard = (theme?: string) => {
       setLoading(false);
       setRefreshing(false);
     }
+  }, [creditsMap]); // 🆕 Add creditsMap as dependency to re-enrich when credits are loaded
+
+  // 🆕 Fetch credits from official API
+  useEffect(() => {
+    const fetchCredits = async () => {
+      try {
+        const response = await fetch('/api/pods-credits');
+        if (response.ok) {
+          const data = await response.json();
+          const allPods = data.allPods || []; // 🆕 Use allPods instead of topEarners to get ALL credits
+          
+          // Create a map of pubkey -> credits
+          const map = new Map<string, number>();
+          allPods.forEach((earner: { pod_id: string; credits: number }) => {
+            map.set(earner.pod_id, earner.credits);
+          });
+          
+          setCreditsMap(map);
+          console.log(`✅ Loaded credits for ${map.size} nodes (${allPods.filter((p: any) => p.credits > 0).length} earning)`);
+        }
+      } catch (error) {
+        console.error('Failed to fetch credits:', error);
+      }
+    };
+    
+    fetchCredits();
+    const interval = setInterval(fetchCredits, 300000); // Refresh every 5 min
+    return () => clearInterval(interval);
   }, []);
 
   // Initial load: fetch full dataset once (for table/map/charts) + start summary polling.
@@ -320,6 +395,9 @@ export const usePnodeDashboard = (theme?: string) => {
     setSelectedHealthStatuses([]);
     setMinCpu(0);
     setMinStorage(0);
+    setOperatorFilter("all");
+    setNetworkStatusFilters(["active", "registry_only", "stale"]); // 🆕 Reset to default: show all types
+    setNetworkFilter("all"); // 🆕 Reset network filter
   }, []);
 
   const availableVersions = useMemo(() => {
@@ -434,6 +512,33 @@ export const usePnodeDashboard = (theme?: string) => {
       result = result.filter(p => (p.stats?.storage_committed ?? 0) >= debouncedMinStorageBytes);
     }
 
+    // 🆕 Advanced: Operator Filter
+    if (operatorFilter !== "all") {
+      result = result.filter(node => {
+        if (operatorFilter === "no_pubkey") return !node.pubkey;
+        if (operatorFilter === "single") return node.pubkey && (nodesByPubkey.get(node.pubkey)?.length === 1);
+        if (operatorFilter === "multi") return node.pubkey && (nodesByPubkey.get(node.pubkey)?.length || 0) > 1;
+        return true;
+      });
+    }
+
+    // 🆕 Advanced: Network Status Filter
+    // Note: We also need to handle "gossip_only" status (private nodes)
+    if (networkStatusFilters.length > 0 && networkStatusFilters.length < 4) {
+      result = result.filter(node => {
+        if (node.status === "registry_only" && networkStatusFilters.includes("registry_only")) return true;
+        if (node.status === "active" && networkStatusFilters.includes("active")) return true;
+        if (node.status === "stale" && networkStatusFilters.includes("stale")) return true;
+        if (node.status === "gossip_only" && networkStatusFilters.includes("active")) return true; // 🆕 gossip_only = private nodes, show with active
+        return false;
+      });
+    }
+
+    // 🆕 Network Filter (MAINNET/DEVNET)
+    if (networkFilter !== "all") {
+      result = result.filter(node => node.network === networkFilter);
+    }
+
     // Sort
     result.sort((a, b) => {
       let valA: any = 0;
@@ -485,6 +590,26 @@ export const usePnodeDashboard = (theme?: string) => {
           valA = a.version ?? "";
           valB = b.version ?? "";
           break;
+        case "pubkey":
+          // Sort by pubkey, with multi-node operators first
+          const countA = a.pubkey ? (nodesByPubkey.get(a.pubkey)?.length || 0) : 0;
+          const countB = b.pubkey ? (nodesByPubkey.get(b.pubkey)?.length || 0) : 0;
+          
+          // Multi-node operators first
+          if (countA !== countB) {
+            valA = countB; // Reverse for desc to show multi-node first
+            valB = countA;
+          } else {
+            // Then alphabetical by pubkey
+            valA = a.pubkey || "";
+            valB = b.pubkey || "";
+          }
+          break;
+        case "credits":
+          // Sort by credits (nodes without credits go to bottom)
+          valA = a.credits ?? -1;
+          valB = b.credits ?? -1;
+          break;
         default: valA = a.ip; valB = b.ip;
       }
 
@@ -494,7 +619,7 @@ export const usePnodeDashboard = (theme?: string) => {
     });
 
     return result;
-  }, [allPnodes, debouncedSearchTerm, nodeFilter, selectedVersions, selectedHealthStatuses, debouncedMinCpu, debouncedMinStorageBytes, sortKey, sortDirection]);
+  }, [allPnodes, debouncedSearchTerm, nodeFilter, staleFilter, selectedVersions, selectedHealthStatuses, debouncedMinCpu, debouncedMinStorageBytes, operatorFilter, networkStatusFilters, networkFilter, nodesByPubkey, sortKey, sortDirection]);
 
   // Reset page to 1 when filters change
   useEffect(() => {
@@ -1057,6 +1182,18 @@ export const usePnodeDashboard = (theme?: string) => {
     exportCsv();
   }, [exportCsv]);
 
+  // 🆕 Count active filters for badge display
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (selectedVersions.length > 0) count++;
+    if (selectedHealthStatuses.length > 0) count++;
+    if (minCpu > 0) count++;
+    if (minStorage > 0) count++;
+    if (operatorFilter !== "all") count++;
+    if (networkStatusFilters.length > 0 && networkStatusFilters.length < 3) count++; // Not all selected = filter active
+    return count;
+  }, [selectedVersions, selectedHealthStatuses, minCpu, minStorage, operatorFilter, networkStatusFilters]);
+
   return {
     pnodes: allPnodes,
     loading,
@@ -1155,5 +1292,16 @@ export const usePnodeDashboard = (theme?: string) => {
     exportData,
     exportCsv,
     exportExcel,
+    // 🆕 Operator & pubkey features
+    nodesByPubkey,
+    operatorStats,
+    operatorFilter,
+    setOperatorFilter,
+    networkStatusFilters,
+    setNetworkStatusFilters,
+    activeFiltersCount,
+    // 🆕 Network filter
+    networkFilter,
+    setNetworkFilter,
   };
 };

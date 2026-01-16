@@ -117,6 +117,9 @@ export default function Page() {
     gridPNodes,
     gridLimit,
     setGridLimit,
+    // Network filter
+    networkFilter,
+    setNetworkFilter,
   } = usePnodeDashboard(theme);
 
   const toast = useToast();
@@ -127,14 +130,7 @@ export default function Page() {
   const [currentTime, setCurrentTime] = useState(Date.now());
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   
-  // 🆕 Network filter state (MAINNET/DEVNET/ALL)
-  const [networkFilter, setNetworkFilter] = useState<"MAINNET" | "DEVNET" | "all">("all");
-  
-  // 🆕 Apply network filter to pnodes
-  const networkFilteredPNodes = useMemo(() => {
-    if (networkFilter === "all") return filteredAndSortedPNodes;
-    return filteredAndSortedPNodes.filter(node => node.network === networkFilter);
-  }, [filteredAndSortedPNodes, networkFilter]);
+  // Network filter is now handled inside the hook
 
   // Network-specific stats for breakdown display
   // Use polled summary counters when available (cheap "live"), fall back to derived counts from full dataset.
@@ -149,14 +145,14 @@ export default function Page() {
   const devnetPublic = pnodesSummary?.devnetPublic ?? devnetNodes.filter(n => n.status === "active").length;
   const devnetPrivate = pnodesSummary?.devnetPrivate ?? devnetNodes.filter(n => n.status !== "active").length;
 
-  // Recalculate publicCount and privateCount based on active network filter
+  // Recalculate publicCount and privateCount based on filtered nodes
   const filteredPublicCount = useMemo(() => {
-    return networkFilteredPNodes.filter(n => n.status === "active").length;
-  }, [networkFilteredPNodes]);
+    return filteredAndSortedPNodes.filter(n => n.status === "active").length;
+  }, [filteredAndSortedPNodes]);
 
   const filteredPrivateCount = useMemo(() => {
-    return networkFilteredPNodes.filter(n => n.status !== "active").length;
-  }, [networkFilteredPNodes]);
+    return filteredAndSortedPNodes.filter(n => n.status !== "active").length;
+  }, [filteredAndSortedPNodes]);
   
   const mainnetStorage = useMemo(() => 
     mainnetNodes.reduce((sum, n) => sum + (n.stats?.storage_committed ?? 0), 0),
@@ -171,7 +167,7 @@ export default function Page() {
   // Selection state for multi-node operations
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const selectedNodes = useMemo(() => 
-    pnodes.filter(node => selectedNodeIds.has(node.ip)), 
+    pnodes.filter(node => node.ip && selectedNodeIds.has(node.ip)), 
     [pnodes, selectedNodeIds]
   );
 
@@ -205,7 +201,7 @@ export default function Page() {
   }, []);
 
   const handleSelectAll = useCallback(() => {
-    setSelectedNodeIds(new Set(paginatedPNodes.map(node => node.ip)));
+    setSelectedNodeIds(new Set(paginatedPNodes.filter(node => node.ip).map(node => node.ip!)));
   }, [paginatedPNodes]);
 
   const handleClearSelection = useCallback(() => {
@@ -225,13 +221,13 @@ export default function Page() {
   }, [selectedNodeIds, addMultipleFavorites, toast]);
 
   const handleCompareSelected = useCallback(() => {
-    const nodes = pnodes.filter(node => selectedNodeIds.has(node.ip));
+    const nodes = pnodes.filter(node => node.ip && selectedNodeIds.has(node.ip));
     setNodesToCompare(nodes);
     setIsCompareModalOpen(true);
   }, [selectedNodeIds, pnodes]);
 
   const handleCompareFromModal = useCallback((ips: string[]) => {
-    const nodes = pnodes.filter(node => ips.includes(node.ip));
+    const nodes = pnodes.filter(node => node.ip && ips.includes(node.ip));
     setNodesToCompare(nodes);
     setIsCompareModalOpen(true);
   }, [pnodes]);
@@ -644,7 +640,7 @@ export default function Page() {
             isAdvancedFilterOpen={isAdvancedFilterOpen}
             setIsAdvancedFilterOpen={setIsAdvancedFilterOpen}
             lastUpdateText={getTimeAgo()}
-            pnodesCount={networkFilteredPNodes.length}
+            pnodesCount={filteredAndSortedPNodes.length}
             publicCount={filteredPublicCount}
             privateCount={filteredPrivateCount}
             resetFilters={resetFilters}
@@ -685,19 +681,19 @@ export default function Page() {
         {/* MAIN CONTENT */}
         <DashboardContent
           viewMode={viewMode}
-          filteredAndSortedPNodes={networkFilteredPNodes}
+          filteredAndSortedPNodes={filteredAndSortedPNodes}
           sortKey={sortKey}
           sortDirection={sortDirection}
           onSort={handleSort}
           loading={loading}
           isLight={isLight}
-          paginatedPNodes={networkFilteredPNodes.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
+          paginatedPNodes={paginatedPNodes}
           currentPage={currentPage}
-          totalPages={Math.ceil(networkFilteredPNodes.length / pageSize)}
+          totalPages={totalPages}
           pageSize={pageSize}
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}
-          gridPNodes={networkFilteredPNodes.slice(0, gridLimit === -1 ? networkFilteredPNodes.length : gridLimit)}
+          gridPNodes={filteredAndSortedPNodes.slice(0, gridLimit === -1 ? filteredAndSortedPNodes.length : gridLimit)}
           gridLimit={gridLimit}
           setGridLimit={setGridLimit}
           selectedNodeIds={selectedNodeIds}

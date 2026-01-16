@@ -23,20 +23,24 @@ export interface PNodeStats {
 // - active: telemetry reachable (or explicitly public)
 // - gossip_only: discovered, but no telemetry
 // - stale: previously known, now consistently unreachable (kept for coverage)
-export type PNodeStatus = "active" | "gossip_only" | "stale";
+// - registry_only: in official registry but not yet discovered by crawler (ip = null)
+export type PNodeStatus = "active" | "gossip_only" | "stale" | "registry_only";
 
 // Network type: MAINNET, DEVNET, or UNKNOWN
 export type NetworkType = "MAINNET" | "DEVNET" | "UNKNOWN";
 
 // Standard model for a pNode throughout the frontend
 export interface PNode {
-  ip: string;
+  ip: string | null; // 🆕 Nullable for registry-only nodes
+  pubkey?: string; // 🆕 Optional - permanent node identifier (may be missing in old data)
   status: PNodeStatus;
   stats: PNodeStats;
   version?: string;
-  pubkey?: string; // Xandeum node public key (for credits matching)
-  network?: NetworkType; // 🆕 MAINNET vs DEVNET classification
-  network_confidence?: "high" | "medium" | "low"; // 🆕 Confidence level of network detection
+  network?: NetworkType; // MAINNET vs DEVNET classification
+  network_confidence?: "high" | "medium" | "low"; // Confidence level of network detection
+  source?: "crawler" | "registry" | "both"; // 🆕 Data source tracking
+  is_official?: boolean; // 🆕 True if in official registry
+  credits?: number; // 🆕 Credits earned from official API (XAN tokens)
   lat?: number | null;
   lng?: number | null;
   city?: string | null;

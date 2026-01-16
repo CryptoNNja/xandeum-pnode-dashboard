@@ -63,20 +63,30 @@ const PNodeTableComponent = ({
 
   const formatUptime = (seconds: number) => {
     if (seconds === 0) return "-";
-    const hours = Math.floor(seconds / 3600);
+    const totalHours = Math.floor(seconds / 3600);
     
-    // Dynamic formatting based on duration
-    if (hours < 24) {
-      return `${hours}h`;
-    } else if (hours < 24 * 30) {
-      const days = Math.floor(hours / 24);
-      return `${days}d`;
-    } else if (hours < 24 * 365) {
-      const months = Math.floor(hours / (24 * 30));
-      return `${months}mo`;
+    // Option A: Double precision compact format
+    if (totalHours < 24) {
+      // Less than 1 day: show hours only
+      return `${totalHours}h`;
+    } else if (totalHours < 24 * 30) {
+      // Less than 30 days: show "Xd Yh"
+      const days = Math.floor(totalHours / 24);
+      const hours = totalHours % 24;
+      return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+    } else if (totalHours < 24 * 365) {
+      // Less than 1 year: show "Xmo Yd"
+      const totalDays = Math.floor(totalHours / 24);
+      const months = Math.floor(totalDays / 30);
+      const days = totalDays % 30;
+      return days > 0 ? `${months}mo ${days}d` : `${months}mo`;
     } else {
-      const years = Math.floor(hours / (24 * 365));
-      return `${years}y`;
+      // 1 year or more: show "Xy Zmo"
+      const totalDays = Math.floor(totalHours / 24);
+      const years = Math.floor(totalDays / 365);
+      const remainingDays = totalDays % 365;
+      const months = Math.floor(remainingDays / 30);
+      return months > 0 ? `${years}y ${months}mo` : `${years}y`;
     }
   };
 
@@ -119,17 +129,17 @@ const PNodeTableComponent = ({
 
   const headers = [
     { key: "network", label: "Network", icon: true }, // Icon column for network - AFTER favorites
-    { key: "score", label: "Score" },
-    { key: "ip", label: "IP Address" },
-    { key: "health", label: "Status" },
-    { key: "version", label: "Version" },
-    { key: "cpu", label: "CPU Load" },
-    { key: "ram", label: "RAM Usage" },
-    { key: "storage", label: "Storage" },
-    { key: "packets", label: "Traffic" },
-    { key: "active_streams", label: "Streams" },
-    { key: "total_pages", label: "Pages" },
-    { key: "uptime", label: "Uptime" },
+    { key: "score", label: "Score", sortable: true },
+    { key: "pubkey", label: "Operator", sortable: true }, // 🆕 New column for pubkey/operator
+    { key: "ip", label: "IP Address", sortable: true },
+    { key: "credits", label: "Credits", sortable: true }, // 🆕 Credits earned (XAN) - sortable
+    { key: "health", label: "Status", sortable: true },
+    { key: "version", label: "Version", sortable: true },
+    { key: "cpu", label: "CPU Load", sortable: true },
+    { key: "ram", label: "RAM Usage", sortable: true },
+    { key: "storage", label: "Storage", sortable: true },
+    { key: "packets", label: "Traffic", sortable: true },
+    { key: "uptime", label: "Uptime", sortable: true },
   ];
 
   return (
@@ -144,20 +154,20 @@ const PNodeTableComponent = ({
       <div className="w-full overflow-x-auto">
         <table className="w-full text-left border-collapse text-sm table-fixed">
           <colgroup>
-            {onToggleSelection && <col className="w-[45px]" />}
-            {onToggleFavorite && <col className="w-[45px]" />}
+            {onToggleSelection && <col className="w-[38px]" />}
+            {onToggleFavorite && <col className="w-[38px]" />}
+            <col className="w-[45px]" />
             <col className="w-[60px]" />
-            <col className="w-[65px]" />
-            <col className="w-[155px]" />
-            <col className="w-[105px]" />
-            <col className="w-[85px]" />
-            <col className="w-[85px]" />
-            <col className="w-[120px]" />
-            <col className="w-[100px]" />
-            <col className="w-[125px]" />
-            <col className="w-[80px]" />
-            <col className="w-[90px]" />
+            <col className="w-[115px]" />
+            <col className="w-[130px]" />
+            <col className="w-[95px]" />
+            <col className="w-[95px]" />
             <col className="w-[75px]" />
+            <col className="w-[70px]" />
+            <col className="w-[100px]" />
+            <col className="w-[95px]" />
+            <col className="w-[85px]" />
+            <col className="w-[70px]" />
           </colgroup>
         <thead>
           <tr
@@ -197,12 +207,11 @@ const PNodeTableComponent = ({
                 key={header.key}
                 onClick={() => onSort(header.key)}
                 className={clsx(
-                  "p-4 text-[11px] font-bold uppercase tracking-wider cursor-pointer transition-colors select-none group whitespace-nowrap",
-                  header.icon ? "text-center" : "",
+                  "p-4 text-[11px] font-bold uppercase tracking-wider cursor-pointer transition-colors select-none group whitespace-nowrap text-center",
                   isLight ? "text-black/60" : "text-text-soft"
                 )}
               >
-                <div className={clsx("flex items-center", header.icon ? "justify-center" : "")}>
+                <div className="flex items-center justify-center">
                   {header.icon ? (
                     <Globe className="w-4 h-4 text-blue-400/70" strokeWidth={2} aria-label="Network" />
                   ) : (
@@ -274,23 +283,27 @@ const PNodeTableComponent = ({
             const usedBytes = Math.max(pnode.stats.storage_used ?? 0, 0);
 
             const isSelected = selectedNodeIds?.has(pnode.ip);
+            const isRegistryOnly = pnode.status === "registry_only";
+            const canNavigate = pnode.ip && !isRegistryOnly;
             
             return (
               <tr
-                key={pnode.ip}
-                onClick={() => !isSelected && router.push(`/pnode/${pnode.ip}`)}
+                key={pnode.ip || pnode.pubkey || `unknown-${index}`}
+                onClick={() => !isSelected && canNavigate && router.push(`/pnode/${pnode.ip}`)}
                 className={clsx(
                   "transition-all duration-200 group relative",
-                  !isSelected && "cursor-pointer",
+                  canNavigate && !isSelected && "cursor-pointer",
+                  !canNavigate && "cursor-default",
                   isSelected && "!bg-purple-500/10 ring-2 ring-inset ring-purple-500",
+                  isRegistryOnly && "opacity-60 italic",
                   isLight
                     ? "hover:bg-black/5 hover:shadow-md"
                     : "bg-bg-card hover:bg-table-hover hover:shadow-lg hover:shadow-accent-aqua/5",
-                  !isSelected && "hover:border-l-4 hover:border-l-accent-aqua"
+                  !isSelected && canNavigate && "hover:border-l-4 hover:border-l-accent-aqua"
                 )}
               >
                 {/* SELECTION CHECKBOX */}
-                {onToggleSelection && (
+                {onToggleSelection && pnode.ip && (
                   <td 
                     className="p-2 text-center align-middle"
                     onClick={(e) => e.stopPropagation()}
@@ -299,16 +312,17 @@ const PNodeTableComponent = ({
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => onToggleSelection(pnode.ip)}
+                        onChange={() => onToggleSelection(pnode.ip!)}
                         onClick={(e) => e.stopPropagation()}
                         className="w-4 h-4 rounded border-2 border-border-app bg-bg-card checked:bg-purple-500 checked:border-purple-500 focus:ring-2 focus:ring-purple-500/30 transition-all cursor-pointer hover:scale-110"
                       />
                     </div>
                   </td>
                 )}
+                {onToggleSelection && !pnode.ip && <td className="p-2"></td>}
 
                 {/* FAVORITE STAR */}
-                {onToggleFavorite && (
+                {onToggleFavorite && pnode.ip && (
                   <td 
                     className="p-2 text-center align-middle"
                     onClick={(e) => e.stopPropagation()}
@@ -316,25 +330,26 @@ const PNodeTableComponent = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        onToggleFavorite(pnode.ip);
+                        onToggleFavorite(pnode.ip!);
                       }}
                       className={clsx(
                         "flex items-center justify-center w-8 h-8 rounded-lg transition-all hover:scale-125 active:scale-95",
-                        favoriteIds?.has(pnode.ip)
+                        favoriteIds?.has(pnode.ip!)
                           ? "text-yellow-500 hover:text-yellow-400"
                           : "text-text-faint hover:text-yellow-500"
                       )}
-                      title={favoriteIds?.has(pnode.ip) ? "Remove from favorites" : "Add to favorites"}
+                      title={favoriteIds?.has(pnode.ip!) ? "Remove from favorites" : "Add to favorites"}
                     >
                       <Star 
                         className={clsx(
                           "w-4 h-4 transition-all",
-                          favoriteIds?.has(pnode.ip) && "fill-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]"
+                          favoriteIds?.has(pnode.ip!) && "fill-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]"
                         )} 
                       />
                     </button>
                   </td>
                 )}
+                {onToggleFavorite && !pnode.ip && <td className="p-2"></td>}
                 
                 {/* Network indicator - Dedicated column RIGHT AFTER favorites */}
                 <td className="p-4 align-middle text-center">
@@ -352,102 +367,123 @@ const PNodeTableComponent = ({
                   </div>
                 </td>
 
-                <td className="p-4 font-mono text-text-main font-medium group-hover:text-accent-aqua transition-colors whitespace-nowrap align-middle">
-                  <div className="flex items-center gap-2">
-                    {/* Show lock icon for private nodes (IP starts with PRIVATE-) */}
-                    {pnode.ip.startsWith('PRIVATE-') && (
-                      <Lock 
-                        className="w-3.5 h-3.5 text-text-faint flex-shrink-0" 
-                        strokeWidth={2.5}
-                        aria-label="Private node - no public services"
-                      />
-                    )}
-                    <span>{pnode.ip}</span>
-                    <ArrowRight className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0" style={{ color: 'var(--accent-aqua)' }} />
-                  </div>
+                {/* 🆕 PUBKEY/OPERATOR CELL */}
+                <td className="p-4 align-middle text-center">
+                  {pnode.pubkey ? (
+                    <div className="flex items-center gap-1.5 min-w-0 justify-center">
+                      <code className="text-xs text-text-main font-mono flex-shrink-0">
+                        {pnode.pubkey.slice(0, 4)}...{pnode.pubkey.slice(-4)}
+                      </code>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(pnode.pubkey!);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-text-faint hover:text-accent-aqua text-xs flex-shrink-0"
+                        title="Copy full pubkey"
+                      >
+                        📋
+                      </button>
+                      {pnode.status === "registry_only" && (
+                        <span className="text-[8px] px-1 py-0.5 rounded bg-blue-500/20 text-blue-400 font-semibold uppercase tracking-wide flex-shrink-0" title="Official registry node">
+                          Reg
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-text-faint italic">Unknown</span>
+                  )}
                 </td>
 
-                <td className="p-4 align-middle">
+                <td className="p-4 font-mono text-text-main font-medium group-hover:text-accent-aqua transition-colors align-middle text-center">
+                  {pnode.ip ? (
+                    <div className="flex items-center gap-1.5 justify-center">
+                      {/* Show lock icon for private nodes (IP starts with PRIVATE-) */}
+                      {pnode.ip.startsWith('PRIVATE-') && (
+                        <Lock 
+                          className="w-3 h-3 text-text-faint flex-shrink-0" 
+                          strokeWidth={2.5}
+                          aria-label="Private node - no public services"
+                        />
+                      )}
+                      <span className="text-xs whitespace-nowrap">
+                        {pnode.ip}
+                      </span>
+                      <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0" style={{ color: 'var(--accent-aqua)' }} />
+                    </div>
+                  ) : (
+                    <span className="text-xs text-text-faint italic">Awaiting</span>
+                  )}
+                </td>
+
+                {/* 🆕 CREDITS CELL - Premium design */}
+                <td className="p-4 align-middle text-center">
+                  {pnode.credits !== undefined && pnode.credits > 0 ? (
+                    <span className="text-sm font-bold font-mono bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
+                      {pnode.credits.toLocaleString()}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-text-faint italic">—</span>
+                  )}
+                </td>
+
+                <td className="p-4 align-middle text-center">
                   {/* Status badge - cleaner without network dot */}
                   <span
-                    className="px-4 py-2 rounded-full text-[10px] font-bold border uppercase tracking-wide whitespace-nowrap"
+                    className="px-3 py-1.5 rounded-full text-[9px] font-bold border uppercase tracking-wide inline-block"
                     style={badgeStyle}
                   >
                     {status}
                   </span>
                 </td>
 
-                <td className="p-4 text-xs text-text-faint font-mono whitespace-nowrap align-middle">
-                  {versionLabel}
+                <td className="p-4 text-xs text-text-faint font-mono align-middle text-center">
+                  <span className="truncate block">{versionLabel}</span>
                 </td>
 
-                <td className="p-4 whitespace-nowrap align-middle">
-                  <span className="text-sm text-text-main font-mono">
+                <td className="p-4 align-middle text-center">
+                  <span className="text-sm text-text-main font-mono block truncate">
                     {Number.isFinite(pnode.stats.cpu_percent)
                       ? `${pnode.stats.cpu_percent.toFixed(1)}%`
                       : "—"}
                   </span>
                 </td>
 
-                <td className="p-4 text-sm text-accent font-semibold whitespace-nowrap align-middle">
-                  {formatBytesAdaptive(ramUsed)}{" "}
-                  <span className="text-text-faint text-xs">
-                    / {formatBytesAdaptive(ramTotal)}
-                  </span>
+                <td className="p-4 text-xs text-accent font-semibold align-middle text-center">
+                  <div className="whitespace-nowrap inline-block">
+                    <span className="font-mono">{formatBytesAdaptive(ramUsed)}</span>
+                    <span className="text-text-faint mx-1">/</span>
+                    <span className="text-text-faint font-mono">{formatBytesAdaptive(ramTotal)}</span>
+                  </div>
                 </td>
 
-                <td className="p-4 text-sm font-semibold whitespace-nowrap align-middle">
-                  <div className="flex flex-col gap-1">
+                <td className="p-4 text-sm font-semibold align-middle text-center">
+                  <div className="flex flex-col gap-1 min-w-0 items-center">
                     {/* Storage Committed (capacity) - Main value in purple */}
-                    <span className="text-sm font-bold" style={{ color: isLight ? '#9945ff' : '#a855f7' }}>
+                    <span className="text-sm font-bold truncate" style={{ color: isLight ? '#9945ff' : '#a855f7' }}>
                       {formatBytesAdaptive(committedBytes)}
                     </span>
                     {/* Storage Used (actual) - Secondary info */}
-                    <span className="text-[10px] text-text-faint">
-                      {formatBytesAdaptive(usedBytes)}
-                      <span className="ml-1 opacity-60">used</span>
+                    <span className="text-[10px] text-text-faint truncate">
+                      {formatBytesAdaptive(usedBytes)} <span className="opacity-60">used</span>
                     </span>
                   </div>
                 </td>
 
-                <td className="p-4 text-sm text-text-main font-mono whitespace-nowrap align-middle">
-                  <div className="flex flex-col">
-                    <span>
+                <td className="p-4 text-xs text-text-main font-mono align-middle text-center">
+                  <div className="flex flex-col gap-0.5 items-center">
+                    <span className="font-semibold whitespace-nowrap">
                       {formatPacketValue(totalPackets)}
-                      <span className="text-[10px] text-text-faint ml-1">
-                        pkts
-                      </span>
                     </span>
-                    <span className="text-[10px] mt-2">
-                      <span style={{ color: 'var(--accent-aqua)' }}>
-                        ↑ {formatPacketValue(sent)}
-                      </span>
-                      <span className="text-text-faint mx-1">•</span>
-                      <span style={{ color: isLight ? '#d97706' : '#fbbf24' }}>
-                        ↓ {formatPacketValue(recv)}
-                      </span>
+                    <span className="text-[9px] whitespace-nowrap flex items-center gap-1">
+                      <span style={{ color: 'var(--accent-aqua)' }}>↑{formatPacketValue(sent)}</span>
+                      <span style={{ color: isLight ? '#d97706' : '#fbbf24' }}>↓{formatPacketValue(recv)}</span>
                     </span>
                   </div>
                 </td>
 
-                <td className="p-4 text-sm text-text-main font-mono text-center whitespace-nowrap align-middle">
-                  <span className="px-2 py-1 rounded-md bg-green-900/20 border border-green-600/30">
-                    {pnode.stats.active_streams || 0}
-                  </span>
-                </td>
-
-                <td className="p-4 text-sm text-text-main font-mono text-center whitespace-nowrap align-middle">
-                  {pnode.stats.total_pages > 0 ? (
-                    <span className="text-accent-purple font-semibold">
-                      {pnode.stats.total_pages.toLocaleString()}
-                    </span>
-                  ) : (
-                    <span className="text-text-faint">—</span>
-                  )}
-                </td>
-
-                <td className="p-4 text-sm text-text-main font-mono whitespace-nowrap align-middle">
-                  {formatUptime(pnode.stats.uptime)}
+                <td className="p-4 text-sm text-text-main font-mono align-middle text-center">
+                  <span className="whitespace-nowrap block">{formatUptime(pnode.stats.uptime)}</span>
                 </td>
               </tr>
             );
