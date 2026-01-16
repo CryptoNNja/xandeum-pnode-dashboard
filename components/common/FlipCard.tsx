@@ -50,7 +50,7 @@ export const FlipCard = ({
       className="flip-card-container"
       style={{ 
         perspective: '1000px',
-        height: '190px'
+        height: '220px'
       }}
     >
       <div
