@@ -128,7 +128,7 @@ const PNodeTableComponent = ({
   };
 
   const headers = [
-    { key: "network", label: "Network", icon: true }, // Icon column for network - AFTER favorites
+    { key: "network", label: "Network", sortable: true }, // Network column - sortable
     { key: "score", label: "Score", sortable: true },
     { key: "pubkey", label: "Operator", sortable: true }, // 🆕 New column for pubkey/operator
     { key: "ip", label: "IP Address", sortable: true },
@@ -155,8 +155,8 @@ const PNodeTableComponent = ({
         <table className="min-w-full text-left border-collapse text-sm" style={{ tableLayout: 'fixed', width: '1100px' }}>
           <colgroup>
             {onToggleSelection && <col style={{ width: '40px' }} />}
-            {onToggleFavorite && <col style={{ width: '40px' }} />}
-            <col style={{ width: '50px' }} />
+            {onToggleFavorite && <col style={{ width: '50px' }} />}
+            <col style={{ width: '60px' }} />
             <col style={{ width: '65px' }} />
             <col style={{ width: '115px' }} />
             <col style={{ width: '145px' }} />
@@ -193,27 +193,31 @@ const PNodeTableComponent = ({
 
             {/* Favorite star header */}
             {onToggleFavorite && (
-              <th className="p-4 bg-bg-bg2/50 align-middle" style={{ textAlign: 'center' }}>
-                <Star className="w-4 h-4 text-yellow-500/50 mx-auto" />
+              <th className="p-4 bg-bg-bg2/50 text-[11px] align-middle" style={{ textAlign: 'center' }}>
+                <Star className="w-4 h-4 text-yellow-500/60 mx-auto" />
               </th>
             )}
             
             {headers.map((header) => (
               <th
                 key={header.key}
-                onClick={() => onSort(header.key)}
+                onClick={() => header.sortable && onSort(header.key)}
                 className={clsx(
-                  "p-4 text-[11px] font-bold uppercase tracking-wider cursor-pointer transition-colors select-none group whitespace-nowrap align-middle",
+                  "p-4 text-[11px] font-bold uppercase tracking-wider transition-colors select-none group whitespace-nowrap align-middle",
+                  header.sortable ? "cursor-pointer" : "cursor-default",
                   isLight ? "text-black/60" : "text-text-soft"
                 )}
                 style={{ textAlign: 'center' }}
               >
-                {header.icon ? (
-                  <Globe className="w-4 h-4 text-blue-400/70 mx-auto" strokeWidth={2} aria-label="Network" />
+                {header.key === "network" ? (
+                  <>
+                    <Globe className="w-4 h-4 text-blue-400/70 inline-block" strokeWidth={2} aria-label="Network" />
+                    {header.sortable && <SortIcon columnKey={header.key} />}
+                  </>
                 ) : (
                   <>
                     {header.label}
-                    <SortIcon columnKey={header.key} />
+                    {header.sortable && <SortIcon columnKey={header.key} />}
                   </>
                 )}
               </th>

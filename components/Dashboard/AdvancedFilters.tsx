@@ -219,29 +219,6 @@ export const AdvancedFilters = ({
                 </div>
               )}
 
-              {/* Stale nodes */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-text-main uppercase tracking-wider">Stale Nodes</h3>
-                </div>
-                <div className="flex items-center justify-between bg-bg-bg/40 border border-border-app rounded-xl p-3">
-                  <div className="flex flex-col">
-                    <span className="text-xs text-text-soft">Include stale (unreachable)</span>
-                    <span className="text-[10px] text-text-faint">Kept for coverage, hidden by default</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setStaleFilter(staleFilter === "hide" ? "include" : "hide")}
-                    className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors border ${
-                      staleFilter === "include"
-                        ? "bg-accent-purple/15 border-accent-purple text-text-main"
-                        : "bg-bg-card border-border-app text-text-soft"
-                    }`}
-                  >
-                    {staleFilter === "include" ? "On" : "Off"}
-                  </button>
-                </div>
-              </div>
               {/* Health Status */}
               <div className="space-y-5">
                 <div className="flex items-center gap-2">
@@ -416,6 +393,30 @@ export const AdvancedFilters = ({
                       <span className="opacity-40 text-[7px]">Network Max</span>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Stale nodes */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-text-main uppercase tracking-wider">Stale Nodes</h3>
+                </div>
+                <div className="flex items-center justify-between bg-bg-bg/40 border border-border-app rounded-xl p-3">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-text-soft">Include stale (unreachable)</span>
+                    <span className="text-[10px] text-text-faint">Kept for coverage, hidden by default</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setStaleFilter(staleFilter === "hide" ? "include" : "hide")}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors border ${
+                      staleFilter === "include"
+                        ? "bg-accent-purple/15 border-accent-purple text-text-main"
+                        : "bg-bg-card border-border-app text-text-soft"
+                    }`}
+                  >
+                    {staleFilter === "include" ? "On" : "Off"}
+                  </button>
                 </div>
               </div>
             </div>

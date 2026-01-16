@@ -22,7 +22,7 @@ import {
 } from "@/lib/utils";
 
 export type ViewMode = "table" | "grid" | "map";
-export type SortKey = "ip" | "cpu" | "ram" | "storage" | "uptime" | "health" | "packets" | "active_streams" | "total_pages" | "score" | "version" | "pubkey" | "credits";
+export type SortKey = "ip" | "cpu" | "ram" | "storage" | "uptime" | "health" | "packets" | "active_streams" | "total_pages" | "score" | "version" | "pubkey" | "credits" | "network";
 export type SortDirection = "asc" | "desc";
 export type NodeFilter = "all" | "public" | "private" | "registry";
 export type NetworkFilter = "all" | "MAINNET" | "DEVNET";
@@ -609,6 +609,15 @@ export const usePnodeDashboard = (theme?: string) => {
           // Sort by credits (nodes without credits go to bottom)
           valA = a.credits ?? -1;
           valB = b.credits ?? -1;
+          break;
+        case "network":
+          // Sort by network: MAINNET first, then DEVNET, then unknown
+          const networkPriority: Record<string, number> = {
+            'MAINNET': 2,
+            'DEVNET': 1,
+          };
+          valA = networkPriority[a.network || ''] ?? 0;
+          valB = networkPriority[b.network || ''] ?? 0;
           break;
         default: valA = a.ip; valB = b.ip;
       }
