@@ -886,7 +886,7 @@ export const KpiCards = ({
             </div>
 
             {/* Breakdown */}
-            <div className="space-y-2 text-sm">
+            <div className="space-y-2 text-sm mb-4">
               <div className="flex items-center justify-between">
                 <span className="text-text-soft">Top operator</span>
                 <span className="font-semibold text-text-main">
@@ -901,24 +901,14 @@ export const KpiCards = ({
                     : '0'} nodes
                 </span>
               </div>
-            </div>
-
-            {/* View Leaderboard Button */}
-            <div className="mt-auto pt-4 border-t border-border-app-soft">
-              <button
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all hover:scale-105"
-                style={{
-                  background: isLight
-                    ? "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%)"
-                    : "linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(16, 185, 129, 0.12) 100%)",
-                  border: '1px solid',
-                  borderColor: '#3B82F633',
-                  color: '#3B82F6'
-                }}
-              >
-                <Trophy className="w-4 h-4" />
-                View Leaderboard
-              </button>
+              <div className="flex items-center justify-between">
+                <span className="text-text-soft">Multi-node rate</span>
+                <span className="font-semibold" style={{ color: operatorsMetrics.multiNodeOperators > operatorsMetrics.singleNodeOperators ? '#10B981' : '#3B82F6' }}>
+                  {operatorsMetrics.uniqueManagers > 0
+                    ? `${((operatorsMetrics.multiNodeOperators / operatorsMetrics.uniqueManagers) * 100).toFixed(0)}%`
+                    : '0%'}
+                </span>
+              </div>
             </div>
           </div>
           </CollapsibleSection>
