@@ -2,7 +2,7 @@
 
 import React, { memo } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Star, Lock, Globe, Copy } from "lucide-react";
+import { Star, Lock, Globe, Copy } from "lucide-react";
 import clsx from "clsx";
 import { calculateNodeScore, getScoreColor } from "@/lib/scoring";
 import { useTheme } from "@/hooks/useTheme";
@@ -371,7 +371,7 @@ const PNodeTableComponent = ({
                   {pnode.pubkey ? (
                     <>
                       <span className="text-xs text-text-main font-mono">
-                        {pnode.pubkey.slice(0, 4)}...{pnode.pubkey.slice(-4)}
+                        {pnode.pubkey.slice(0, 8)}...{pnode.pubkey.slice(-4)}
                       </span>
                       <button
                         onClick={(e) => {

@@ -33,7 +33,6 @@ export const Sparkline = ({
   }
 
   // Calculate dimensions
-  const width = 100; // percentage
   const maxValue = Math.max(
     ...data.map(d => Math.max(d.mainnet, d.devnet))
   );

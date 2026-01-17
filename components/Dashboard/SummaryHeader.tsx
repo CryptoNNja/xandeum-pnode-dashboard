@@ -8,13 +8,15 @@ import { SystemAlertsAnalyticsModal } from "./SystemAlertsAnalyticsModal";
 import { NetworkBadge } from "@/components/common/NetworkBadge";
 import { FlipCard } from "@/components/common/FlipCard";
 
+import type { PNode } from '@/lib/types';
+
 type OperatorsMetrics = {
   uniqueManagers: number;
   multiNodeOperators: number;
   topOperator: {
     pubkey: string;
     nodeCount: number;
-    nodes: any[];
+    nodes: PNode[];
     totalStorage: number;
     avgStorage: number;
   } | null;
@@ -22,7 +24,7 @@ type OperatorsMetrics = {
   operators: Array<{
     pubkey: string;
     nodeCount: number;
-    nodes: any[];
+    nodes: PNode[];
     totalStorage: number;
     avgStorage: number;
   }>;

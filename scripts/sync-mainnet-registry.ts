@@ -58,12 +58,9 @@ async function syncMainnetRegistry(): Promise<SyncStats> {
           const { error: updateError } = await supabase
             .from('pnodes')
             .update({
-              // @ts-ignore - Types not yet updated with latest migrations
               source: 'both',
               network: 'MAINNET',
-              // @ts-ignore
               network_confidence: 'high',
-              // @ts-ignore
               is_official: true
             } as any)
             .eq('pubkey', pubkey);
@@ -81,16 +78,11 @@ async function syncMainnetRegistry(): Promise<SyncStats> {
             .from('pnodes')
             .insert({
               pubkey,
-              // @ts-ignore - Types not yet updated with latest migrations
               ip: null,
               status: 'registry_only',
-              // @ts-ignore
               source: 'registry',
-              // @ts-ignore
               network: 'MAINNET',
-              // @ts-ignore
               network_confidence: 'high',
-              // @ts-ignore
               is_official: true,
               stats: {},
               version: 'unknown'
