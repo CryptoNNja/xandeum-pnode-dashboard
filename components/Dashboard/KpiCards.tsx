@@ -33,7 +33,7 @@ import { CpuDistributionModal } from "./CpuDistributionModal";
 import { StorageAnalyticsModal } from "./StorageAnalyticsModal";
 import { DataDistributionModal } from "./DataDistributionModal";
 import { NetworkCoverageModal } from "./NetworkCoverageModal";
-import { LeaderboardModal } from "./LeaderboardModal";
+import TopPerformersChart from "@/components/TopPerformersChart";
 import { FlagsCarousel } from "./FlagsCarousel";
 import { PacketsAnimation } from "./PacketsAnimation";
 import { ActiveStreamsAnimation } from "./ActiveStreamsAnimation";
@@ -184,7 +184,7 @@ export const KpiCards = ({
     const [isStorageModalOpen, setIsStorageModalOpen] = useState(false);
     const [isDataModalOpen, setIsDataModalOpen] = useState(false);
     const [isNetworkCoverageModalOpen, setIsNetworkCoverageModalOpen] = useState(false);
-    const [isLeaderboardModalOpen, setIsLeaderboardModalOpen] = useState(false);
+    const [showFullLeaderboard, setShowFullLeaderboard] = useState(false);
 
     // State for credits data
     const [creditsData, setCreditsData] = useState<{ pod_id: string; credits: number }[]>([]);
@@ -1439,13 +1439,13 @@ export const KpiCards = ({
           {/* Top Performers Card */}
           <div 
             className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-accent-primary/10 hover:border-accent-primary/50 hover:scale-[1.02] group"
-            onClick={() => setIsLeaderboardModalOpen(true)}
+            onClick={() => setShowFullLeaderboard(true)}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                setIsLeaderboardModalOpen(true);
+                setShowFullLeaderboard(true);
               }
             }}
           >
@@ -1706,13 +1706,15 @@ export const KpiCards = ({
             networkHistory={networkHistory}
           />
 
-          {/* Leaderboard Modal */}
-          <LeaderboardModal
-            isOpen={isLeaderboardModalOpen}
-            onClose={() => setIsLeaderboardModalOpen(false)}
-            nodes={pnodes}
-            isLight={isLight}
-          />
+          {/* Full Leaderboard - Direct modal from TopPerformersChart */}
+          {showFullLeaderboard && (
+            <TopPerformersChart 
+              nodes={pnodes} 
+              hideHeader={false} 
+              openModalDirectly={true}
+              onCloseModal={() => setShowFullLeaderboard(false)}
+            />
+          )}
         </div>
     )
 }
