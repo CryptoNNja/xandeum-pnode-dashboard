@@ -388,6 +388,7 @@ export const main = async () => {
     const storageUsedMap = new Map<string, number>();
     const isPublicMap = new Map<string, boolean>();
     const rpcPortMap = new Map<string, number>();
+    const lastSeenGossipMap = new Map<string, number>(); // 🆕 Track last_seen_timestamp from gossip
     console.log('📡 Fetching versions, pubkeys, storage commitments, and public status...');
     
     // Batch metadata calls for speed (100 concurrent at a time for faster crawling)
@@ -438,6 +439,14 @@ export const main = async () => {
                 if (ip && typeof pod.rpc_port === 'number' && Number.isFinite(pod.rpc_port) && pod.rpc_port > 0) {
                     rpcPortMap.set(ip, pod.rpc_port);
                 }
+
+                // 🆕 Capture last_seen_timestamp from gossip network
+                if (ip && pod.last_seen_timestamp) {
+                    const lastSeenTimestamp = coerceNumber(pod.last_seen_timestamp);
+                    if (lastSeenTimestamp > 0) {
+                        lastSeenGossipMap.set(ip, lastSeenTimestamp);
+                    }
+                }
             })
         }
     });
@@ -452,6 +461,7 @@ export const main = async () => {
     console.log(`     - storage_used: ${storageUsedMap.size}`);
     console.log(`     - is_public flags: ${isPublicMap.size}`);
     console.log(`     - rpc_port hints: ${rpcPortMap.size}`);
+    console.log(`     - last_seen_gossip timestamps: ${lastSeenGossipMap.size}`);
 
     console.log('📊 Fetching stats and geolocation...');
     
@@ -543,6 +553,7 @@ export const main = async () => {
         // Enrich stats with storage data from get-pods-with-stats (gossip)
         const storageCommitted = storageCommittedMap.get(ip);
         const storageUsed = storageUsedMap.get(ip);
+        const lastSeenGossip = lastSeenGossipMap.get(ip);
 
         // Add storage_committed and storage_used for ALL nodes (both active and gossip_only)
         if (storageCommitted && storageCommitted > 0) {
@@ -550,6 +561,10 @@ export const main = async () => {
         }
         if (storageUsed && storageUsed > 0) {
             stats.storage_used = storageUsed;
+        }
+        // 🆕 Add last_seen_gossip timestamp for ALL nodes
+        if (lastSeenGossip && lastSeenGossip > 0) {
+            stats.last_seen_gossip = lastSeenGossip;
         }
 
         if (status === 'gossip_only') {

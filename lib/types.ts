@@ -16,6 +16,7 @@ export interface PNodeStats {
   uptime: number;
   storage_committed?: number; // From get-pods-with-stats (capacity promised)
   storage_used?: number; // From get-pods-with-stats (actual storage used)
+  last_seen_gossip?: number; // From get-pods-with-stats (timestamp when node was last seen by gossip network)
 }
 
 // Network status of the node as determined by our crawler
@@ -66,4 +67,5 @@ export const EMPTY_STATS: PNodeStats = {
   uptime: 0,
   storage_committed: 0,
   storage_used: 0,
+  last_seen_gossip: 0,
 };
