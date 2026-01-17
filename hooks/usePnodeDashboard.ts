@@ -664,6 +664,8 @@ export const usePnodeDashboard = (theme?: string) => {
   // Generates detailed, actionable alerts based on expert SRE thresholds
   const alerts = useMemo(() => {
     const generated: Alert[] = [];
+    const now = Date.now() / 1000;
+    const STALE_DATA_THRESHOLD = 3600; // 1 hour - data older than this triggers stale warning
     
     allPnodes.forEach((pnode) => {
       if (pnode.status !== "active") return;
@@ -687,7 +689,34 @@ export const usePnodeDashboard = (theme?: string) => {
       const storagePercent = committedBytes > 0 ? (usedBytes / committedBytes) * 100 : 0;
       const performanceScore = calculateNodeScore(pnode, allPnodes);
 
+      // 🆕 Check data freshness using last_seen_gossip (from get-pods-with-stats)
+      // This ensures alerts are based on recent, reliable data from the gossip network
+      const lastSeenGossip = stats.last_seen_gossip;
+      let dataAge = 0;
+      let isDataStale = false;
+      
+      if (lastSeenGossip && lastSeenGossip > 0) {
+        dataAge = now - lastSeenGossip;
+        isDataStale = dataAge > STALE_DATA_THRESHOLD;
+        
+        // Generate stale data alert if data is old
+        if (isDataStale) {
+          const ageHours = Math.floor(dataAge / 3600);
+          const ageMinutes = Math.floor((dataAge % 3600) / 60);
+          generated.push({
+            ip: pnode.ip,
+            severity: "warning",
+            type: "Stale Data",
+            message: `Node data is ${ageHours}h ${ageMinutes}m old - metrics may be outdated`,
+            value: `Last seen: ${new Date(lastSeenGossip * 1000).toLocaleString()}`
+          });
+          // Skip uptime-based alerts for stale data to avoid false positives
+          return;
+        }
+      }
+
       // CRITICAL ALERTS - Immediate action required
+      // Note: Uptime alerts are now validated against fresh data (< 1h old) via last_seen_gossip
       if (healthStatus === "Critical") {
         // Uptime < 5 min = Recent crash/restart
         if (uptimeSeconds < 300) {
