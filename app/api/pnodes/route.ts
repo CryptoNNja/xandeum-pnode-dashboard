@@ -67,6 +67,9 @@ export async function GET(request: NextRequest) {
       network_confidence: (row as any).network_confidence, // 🆕 Confidence
       source: (row as any).source, // 🆕 Data source (crawler/registry/both)
       is_official: (row as any).is_official, // 🆕 Official registry flag
+      last_seen_gossip: (row as any).last_seen_gossip 
+        ? new Date((row as any).last_seen_gossip).getTime() / 1000 
+        : undefined, // 🆕 Convert ISO timestamp to Unix seconds
       lat: row.lat,
       lng: row.lng,
       city: row.city,

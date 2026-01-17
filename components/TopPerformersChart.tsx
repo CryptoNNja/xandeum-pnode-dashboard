@@ -350,9 +350,9 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
         return nodes
             .filter((node) => node.ip) // Filter out nodes without IP
             .map((node) => {
-                // 🆕 Prioritize last_seen_gossip (from get-pods-with-stats) over last_updated (from get-stats)
-                // last_seen_gossip is more reliable for uptime calculations as it reflects gossip network consensus
-                const lastSeen = node.stats.last_seen_gossip || node.stats.last_updated;
+                // 🆕 Use last_seen_gossip from DB column (most reliable, from gossip network)
+                // Fallback to stats.last_updated if not available (direct RPC timestamp)
+                const lastSeen = node.last_seen_gossip || node.stats.last_updated;
                 
                 return {
                     node,

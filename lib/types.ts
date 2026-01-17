@@ -42,6 +42,7 @@ export interface PNode {
   source?: "crawler" | "registry" | "both"; // 🆕 Data source tracking
   is_official?: boolean; // 🆕 True if in official registry
   credits?: number; // 🆕 Credits earned from official API (XAN tokens)
+  last_seen_gossip?: number; // 🆕 Timestamp from gossip network (DB column, not JSONB stats)
   lat?: number | null;
   lng?: number | null;
   city?: string | null;
