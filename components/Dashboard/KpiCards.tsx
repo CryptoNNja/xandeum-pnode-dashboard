@@ -43,13 +43,15 @@ import { calculateNodeScore } from "@/lib/scoring";
 
 import type { NetworkParticipationMetrics } from "@/lib/blockchain-metrics";
 
+import type { PNode } from '@/lib/types';
+
 type OperatorsMetrics = {
     uniqueManagers: number;
     multiNodeOperators: number;
     topOperator: {
         pubkey: string;
         nodeCount: number;
-        nodes: any[];
+        nodes: PNode[];
         totalStorage: number;
         avgStorage: number;
     } | null;
@@ -57,7 +59,7 @@ type OperatorsMetrics = {
     operators: Array<{
         pubkey: string;
         nodeCount: number;
-        nodes: any[];
+        nodes: PNode[];
         totalStorage: number;
         avgStorage: number;
     }>;
