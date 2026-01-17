@@ -621,12 +621,18 @@ export const main = async () => {
             is_public: isPublicMap.get(ip) ?? null  // Add is_public to stats
         };
 
+        // 🆕 Convert last_seen_gossip timestamp to ISO string for DB column
+        const lastSeenGossipTimestamp = lastSeenGossip && lastSeenGossip > 0 
+            ? new Date(lastSeenGossip * 1000).toISOString() 
+            : null;
+
         pnodesToUpsert.push({
             ip: ip,
             status: status,
             version: versionMap.get(ip) || "unknown",
             pubkey: pubkeyMap.get(ip) || null,
             stats: finalStats as unknown as Json,
+            last_seen_gossip: lastSeenGossipTimestamp, // 🆕 Store in dedicated DB column
             lat: geo?.lat,
             lng: geo?.lng,
             city: geo?.city,
