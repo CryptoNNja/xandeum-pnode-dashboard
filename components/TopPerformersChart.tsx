@@ -105,7 +105,7 @@ const TAB_META: Record<LeaderboardTab, LeaderboardMeta> = {
         icon: Zap,
         accentBg: "rgba(16,185,129,0.15)", // Green - hardcoded for consistency
         accentText: "#10B981", // Green - hardcoded for consistency
-        tooltip: "Longest-running nodes measured by reported uptime and last seen timestamp.",
+        tooltip: "Longest-running active nodes. Excludes zombies not seen in 7+ days via gossip.",
     },
     credits: {
         label: "Credits",
@@ -252,6 +252,8 @@ const formatUptimeValue = (seconds?: number) => {
 
 const formatStartDate = (uptime?: number, lastSeen?: number) => {
     if (!Number.isFinite(uptime ?? NaN) || !uptime || uptime <= 0) return "Unknown";
+    // Use lastSeen (now prioritizing last_seen_gossip) for accurate start date calculation
+    // Falls back to Date.now() only if no timestamp is available
     const referenceSeconds = lastSeen && lastSeen > 0 ? lastSeen : Date.now() / 1000;
     const startTime = (referenceSeconds - uptime) * 1000;
     if (!Number.isFinite(startTime) || startTime <= 0) return "Unknown";
@@ -341,14 +343,38 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
 
     const uptimeRanking = useMemo<UptimeEntry[]>(() => {
         if (!nodes || nodes.length === 0) return [];
+        
+        const now = Date.now() / 1000;
+        const MAX_AGE_SECONDS = 7 * 24 * 3600; // 7 days - filter out zombie nodes
+        
         return nodes
             .filter((node) => node.ip) // Filter out nodes without IP
-            .map((node) => ({
-                node,
-                uptime: Math.max(node.stats.uptime, 0),
-                lastSeen: node.stats.last_updated,
-            }))
-            .filter((entry) => entry.uptime > 0)
+            .map((node) => {
+                // 🆕 Prioritize last_seen_gossip (from get-pods-with-stats) over last_updated (from get-stats)
+                // last_seen_gossip is more reliable for uptime calculations as it reflects gossip network consensus
+                const lastSeen = node.stats.last_seen_gossip || node.stats.last_updated;
+                
+                return {
+                    node,
+                    uptime: Math.max(node.stats.uptime, 0),
+                    lastSeen,
+                };
+            })
+            .filter((entry) => {
+                // Filter out entries with invalid uptime
+                if (entry.uptime <= 0) return false;
+                
+                // 🆕 Filter out zombie nodes (not seen recently despite high uptime)
+                // This prevents stale nodes from dominating the leaderboard
+                if (entry.lastSeen && entry.lastSeen > 0) {
+                    const ageSeconds = now - entry.lastSeen;
+                    if (ageSeconds > MAX_AGE_SECONDS) {
+                        return false; // Exclude nodes not seen in the last 7 days
+                    }
+                }
+                
+                return true;
+            })
             .sort((a, b) => {
                 if (b.uptime === a.uptime) {
                     return (a.node.ip || '').localeCompare(b.node.ip || '');
