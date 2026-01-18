@@ -325,7 +325,7 @@ const FavoritesModalComponent = ({
                         <div>
                           <p className="text-sm font-mono font-bold text-text-main">{node?.ip}</p>
                           <p className="text-xs text-text-soft">
-                            Added {new Date(favorite.addedAt).toLocaleDateString()}
+                            Added {new Date(favorite.addedAt).toLocaleDateString("en-US")}
                           </p>
                         </div>
                       </div>

@@ -30,6 +30,13 @@ export async function GET(
       version: data.version ?? undefined,
       pubkey: data.pubkey ?? undefined,
       stats: data.stats as unknown as import("@/lib/types").PNodeStats,
+      network: (data as any).network,
+      network_confidence: (data as any).network_confidence,
+      source: (data as any).source,
+      is_official: (data as any).is_official,
+      last_seen_gossip: (data as any).last_seen_gossip 
+        ? new Date((data as any).last_seen_gossip).getTime() / 1000 
+        : undefined, // 🆕 Convert ISO timestamp to Unix seconds
       lat: data.lat ?? null,
       lng: data.lng ?? null,
       city: data.city ?? null,

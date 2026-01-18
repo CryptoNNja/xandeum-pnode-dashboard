@@ -388,6 +388,8 @@ export const main = async () => {
     const storageUsedMap = new Map<string, number>();
     const isPublicMap = new Map<string, boolean>();
     const rpcPortMap = new Map<string, number>();
+    const lastSeenGossipMap = new Map<string, number>(); // 🆕 Track last_seen_timestamp from gossip
+    const uptimeGossipMap = new Map<string, number>(); // 🆕 Track uptime from gossip
     console.log('📡 Fetching versions, pubkeys, storage commitments, and public status...');
     
     // Batch metadata calls for speed (100 concurrent at a time for faster crawling)
@@ -438,6 +440,22 @@ export const main = async () => {
                 if (ip && typeof pod.rpc_port === 'number' && Number.isFinite(pod.rpc_port) && pod.rpc_port > 0) {
                     rpcPortMap.set(ip, pod.rpc_port);
                 }
+
+                // 🆕 Capture last_seen_timestamp from gossip network
+                if (ip && pod.last_seen_timestamp) {
+                    const lastSeenTimestamp = coerceNumber(pod.last_seen_timestamp);
+                    if (lastSeenTimestamp > 0) {
+                        lastSeenGossipMap.set(ip, lastSeenTimestamp);
+                    }
+                }
+
+                // 🆕 Capture uptime from gossip network (for private nodes)
+                if (ip && pod.uptime) {
+                    const uptimeSeconds = coerceNumber(pod.uptime);
+                    if (uptimeSeconds > 0) {
+                        uptimeGossipMap.set(ip, uptimeSeconds);
+                    }
+                }
             })
         }
     });
@@ -452,6 +470,8 @@ export const main = async () => {
     console.log(`     - storage_used: ${storageUsedMap.size}`);
     console.log(`     - is_public flags: ${isPublicMap.size}`);
     console.log(`     - rpc_port hints: ${rpcPortMap.size}`);
+    console.log(`     - last_seen_gossip timestamps: ${lastSeenGossipMap.size}`);
+    console.log(`     - uptime from gossip: ${uptimeGossipMap.size}`);
 
     console.log('📊 Fetching stats and geolocation...');
     
@@ -535,32 +555,51 @@ export const main = async () => {
         const isPublic = isPublicMap.get(ip) === true;
         const status = (hasStats || isPublic) ? 'active' : 'gossip_only';
         
-        // Create a copy of stats to avoid mutating shared EMPTY_STATS constant
-        const stats: PNodeStats = hasStats
-            ? { ...statsResult.value } as PNodeStats
-            : { ...EMPTY_STATS };
+        // 🆕 NEW ARCHITECTURE: Start with EMPTY_STATS, then enrich from GOSSIP first (all nodes),
+        // then enrich from RPC (public nodes only) for metrics not available in gossip
+        const stats: PNodeStats = { ...EMPTY_STATS };
 
-        // Enrich stats with storage data from get-pods-with-stats (gossip)
+        // Get gossip data for this node
         const storageCommitted = storageCommittedMap.get(ip);
         const storageUsed = storageUsedMap.get(ip);
+        const lastSeenGossip = lastSeenGossipMap.get(ip);
+        const uptimeGossip = uptimeGossipMap.get(ip);
 
-        // Add storage_committed and storage_used for ALL nodes (both active and gossip_only)
+        // PHASE 1: Enrich from GOSSIP (for ALL nodes - public + private)
+        // These metrics from gossip are PRIORITIZED over RPC as they reflect network consensus
         if (storageCommitted && storageCommitted > 0) {
             stats.storage_committed = storageCommitted;
+            stats.file_size = storageCommitted; // Legacy compat
         }
         if (storageUsed && storageUsed > 0) {
             stats.storage_used = storageUsed;
         }
+        if (lastSeenGossip && lastSeenGossip > 0) {
+            stats.last_seen_gossip = lastSeenGossip;
+        }
+        if (uptimeGossip && uptimeGossip > 0) {
+            stats.uptime = uptimeGossip; // 🆕 Gossip uptime for ALL nodes (100% coverage)
+        }
 
-        if (status === 'gossip_only') {
-            // For gossip_only nodes we don't have reliable `get-stats` metrics.
-            // We keep `storage_committed`/`storage_used` in their dedicated fields,
-            // and DO NOT overwrite core `get-stats` fields like `total_bytes`.
-            // (Overwriting caused confusion and made our metrics diverge from the official dashboard.)
-            if (storageCommitted && storageCommitted > 0) {
-                // Legacy/backwards-compat: some UI used `file_size` as a proxy for capacity.
-                stats.file_size = storageCommitted;
-            }
+        // PHASE 2: Enrich from RPC (for PUBLIC nodes only)
+        // Only add metrics that are NOT available in gossip (CPU, RAM, packets, etc.)
+        if (hasStats && statsResult.value) {
+            const rpcStats = statsResult.value as PNodeStats;
+            
+            // RPC-only metrics (not available in gossip)
+            stats.cpu_percent = rpcStats.cpu_percent;
+            stats.ram_used = rpcStats.ram_used;
+            stats.ram_total = rpcStats.ram_total;
+            stats.active_streams = rpcStats.active_streams;
+            stats.packets_sent = rpcStats.packets_sent;
+            stats.packets_received = rpcStats.packets_received;
+            stats.current_index = rpcStats.current_index;
+            stats.total_pages = rpcStats.total_pages;
+            stats.total_bytes = rpcStats.total_bytes;
+            stats.last_updated = rpcStats.last_updated; // RPC timestamp for comparison
+            
+            // Note: We do NOT overwrite uptime, storage_committed, storage_used from RPC
+            // as gossip data is more reliable and has 100% coverage
         }
 
         // Detect network (MAINNET/DEVNET) - fully independent detection
@@ -606,12 +645,18 @@ export const main = async () => {
             is_public: isPublicMap.get(ip) ?? null  // Add is_public to stats
         };
 
+        // 🆕 Convert last_seen_gossip timestamp to ISO string for DB column
+        const lastSeenGossipTimestamp = lastSeenGossip && lastSeenGossip > 0 
+            ? new Date(lastSeenGossip * 1000).toISOString() 
+            : null;
+
         pnodesToUpsert.push({
             ip: ip,
             status: status,
             version: versionMap.get(ip) || "unknown",
             pubkey: pubkeyMap.get(ip) || null,
             stats: finalStats as unknown as Json,
+            last_seen_gossip: lastSeenGossipTimestamp, // 🆕 Store in dedicated DB column
             lat: geo?.lat,
             lng: geo?.lng,
             city: geo?.city,
@@ -733,6 +778,23 @@ export const main = async () => {
         // If node responded successfully (has version/pubkey from get-pods-with-stats), reset failed_checks
         const hasMetadata = versionMap.has(node.ip) || pubkeyMap.has(node.ip);
         node.failed_checks = hasMetadata ? 0 : (existingIpsMap.get(node.ip) ?? 0) + 1;
+        
+        // 🆕 HYBRID STALE LOGIC: Mark node as stale based on intelligent criteria
+        // - 2 failed checks WITHOUT gossip data (truly dead - not in network at all)
+        // - OR 4 failed checks WITH gossip data (persistent problem despite being in gossip)
+        const currentFailedChecks = node.failed_checks;
+        const hasGossipData = versionMap.has(node.ip) || 
+                             storageCommittedMap.has(node.ip) || 
+                             pubkeyMap.has(node.ip);
+        
+        if (currentFailedChecks >= 2 && !hasGossipData) {
+            // Node is truly dead - not even in gossip network
+            node.status = 'stale';
+        } else if (currentFailedChecks >= 4 && hasGossipData) {
+            // Node has persistent issues despite being in gossip
+            node.status = 'stale';
+        }
+        // Otherwise keep the status determined earlier (active or gossip_only)
     });
     
     // For existing nodes NOT in this crawl, increment their failed_checks
@@ -762,11 +824,21 @@ export const main = async () => {
     }
     
     // Build zombie IP set BEFORE upsert so we can avoid overwriting their status.
-    // Definition: failed_checks >= 3 and not PRIVATE-*.
+    // NEW DEFINITION: Hybrid stale logic
+    // - 2+ failures WITHOUT gossip data (truly dead)
+    // - OR 4+ failures WITH gossip data (persistent issues)
     const zombieIpsSet = new Set<string>();
     if (KEEP_ZOMBIES) {
       for (const n of deduplicatedNodes as any[]) {
-        if ((n.failed_checks ?? 0) >= 3 && typeof n.ip === 'string' && !n.ip.startsWith('PRIVATE-')) {
+        const failedChecks = n.failed_checks ?? 0;
+        const hasGossipData = versionMap.has(n.ip) || 
+                             storageCommittedMap.has(n.ip) || 
+                             pubkeyMap.has(n.ip);
+        
+        const isZombie = (failedChecks >= 2 && !hasGossipData) || 
+                        (failedChecks >= 4 && hasGossipData);
+        
+        if (isZombie && typeof n.ip === 'string' && !n.ip.startsWith('PRIVATE-')) {
           zombieIpsSet.add(n.ip);
         }
       }
@@ -829,14 +901,16 @@ export const main = async () => {
     }
 
     // Auto-cleanup: Remove zombie nodes (consistently inaccessible)
-    // A node is a zombie if it has failed_checks >= 3 (3 consecutive crawl failures)
+    // NEW HYBRID LOGIC:
+    // - Nodes with 2+ failures WITHOUT gossip data → stale (truly dead)
+    // - Nodes with 4+ failures WITH gossip data → stale (persistent issues)
     // BUT: Exclude private nodes (IP starting with PRIVATE-) since they can't respond to RPC
-    console.log('\n🧹 Checking for zombie nodes (failed_checks >= 3)...');
+    console.log('\n🧹 Checking for zombie nodes (hybrid stale logic)...');
     
     const { data: zombieNodes, error: zombieError } = await supabaseAdmin
         .from('pnodes')
         .select('ip, failed_checks, last_crawled_at')
-        .gte('failed_checks', 3);
+        .gte('failed_checks', 2); // 🆕 Lowered from 3 to 2 for faster detection
     
     // Track zombies for reporting/cleanup (already computed before upsert)
 

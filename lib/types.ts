@@ -16,6 +16,7 @@ export interface PNodeStats {
   uptime: number;
   storage_committed?: number; // From get-pods-with-stats (capacity promised)
   storage_used?: number; // From get-pods-with-stats (actual storage used)
+  last_seen_gossip?: number; // From get-pods-with-stats (timestamp when node was last seen by gossip network)
 }
 
 // Network status of the node as determined by our crawler
@@ -41,6 +42,7 @@ export interface PNode {
   source?: "crawler" | "registry" | "both"; // 🆕 Data source tracking
   is_official?: boolean; // 🆕 True if in official registry
   credits?: number; // 🆕 Credits earned from official API (XAN tokens)
+  last_seen_gossip?: number; // 🆕 Timestamp from gossip network (DB column, not JSONB stats)
   lat?: number | null;
   lng?: number | null;
   city?: string | null;
@@ -66,4 +68,5 @@ export const EMPTY_STATS: PNodeStats = {
   uptime: 0,
   storage_committed: 0,
   storage_used: 0,
+  last_seen_gossip: 0,
 };
