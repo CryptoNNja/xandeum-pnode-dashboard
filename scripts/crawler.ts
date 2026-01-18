@@ -778,6 +778,23 @@ export const main = async () => {
         // If node responded successfully (has version/pubkey from get-pods-with-stats), reset failed_checks
         const hasMetadata = versionMap.has(node.ip) || pubkeyMap.has(node.ip);
         node.failed_checks = hasMetadata ? 0 : (existingIpsMap.get(node.ip) ?? 0) + 1;
+        
+        // 🆕 HYBRID STALE LOGIC: Mark node as stale based on intelligent criteria
+        // - 2 failed checks WITHOUT gossip data (truly dead - not in network at all)
+        // - OR 4 failed checks WITH gossip data (persistent problem despite being in gossip)
+        const currentFailedChecks = node.failed_checks;
+        const hasGossipData = versionMap.has(node.ip) || 
+                             storageCommittedMap.has(node.ip) || 
+                             pubkeyMap.has(node.ip);
+        
+        if (currentFailedChecks >= 2 && !hasGossipData) {
+            // Node is truly dead - not even in gossip network
+            node.status = 'stale';
+        } else if (currentFailedChecks >= 4 && hasGossipData) {
+            // Node has persistent issues despite being in gossip
+            node.status = 'stale';
+        }
+        // Otherwise keep the status determined earlier (active or gossip_only)
     });
     
     // For existing nodes NOT in this crawl, increment their failed_checks
@@ -807,11 +824,21 @@ export const main = async () => {
     }
     
     // Build zombie IP set BEFORE upsert so we can avoid overwriting their status.
-    // Definition: failed_checks >= 3 and not PRIVATE-*.
+    // NEW DEFINITION: Hybrid stale logic
+    // - 2+ failures WITHOUT gossip data (truly dead)
+    // - OR 4+ failures WITH gossip data (persistent issues)
     const zombieIpsSet = new Set<string>();
     if (KEEP_ZOMBIES) {
       for (const n of deduplicatedNodes as any[]) {
-        if ((n.failed_checks ?? 0) >= 3 && typeof n.ip === 'string' && !n.ip.startsWith('PRIVATE-')) {
+        const failedChecks = n.failed_checks ?? 0;
+        const hasGossipData = versionMap.has(n.ip) || 
+                             storageCommittedMap.has(n.ip) || 
+                             pubkeyMap.has(n.ip);
+        
+        const isZombie = (failedChecks >= 2 && !hasGossipData) || 
+                        (failedChecks >= 4 && hasGossipData);
+        
+        if (isZombie && typeof n.ip === 'string' && !n.ip.startsWith('PRIVATE-')) {
           zombieIpsSet.add(n.ip);
         }
       }
@@ -874,14 +901,16 @@ export const main = async () => {
     }
 
     // Auto-cleanup: Remove zombie nodes (consistently inaccessible)
-    // A node is a zombie if it has failed_checks >= 3 (3 consecutive crawl failures)
+    // NEW HYBRID LOGIC:
+    // - Nodes with 2+ failures WITHOUT gossip data → stale (truly dead)
+    // - Nodes with 4+ failures WITH gossip data → stale (persistent issues)
     // BUT: Exclude private nodes (IP starting with PRIVATE-) since they can't respond to RPC
-    console.log('\n🧹 Checking for zombie nodes (failed_checks >= 3)...');
+    console.log('\n🧹 Checking for zombie nodes (hybrid stale logic)...');
     
     const { data: zombieNodes, error: zombieError } = await supabaseAdmin
         .from('pnodes')
         .select('ip, failed_checks, last_crawled_at')
-        .gte('failed_checks', 3);
+        .gte('failed_checks', 2); // 🆕 Lowered from 3 to 2 for faster detection
     
     // Track zombies for reporting/cleanup (already computed before upsert)
 
