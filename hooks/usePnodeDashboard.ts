@@ -990,22 +990,47 @@ export const usePnodeDashboard = (theme?: string) => {
   );
 
   const avgCpuUsage = useMemo(() => {
-    const activeCpuNodes = allPnodes.filter((pnode) => pnode.status === "active");
-    if (activeCpuNodes.length === 0) return { percent: 0, nodeCount: 0 };
+    const allActiveNodes = allPnodes.filter((pnode) => pnode.status === "active");
+    const activeCpuNodes = allActiveNodes.filter((pnode) => (pnode.stats?.cpu_percent ?? 0) > 0);
+    
+    if (activeCpuNodes.length === 0) return { 
+      percent: 0, 
+      reportingNodes: 0,
+      totalActiveNodes: allActiveNodes.length
+    };
+    
     const totalPercent = activeCpuNodes.reduce((sum, pnode) => sum + Math.max(0, pnode.stats?.cpu_percent ?? 0), 0);
-    return { percent: Math.min(100, totalPercent / activeCpuNodes.length), nodeCount: activeCpuNodes.length };
+    
+    return { 
+      percent: Math.min(100, totalPercent / activeCpuNodes.length), 
+      reportingNodes: activeCpuNodes.length,
+      totalActiveNodes: allActiveNodes.length
+    };
   }, [allPnodes]);
 
   const avgRamUsage = useMemo(() => {
-    const activeRamNodes = allPnodes.filter((pnode) => pnode.status === "active" && (pnode.stats?.ram_total ?? 0) > 0);
-    if (activeRamNodes.length === 0) return { usedAvg: 0, totalAvg: 0, ratio: 0, nodeCount: 0 };
+    const allActiveNodes = allPnodes.filter((pnode) => pnode.status === "active");
+    const activeRamNodes = allActiveNodes.filter((pnode) => (pnode.stats?.ram_total ?? 0) > 0);
+    
+    if (activeRamNodes.length === 0) return { 
+      usedAvg: 0, 
+      totalAvg: 0, 
+      ratio: 0, 
+      reportingNodes: 0,
+      totalActiveNodes: allActiveNodes.length,
+      formattedUsed: "0 GB",
+      formattedTotal: "0 GB"
+    };
+    
     const usedAvg = activeRamNodes.reduce((sum, pnode) => sum + Math.max(0, pnode.stats?.ram_used ?? 0), 0) / activeRamNodes.length;
     const totalAvg = activeRamNodes.reduce((sum, pnode) => sum + Math.max(0, pnode.stats?.ram_total ?? 0), 0) / activeRamNodes.length;
+    
     return { 
       usedAvg, 
       totalAvg, 
       ratio: Math.min(100, (usedAvg / totalAvg) * 100), 
-      nodeCount: activeRamNodes.length,
+      reportingNodes: activeRamNodes.length,
+      totalActiveNodes: allActiveNodes.length,
       formattedUsed: `${(usedAvg / GB_IN_BYTES).toFixed(1)} GB`,
       formattedTotal: `${(totalAvg / GB_IN_BYTES).toFixed(1)} GB`
     };
