@@ -34,7 +34,6 @@ import { StorageAnalyticsModal } from "./StorageAnalyticsModal";
 import { DataDistributionModal } from "./DataDistributionModal";
 import { NetworkCoverageModal } from "./NetworkCoverageModal";
 import TopPerformersChart from "@/components/TopPerformersChart";
-import { RewardsCalculatorCard } from "./RewardsCalculatorCard";
 import { FlagsCarousel } from "./FlagsCarousel";
 import { PacketsAnimation } from "./PacketsAnimation";
 import { ActiveStreamsAnimation } from "./ActiveStreamsAnimation";
@@ -1667,13 +1666,6 @@ export const KpiCards = ({
               <ChevronRight className="w-5 h-5 text-accent-primary" strokeWidth={2.5} />
             </div>
           </div>
-
-          {/* Rewards Calculator Card - NEW */}
-          <RewardsCalculatorCard
-            creditsData={creditsData}
-            isLight={isLight}
-            totalNodes={publicCount}
-          />
 
           </CollapsibleSection>
 

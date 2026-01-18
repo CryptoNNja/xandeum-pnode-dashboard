@@ -70,7 +70,7 @@ export const RewardsCalculatorModal = ({
           
           {/* Content */}
           <div className="p-6 overflow-y-auto" style={{ maxHeight: "calc(90vh - 100px)" }}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               
               {/* Left: Input Zone */}
               <div className="space-y-6">
