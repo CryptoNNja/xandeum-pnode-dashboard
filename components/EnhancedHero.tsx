@@ -4,7 +4,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import { useHeroPreset } from "@/hooks/useHeroPreset";
 import { useTheme } from "@/hooks/useTheme";
@@ -13,7 +13,7 @@ import { useHydrated } from "@/hooks/useHydrated";
 
 interface EnhancedHeroProps {
   criticalCount: number;
-  onAlertsClick: () => void;
+  warningCount: number;
 }
 
 const hexToRgba = (hex: string, alpha: number) => {
@@ -33,7 +33,7 @@ const hexToRgba = (hex: string, alpha: number) => {
 
 const EnhancedHero: React.FC<EnhancedHeroProps> = ({
   criticalCount,
-  onAlertsClick,
+  warningCount,
 }) => {
   const { currentPreset, preset } = useHeroPreset();
   const { theme } = useTheme();
@@ -135,52 +135,59 @@ const EnhancedHero: React.FC<EnhancedHeroProps> = ({
               />
             </Link>
             <div className="flex items-center gap-3">
-              <motion.button
-                type="button"
-                onClick={onAlertsClick}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors relative overflow-hidden"
-                style={{
-                  backgroundColor:
-                    criticalCount > 0
-                      ? hexToRgba("#EF4444", 0.15)
-                      : hexToRgba("#10B981", 0.15),
-                  border: `1px solid ${criticalCount > 0 ? hexToRgba("#EF4444", 0.3) : hexToRgba("#10B981", 0.3)
-                    }`,
-                }}
-                whileHover={{
-                  scale: 1.02,
-                  backgroundColor:
-                    criticalCount > 0
-                      ? hexToRgba("#EF4444", 0.25)
-                      : hexToRgba("#10B981", 0.25),
-                }}
-                whileTap={{ scale: 0.98 }}
-              >
+              <div className="flex items-center gap-2">
                 {criticalCount > 0 && (
                   <motion.div
-                    className="absolute -inset-2 bg-red-500 blur-[32px] rounded-xl ring-8 ring-red-400/80 shadow-2xl"
-                    style={{ opacity: 0.55, zIndex: 1, boxShadow: '0 0 32px 12px #ef4444cc' }}
-                    animate={{ opacity: [0.25, 0.85, 0.25], scale: [1, 1.18, 1] }}
-                    transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
-                  />
+                    className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-red-500/15 border border-red-500/30"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                    title={`${criticalCount} Critical Alert${criticalCount > 1 ? 's' : ''} - Immediate attention required`}
+                  >
+                    {/* Glow pulsant RENFORCÉ pour Critical */}
+                    <motion.div
+                      className="absolute -inset-1 rounded-full bg-red-500 blur-lg"
+                      animate={{ 
+                        opacity: [0.4, 0.8, 0.4],
+                        scale: [1, 1.2, 1]
+                      }}
+                      transition={{ 
+                        duration: 1.5, 
+                        repeat: Infinity, 
+                        ease: "easeInOut" 
+                      }}
+                    />
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 relative z-10" />
+                    <span className="text-sm font-bold text-red-500 relative z-10">{criticalCount}</span>
+                  </motion.div>
                 )}
-                <AlertCircle
-                  className="w-5 h-5"
-                  style={{
-                    color: criticalCount > 0 ? "#EF4444" : "#10B981",
-                  }}
-                />
-                <span
-                  className="text-base font-medium"
-                  style={{
-                    color: criticalCount > 0 ? "#EF4444" : "#10B981",
-                  }}
-                >
-                  {criticalCount > 0
-                    ? `${criticalCount} CRITICAL`
-                    : "All Systems Normal"}
-                </span>
-              </motion.button>
+                
+                {warningCount > 0 && (
+                  <motion.div
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-orange-500/15 border border-orange-500/30"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                    title={`${warningCount} Warning${warningCount > 1 ? 's' : ''} - Monitor closely`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                    <span className="text-sm font-bold text-orange-500">{warningCount}</span>
+                  </motion.div>
+                )}
+                
+                {criticalCount === 0 && warningCount === 0 && (
+                  <motion.div
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-green-500/15 border border-green-500/30"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                    title="All systems operating normally"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                    <span className="text-sm font-bold text-green-500">OK</span>
+                  </motion.div>
+                )}
+              </div>
               <ThemeToggle />
             </div>
           </div>
