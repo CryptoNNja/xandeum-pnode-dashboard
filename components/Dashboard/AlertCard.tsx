@@ -22,15 +22,22 @@ export const AlertCard = ({ alert, isLight, onClose }: AlertCardProps) => {
   };
 
   const isCritical = alert.severity === "critical";
+  const hasIp = Boolean(alert.ip);
 
   return (
     <div
-      onClick={handleClick}
+      onClick={hasIp ? handleClick : undefined}
       className={clsx(
-        "p-4 rounded-xl border cursor-pointer group transition-all duration-200",
+        "p-4 rounded-xl border transition-all duration-200",
+        hasIp && "cursor-pointer group",
+        !hasIp && "cursor-default opacity-60",
         isCritical
-          ? "bg-red-500/5 border-red-500/20 hover:border-red-500/40 hover:bg-red-500/10"
-          : "bg-orange-500/5 border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/10"
+          ? hasIp
+            ? "bg-red-500/5 border-red-500/20 hover:border-red-500/40 hover:bg-red-500/10"
+            : "bg-red-500/5 border-red-500/20"
+          : hasIp
+            ? "bg-orange-500/5 border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/10"
+            : "bg-orange-500/5 border-orange-500/20"
       )}
     >
       <div className="flex items-start justify-between gap-4">
@@ -59,7 +66,9 @@ export const AlertCard = ({ alert, isLight, onClose }: AlertCardProps) => {
           >
             {alert.value}
           </span>
-          <ChevronRight className="w-4 h-4 text-text-faint group-hover:text-text-main transition-all translate-x-0 group-hover:translate-x-1" />
+          {hasIp && (
+            <ChevronRight className="w-4 h-4 text-text-faint group-hover:text-text-main transition-all translate-x-0 group-hover:translate-x-1" />
+          )}
         </div>
       </div>
     </div>

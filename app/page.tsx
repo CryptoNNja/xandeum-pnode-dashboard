@@ -618,6 +618,7 @@ export default function Page() {
       <EnhancedHero
         criticalCount={criticalCount}
         warningCount={warningCount}
+        onAlertsClick={() => setIsAlertHubOpen(true)}
       />
 
       {/* ABOUT PNODES - Educational Section */}

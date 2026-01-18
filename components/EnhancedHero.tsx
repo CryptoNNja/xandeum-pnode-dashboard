@@ -14,6 +14,7 @@ import { useHydrated } from "@/hooks/useHydrated";
 interface EnhancedHeroProps {
   criticalCount: number;
   warningCount: number;
+  onAlertsClick?: () => void;
 }
 
 const hexToRgba = (hex: string, alpha: number) => {
@@ -34,6 +35,7 @@ const hexToRgba = (hex: string, alpha: number) => {
 const EnhancedHero: React.FC<EnhancedHeroProps> = ({
   criticalCount,
   warningCount,
+  onAlertsClick,
 }) => {
   const { currentPreset, preset } = useHeroPreset();
   const { theme } = useTheme();
@@ -137,14 +139,16 @@ const EnhancedHero: React.FC<EnhancedHeroProps> = ({
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 {criticalCount > 0 && (
-                  <motion.div
-                    className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-red-500/15 border border-red-500/30"
+                  <motion.button
+                    onClick={onAlertsClick}
+                    className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-red-500/15 border border-red-500/30 cursor-pointer hover:bg-red-500/25 transition-colors"
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3 }}
-                    title={`${criticalCount} Critical Alert${criticalCount > 1 ? 's' : ''} - Immediate attention required`}
+                    title={`${criticalCount} Critical Alert${criticalCount > 1 ? 's' : ''} - Click to view details`}
+                    aria-label={`View ${criticalCount} critical alert${criticalCount > 1 ? 's' : ''}`}
                   >
-                    {/* Glow pulsant RENFORCÉ pour Critical */}
+                    {/* Strong pulsing glow for Critical */}
                     <motion.div
                       className="absolute -inset-1 rounded-full bg-red-500 blur-lg"
                       animate={{ 
@@ -159,20 +163,22 @@ const EnhancedHero: React.FC<EnhancedHeroProps> = ({
                     />
                     <span className="w-1.5 h-1.5 rounded-full bg-red-500 relative z-10" />
                     <span className="text-sm font-bold text-red-500 relative z-10">{criticalCount}</span>
-                  </motion.div>
+                  </motion.button>
                 )}
                 
                 {warningCount > 0 && (
-                  <motion.div
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-orange-500/15 border border-orange-500/30"
+                  <motion.button
+                    onClick={onAlertsClick}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-orange-500/15 border border-orange-500/30 cursor-pointer hover:bg-orange-500/25 transition-colors"
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3, delay: 0.1 }}
-                    title={`${warningCount} Warning${warningCount > 1 ? 's' : ''} - Monitor closely`}
+                    title={`${warningCount} Warning${warningCount > 1 ? 's' : ''} - Click to view details`}
+                    aria-label={`View ${warningCount} warning${warningCount > 1 ? 's' : ''}`}
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
                     <span className="text-sm font-bold text-orange-500">{warningCount}</span>
-                  </motion.div>
+                  </motion.button>
                 )}
                 
                 {criticalCount === 0 && warningCount === 0 && (
@@ -182,6 +188,8 @@ const EnhancedHero: React.FC<EnhancedHeroProps> = ({
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3 }}
                     title="All systems operating normally"
+                    role="status"
+                    aria-label="All systems normal"
                   >
                     <CheckCircle className="w-3.5 h-3.5 text-green-500" />
                     <span className="text-sm font-bold text-green-500">OK</span>

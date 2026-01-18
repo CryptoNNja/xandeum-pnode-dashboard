@@ -34,7 +34,7 @@ export const AlertsHubModal = ({
         });
       }
     }
-  }, [isOpen, defaultTab, defaultFilters]);
+  }, [isOpen, defaultTab, defaultFilters, setFilters]);
 
   // Handle escape key
   useEffect(() => {

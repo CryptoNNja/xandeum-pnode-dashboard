@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { AlertCircle } from "lucide-react";
 import clsx from "clsx";
 import type { Alert, AlertFilters } from "@/types/alerts";
@@ -15,7 +15,7 @@ type AlertsListTabProps = {
   onResetFilters: () => void;
   onClose: () => void;
   isLight: boolean;
-  allAlerts: Alert[]; // Toutes les alertes non filtrées pour les counts
+  allAlerts: Alert[]; // All unfiltered alerts used for counts
 };
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -40,7 +40,7 @@ export const AlertsListTab = ({
   }, [alerts, currentPage, pageSize]);
 
   // Reset to page 1 when filters change or alerts change
-  useMemo(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [alerts.length, filters]);
 
@@ -50,7 +50,7 @@ export const AlertsListTab = ({
   };
 
   return (
-    <div className="flex flex-col h-[calc(90vh-280px)]">
+    <div className="flex flex-col h-full min-h-0">
       {/* Filter Bar - Sticky Top */}
       <div className="flex-shrink-0 pb-4">
         <FilterBar
