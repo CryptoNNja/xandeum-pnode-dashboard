@@ -7,6 +7,7 @@ import { ToastProvider } from "@/components/common/Toast";
 import { TooltipProvider } from "@/components/common/Tooltip";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ChatbotWidget } from "@/components/Chat";
+import { STOINCCalculatorWidget } from "@/components/STOINCCalculator";
 import { DashboardProvider } from "@/lib/dashboard-context";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -30,6 +31,7 @@ export default function RootLayout({
               <TooltipProvider>
                 <DashboardProvider>
                   {children}
+                  <STOINCCalculatorWidget />
                   <ChatbotWidget />
                 </DashboardProvider>
               </TooltipProvider>
