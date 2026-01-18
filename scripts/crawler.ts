@@ -389,6 +389,7 @@ export const main = async () => {
     const isPublicMap = new Map<string, boolean>();
     const rpcPortMap = new Map<string, number>();
     const lastSeenGossipMap = new Map<string, number>(); // 🆕 Track last_seen_timestamp from gossip
+    const uptimeGossipMap = new Map<string, number>(); // 🆕 Track uptime from gossip
     console.log('📡 Fetching versions, pubkeys, storage commitments, and public status...');
     
     // Batch metadata calls for speed (100 concurrent at a time for faster crawling)
@@ -447,6 +448,14 @@ export const main = async () => {
                         lastSeenGossipMap.set(ip, lastSeenTimestamp);
                     }
                 }
+
+                // 🆕 Capture uptime from gossip network (for private nodes)
+                if (ip && pod.uptime) {
+                    const uptimeSeconds = coerceNumber(pod.uptime);
+                    if (uptimeSeconds > 0) {
+                        uptimeGossipMap.set(ip, uptimeSeconds);
+                    }
+                }
             })
         }
     });
@@ -462,6 +471,7 @@ export const main = async () => {
     console.log(`     - is_public flags: ${isPublicMap.size}`);
     console.log(`     - rpc_port hints: ${rpcPortMap.size}`);
     console.log(`     - last_seen_gossip timestamps: ${lastSeenGossipMap.size}`);
+    console.log(`     - uptime from gossip: ${uptimeGossipMap.size}`);
 
     console.log('📊 Fetching stats and geolocation...');
     
@@ -545,37 +555,51 @@ export const main = async () => {
         const isPublic = isPublicMap.get(ip) === true;
         const status = (hasStats || isPublic) ? 'active' : 'gossip_only';
         
-        // Create a copy of stats to avoid mutating shared EMPTY_STATS constant
-        const stats: PNodeStats = hasStats
-            ? { ...statsResult.value } as PNodeStats
-            : { ...EMPTY_STATS };
+        // 🆕 NEW ARCHITECTURE: Start with EMPTY_STATS, then enrich from GOSSIP first (all nodes),
+        // then enrich from RPC (public nodes only) for metrics not available in gossip
+        const stats: PNodeStats = { ...EMPTY_STATS };
 
-        // Enrich stats with storage data from get-pods-with-stats (gossip)
+        // Get gossip data for this node
         const storageCommitted = storageCommittedMap.get(ip);
         const storageUsed = storageUsedMap.get(ip);
         const lastSeenGossip = lastSeenGossipMap.get(ip);
+        const uptimeGossip = uptimeGossipMap.get(ip);
 
-        // Add storage_committed and storage_used for ALL nodes (both active and gossip_only)
+        // PHASE 1: Enrich from GOSSIP (for ALL nodes - public + private)
+        // These metrics from gossip are PRIORITIZED over RPC as they reflect network consensus
         if (storageCommitted && storageCommitted > 0) {
             stats.storage_committed = storageCommitted;
+            stats.file_size = storageCommitted; // Legacy compat
         }
         if (storageUsed && storageUsed > 0) {
             stats.storage_used = storageUsed;
         }
-        // 🆕 Add last_seen_gossip timestamp for ALL nodes
         if (lastSeenGossip && lastSeenGossip > 0) {
             stats.last_seen_gossip = lastSeenGossip;
         }
+        if (uptimeGossip && uptimeGossip > 0) {
+            stats.uptime = uptimeGossip; // 🆕 Gossip uptime for ALL nodes (100% coverage)
+        }
 
-        if (status === 'gossip_only') {
-            // For gossip_only nodes we don't have reliable `get-stats` metrics.
-            // We keep `storage_committed`/`storage_used` in their dedicated fields,
-            // and DO NOT overwrite core `get-stats` fields like `total_bytes`.
-            // (Overwriting caused confusion and made our metrics diverge from the official dashboard.)
-            if (storageCommitted && storageCommitted > 0) {
-                // Legacy/backwards-compat: some UI used `file_size` as a proxy for capacity.
-                stats.file_size = storageCommitted;
-            }
+        // PHASE 2: Enrich from RPC (for PUBLIC nodes only)
+        // Only add metrics that are NOT available in gossip (CPU, RAM, packets, etc.)
+        if (hasStats && statsResult.value) {
+            const rpcStats = statsResult.value as PNodeStats;
+            
+            // RPC-only metrics (not available in gossip)
+            stats.cpu_percent = rpcStats.cpu_percent;
+            stats.ram_used = rpcStats.ram_used;
+            stats.ram_total = rpcStats.ram_total;
+            stats.active_streams = rpcStats.active_streams;
+            stats.packets_sent = rpcStats.packets_sent;
+            stats.packets_received = rpcStats.packets_received;
+            stats.current_index = rpcStats.current_index;
+            stats.total_pages = rpcStats.total_pages;
+            stats.total_bytes = rpcStats.total_bytes;
+            stats.last_updated = rpcStats.last_updated; // RPC timestamp for comparison
+            
+            // Note: We do NOT overwrite uptime, storage_committed, storage_used from RPC
+            // as gossip data is more reliable and has 100% coverage
         }
 
         // Detect network (MAINNET/DEVNET) - fully independent detection

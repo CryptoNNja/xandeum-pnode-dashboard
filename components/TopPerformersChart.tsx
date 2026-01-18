@@ -713,7 +713,7 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
                 </div>
             </div>
             <div className="col-span-2 col-start-2 text-xs text-text-soft">
-                Last seen: {entry.lastSeen ? new Date(entry.lastSeen * 1000).toLocaleString() : "N/A"}
+                Last seen: {entry.lastSeen ? new Date(entry.lastSeen * 1000).toLocaleString("en-US") : "N/A"}
             </div>
         </div>
     );
