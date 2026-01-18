@@ -1,5 +1,6 @@
 import type { PNode } from "./types";
 import { calculateNodeScore, setCachedNodes } from "./scoring";
+import { WARNING_UPTIME_THRESHOLD_HOURS, CRITICAL_UPTIME_THRESHOLD_HOURS } from "./constants";
 
 /**
  * Set cached nodes for health calculations
@@ -80,7 +81,7 @@ export function getHealthStatus(pnode?: PNode | null, allNodes?: PNode[]): Healt
   // CRITICAL - Service at risk, immediate action required
   // Expert SRE thresholds for production monitoring
   const isCritical =
-    uptimeSeconds < 300 ||           // < 5min (recent crash/restart)
+    uptimeHours < CRITICAL_UPTIME_THRESHOLD_HOURS ||  // < 5min (recent crash/restart)
     storagePercent >= 98 ||          // Disk almost full (data loss imminent)
     ramPercent >= 98 ||              // RAM saturated (OOM kill risk)
     cpu >= 98 ||                     // CPU stuck (possible infinite loop)
@@ -91,7 +92,7 @@ export function getHealthStatus(pnode?: PNode | null, allNodes?: PNode[]): Healt
   // WARNING - Degraded performance, monitoring required
   // Node is functional but needs attention
   const isWarning =
-    uptimeHours < 6 ||               // Restarted recently (< 6h, stability concern)
+    uptimeHours < WARNING_UPTIME_THRESHOLD_HOURS ||  // Restarted recently (stability concern)
     storagePercent >= 85 ||          // Storage filling up
     ramPercent >= 85 ||              // High memory pressure
     cpu >= 90 ||                     // High sustained CPU load
