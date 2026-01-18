@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Radio, ShieldCheck, Network, LucideIcon, AlertCircle, Check, AlertTriangle, Users } from "lucide-react";
 import { hexToRgba, getKpiColors, getStatusColors } from "@/lib/utils";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
-import { SystemAlertsAnalyticsModal } from "./SystemAlertsAnalyticsModal";
+import { AlertsHubModal } from "./AlertsHubModal";
 import { NetworkBadge } from "@/components/common/NetworkBadge";
 import { FlipCard } from "@/components/common/FlipCard";
 
@@ -441,7 +441,7 @@ export const SummaryHeader = ({
               }}
             >
               <div className="text-4xl font-bold tracking-tight" style={{ color: alerts.length === 0 ? kpiColors.alertOk : kpiColors.alerts }}>
-                {alerts.length}
+                {criticalCount + warningCount}
               </div>
             </div>
           </div>
@@ -492,13 +492,14 @@ export const SummaryHeader = ({
         </div>
       </div>
       
-      {/* Analytics Modal */}
-      <SystemAlertsAnalyticsModal
+      {/* Alerts Hub Modal */}
+      <AlertsHubModal
         isOpen={isAnalyticsModalOpen}
         onClose={() => setIsAnalyticsModalOpen(false)}
         alerts={alerts}
         totalNodes={totalNodes}
         isLight={isLight}
+        defaultTab="analytics"
       />
     </div>
   );

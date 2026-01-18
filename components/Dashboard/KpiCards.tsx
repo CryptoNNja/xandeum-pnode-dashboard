@@ -103,6 +103,7 @@ type KpiCardsProps = {
     versionAdoptionPercent: number;
     onVersionClick?: () => void;
     onGeographicClick?: () => void;
+    onAlertsClick?: (tab: 'alerts' | 'analytics', filters?: { severity?: 'all' | 'critical' | 'warning' }) => void;
     healthDistribution: {
         excellent: number;
         good: number;
@@ -152,6 +153,7 @@ export const KpiCards = ({
     versionAdoptionPercent,
     onVersionClick,
     onGeographicClick,
+    onAlertsClick,
     healthDistribution,
     cpuDistribution,
     storageDistribution,

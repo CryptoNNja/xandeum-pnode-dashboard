@@ -11,7 +11,7 @@ import { usePnodeDashboard } from "@/hooks/usePnodeDashboard";
 import { useFavorites } from "@/hooks/useFavorites";
 import { SummaryHeader } from "@/components/Dashboard/SummaryHeader";
 import { DashboardContent } from "@/components/Dashboard/DashboardContent";
-import { AlertsModal } from "@/components/Dashboard/AlertsModal";
+import { AlertsHubModal } from "@/components/Dashboard/AlertsHubModal";
 import { VersionDetailsModal } from "@/components/Dashboard/VersionDetailsModal";
 import { GeographicDistributionModal } from "@/components/Dashboard/GeographicDistributionModal";
 import { KpiCards } from "@/components/Dashboard/KpiCards";
@@ -124,7 +124,11 @@ export default function Page() {
 
   const toast = useToast();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isAlertHubOpen, setIsAlertHubOpen] = useState(false);
+  const [alertHubConfig, setAlertHubConfig] = useState<{
+    defaultTab: 'alerts' | 'analytics';
+    defaultFilters?: { severity?: 'all' | 'critical' | 'warning' };
+  }>({ defaultTab: 'alerts' });
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
   const [isGeographicModalOpen, setIsGeographicModalOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
@@ -602,7 +606,7 @@ export default function Page() {
 
       <EnhancedHero
         criticalCount={criticalCount}
-        onAlertsClick={() => setIsAlertOpen(true)}
+        warningCount={warningCount}
       />
 
       {/* ABOUT PNODES - Educational Section */}
@@ -671,6 +675,10 @@ export default function Page() {
           versionAdoptionPercent={versionAdoptionPercent}
           onVersionClick={() => setIsVersionModalOpen(true)}
           onGeographicClick={() => setIsGeographicModalOpen(true)}
+          onAlertsClick={(tab, filters) => {
+            setAlertHubConfig({ defaultTab: tab, defaultFilters: filters });
+            setIsAlertHubOpen(true);
+          }}
           healthDistribution={healthDistribution}
           cpuDistribution={cpuDistribution}
           storageDistribution={storageDistribution}
@@ -836,11 +844,14 @@ export default function Page() {
       </footer>
 
       {/* MODALS */}
-      <AlertsModal
-        isOpen={isAlertOpen}
-        onClose={() => setIsAlertOpen(false)}
+      <AlertsHubModal
+        isOpen={isAlertHubOpen}
+        onClose={() => setIsAlertHubOpen(false)}
         alerts={alerts}
+        totalNodes={pnodes.length}
         isLight={isLight}
+        defaultTab={alertHubConfig.defaultTab}
+        defaultFilters={alertHubConfig.defaultFilters}
       />
 
       <VersionDetailsModal
