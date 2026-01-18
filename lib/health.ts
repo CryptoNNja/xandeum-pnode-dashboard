@@ -91,7 +91,7 @@ export function getHealthStatus(pnode?: PNode | null, allNodes?: PNode[]): Healt
   // WARNING - Degraded performance, monitoring required
   // Node is functional but needs attention
   const isWarning =
-    uptimeHours < 24 ||              // Restarted recently (stability concern)
+    uptimeHours < 6 ||               // Restarted recently (< 6h, stability concern)
     storagePercent >= 85 ||          // Storage filling up
     ramPercent >= 85 ||              // High memory pressure
     cpu >= 90 ||                     // High sustained CPU load
