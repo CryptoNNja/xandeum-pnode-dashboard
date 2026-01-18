@@ -777,8 +777,9 @@ export const usePnodeDashboard = (theme?: string) => {
 
       // WARNING ALERTS - Monitor closely, action needed soon
       if (healthStatus === "Warning") {
-        // Uptime < 24h = Recent restart (instability?)
-        if (uptimeHours < 24 && uptimeHours >= 0.083) { // 5min to 24h
+        // Uptime < 6h = Recent restart (instability concern)
+        // Reduced from 24h to 6h to minimize alert noise for stable nodes (18-24h uptime)
+        if (uptimeHours < 6 && uptimeHours >= 0.083) { // 5min to 6h
           generated.push({
             ip: pnode.ip,
             severity: "warning",
