@@ -5,19 +5,21 @@ import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
 import confetti from "canvas-confetti";
-import { Trophy, ArrowRight, HardDrive, Zap, Star, ChevronDown, Info, Coins, Search, X } from "lucide-react";
+import { Trophy, ArrowRight, HardDrive, Zap, Star, ChevronDown, Info, Coins, Search, X, Users } from "lucide-react";
 import { InfoTooltip } from "@/components/common/InfoTooltip";
 import { useTheme } from "@/hooks/useTheme";
 import { calculateNodeScore } from "@/lib/scoring";
 import type { PNode } from "@/lib/types";
 
-type LeaderboardTab = "performance" | "storage" | "uptime" | "credits";
+type LeaderboardTab = "performance" | "storage" | "uptime" | "credits" | "operators";
 type RowVariant = "card" | "modal";
 
 interface TopPerformersChartProps {
     nodes: PNode[];
     onSelectNode?: (ip: string) => void;
     hideHeader?: boolean;
+    openModalDirectly?: boolean; // Open full leaderboard modal immediately
+    onCloseModal?: () => void; // Callback when modal is closed
 }
 
 interface PerformanceEntry {
@@ -43,7 +45,14 @@ interface CreditsEntry {
     podId?: string;
 }
 
-type AnyEntry = PerformanceEntry | StorageEntry | UptimeEntry | CreditsEntry;
+interface OperatorEntry {
+    pubkey: string;
+    nodeCount: number;
+    totalStorage: number;
+    nodes: PNode[];
+}
+
+type AnyEntry = PerformanceEntry | StorageEntry | UptimeEntry | CreditsEntry | OperatorEntry;
 
 const MAX_FULL_LEADERBOARD = 30;
 
@@ -96,7 +105,7 @@ const TAB_META: Record<LeaderboardTab, LeaderboardMeta> = {
         icon: Zap,
         accentBg: "rgba(16,185,129,0.15)", // Green - hardcoded for consistency
         accentText: "#10B981", // Green - hardcoded for consistency
-        tooltip: "Longest-running nodes measured by reported uptime and last seen timestamp.",
+        tooltip: "Longest-running active nodes. Excludes zombies not seen in 7+ days via gossip.",
     },
     credits: {
         label: "Credits",
@@ -105,9 +114,16 @@ const TAB_META: Record<LeaderboardTab, LeaderboardMeta> = {
         accentText: "#F59E0B", // Orange
         tooltip: "Total credits earned by each pNode this cycle. Rewards reset monthly.",
     },
+    operators: {
+        label: "Operators",
+        icon: Users,
+        accentBg: "rgba(6,182,212,0.15)", // Cyan
+        accentText: "#06B6D4", // Cyan
+        tooltip: "Manager wallets operating multiple pNodes. Ranked by total node count.",
+    },
 };
 
-const TAB_ORDER: LeaderboardTab[] = ["performance", "storage", "uptime", "credits"];
+const TAB_ORDER: LeaderboardTab[] = ["performance", "storage", "uptime", "credits", "operators"];
 
 interface LeaderboardTabsProps {
     activeTab: LeaderboardTab;
@@ -236,6 +252,8 @@ const formatUptimeValue = (seconds?: number) => {
 
 const formatStartDate = (uptime?: number, lastSeen?: number) => {
     if (!Number.isFinite(uptime ?? NaN) || !uptime || uptime <= 0) return "Unknown";
+    // Use lastSeen (now prioritizing last_seen_gossip) for accurate start date calculation
+    // Falls back to Date.now() only if no timestamp is available
     const referenceSeconds = lastSeen && lastSeen > 0 ? lastSeen : Date.now() / 1000;
     const startTime = (referenceSeconds - uptime) * 1000;
     if (!Number.isFinite(startTime) || startTime <= 0) return "Unknown";
@@ -246,12 +264,12 @@ const formatStartDate = (uptime?: number, lastSeen?: number) => {
     });
 };
 
-export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = false }: TopPerformersChartProps) {
+export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = false, openModalDirectly = false, onCloseModal }: TopPerformersChartProps) {
     const { theme, mounted } = useTheme();
     const router = useRouter();
     const isLight = mounted ? theme === "light" : false;
     const [isSmallScreen, setIsSmallScreen] = useState(false);
-    const [showFullLeaderboard, setShowFullLeaderboard] = useState(false);
+    const [showFullLeaderboard, setShowFullLeaderboard] = useState(openModalDirectly);
     const [activeTab, setActiveTab] = useState<LeaderboardTab>("performance");
     const [creditsData, setCreditsData] = useState<{ pod_id: string; credits: number }[]>([]);
     const [allCreditsData, setAllCreditsData] = useState<{ pod_id: string; credits: number }[]>([]);
@@ -325,14 +343,38 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
 
     const uptimeRanking = useMemo<UptimeEntry[]>(() => {
         if (!nodes || nodes.length === 0) return [];
+        
+        const now = Date.now() / 1000;
+        const MAX_AGE_SECONDS = 7 * 24 * 3600; // 7 days - filter out zombie nodes
+        
         return nodes
             .filter((node) => node.ip) // Filter out nodes without IP
-            .map((node) => ({
-                node,
-                uptime: Math.max(node.stats.uptime, 0),
-                lastSeen: node.stats.last_updated,
-            }))
-            .filter((entry) => entry.uptime > 0)
+            .map((node) => {
+                // 🆕 Use last_seen_gossip from DB column (most reliable, from gossip network)
+                // Fallback to stats.last_updated if not available (direct RPC timestamp)
+                const lastSeen = node.last_seen_gossip || node.stats.last_updated;
+                
+                return {
+                    node,
+                    uptime: Math.max(node.stats.uptime, 0),
+                    lastSeen,
+                };
+            })
+            .filter((entry) => {
+                // Filter out entries with invalid uptime
+                if (entry.uptime <= 0) return false;
+                
+                // 🆕 Filter out zombie nodes (not seen recently despite high uptime)
+                // This prevents stale nodes from dominating the leaderboard
+                if (entry.lastSeen && entry.lastSeen > 0) {
+                    const ageSeconds = now - entry.lastSeen;
+                    if (ageSeconds > MAX_AGE_SECONDS) {
+                        return false; // Exclude nodes not seen in the last 7 days
+                    }
+                }
+                
+                return true;
+            })
             .sort((a, b) => {
                 if (b.uptime === a.uptime) {
                     return (a.node.ip || '').localeCompare(b.node.ip || '');
@@ -365,11 +407,58 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
             });
     }, [creditsData, allCreditsData, nodes, showFullLeaderboard]);
 
+    const operatorsRanking = useMemo<OperatorEntry[]>(() => {
+        if (!nodes || nodes.length === 0) return [];
+        
+        // Group nodes by pubkey (operator wallet)
+        const operatorMap = new Map<string, PNode[]>();
+        
+        nodes.forEach(node => {
+            if (node.pubkey && node.ip) { // Only count nodes with pubkey and IP
+                if (!operatorMap.has(node.pubkey)) {
+                    operatorMap.set(node.pubkey, []);
+                }
+                operatorMap.get(node.pubkey)!.push(node);
+            }
+        });
+        
+        // Convert to OperatorEntry array and filter for multi-node operators only (> 1 node)
+        const operators = Array.from(operatorMap.entries())
+            .filter(([_, nodes]) => nodes.length > 1) // Only operators with more than 1 node
+            .map(([pubkey, nodes]) => {
+                const totalStorage = nodes.reduce((sum, node) => {
+                    return sum + (node.stats.storage_committed ?? 0);
+                }, 0);
+                
+                return {
+                    pubkey,
+                    nodeCount: nodes.length,
+                    totalStorage,
+                    nodes,
+                };
+            })
+            .sort((a, b) => {
+                // Primary sort: by node count (descending)
+                if (b.nodeCount !== a.nodeCount) {
+                    return b.nodeCount - a.nodeCount;
+                }
+                // Secondary sort: by total storage (descending)
+                if (b.totalStorage !== a.totalStorage) {
+                    return b.totalStorage - a.totalStorage;
+                }
+                // Tertiary sort: by pubkey (alphabetical)
+                return a.pubkey.localeCompare(b.pubkey);
+            });
+        
+        return operators;
+    }, [nodes]);
+
     const getRankingForTab = (tab: LeaderboardTab): AnyEntry[] => {
         if (tab === "performance") return performanceRanking;
         if (tab === "storage") return storageRanking;
         if (tab === "uptime") return uptimeRanking;
-        return creditsRanking;
+        if (tab === "credits") return creditsRanking;
+        return operatorsRanking;
     };
 
     const activeRanking = getRankingForTab(activeTab);
@@ -380,6 +469,12 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
         
         const query = searchQuery.toLowerCase().trim();
         return activeRanking.filter((entry) => {
+            // For operators, search in pubkey
+            if ('pubkey' in entry && 'nodeCount' in entry) {
+                const pubkey = (entry as OperatorEntry).pubkey.toLowerCase();
+                return pubkey.includes(query);
+            }
+            
             const ip = entry.node.ip?.toLowerCase() || "";
             // For credits, also search in podId
             if ('podId' in entry) {
@@ -403,6 +498,7 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
         }
         if (closeModal) {
             setShowFullLeaderboard(false);
+            onCloseModal?.();
         }
     };
 
@@ -431,6 +527,8 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
                     return ["#10B981", "#34D399", "#6EE7B7"];
                 case "credits":
                     return ["#F59E0B", "#FBBF24", "#FCD34D"];
+                case "operators":
+                    return ["#06B6D4", "#22D3EE", "#67E8F9"]; // Cyan confetti
                 default:
                     return ["#FFD700", "#FFA500"];
             }
@@ -615,7 +713,7 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
                 </div>
             </div>
             <div className="col-span-2 col-start-2 text-xs text-text-soft">
-                Last seen: {entry.lastSeen ? new Date(entry.lastSeen * 1000).toLocaleString() : "N/A"}
+                Last seen: {entry.lastSeen ? new Date(entry.lastSeen * 1000).toLocaleString("en-US") : "N/A"}
             </div>
         </div>
     );
@@ -681,6 +779,66 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
         );
     };
 
+    const renderOperatorsRow = (
+        entry: OperatorEntry,
+        rank: number,
+        variant: RowVariant,
+        closeModal: boolean
+    ) => {
+        const firstNode = entry.nodes[0]; // Get first node for click navigation
+        const isElite = entry.nodeCount >= 5; // Elite badge for 5+ nodes
+        
+        return (
+            <div
+                key={`operator-${entry.pubkey}-${variant}`}
+                role="button"
+                tabIndex={0}
+                onClick={() => handleRowClick(firstNode.ip, closeModal)}
+                onKeyDown={handleRowKeyDown(firstNode.ip, closeModal)}
+                onMouseEnter={rank === 1 ? triggerConfetti : undefined}
+                className={clsx(
+                    rowBaseClasses(variant),
+                    rowHoverClass,
+                    "grid grid-cols-[2.5rem_minmax(0,1fr)_auto] gap-x-4 gap-y-1"
+                )}
+            >
+                <span className="text-sm font-semibold text-text-faint text-right">{rank}.</span>
+                <div className="min-w-0">
+                    <div className="flex items-center gap-1">
+                        {getRankMedal(rank)}
+                        <span 
+                            className="px-1.5 py-0.5 rounded text-xs font-bold mr-1"
+                            style={{ 
+                                backgroundColor: isElite ? 'rgba(245, 158, 11, 0.15)' : 'rgba(6, 182, 212, 0.15)',
+                                color: isElite ? '#F59E0B' : '#06B6D4'
+                            }}
+                        >
+                            {isElite ? '⭐' : ''}{entry.nodeCount}x
+                        </span>
+                        <p className="font-mono text-xs text-text-main truncate" title={entry.pubkey}>
+                            {entry.pubkey.slice(0, 8)}...{entry.pubkey.slice(-6)}
+                        </p>
+                    </div>
+                    <p className="text-xs text-text-soft">
+                        {entry.nodeCount} nodes operated
+                    </p>
+                </div>
+                <div className="flex flex-col items-end gap-1 text-right">
+                    <span className="text-lg font-bold leading-none" style={{ color: '#06B6D4' }}>
+                        {entry.nodeCount}
+                    </span>
+                    <div className="flex items-center gap-2 text-xs text-text-soft">
+                        <span>Nodes</span>
+                        <Users className="w-3 h-3" style={{ color: '#06B6D4' }} />
+                    </div>
+                </div>
+                <div className="col-span-2 col-start-2 text-xs text-text-soft">
+                    <span className="font-medium text-text-main">{formatStorage(entry.totalStorage)}</span> total storage
+                </div>
+            </div>
+        );
+    };
+
     const renderRow = (
         tab: LeaderboardTab,
         entry: AnyEntry,
@@ -697,7 +855,10 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
         if (tab === "uptime") {
             return renderUptimeRow(entry as UptimeEntry, rank, variant, closeModal);
         }
-        return renderCreditsRow(entry as CreditsEntry, rank, variant, closeModal);
+        if (tab === "credits") {
+            return renderCreditsRow(entry as CreditsEntry, rank, variant, closeModal);
+        }
+        return renderOperatorsRow(entry as OperatorEntry, rank, variant, closeModal);
     };
 
     return (
@@ -753,7 +914,10 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
                             "fixed inset-0 backdrop-blur-md z-50 flex items-center justify-center p-4",
                             isLight ? "bg-white/95" : "bg-black/90"
                         )}
-                        onClick={() => setShowFullLeaderboard(false)}
+                        onClick={() => {
+                            setShowFullLeaderboard(false);
+                            onCloseModal?.();
+                        }}
                     >
                         <div
                             role="dialog"
@@ -770,7 +934,10 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() => setShowFullLeaderboard(false)}
+                                    onClick={() => {
+                                        setShowFullLeaderboard(false);
+                                        onCloseModal?.();
+                                    }}
                                     className="text-text-faint hover:text-text-main"
                                     aria-label="Close leaderboard"
                                 >
@@ -795,7 +962,11 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
                                     />
                                     <input
                                         type="text"
-                                        placeholder={activeTab === "credits" ? "Search by IP or pubkey..." : "Search by IP address..."}
+                                        placeholder={
+                                            activeTab === "operators" ? "Search by pubkey..." :
+                                            activeTab === "credits" ? "Search by IP or pubkey..." : 
+                                            "Search by IP address..."
+                                        }
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         className="w-full pl-10 pr-10 py-2.5 rounded-xl border text-sm text-text-main placeholder:text-text-soft focus:outline-none focus:ring-2 focus:ring-accent-aqua transition-all"
@@ -832,7 +1003,18 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
                             <div className="px-6 pb-6 space-y-2 overflow-y-auto max-h-[calc(80vh-280px)]">
                                 {filteredRanking.map((entry, index) => {
                                     // Find the actual rank in the full ranking (before filtering)
-                                    const actualRank = activeRanking.findIndex(e => e.node.ip === entry.node.ip) + 1;
+                                    const actualRank = (() => {
+                                        if ('pubkey' in entry && 'nodeCount' in entry) {
+                                            // For operators, match by pubkey
+                                            return activeRanking.findIndex(e => 
+                                                'pubkey' in e && (e as OperatorEntry).pubkey === (entry as OperatorEntry).pubkey
+                                            ) + 1;
+                                        }
+                                        // For other entries, match by node IP
+                                        return activeRanking.findIndex(e => 
+                                            'node' in e && e.node.ip === (entry as any).node.ip
+                                        ) + 1;
+                                    })();
                                     return renderRow(activeTab, entry, actualRank, "modal", true);
                                 })}
                                 {filteredRanking.length === 0 && !searchQuery && (
