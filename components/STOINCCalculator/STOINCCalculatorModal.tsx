@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { X, Calculator, TrendingUp, Award, Zap, Shield, Sparkles, Server, HardDrive, Gauge, Gem, Clock } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { X, Calculator, TrendingUp, Award, Zap, Shield, Sparkles, Server, HardDrive, Gauge, Gem, Clock, FileDown, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 
 interface STOINCCalculatorModalProps {
   isOpen: boolean;
@@ -45,6 +46,7 @@ export function STOINCCalculatorModal({ isOpen, onClose }: STOINCCalculatorModal
   const [totalNetworkCredits, setTotalNetworkCredits] = useState(100000); // Total boosted credits across all wallets
   const [pNodeShare, setPNodeShare] = useState(0.94); // 94% goes to pNode operators
 
+
   // Calculate STOINC based on official formula from xandeum.network/stoinc
   const calculation = useMemo(() => {
     // Step 1: Storage Credits = number of pNodes × storage space × performance score × stake
@@ -81,6 +83,57 @@ export function STOINCCalculatorModal({ isOpen, onClose }: STOINCCalculatorModal
       stoincPerMonth: Math.round(stoinc * 30 * 100) / 100, // Assuming ~30 epochs/month
     };
   }, [numPNodes, storageSpace, performanceScore, xandStaked, nftTier, purchaseEra, totalNetworkFees, totalNetworkCredits, pNodeShare]);
+
+  // Generate 12-month projection data for chart
+  const projectionData = useMemo(() => {
+    return Array.from({ length: 12 }, (_, i) => ({
+      month: `M${i + 1}`,
+      accumulated: calculation.stoincPerMonth * (i + 1),
+      monthly: calculation.stoincPerMonth,
+    }));
+  }, [calculation.stoincPerMonth]);
+
+  // Export PDF Handler
+  const handleExportPDF = async () => {
+    const data = {
+      title: 'STOINC Calculator Results',
+      timestamp: new Date().toISOString(),
+      params: { 
+        numPNodes, 
+        storageSpace, 
+        performanceScore, 
+        xandStaked,
+        nftTier: NFT_BOOSTS[nftTier].label,
+        purchaseEra: PURCHASE_ERA_BOOSTS[purchaseEra].label,
+      },
+      results: calculation,
+      projection: projectionData,
+    };
+    
+    // TODO: Implement using lib/pdf-export.ts
+    console.log('Exporting PDF...', data);
+    
+    // Show notification (temporary)
+    alert('PDF Export feature coming soon! Data logged to console.');
+  };
+
+  // Share Link Handler
+  const handleShareLink = () => {
+    const params = new URLSearchParams({
+      nodes: numPNodes.toString(),
+      storage: storageSpace.toString(),
+      perf: performanceScore.toString(),
+      stake: xandStaked.toString(),
+      nft: nftTier,
+      era: purchaseEra,
+    });
+    
+    const url = `${window.location.origin}?calculator=${encodeURIComponent(params.toString())}`;
+    navigator.clipboard.writeText(url);
+    
+    // Show notification (temporary)
+    alert('Link copied to clipboard! 🎉\n\n' + url);
+  };
 
   if (!isOpen) return null;
 
@@ -129,12 +182,12 @@ export function STOINCCalculatorModal({ isOpen, onClose }: STOINCCalculatorModal
             </button>
           </div>
 
-          {/* Content - Ultra-compact 3-column no scroll */}
-          <div className="p-6">
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Content - Ultra-compact 4-column no scroll */}
+          <div className="p-5">
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
               
               {/* Left Column: Core Parameters */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="flex items-center gap-2 mb-3">
                   <Server className="w-4 h-4 text-cyan-400" />
                   <h3 className="text-sm font-bold text-white uppercase tracking-wider">Core Parameters</h3>
@@ -158,30 +211,62 @@ export function STOINCCalculatorModal({ isOpen, onClose }: STOINCCalculatorModal
                   </div>
                 </div>
 
-                {/* Storage - Compact */}
+                {/* Storage - Enhanced UX */}
                 <div className="p-3 rounded-xl bg-white/5">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <HardDrive className="w-3 h-3 text-cyan-400" />
                       <span className="text-xs font-semibold text-gray-300">Storage</span>
                     </div>
-                    <span className="text-sm font-bold text-white">
-                      {storageSpace >= 1000 ? `${(storageSpace / 1000).toFixed(1)} TB` : `${storageSpace} GB`}
-                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={300000}
+                      value={storageSpace}
+                      onChange={(e) => setStorageSpace(Math.min(300000, Math.max(0, Number(e.target.value))))}
+                      className="w-20 px-2 py-1 text-right rounded bg-white/10 border border-white/20 text-white text-xs font-bold"
+                      placeholder="GB"
+                    />
                   </div>
+                  
+                  {/* Quick Presets */}
+                  <div className="grid grid-cols-4 gap-1 mb-2">
+                    {[
+                      { label: '100GB', value: 100 },
+                      { label: '1TB', value: 1000 },
+                      { label: '5TB', value: 5000 },
+                      { label: '10TB', value: 10000 },
+                    ].map((preset) => (
+                      <button
+                        key={preset.value}
+                        onClick={() => setStorageSpace(preset.value)}
+                        className={`
+                          px-2 py-1 rounded text-[9px] font-semibold transition-all
+                          ${storageSpace === preset.value
+                            ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
+                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                          }
+                        `}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  {/* Fine-tune slider */}
                   <input
                     type="range"
                     min={0}
                     max={300000}
-                    step={storageSpace < 1000 ? 50 : 1000}
+                    step={100}
                     value={storageSpace}
                     onChange={(e) => setStorageSpace(Number(e.target.value))}
-                    className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
                     style={{
                       background: `linear-gradient(90deg, #10b981 ${(storageSpace / 300000) * 100}%, rgba(255,255,255,0.1) ${(storageSpace / 300000) * 100}%)`,
                     }}
                   />
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <div className="flex justify-between text-[9px] text-gray-500 mt-1">
                     <span>0</span>
                     <span>300 TB</span>
                   </div>
@@ -257,67 +342,131 @@ export function STOINCCalculatorModal({ isOpen, onClose }: STOINCCalculatorModal
               </div>
 
               {/* Center Column: Boost Multipliers */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="flex items-center gap-2 mb-3">
                   <Gem className="w-4 h-4 text-purple-400" />
                   <h3 className="text-sm font-bold text-white uppercase tracking-wider">Boost Multipliers</h3>
                 </div>
 
-                {/* NFT Selection */}
-                <div>
-                  <p className="text-xs font-semibold text-gray-400 mb-2 uppercase">NFT Ownership</p>
-                  <div className="space-y-1">
-                    {Object.entries(NFT_BOOSTS).map(([key, { label, boost, icon }]) => (
-                      <button
-                        key={key}
-                        onClick={() => setNftTier(key as keyof typeof NFT_BOOSTS)}
-                        className={`
-                          w-full px-3 py-2 rounded-lg text-left transition-all flex items-center justify-between
-                          ${nftTier === key 
-                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' 
-                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                          }
-                        `}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm">{icon}</span>
-                          <span className="text-xs font-semibold">{label}</span>
-                        </div>
-                        <span className="text-xs font-bold">{boost}x</span>
-                      </button>
-                    ))}
+                {/* NFT Selection - Premium Box - COMPACT */}
+                <div 
+                  className="p-3 rounded-xl border relative overflow-hidden"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%)',
+                    borderColor: 'rgba(168, 85, 247, 0.3)',
+                  }}
+                >
+                  {/* Animated Background Glow */}
+                  <motion.div
+                    className="absolute inset-0 opacity-20"
+                    style={{ background: 'radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.4), transparent 70%)' }}
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.3, 0.2] }}
+                    transition={{ duration: 4, repeat: Infinity }}
+                  />
+                  
+                  <div className="relative">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                        <Award className="w-3 h-3 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-purple-300 uppercase tracking-wider leading-tight">NFT Ownership</p>
+                        <p className="text-[9px] text-gray-400 leading-tight">Up to 11x</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      {Object.entries(NFT_BOOSTS).map(([key, { label, boost, icon }]) => (
+                        <button
+                          key={key}
+                          onClick={() => setNftTier(key as keyof typeof NFT_BOOSTS)}
+                          className={`
+                            w-full px-2 py-1.5 rounded-lg text-left transition-all flex items-center justify-between group
+                            ${nftTier === key 
+                              ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' 
+                              : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                            }
+                          `}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm">{icon}</span>
+                            <span className="text-[10px] font-semibold">{label}</span>
+                          </div>
+                          <div className="flex items-center gap-0.5">
+                            <span className={`text-[10px] font-bold ${nftTier === key ? 'text-white' : 'text-purple-400'}`}>
+                              {boost}x
+                            </span>
+                            {nftTier === key && (
+                              <Sparkles className="w-2.5 h-2.5 text-yellow-300" />
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                {/* Purchase Era Selection */}
-                <div>
-                  <p className="text-xs font-semibold text-gray-400 mb-2 uppercase">Purchase Era</p>
-                  <div className="space-y-1">
-                    {Object.entries(PURCHASE_ERA_BOOSTS).map(([key, { label, boost, icon }]) => (
-                      <button
-                        key={key}
-                        onClick={() => setPurchaseEra(key as keyof typeof PURCHASE_ERA_BOOSTS)}
-                        className={`
-                          w-full px-3 py-2 rounded-lg text-left transition-all flex items-center justify-between
-                          ${purchaseEra === key 
-                            ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white' 
-                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                          }
-                        `}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm">{icon}</span>
-                          <span className="text-xs font-semibold">{label}</span>
-                        </div>
-                        <span className="text-xs font-bold">{boost}x</span>
-                      </button>
-                    ))}
+                {/* Purchase Era Selection - Premium Box - COMPACT */}
+                <div 
+                  className="p-3 rounded-xl border relative overflow-hidden"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)',
+                    borderColor: 'rgba(6, 182, 212, 0.3)',
+                  }}
+                >
+                  {/* Animated Background Glow */}
+                  <motion.div
+                    className="absolute inset-0 opacity-20"
+                    style={{ background: 'radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.4), transparent 70%)' }}
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.3, 0.2] }}
+                    transition={{ duration: 4, repeat: Infinity, delay: 2 }}
+                  />
+                  
+                  <div className="relative">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
+                        <Clock className="w-3 h-3 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-cyan-300 uppercase tracking-wider leading-tight">Purchase Era</p>
+                        <p className="text-[9px] text-gray-400 leading-tight">Up to 16x</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      {Object.entries(PURCHASE_ERA_BOOSTS).map(([key, { label, boost, icon }]) => (
+                        <button
+                          key={key}
+                          onClick={() => setPurchaseEra(key as keyof typeof PURCHASE_ERA_BOOSTS)}
+                          className={`
+                            w-full px-2 py-1.5 rounded-lg text-left transition-all flex items-center justify-between group
+                            ${purchaseEra === key 
+                              ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg' 
+                              : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                            }
+                          `}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm">{icon}</span>
+                            <span className="text-[10px] font-semibold">{label}</span>
+                          </div>
+                          <div className="flex items-center gap-0.5">
+                            <span className={`text-[10px] font-bold ${purchaseEra === key ? 'text-white' : 'text-cyan-400'}`}>
+                              {boost}x
+                            </span>
+                            {purchaseEra === key && (
+                              <Sparkles className="w-2.5 h-2.5 text-yellow-300" />
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Right Column: Results */}
-              <div className="space-y-4">
+              {/* Column 3: Results */}
+              <div className="space-y-3">
                 <div className="flex items-center gap-2 mb-3">
                   <TrendingUp className="w-4 h-4 text-green-400" />
                   <h3 className="text-sm font-bold text-white uppercase tracking-wider">Results</h3>
@@ -392,6 +541,37 @@ export function STOINCCalculatorModal({ isOpen, onClose }: STOINCCalculatorModal
                       ({totalNetworkFees} × {pNodeShare} × {calculation.boostedCredits}) / {totalNetworkCredits}
                     </p>
                   </div>
+
+                  {/* Action Buttons - Moved here */}
+                  <div className="space-y-2 pt-2">
+                    <button
+                      onClick={handleExportPDF}
+                      className="w-full px-3 py-2 rounded-lg font-bold text-xs text-white
+                        bg-gradient-to-r from-green-500 to-cyan-500
+                        hover:from-green-600 hover:to-cyan-600
+                        transform hover:scale-105 active:scale-95
+                        transition-all duration-200
+                        flex items-center justify-center gap-2
+                        shadow-lg hover:shadow-xl"
+                    >
+                      <FileDown className="w-3 h-3" />
+                      Export PDF
+                    </button>
+                    
+                    <button
+                      onClick={handleShareLink}
+                      className="w-full px-3 py-2 rounded-lg font-bold text-xs text-white
+                        bg-gradient-to-r from-blue-500 to-purple-500
+                        hover:from-blue-600 hover:to-purple-600
+                        transform hover:scale-105 active:scale-95
+                        transition-all duration-200
+                        flex items-center justify-center gap-2
+                        shadow-lg hover:shadow-xl"
+                    >
+                      <Share2 className="w-3 h-3" />
+                      Share Link
+                    </button>
+                  </div>
                 </div>
 
                 {/* Tips - Ultra Compact */}
@@ -408,6 +588,81 @@ export function STOINCCalculatorModal({ isOpen, onClose }: STOINCCalculatorModal
                     </ul>
                   </div>
                 )}
+              </div>
+
+              {/* Column 4: Projection */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <TrendingUp className="w-4 h-4 text-green-400" />
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">Projection</h3>
+                </div>
+
+                {/* Mini Timeline Chart */}
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                  <p className="text-xs font-bold text-gray-400 mb-2 uppercase">12-Month Accumulation</p>
+                  <div style={{ height: '150px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={projectionData}>
+                        <defs>
+                          <linearGradient id="colorStoinc" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <XAxis 
+                          dataKey="month" 
+                          stroke="#6b7280" 
+                          style={{ fontSize: '10px' }}
+                          tickLine={false}
+                        />
+                        <YAxis 
+                          stroke="#6b7280" 
+                          style={{ fontSize: '10px' }}
+                          tickLine={false}
+                          tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: '#1e293b', 
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '8px',
+                            fontSize: '12px'
+                          }}
+                          formatter={(value: number) => [`${value.toFixed(0)} XAND`, 'Total']}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="accumulated" 
+                          stroke="#10b981" 
+                          strokeWidth={2}
+                          fillOpacity={1} 
+                          fill="url(#colorStoinc)" 
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                  
+                  {/* Quick Stats */}
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="p-2 rounded bg-white/5 text-center">
+                      <p className="text-xs text-gray-400">Year 1</p>
+                      <p className="text-sm font-bold text-white">{(calculation.stoincPerMonth * 12).toFixed(0)}</p>
+                    </div>
+                    <div className="p-2 rounded bg-white/5 text-center">
+                      <p className="text-xs text-gray-400">Daily Avg</p>
+                      <p className="text-sm font-bold text-white">{(calculation.stoincPerEpoch).toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ROI Estimator - Ultra Compact */}
+                <div className="p-3 rounded-lg bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30">
+                  <p className="text-xs font-bold text-yellow-400 uppercase mb-1">💎 ROI Estimate</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-400">Break-even</span>
+                    <span className="text-sm font-bold text-white">~6 months</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

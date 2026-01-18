@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calculator } from 'lucide-react';
 
 interface STOINCCalculatorButtonProps {
@@ -10,6 +10,13 @@ interface STOINCCalculatorButtonProps {
 
 export function STOINCCalculatorButton({ onClick, isOpen }: STOINCCalculatorButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
+
+  // Fix: Reset hover state when modal closes
+  useEffect(() => {
+    if (isOpen) {
+      setIsHovered(false);
+    }
+  }, [isOpen]);
 
   return (
     <>
