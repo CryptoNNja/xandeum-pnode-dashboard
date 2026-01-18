@@ -91,12 +91,12 @@ export const AlertsAnalyticsTab = ({
   const CATEGORY_COLORS = ["#ef4444", "#f59e0b", "#8b5cf6", "#3b82f6", "#10b981", "#ec4899"];
 
   return (
-    <div className="h-[calc(90vh-300px)] overflow-hidden">
+    <div className="h-full min-h-0 overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 h-full">
         
         {/* TOP-LEFT: KPI Cards Vertical Stack */}
         <div className="space-y-1.5">
-          {/* Total Alerts - Afficher le nombre de NODES uniques affectés */}
+          {/* Total Alerts - Display the number of unique affected NODES */}
           <div className={clsx(
             "p-2 rounded-lg border",
             isLight ? "bg-blue-500/5 border-blue-500/20" : "bg-blue-500/10 border-blue-500/30"
@@ -180,30 +180,30 @@ export const AlertsAnalyticsTab = ({
                   dataKey="value"
                 >
                   {categoryData.map((entry, index) => {
-                    // Color based on ALERT TYPE - Cohérent avec la sévérité
+                    // Color based on ALERT TYPE - Consistent with severity
                     // Normalize name for matching (handle spaces)
                     const normalizedName = entry.name.toLowerCase().replace(/\s+/g, '');
                     const typeColors: Record<string, string> = {
-                      // Critical Storage (Rouge intense)
-                      'lowstorage': '#ef4444',       // Red - Storage critique
-                      'storagecritical': '#dc2626',  // Dark red - Storage très critique
-                      'storagefilling': '#f97316',   // Orange-red - Storage se remplit
+                      // Critical Storage (Intense Red)
+                      'lowstorage': '#ef4444',       // Red - Critical storage
+                      'storagecritical': '#dc2626',  // Dark red - Very critical storage
+                      'storagefilling': '#f97316',   // Orange-red - Storage filling up
                       
-                      // Critical Nodes (Rouge/Rose)
+                      // Critical Nodes (Red/Pink)
                       'offlinenode': '#b91c1c',      // Dark red - Node offline
                       'nodecrash': '#dc2626',        // Dark red - Node crash
-                      'nodecrashdetected': '#ef4444', // Red - Node crash détecté
+                      'nodecrashdetected': '#ef4444', // Red - Node crash detected
                       
-                      // Warnings (Orange/Jaune)
-                      'stalenode': '#f59e0b',        // Orange - Node stale
-                      'staledata': '#fbbf24',        // Yellow - Data stale
+                      // Warnings (Orange/Yellow)
+                      'stalenode': '#f59e0b',        // Orange - Stale node
+                      'staledata': '#fbbf24',        // Yellow - Stale data
                       
-                      // Performance Issues (Violet/Rose)
-                      'highcpu': '#8b5cf6',          // Purple - CPU élevé
-                      'highram': '#ec4899',          // Pink - RAM élevée
+                      // Performance Issues (Purple/Pink)
+                      'highcpu': '#8b5cf6',          // Purple - High CPU
+                      'highram': '#ec4899',          // Pink - High RAM
                       
-                      // Info/Restart (Bleu)
-                      'recentrestart': '#3b82f6',    // Blue - Redémarrage récent
+                      // Info/Restart (Blue)
+                      'recentrestart': '#3b82f6',    // Blue - Recent restart
                     };
                     const color = typeColors[normalizedName] || '#6b7280'; // Gray fallback
                     return <Cell key={`cell-${index}`} fill={color} />;

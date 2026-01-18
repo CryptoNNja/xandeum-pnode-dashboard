@@ -12,7 +12,7 @@ type FilterBarProps = {
   isLight: boolean;
   totalResults: number;
   totalAlerts: number;
-  allAlerts: any[]; // Toutes les alertes pour compter par type
+  allAlerts: any[]; // All alerts used for type counts
 };
 
 const ALL_ALERT_TYPES = [
@@ -52,11 +52,11 @@ export const FilterBar = ({
       onFiltersChange({ ...filters, searchTerm: searchInput });
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, filters, onFiltersChange]);
 
   const hasActiveFilters = filters.searchTerm || filters.severity !== 'all' || filters.type !== 'all';
 
-  // Compter les alertes par type
+  // Count alerts by type
   const alertTypeCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     ALL_ALERT_TYPES.forEach(type => {
@@ -65,7 +65,7 @@ export const FilterBar = ({
     return counts;
   }, [allAlerts]);
 
-  // Séparer types disponibles vs vides
+  // Separate available types vs empty types
   const availableTypes = ALL_ALERT_TYPES.filter(type => alertTypeCounts[type] > 0);
   const emptyTypes = ALL_ALERT_TYPES.filter(type => alertTypeCounts[type] === 0);
 
