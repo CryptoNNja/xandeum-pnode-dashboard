@@ -431,16 +431,27 @@ export default function Page() {
 
   // Calculate network bandwidth (packets per second estimate)
   const networkBandwidth = useMemo(() => {
-    const totalPackets = pnodes
-      .filter((p) => p.status === "active")
-      .reduce((sum, p) => sum + (p.stats?.packets_sent ?? 0) + (p.stats?.packets_received ?? 0), 0);
+    // Filter nodes that actually have packet data (RPC responded)
+    const nodesWithPackets = pnodes.filter((p) => 
+      p.status === "active" && 
+      ((p.stats?.packets_sent ?? 0) > 0 || (p.stats?.packets_received ?? 0) > 0)
+    );
+    
+    const totalPackets = nodesWithPackets.reduce(
+      (sum, p) => sum + (p.stats?.packets_sent ?? 0) + (p.stats?.packets_received ?? 0), 
+      0
+    );
     
     // Rough estimate: divide by average uptime to get packets/sec
-    const avgUptime = pnodes
-      .filter((p) => p.status === "active" && (p.stats?.uptime ?? 0) > 0)
+    const avgUptime = nodesWithPackets
+      .filter((p) => (p.stats?.uptime ?? 0) > 0)
       .reduce((sum, p, _, arr) => sum + (p.stats?.uptime ?? 0) / arr.length, 0);
     
-    return avgUptime > 0 ? totalPackets / avgUptime : 0;
+    return {
+      packetsPerSecond: avgUptime > 0 ? totalPackets / avgUptime : 0,
+      reportingNodes: nodesWithPackets.length,
+      totalActiveNodes: pnodes.filter((p) => p.status === "active").length
+    };
   }, [pnodes]);
 
   // Version adoption percentage (already calculated in versionChart)

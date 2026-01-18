@@ -99,7 +99,11 @@ type KpiCardsProps = {
     networkGrowthRate: number;
     storageGrowthRate: number;
     networkHistory: Array<{ date: string; nodes: number }>;
-    networkBandwidth: number;
+    networkBandwidth: {
+      packetsPerSecond: number;
+      reportingNodes: number;
+      totalActiveNodes: number;
+    };
     versionAdoptionPercent: number;
     onVersionClick?: () => void;
     onGeographicClick?: () => void;
@@ -479,11 +483,11 @@ export const KpiCards = ({
                     className="text-4xl font-bold tracking-tight"
                     style={{ color: "#3B82F6" }}
                   >
-                    {networkBandwidth >= 1000000 
-                      ? `${(networkBandwidth / 1000000).toFixed(2)}M`
-                      : networkBandwidth >= 1000
-                      ? `${(networkBandwidth / 1000).toFixed(1)}K`
-                      : networkBandwidth.toFixed(0)}
+                    {networkBandwidth.packetsPerSecond >= 1000000 
+                      ? `${(networkBandwidth.packetsPerSecond / 1000000).toFixed(2)}M`
+                      : networkBandwidth.packetsPerSecond >= 1000
+                      ? `${(networkBandwidth.packetsPerSecond / 1000).toFixed(1)}K`
+                      : networkBandwidth.packetsPerSecond.toFixed(0)}
                   </span>
                   <span className="text-sm font-mono text-text-soft">pkt/s</span>
                 </div>
@@ -502,23 +506,25 @@ export const KpiCards = ({
 
             <div className="mt-6">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-text-soft">Active nodes</span>
-                <span className="font-semibold text-text-main">{publicCount}</span>
+                <span className="text-text-soft">Reporting nodes</span>
+                <span className="font-semibold text-text-main">
+                  {networkBandwidth.reportingNodes} of {networkBandwidth.totalActiveNodes}
+                </span>
               </div>
               <div className="flex items-center justify-between text-sm mt-2">
                 <span className="text-text-soft">Avg per node</span>
                 <span className="font-semibold text-text-main">
-                  {publicCount > 0 
-                    ? `${(networkBandwidth / publicCount).toFixed(0)} pkt/s`
+                  {networkBandwidth.reportingNodes > 0 
+                    ? `${(networkBandwidth.packetsPerSecond / networkBandwidth.reportingNodes).toFixed(0)} pkt/s`
                     : "0 pkt/s"}
                 </span>
               </div>
               <p className="text-sm text-text-faint mt-4">
-                {networkBandwidth > 1000000 
+                {networkBandwidth.packetsPerSecond > 1000000 
                   ? "High network activity" 
-                  : networkBandwidth > 100000
+                  : networkBandwidth.packetsPerSecond > 100000
                   ? "Moderate traffic flow" 
-                  : networkBandwidth > 10000
+                  : networkBandwidth.packetsPerSecond > 10000
                   ? "Light network usage"
                   : "Minimal activity"}
               </p>
@@ -534,12 +540,12 @@ export const KpiCards = ({
                   <div 
                     className="w-2 h-2 rounded-full animate-pulse"
                     style={{ 
-                      backgroundColor: networkBandwidth > 0 ? "#3B82F6" : "#6B7280",
-                      boxShadow: networkBandwidth > 0 ? "0 0 8px #3B82F6" : "none"
+                      backgroundColor: networkBandwidth.packetsPerSecond > 0 ? "#3B82F6" : "#6B7280",
+                      boxShadow: networkBandwidth.packetsPerSecond > 0 ? "0 0 8px #3B82F6" : "none"
                     }}
                   />
                   <span className="text-xs font-mono text-text-soft">
-                    {networkBandwidth > 0 ? "ACTIVE" : "IDLE"}
+                    {networkBandwidth.packetsPerSecond > 0 ? "ACTIVE" : "IDLE"}
                   </span>
                 </div>
               </div>
@@ -557,7 +563,7 @@ export const KpiCards = ({
                 }}
               >
                 <PacketsAnimation 
-                  throughput={networkBandwidth / 1000} 
+                  throughput={networkBandwidth.packetsPerSecond / 1000} 
                   maxThroughput={1000}
                 />
                 
@@ -620,9 +626,9 @@ export const KpiCards = ({
                 <span>{avgRamUsage.ratio.toFixed(0)}%</span>
               </div>
               <p className="text-sm text-text-faint mt-4">
-                {avgRamUsage.nodeCount > 0
-                  ? `${avgRamUsage.nodeCount} nodes reporting`
-                  : "Awaiting active telemetry"}
+                {avgRamUsage.reportingNodes > 0
+                  ? `${avgRamUsage.reportingNodes} of ${avgRamUsage.totalActiveNodes} nodes reporting`
+                  : `0 of ${avgRamUsage.totalActiveNodes} nodes reporting`}
               </p>
             </div>
 
@@ -1101,9 +1107,9 @@ export const KpiCards = ({
                 <span>{avgCpuUsage.percent.toFixed(0)}%</span>
               </div>
               <p className="text-sm text-text-faint mt-4">
-                {avgCpuUsage.nodeCount > 0
-                  ? `Across ${avgCpuUsage.nodeCount} active nodes`
-                  : "Awaiting active telemetry"}
+                {avgCpuUsage.reportingNodes > 0
+                  ? `${avgCpuUsage.reportingNodes} of ${avgCpuUsage.totalActiveNodes} nodes reporting`
+                  : `0 of ${avgCpuUsage.totalActiveNodes} nodes reporting`}
               </p>
             </div>
 
