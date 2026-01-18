@@ -9,6 +9,7 @@ import { calculateNodeScore } from "@/lib/scoring";
 import { computeVersionOverview } from "@/lib/kpi";
 import { calculateNetworkSyncMetrics, fetchNetworkParticipation, type NetworkParticipationMetrics } from "@/lib/blockchain-metrics";
 import { useToast } from "@/components/common/Toast";
+import { WARNING_UPTIME_THRESHOLD_HOURS, CRITICAL_UPTIME_THRESHOLD_HOURS } from "@/lib/constants";
 import { 
   GB_IN_BYTES, 
   TB_IN_BYTES, 
@@ -779,7 +780,7 @@ export const usePnodeDashboard = (theme?: string) => {
       if (healthStatus === "Warning") {
         // Uptime < 6h = Recent restart (instability concern)
         // Reduced from 24h to 6h to minimize alert noise for stable nodes (18-24h uptime)
-        if (uptimeHours < 6 && uptimeHours >= 0.083) { // 5min to 6h
+        if (uptimeHours < WARNING_UPTIME_THRESHOLD_HOURS && uptimeHours >= CRITICAL_UPTIME_THRESHOLD_HOURS) {
           generated.push({
             ip: pnode.ip,
             severity: "warning",
