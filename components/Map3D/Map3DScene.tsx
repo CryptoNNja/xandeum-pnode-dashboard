@@ -17,7 +17,7 @@ type Map3DSceneProps = {
   cameraPosition?: { lat: number; lng: number; altitude: number };
 };
 
-// Simple Earth component
+// Earth component with realistic styling (matching 2D map)
 function Earth({ theme }: { theme: Globe3DTheme }) {
   const earthRef = useRef<THREE.Mesh>(null);
   
@@ -27,14 +27,30 @@ function Earth({ theme }: { theme: Globe3DTheme }) {
     }
   });
   
+  // Use colors that match the 2D map GeoJSON style
+  const earthColor = theme.countries.fill; // Dark mode: #1e293b, Light mode: #f1f5f9
+  const borderColor = theme.countries.stroke; // Dark mode: #334155, Light mode: #cbd5e1
+  
   return (
     <mesh ref={earthRef}>
       <sphereGeometry args={[100, 64, 64]} />
       <meshStandardMaterial
-        color={theme.countries.fill}
-        roughness={0.8}
-        metalness={0.2}
+        color={earthColor}
+        roughness={0.9}
+        metalness={0.1}
+        emissive={borderColor}
+        emissiveIntensity={0.05}
       />
+      {/* Wireframe overlay for country borders effect */}
+      <mesh>
+        <sphereGeometry args={[100.5, 32, 32]} />
+        <meshBasicMaterial
+          color={borderColor}
+          wireframe={true}
+          transparent={true}
+          opacity={0.15}
+        />
+      </mesh>
     </mesh>
   );
 }

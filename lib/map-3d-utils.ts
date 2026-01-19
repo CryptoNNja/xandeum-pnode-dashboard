@@ -50,22 +50,35 @@ export function pnodeToNode3D(pnode: any): Node3DData | null {
 /**
  * Get globe theme based on current theme
  */
+/**
+ * Get globe theme matching the 2D map design
+ * Dark mode uses aqua accent (#00D4AA), light mode uses orange (#EA580C)
+ */
 export function getGlobeTheme(theme: 'light' | 'dark'): Globe3DTheme {
   const isDark = theme === 'dark';
   
   return {
-    background: isDark ? 'rgba(10, 14, 39, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-    atmosphere: isDark ? '#14f195' : '#10b981',
+    // Background matches map container
+    background: isDark ? '#020204' : '#f5f5f7',
+    
+    // Atmosphere uses theme accent colors
+    atmosphere: isDark ? '#00D4AA' : '#EA580C',
+    
+    // Countries match GeoJSON style from NodesMap
     countries: {
-      fill: isDark ? '#1e293b' : '#f1f5f9',
-      stroke: isDark ? '#334155' : '#cbd5e1',
+      fill: isDark ? '#0A0E1A' : '#FEF3E2', // fillColor from getGeoJsonStyleForTheme
+      stroke: isDark ? '#00D4AA' : '#EA580C', // color from getGeoJsonStyleForTheme
     },
+    
+    // Nodes use KPI colors (CSS variables)
     nodes: {
-      healthy: isDark ? '#14f195' : '#10b981',
-      warning: isDark ? '#fbbf24' : '#f59e0b',
-      critical: isDark ? '#ef4444' : '#dc2626',
+      healthy: '#10B981',    // --kpi-excellent
+      warning: '#F59E0B',    // --kpi-warning
+      critical: '#EF4444',   // --kpi-critical
     },
-    arcs: isDark ? 'rgba(20, 241, 149, 0.3)' : 'rgba(16, 185, 129, 0.3)',
+    
+    // Arcs use theme accent with transparency
+    arcs: isDark ? 'rgba(0, 212, 170, 0.3)' : 'rgba(234, 88, 12, 0.3)',
   };
 }
 

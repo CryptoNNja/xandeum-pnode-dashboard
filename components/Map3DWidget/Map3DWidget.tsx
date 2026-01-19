@@ -17,10 +17,8 @@ export function Map3DWidget({ pnodes }: Map3DWidgetProps) {
   
   return (
     <>
-      {/* Floating Button */}
-      <div className="fixed bottom-6 right-6 z-40">
-        <Map3DButton onClick={() => setIsOpen(true)} />
-      </div>
+      {/* Floating Button - Above Calculator */}
+      <Map3DButton onClick={() => setIsOpen(true)} isOpen={isOpen} />
       
       {/* 3D Viewer Modal */}
       {isOpen && (
