@@ -1260,11 +1260,6 @@ export const usePnodeDashboard = (theme?: string) => {
     return count;
   }, [selectedVersions, selectedHealthStatuses, minCpu, minStorage, operatorFilter, networkStatusFilters]);
 
-  // Manual refresh function for toolbar button
-  const refreshData = useCallback(() => {
-    loadData(true); // true = manual refresh, shows spinner
-  }, [loadData]);
-
   return {
     pnodes: allPnodes,
     loading,
@@ -1374,9 +1369,5 @@ export const usePnodeDashboard = (theme?: string) => {
     // ?? Network filter
     networkFilter,
     setNetworkFilter,
-    // Filtered and sorted nodes (for counter and display)
-    filteredAndSortedPNodes,
-    // Last update timestamp for "X ago" display
-    lastUpdate,
   };
 };
