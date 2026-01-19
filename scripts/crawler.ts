@@ -7,6 +7,8 @@ import type { Database, Json } from '../types/supabase.mjs';
 import { getNetworkDetector } from '../lib/network-detector';
 import { fetchOfficialRegistries, getCreditsForPubkey } from '../lib/official-apis';
 import { calculateConfidence, type PNodeForScoring } from '../lib/confidence-scoring';
+import type { DiscoveredNode, NodeToIncrement, GeolocationResult } from './crawler-types';
+import pLimit from 'p-limit';
 
 // IMPORTANT: this file is imported by Next.js API routes.
 // It must be "import-safe": no env validation, no network calls, and no crawl execution at module load.
@@ -48,24 +50,9 @@ function initCrawlerEnv() {
 }
 
 
-const BOOTSTRAP_NODES = [
-    // Original bootstrap nodes
-    "192.190.136.36", "192.190.136.28", "192.190.136.29", "192.190.136.37", 
-    "192.190.136.38", "173.212.203.145", "161.97.97.41", "207.244.255.1", 
-    "159.69.221.189", "178.18.250.133", "37.120.167.241", "173.249.36.181",
-    "213.199.44.36", "62.84.180.238", "154.38.169.212", "152.53.248.235",
-    "173.212.217.77", "195.26.241.159",
-    // Additional nodes discovered (34 missing nodes with ~228 TB storage)
-    "194.238.24.95", "194.238.24.87", "194.238.24.88", "194.238.24.89",
-    "194.238.24.90", "194.238.24.91", "194.238.24.92", "194.238.24.86",
-    "95.217.178.17", "195.26.241.115", "136.115.243.45", "192.190.136.26",
-    "100.79.135.83", "94.255.130.90", "89.58.27.200", "62.84.180.246",
-    "66.94.98.124", "62.84.180.244", "51.159.232.252", "51.159.232.250",
-    "62.84.180.247", "62.84.180.245", "62.84.180.239", "51.159.232.251",
-    "66.94.98.125", "62.84.180.243", "62.84.180.242", "62.84.180.241",
-    "207.244.255.10", "66.94.98.126", "62.84.180.240", "51.15.234.234",
-    "51.15.234.233", "51.15.234.232"
-];
+// Load bootstrap nodes from external config file
+import bootstrapConfig from '../config/bootstrap.json';
+const BOOTSTRAP_NODES = bootstrapConfig.seeds;
 
 // Increased timeout from 2000ms to 5000ms to catch slower nodes
 const TIMEOUT = 5000;
@@ -497,44 +484,51 @@ export const main = async () => {
         console.log(`  Fetched stats for ${Math.min(i + BATCH_SIZE, allIps.length)}/${allIps.length} nodes...`);
     }
     
-    const allGeo: (GeolocationData | null)[] = [];
-
-    // Geolocation with rate limiting and caching
-    // ip-api.com free tier: 45 requests/minute, we use 1.5s delay to be safe (40/min)
-    let geoCallsThisMinute = 0;
-    let minuteStartTime = Date.now();
+    // Geolocation with parallel rate limiting and caching
+    // ip-api.com free tier: 45 requests/minute, we use 40/min to be safe
+    console.log(`📍 Geolocating ${allIps.length} IPs (with cache check)...`);
+    const geoStartTime = Date.now();
+    const limit = pLimit(40); // Max 40 concurrent requests
     
-    for (const ip of allIps) {
-        const existing = existingMap.get(ip);
-        if (existing && existing.lat && existing.lng && existing.country_code) {
-            allGeo.push({
-                lat: existing.lat,
-                lng: existing.lng,
-                city: existing.city,
-                country: existing.country,
-                country_code: existing.country_code
-            });
-        } else {
-            // Rate limit check: max 40 calls per minute
-            if (geoCallsThisMinute >= 40) {
-                const elapsed = Date.now() - minuteStartTime;
-                if (elapsed < 60000) {
-                    const waitTime = 60000 - elapsed;
-                    console.log(`  Rate limit: waiting ${(waitTime/1000).toFixed(1)}s before next geolocation batch...`);
-                    await new Promise(r => setTimeout(r, waitTime));
-                }
-                geoCallsThisMinute = 0;
-                minuteStartTime = Date.now();
+    const geoTasks = allIps.map(ip => 
+        limit(async () => {
+            const existing = existingMap.get(ip);
+            if (existing && existing.lat && existing.lng && existing.country_code) {
+                // Return cached geolocation
+                return {
+                    lat: existing.lat,
+                    lng: existing.lng,
+                    city: existing.city,
+                    country: existing.country,
+                    country_code: existing.country_code
+                };
             }
             
-            const geo = await getGeolocation(ip);
-            allGeo.push(geo);
-            if (geo) {
-                geoCallsThisMinute++;
-                await new Promise(r => setTimeout(r, 1500)); // 1.5s delay = ~40/min
+            // Fetch new geolocation
+            try {
+                const geo = await getGeolocation(ip);
+                // Respect rate limit (40 req/min = 1 req per 1.5s average)
+                await new Promise(r => setTimeout(r, 1500));
+                return geo;
+            } catch (error) {
+                console.error(`   Failed to geolocate ${ip}:`, error);
+                return null;
             }
-        }
-    }
+        })
+    );
+    
+    const geoResults = await Promise.allSettled(geoTasks);
+    const allGeo: (GeolocationData | null)[] = geoResults.map(r => 
+        r.status === 'fulfilled' ? r.value : null
+    );
+    
+    const geoElapsed = ((Date.now() - geoStartTime) / 1000).toFixed(1);
+    const geoSuccess = allGeo.filter(g => g !== null).length;
+    const geoCached = allIps.filter(ip => {
+        const existing = existingMap.get(ip);
+        return existing && existing.lat && existing.lng;
+    }).length;
+    console.log(`   ✅ Geolocation: ${geoSuccess}/${allIps.length} in ${geoElapsed}s (${geoCached} from cache)`);
 
     const pnodesToUpsert: Database['public']['Tables']['pnodes']['Insert'][] = [];
     const historyToInsert: Database['public']['Tables']['pnode_history']['Insert'][] = [];
