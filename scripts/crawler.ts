@@ -486,11 +486,39 @@ export const main = async () => {
     }
     
     // Geolocation with parallel rate limiting and caching
-    // ip-api.com free tier: 45 requests/minute, we use 40/min to be safe
-    console.log(`📍 Geolocating ${allIps.length} IPs (with cache check)...`);
+    // ip-api.com free tier: 45 requests/minute, we use 44/min to be safe
+    console.log(`📍 Geolocating ${allIps.length} IPs...`);
     const geoStartTime = Date.now();
     
-    // Bottleneck rate limiter: guarantees minimum 1.35s between API calls
+    // Separate cached vs new IPs BEFORE rate limiting
+    // This prevents cached IPs from going through Bottleneck unnecessarily
+    const cachedIps: string[] = [];
+    const newIps: string[] = [];
+    
+    allIps.forEach(ip => {
+        const existing = existingMap.get(ip);
+        if (existing && existing.lat && existing.lng && existing.country_code) {
+            cachedIps.push(ip);
+        } else {
+            newIps.push(ip);
+        }
+    });
+    
+    console.log(`   📊 Cache: ${cachedIps.length} cached, ${newIps.length} new IPs to geolocate`);
+    
+    // Process cached IPs immediately (no API call, no rate limiting)
+    const cachedResults: (GeolocationData | null)[] = cachedIps.map(ip => {
+        const existing = existingMap.get(ip)!;
+        return {
+            lat: existing.lat!,
+            lng: existing.lng!,
+            city: existing.city || null,
+            country: existing.country || null,
+            country_code: existing.country_code!
+        };
+    });
+    
+    // Bottleneck rate limiter: only for NEW IPs that need API calls
     // This prevents burst requests and respects ip-api.com rate limits (45 req/min free tier)
     // Using 44 req/min (1.35s) to stay safely under the limit
     const limiter = new Bottleneck({
@@ -498,21 +526,9 @@ export const main = async () => {
         minTime: 1350,           // Minimum 1.35s between each request (~44 req/min)
     });
     
-    const geoTasks = allIps.map(ip => 
+    // Process only NEW IPs through Bottleneck
+    const geoTasks = newIps.map(ip => 
         limiter.schedule(async () => {
-            const existing = existingMap.get(ip);
-            if (existing && existing.lat && existing.lng && existing.country_code) {
-                // Return cached geolocation (no API call, no rate limit impact)
-                return {
-                    lat: existing.lat,
-                    lng: existing.lng,
-                    city: existing.city,
-                    country: existing.country,
-                    country_code: existing.country_code
-                };
-            }
-            
-            // Fetch new geolocation (Bottleneck ensures 1.5s spacing)
             try {
                 return await getGeolocation(ip);
             } catch (error) {
@@ -522,18 +538,27 @@ export const main = async () => {
         })
     );
     
-    const geoResults = await Promise.allSettled(geoTasks);
-    const allGeo: (GeolocationData | null)[] = geoResults.map(r => 
+    const newGeoResults = await Promise.allSettled(geoTasks);
+    const newResults: (GeolocationData | null)[] = newGeoResults.map(r => 
         r.status === 'fulfilled' ? r.value : null
     );
     
+    // Combine cached and new results in original order
+    const cachedMap = new Map<string, GeolocationData | null>(
+        cachedIps.map((ip, idx) => [ip, cachedResults[idx]]),
+    );
+    const newMap = new Map<string, GeolocationData | null>(
+        newIps.map((ip, idx) => [ip, newResults[idx]]),
+    );
+    const allGeo: (GeolocationData | null)[] = allIps.map(ip => {
+        return cachedMap.get(ip) ?? newMap.get(ip) ?? null;
+    });
+    
     const geoElapsed = ((Date.now() - geoStartTime) / 1000).toFixed(1);
     const geoSuccess = allGeo.filter(g => g !== null).length;
-    const geoCached = allIps.filter(ip => {
-        const existing = existingMap.get(ip);
-        return existing && existing.lat && existing.lng;
-    }).length;
-    console.log(`   ✅ Geolocation: ${geoSuccess}/${allIps.length} in ${geoElapsed}s (${geoCached} from cache)`);
+    const apiCallsMade = newIps.length;
+    const timeSaved = cachedIps.length > 0 ? ((cachedIps.length * 1.35) / 60).toFixed(1) : '0';
+    console.log(`   ✅ Geolocation: ${geoSuccess}/${allIps.length} in ${geoElapsed}s (${cachedIps.length} cached, ${apiCallsMade} API calls, ~${timeSaved} min saved)`);
 
     const pnodesToUpsert: Database['public']['Tables']['pnodes']['Insert'][] = [];
     const historyToInsert: Database['public']['Tables']['pnode_history']['Insert'][] = [];
