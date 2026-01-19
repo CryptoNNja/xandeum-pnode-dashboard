@@ -28,7 +28,7 @@ export function Map3DButton({ onClick, isOpen }: Map3DButtonProps) {
         className="
           fixed bottom-42 right-6 z-50
           w-14 h-14 rounded-full
-          bg-gradient-to-r from-emerald-500 to-teal-500
+          bg-gradient-to-r from-blue-500 to-cyan-500
           shadow-lg hover:shadow-2xl
           transform hover:scale-110 active:scale-95
           transition-all duration-200
@@ -42,13 +42,13 @@ export function Map3DButton({ onClick, isOpen }: Map3DButtonProps) {
           className={`
             w-7 h-7 text-white
             transition-transform duration-300
-            ${isOpen ? 'rotate-180' : 'rotate-0'}
+            ${!isOpen ? 'animate-spin-slow' : ''}
           `}
         />
         
         {/* Pulse animation when not open */}
         {!isOpen && (
-          <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-20" />
+          <span className="absolute inset-0 rounded-full bg-blue-500 animate-ping opacity-20" />
         )}
       </button>
 
