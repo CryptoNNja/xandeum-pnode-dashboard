@@ -27,6 +27,7 @@ import { generatePDFReport } from "@/lib/pdf-export";
 import { useToast } from "@/components/common/Toast";
 import Joyride from 'react-joyride';
 import { useOnboarding } from '@/hooks/useOnboarding';
+import { getJoyrideStyles } from '@/lib/joyride-styles';
 
 const TOOLTIP_STYLES = `
   .recharts-tooltip-wrapper { outline: none !important; }
@@ -462,56 +463,182 @@ export default function Page() {
 
   // Export PDF Report - Full Network
   const exportPdf = useCallback(() => {
-    const totalPackets = pnodes.reduce((sum, p) => sum + (p.stats?.packets_sent || 0) + (p.stats?.packets_received || 0), 0);
-    const totalStorage = pnodes.reduce((sum, p) => sum + (p.stats?.storage_committed || 0), 0);
+    const nodeCount = pnodes.length;
     
-    const summary = {
-      totalNodes: pnodes.length,
-      publicNodes: publicCount,
-      privateNodes: privateCount,
-      avgCPU: avgCpuUsage.percent,
-      avgRAM: avgRamUsage.ratio * 100, // Convert ratio to percentage
-      avgUptime: pnodes.reduce((sum, p) => sum + (p.stats?.uptime || 0), 0) / pnodes.length,
-      healthyNodes: pnodes.filter(p => ((p as any)._score || 0) >= 70).length,
-      networkThroughput: totalPackets,
-      totalStorage: totalStorage,
-    };
+    // Show confirmation dialog for large exports (>100 nodes)
+    if (nodeCount > 100) {
+      const confirmed = window.confirm(
+        `⚠️ Large Export Warning\n\n` +
+        `You are about to export ${nodeCount} nodes to PDF.\n` +
+        `This may take 10-30 seconds and could slow down your browser.\n\n` +
+        `Do you want to continue?`
+      );
+      
+      if (!confirmed) {
+        return;
+      }
+    }
+    
+    // Show loading toast
+    const toastId = `pdf-export-${Date.now()}`;
+    const toast = document.createElement('div');
+    toast.id = toastId;
+    toast.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3';
+    toast.innerHTML = `
+      <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span>Generating PDF... (${nodeCount} nodes)</span>
+    `;
+    document.body.appendChild(toast);
+    
+    // Use setTimeout to allow UI to update before heavy processing
+    setTimeout(() => {
+      try {
+        const totalPackets = pnodes.reduce((sum, p) => sum + (p.stats?.packets_sent || 0) + (p.stats?.packets_received || 0), 0);
+        const totalStorage = pnodes.reduce((sum, p) => sum + (p.stats?.storage_committed || 0), 0);
+        
+        const summary = {
+          totalNodes: pnodes.length,
+          publicNodes: publicCount,
+          privateNodes: privateCount,
+          avgCPU: avgCpuUsage.percent,
+          avgRAM: avgRamUsage.ratio * 100, // Convert ratio to percentage
+          avgUptime: pnodes.reduce((sum, p) => sum + (p.stats?.uptime || 0), 0) / pnodes.length,
+          healthyNodes: pnodes.filter(p => ((p as any)._score || 0) >= 70).length,
+          networkThroughput: totalPackets,
+          totalStorage: totalStorage,
+        };
 
-    generatePDFReport({
-      nodes: pnodes,
-      summary,
-    });
+        generatePDFReport({
+          nodes: pnodes,
+          summary,
+        });
+        
+        // Success toast
+        toast.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3';
+        toast.innerHTML = `
+          <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>PDF exported successfully!</span>
+        `;
+        
+        setTimeout(() => {
+          toast.remove();
+        }, 3000);
+      } catch (error) {
+        console.error('PDF export failed:', error);
+        
+        // Error toast
+        toast.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3';
+        toast.innerHTML = `
+          <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span>PDF export failed. Please try again.</span>
+        `;
+        
+        setTimeout(() => {
+          toast.remove();
+        }, 5000);
+      }
+    }, 100);
   }, [pnodes, publicCount, privateCount, avgCpuUsage, avgRamUsage]);
 
   // Export PDF Report - Selected Nodes (NEW!)
   const exportSelectedPdf = useCallback(() => {
     if (selectedNodes.length === 0) return;
+    
+    const nodeCount = selectedNodes.length;
+    
+    // Show confirmation dialog for large exports (>100 nodes)
+    if (nodeCount > 100) {
+      const confirmed = window.confirm(
+        `⚠️ Large Export Warning\n\n` +
+        `You are about to export ${nodeCount} selected nodes to PDF.\n` +
+        `This may take 10-30 seconds and could slow down your browser.\n\n` +
+        `Do you want to continue?`
+      );
+      
+      if (!confirmed) {
+        return;
+      }
+    }
+    
+    // Show loading toast
+    const toastId = `pdf-export-selected-${Date.now()}`;
+    const toast = document.createElement('div');
+    toast.id = toastId;
+    toast.className = 'fixed top-4 right-4 bg-purple-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3';
+    toast.innerHTML = `
+      <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span>Exporting ${nodeCount} selected nodes...</span>
+    `;
+    document.body.appendChild(toast);
+    
+    // Use setTimeout to allow UI to update before heavy processing
+    setTimeout(() => {
+      try {
+        const totalPackets = selectedNodes.reduce((sum, n) => sum + (n.stats?.packets_sent || 0) + (n.stats?.packets_received || 0), 0);
+        const totalStorage = selectedNodes.reduce((sum, n) => sum + (n.stats?.storage_committed || 0), 0);
 
-    const totalPackets = selectedNodes.reduce((sum, n) => sum + (n.stats?.packets_sent || 0) + (n.stats?.packets_received || 0), 0);
-    const totalStorage = selectedNodes.reduce((sum, n) => sum + (n.stats?.storage_committed || 0), 0);
+        const summary = {
+          totalNodes: selectedNodes.length,
+          publicNodes: selectedNodes.filter(n => n.status === 'active').length,
+          privateNodes: selectedNodes.filter(n => n.status !== 'active').length,
+          avgCPU: selectedNodes.reduce((sum, n) => sum + (n.stats?.cpu_percent || 0), 0) / selectedNodes.length,
+          avgRAM: selectedNodes.reduce((sum, n) => {
+            const usage = n.stats?.ram_used && n.stats?.ram_total 
+              ? (n.stats.ram_used / n.stats.ram_total) * 100 
+              : 0;
+            return sum + usage;
+          }, 0) / selectedNodes.length,
+          avgUptime: selectedNodes.reduce((sum, n) => sum + (n.stats?.uptime || 0), 0) / selectedNodes.length,
+          healthyNodes: selectedNodes.filter(n => ((n as any)._score || 0) >= 70).length,
+          networkThroughput: totalPackets,
+          totalStorage: totalStorage,
+        };
 
-    const summary = {
-      totalNodes: selectedNodes.length,
-      publicNodes: selectedNodes.filter(n => n.status === 'active').length,
-      privateNodes: selectedNodes.filter(n => n.status !== 'active').length,
-      avgCPU: selectedNodes.reduce((sum, n) => sum + (n.stats?.cpu_percent || 0), 0) / selectedNodes.length,
-      avgRAM: selectedNodes.reduce((sum, n) => {
-        const usage = n.stats?.ram_used && n.stats?.ram_total 
-          ? (n.stats.ram_used / n.stats.ram_total) * 100 
-          : 0;
-        return sum + usage;
-      }, 0) / selectedNodes.length,
-      avgUptime: selectedNodes.reduce((sum, n) => sum + (n.stats?.uptime || 0), 0) / selectedNodes.length,
-      healthyNodes: selectedNodes.filter(n => ((n as any)._score || 0) >= 70).length,
-      networkThroughput: totalPackets,
-      totalStorage: totalStorage,
-    };
-
-    generatePDFReport({
-      nodes: selectedNodes,
-      summary,
-      isCustomSelection: true,
-    });
+        generatePDFReport({
+          nodes: selectedNodes,
+          summary,
+          isCustomSelection: true,
+        });
+        
+        // Success toast
+        toast.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3';
+        toast.innerHTML = `
+          <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>PDF exported successfully!</span>
+        `;
+        
+        setTimeout(() => {
+          toast.remove();
+        }, 3000);
+      } catch (error) {
+        console.error('PDF export failed:', error);
+        
+        // Error toast
+        toast.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3';
+        toast.innerHTML = `
+          <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span>PDF export failed. Please try again.</span>
+        `;
+        
+        setTimeout(() => {
+          toast.remove();
+        }, 5000);
+      }
+    }, 100);
   }, [selectedNodes]);
 
   if (loading) {
@@ -538,74 +665,7 @@ export default function Page() {
         disableOverlayClose={true}
         spotlightClicks={false}
         callback={handleJoyrideCallback}
-        styles={{
-          options: {
-            primaryColor: '#14f195',
-            backgroundColor: theme === 'dark' ? '#1a1f3a' : '#ffffff',
-            textColor: theme === 'dark' ? '#f8fafc' : '#0f172a',
-            overlayColor: 'rgba(10, 14, 39, 0.85)',
-            arrowColor: theme === 'dark' ? '#1a1f3a' : '#ffffff',
-            zIndex: 10000,
-          },
-          tooltip: {
-            borderRadius: '16px',
-            fontSize: '14px',
-            padding: '20px',
-            border: theme === 'dark' 
-              ? '1px solid rgba(100, 116, 139, 0.2)' 
-              : '1px solid #e5e7eb',
-            boxShadow: theme === 'dark'
-              ? '0 20px 45px -25px rgba(2, 4, 24, 0.65), 0 0 40px rgba(20, 241, 149, 0.1)'
-              : '0 10px 25px rgba(0, 0, 0, 0.1)',
-          },
-          tooltipContainer: {
-            textAlign: 'left',
-          },
-          tooltipTitle: {
-            fontSize: '16px',
-            fontWeight: '700',
-            marginBottom: '12px',
-            lineHeight: '1.4',
-          },
-          tooltipContent: {
-            fontSize: '14px',
-            lineHeight: '1.6',
-            padding: '0',
-          },
-          buttonNext: {
-            backgroundColor: '#14f195',
-            color: '#0a0e27',
-            borderRadius: '8px',
-            padding: '10px 20px',
-            fontSize: '14px',
-            fontWeight: '600',
-            border: 'none',
-            boxShadow: '0 0 20px rgba(20, 241, 149, 0.3)',
-            transition: 'all 0.3s ease',
-          },
-          buttonBack: {
-            color: '#14f195',
-            fontSize: '14px',
-            fontWeight: '600',
-            marginRight: '12px',
-          },
-          buttonSkip: {
-            color: '#94a3b8',
-            fontSize: '13px',
-            fontWeight: '500',
-          },
-          spotlight: {
-            borderRadius: '12px',
-            boxShadow: '0 0 0 9999px rgba(10, 14, 39, 0.85), 0 0 40px rgba(20, 241, 149, 0.2)',
-          },
-          beaconInner: {
-            backgroundColor: '#14f195',
-          },
-          beaconOuter: {
-            backgroundColor: 'rgba(20, 241, 149, 0.3)',
-            borderColor: '#14f195',
-          },
-        }}
+        styles={getJoyrideStyles(theme)}
         locale={{
           back: '← Back',
           close: 'Close',
