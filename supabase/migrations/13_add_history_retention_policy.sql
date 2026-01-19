@@ -11,9 +11,13 @@ CREATE OR REPLACE FUNCTION cleanup_old_history()
 RETURNS TABLE(deleted_count bigint) AS $$
 DECLARE
     rows_deleted bigint;
+    cutoff_timestamp bigint;
 BEGIN
+    -- Calculate 30 days ago in Unix timestamp (seconds)
+    cutoff_timestamp := EXTRACT(EPOCH FROM (NOW() - INTERVAL '30 days'))::bigint;
+    
     DELETE FROM pnode_history
-    WHERE recorded_at < NOW() - INTERVAL '30 days';
+    WHERE ts < cutoff_timestamp;
     
     GET DIAGNOSTICS rows_deleted = ROW_COUNT;
     
@@ -30,13 +34,14 @@ Expected cleanup: ~144,000 rows/day for 500 nodes with 5min crawls.';
 
 -- Add composite index for efficient cleanup queries
 -- This index helps the DELETE query find old records quickly
+-- Note: Using ts (unix timestamp) instead of recorded_at
 CREATE INDEX IF NOT EXISTS idx_pnode_history_cleanup 
-ON pnode_history(recorded_at) 
-WHERE recorded_at < NOW() - INTERVAL '30 days';
+ON pnode_history(ts) 
+WHERE ts < EXTRACT(EPOCH FROM (NOW() - INTERVAL '30 days'))::bigint;
 
 -- Add index to speed up dashboard queries (most recent history per node)
 CREATE INDEX IF NOT EXISTS idx_pnode_history_ip_recent 
-ON pnode_history(ip, recorded_at DESC);
+ON pnode_history(ip, ts DESC);
 
 COMMENT ON INDEX idx_pnode_history_cleanup IS 
 'Partial index for efficient cleanup of old history records (>30 days)';
