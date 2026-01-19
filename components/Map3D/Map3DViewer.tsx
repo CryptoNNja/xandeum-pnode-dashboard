@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { X, Camera } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { Map3DScene } from './Map3DScene';
@@ -15,6 +15,13 @@ type Map3DViewerProps = {
 };
 
 export function Map3DViewer({ pnodes, onClose }: Map3DViewerProps) {
+  // Hide other floating widgets when 3D modal is open
+  useEffect(() => {
+    document.body.style.setProperty('--hide-floating-widgets', '1');
+    return () => {
+      document.body.style.removeProperty('--hide-floating-widgets');
+    };
+  }, []);
   const { theme } = useTheme();
   const [mode, setMode] = useState<Globe3DMode>('free');
   const [showArcs, setShowArcs] = useState(false);
@@ -151,8 +158,8 @@ export function Map3DViewer({ pnodes, onClose }: Map3DViewerProps) {
         visualSettings={visualSettings}
       />
       
-      {/* Bottom Legend - Compact */}
-      <div className="absolute bottom-6 right-6 z-20 bg-bg-card/95 backdrop-blur-xl border border-border-app rounded-xl p-4 shadow-lg max-w-xs">
+      {/* Bottom Legend - Compact (repositioned to avoid button overlap) */}
+      <div className="absolute bottom-6 left-[26rem] z-20 bg-bg-card/95 backdrop-blur-xl border border-border-app rounded-xl p-4 shadow-lg max-w-xs">
         <div className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
           Visual Guide
         </div>

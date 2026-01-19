@@ -41,7 +41,7 @@ export function Map3DSidebar({
   onVisualSettingsChange,
 }: Map3DSidebarProps) {
   return (
-    <div className="fixed left-6 top-20 bottom-6 z-20 w-80 bg-bg-card/95 backdrop-blur-xl border border-border-app rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed left-6 top-20 bottom-6 z-20 w-80 bg-bg-card/95 backdrop-blur-xl border border-border-app rounded-2xl shadow-2xl flex flex-col max-h-[calc(100vh-8rem)]">
       {/* Header */}
       <div className="p-4 border-b border-border-app bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
         <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">

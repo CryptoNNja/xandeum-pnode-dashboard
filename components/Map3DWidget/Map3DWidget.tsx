@@ -15,14 +15,25 @@ type Map3DWidgetProps = {
 export function Map3DWidget({ pnodes }: Map3DWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   
+  // Hide button when modal is open
+  const buttonStyle = isOpen ? { display: 'none' } : undefined;
+  
   return (
     <>
       {/* Floating Button - Above Calculator */}
-      <Map3DButton onClick={() => setIsOpen(true)} isOpen={isOpen} />
+      <div style={buttonStyle}>
+        <Map3DButton onClick={() => setIsOpen(true)} isOpen={isOpen} />
+      </div>
       
       {/* 3D Viewer Modal */}
       {isOpen && (
-        <Suspense fallback={
+        <>
+          {/* Hide other widgets using CSS */}
+          <style>{`
+            [class*="STOINCCalculator"] { display: none !important; }
+            [class*="ChatbotWidget"] { display: none !important; }
+          `}</style>
+          <Suspense fallback={
           <div className="fixed inset-0 z-50 bg-bg-dark flex items-center justify-center">
             <div className="text-center">
               <div className="inline-block w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
@@ -33,6 +44,7 @@ export function Map3DWidget({ pnodes }: Map3DWidgetProps) {
         }>
           <Map3DViewer pnodes={pnodes} onClose={() => setIsOpen(false)} />
         </Suspense>
+        </>
       )}
     </>
   );

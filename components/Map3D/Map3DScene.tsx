@@ -36,37 +36,53 @@ function Earth({ theme }: { theme: Globe3DTheme }) {
     }
   });
   
-  // Create country borders from GeoJSON
-  const countryBorders = geoJsonData?.features.map((feature: any, index: number) => {
-    if (!feature.geometry || feature.geometry.type !== 'Polygon') return null;
+  // Create country borders from GeoJSON (support both Polygon and MultiPolygon)
+  const countryBorders = geoJsonData?.features.flatMap((feature: any, featureIndex: number) => {
+    if (!feature.geometry) return [];
     
-    const coordinates = feature.geometry.coordinates[0];
-    if (!coordinates || coordinates.length < 3) return null;
+    const { type, coordinates } = feature.geometry;
+    let polygons: number[][][] = [];
     
-    const points = coordinates.map((coord: number[]) => {
-      const [lng, lat] = coord;
-      const phi = (90 - lat) * (Math.PI / 180);
-      const theta = (lng + 180) * (Math.PI / 180);
-      const radius = 100.2; // Slightly above sphere surface
+    // Handle both Polygon and MultiPolygon
+    if (type === 'Polygon') {
+      polygons = [coordinates];
+    } else if (type === 'MultiPolygon') {
+      polygons = coordinates;
+    } else {
+      return [];
+    }
+    
+    // Create lines for each polygon
+    return polygons.flatMap((polygon, polyIndex) => {
+      // polygon[0] is the outer ring
+      const coords = polygon[0];
+      if (!coords || coords.length < 3) return [];
       
-      return new THREE.Vector3(
-        radius * Math.sin(phi) * Math.cos(theta),
-        radius * Math.cos(phi),
-        radius * Math.sin(phi) * Math.sin(theta)
+      const points = coords.map((coord: any) => {
+        const [lng, lat] = coord;
+        const phi = (90 - lat) * (Math.PI / 180);
+        const theta = (lng + 180) * (Math.PI / 180);
+        const radius = 100.3; // Slightly above sphere surface
+        
+        return new THREE.Vector3(
+          -radius * Math.sin(phi) * Math.cos(theta),
+          radius * Math.cos(phi),
+          radius * Math.sin(phi) * Math.sin(theta)
+        );
+      });
+      
+      return (
+        <Line
+          key={`border-${featureIndex}-${polyIndex}`}
+          points={points}
+          color={theme.countries.stroke}
+          lineWidth={1.2}
+          transparent
+          opacity={0.7}
+        />
       );
     });
-    
-    return (
-      <Line
-        key={`border-${index}`}
-        points={points}
-        color={theme.countries.stroke}
-        lineWidth={1.5}
-        transparent
-        opacity={0.6}
-      />
-    );
-  }).filter(Boolean);
+  }) || [];
   
   return (
     <group ref={earthRef}>
@@ -116,7 +132,8 @@ function NodePoint({
   const theta = (node.lng + 180) * (Math.PI / 180);
   
   const height = showHeight ? getNodeHeight(node.health) * 20 : 2;
-  const x = (radius + height) * Math.sin(phi) * Math.cos(theta);
+  // Fixed position calculation (negative x for correct orientation)
+  const x = -(radius + height) * Math.sin(phi) * Math.cos(theta);
   const y = (radius + height) * Math.cos(phi);
   const z = (radius + height) * Math.sin(phi) * Math.sin(theta);
   
