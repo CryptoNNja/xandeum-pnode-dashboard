@@ -27,6 +27,7 @@ import { generatePDFReport } from "@/lib/pdf-export";
 import { useToast } from "@/components/common/Toast";
 import Joyride from 'react-joyride';
 import { useOnboarding } from '@/hooks/useOnboarding';
+import { getJoyrideStyles } from '@/lib/joyride-styles';
 
 const TOOLTIP_STYLES = `
   .recharts-tooltip-wrapper { outline: none !important; }
@@ -462,57 +463,117 @@ export default function Page() {
 
   // Export PDF Report - Full Network
   const exportPdf = useCallback(() => {
-    const totalPackets = pnodes.reduce((sum, p) => sum + (p.stats?.packets_sent || 0) + (p.stats?.packets_received || 0), 0);
-    const totalStorage = pnodes.reduce((sum, p) => sum + (p.stats?.storage_committed || 0), 0);
+    const nodeCount = pnodes.length;
     
-    const summary = {
-      totalNodes: pnodes.length,
-      publicNodes: publicCount,
-      privateNodes: privateCount,
-      avgCPU: avgCpuUsage.percent,
-      avgRAM: avgRamUsage.ratio * 100, // Convert ratio to percentage
-      avgUptime: pnodes.reduce((sum, p) => sum + (p.stats?.uptime || 0), 0) / pnodes.length,
-      healthyNodes: pnodes.filter(p => ((p as any)._score || 0) >= 70).length,
-      networkThroughput: totalPackets,
-      totalStorage: totalStorage,
-    };
+    // Show confirmation dialog for large exports (>100 nodes)
+    if (nodeCount > 100) {
+      const confirmed = window.confirm(
+        `⚠️ Large Export Warning\n\n` +
+        `You are about to export ${nodeCount} nodes to PDF.\n` +
+        `This may take 10-30 seconds and could slow down your browser.\n\n` +
+        `Do you want to continue?`
+      );
+      
+      if (!confirmed) {
+        return;
+      }
+    }
+    
+    // Show loading toast
+    toast.info(`Generating PDF... (${nodeCount} nodes)`, 30000); // 30s duration for long operations
+    
+    // Use setTimeout to allow UI to update before heavy processing
+    setTimeout(() => {
+      try {
+        const totalPackets = pnodes.reduce((sum, p) => sum + (p.stats?.packets_sent || 0) + (p.stats?.packets_received || 0), 0);
+        const totalStorage = pnodes.reduce((sum, p) => sum + (p.stats?.storage_committed || 0), 0);
+        
+        const summary = {
+          totalNodes: pnodes.length,
+          publicNodes: publicCount,
+          privateNodes: privateCount,
+          avgCPU: avgCpuUsage.percent,
+          avgRAM: avgRamUsage.ratio * 100, // Convert ratio to percentage
+          avgUptime: pnodes.reduce((sum, p) => sum + (p.stats?.uptime || 0), 0) / pnodes.length,
+          healthyNodes: pnodes.filter(p => ((p as any)._score || 0) >= 70).length,
+          networkThroughput: totalPackets,
+          totalStorage: totalStorage,
+        };
 
-    generatePDFReport({
-      nodes: pnodes,
-      summary,
-    });
-  }, [pnodes, publicCount, privateCount, avgCpuUsage, avgRamUsage]);
+        generatePDFReport({
+          nodes: pnodes,
+          summary,
+        });
+        
+        // Success toast
+        toast.success('PDF exported successfully!');
+      } catch (error) {
+        console.error('PDF export failed:', error);
+        toast.error('PDF export failed. Please try again.');
+      }
+    }, 100);
+  }, [pnodes, publicCount, privateCount, avgCpuUsage, avgRamUsage, toast]);
 
   // Export PDF Report - Selected Nodes (NEW!)
   const exportSelectedPdf = useCallback(() => {
     if (selectedNodes.length === 0) return;
+    
+    const nodeCount = selectedNodes.length;
+    
+    // Show confirmation dialog for large exports (>100 nodes)
+    if (nodeCount > 100) {
+      const confirmed = window.confirm(
+        `⚠️ Large Export Warning\n\n` +
+        `You are about to export ${nodeCount} selected nodes to PDF.\n` +
+        `This may take 10-30 seconds and could slow down your browser.\n\n` +
+        `Do you want to continue?`
+      );
+      
+      if (!confirmed) {
+        return;
+      }
+    }
+    
+    // Show loading toast
+    toast.info(`Exporting ${nodeCount} selected nodes...`, 30000); // 30s duration for long operations
+    
+    // Use setTimeout to allow UI to update before heavy processing
+    setTimeout(() => {
+      try {
+        const totalPackets = selectedNodes.reduce((sum, n) => sum + (n.stats?.packets_sent || 0) + (n.stats?.packets_received || 0), 0);
+        const totalStorage = selectedNodes.reduce((sum, n) => sum + (n.stats?.storage_committed || 0), 0);
 
-    const totalPackets = selectedNodes.reduce((sum, n) => sum + (n.stats?.packets_sent || 0) + (n.stats?.packets_received || 0), 0);
-    const totalStorage = selectedNodes.reduce((sum, n) => sum + (n.stats?.storage_committed || 0), 0);
+        const summary = {
+          totalNodes: selectedNodes.length,
+          publicNodes: selectedNodes.filter(n => n.status === 'active').length,
+          privateNodes: selectedNodes.filter(n => n.status !== 'active').length,
+          avgCPU: selectedNodes.reduce((sum, n) => sum + (n.stats?.cpu_percent || 0), 0) / selectedNodes.length,
+          avgRAM: selectedNodes.reduce((sum, n) => {
+            const usage = n.stats?.ram_used && n.stats?.ram_total 
+              ? (n.stats.ram_used / n.stats.ram_total) * 100 
+              : 0;
+            return sum + usage;
+          }, 0) / selectedNodes.length,
+          avgUptime: selectedNodes.reduce((sum, n) => sum + (n.stats?.uptime || 0), 0) / selectedNodes.length,
+          healthyNodes: selectedNodes.filter(n => ((n as any)._score || 0) >= 70).length,
+          networkThroughput: totalPackets,
+          totalStorage: totalStorage,
+        };
 
-    const summary = {
-      totalNodes: selectedNodes.length,
-      publicNodes: selectedNodes.filter(n => n.status === 'active').length,
-      privateNodes: selectedNodes.filter(n => n.status !== 'active').length,
-      avgCPU: selectedNodes.reduce((sum, n) => sum + (n.stats?.cpu_percent || 0), 0) / selectedNodes.length,
-      avgRAM: selectedNodes.reduce((sum, n) => {
-        const usage = n.stats?.ram_used && n.stats?.ram_total 
-          ? (n.stats.ram_used / n.stats.ram_total) * 100 
-          : 0;
-        return sum + usage;
-      }, 0) / selectedNodes.length,
-      avgUptime: selectedNodes.reduce((sum, n) => sum + (n.stats?.uptime || 0), 0) / selectedNodes.length,
-      healthyNodes: selectedNodes.filter(n => ((n as any)._score || 0) >= 70).length,
-      networkThroughput: totalPackets,
-      totalStorage: totalStorage,
-    };
-
-    generatePDFReport({
-      nodes: selectedNodes,
-      summary,
-      isCustomSelection: true,
-    });
-  }, [selectedNodes]);
+        generatePDFReport({
+          nodes: selectedNodes,
+          summary,
+          isCustomSelection: true,
+        });
+        
+        // Success toast
+        toast.success('PDF exported successfully!');
+      } catch (error) {
+        console.error('PDF export failed:', error);
+        toast.error('PDF export failed. Please try again.');
+      }
+    }, 100);
+  }, [selectedNodes, toast]);
 
   if (loading) {
     return <SkeletonLoader />;
@@ -538,74 +599,7 @@ export default function Page() {
         disableOverlayClose={true}
         spotlightClicks={false}
         callback={handleJoyrideCallback}
-        styles={{
-          options: {
-            primaryColor: '#14f195',
-            backgroundColor: theme === 'dark' ? '#1a1f3a' : '#ffffff',
-            textColor: theme === 'dark' ? '#f8fafc' : '#0f172a',
-            overlayColor: 'rgba(10, 14, 39, 0.85)',
-            arrowColor: theme === 'dark' ? '#1a1f3a' : '#ffffff',
-            zIndex: 10000,
-          },
-          tooltip: {
-            borderRadius: '16px',
-            fontSize: '14px',
-            padding: '20px',
-            border: theme === 'dark' 
-              ? '1px solid rgba(100, 116, 139, 0.2)' 
-              : '1px solid #e5e7eb',
-            boxShadow: theme === 'dark'
-              ? '0 20px 45px -25px rgba(2, 4, 24, 0.65), 0 0 40px rgba(20, 241, 149, 0.1)'
-              : '0 10px 25px rgba(0, 0, 0, 0.1)',
-          },
-          tooltipContainer: {
-            textAlign: 'left',
-          },
-          tooltipTitle: {
-            fontSize: '16px',
-            fontWeight: '700',
-            marginBottom: '12px',
-            lineHeight: '1.4',
-          },
-          tooltipContent: {
-            fontSize: '14px',
-            lineHeight: '1.6',
-            padding: '0',
-          },
-          buttonNext: {
-            backgroundColor: '#14f195',
-            color: '#0a0e27',
-            borderRadius: '8px',
-            padding: '10px 20px',
-            fontSize: '14px',
-            fontWeight: '600',
-            border: 'none',
-            boxShadow: '0 0 20px rgba(20, 241, 149, 0.3)',
-            transition: 'all 0.3s ease',
-          },
-          buttonBack: {
-            color: '#14f195',
-            fontSize: '14px',
-            fontWeight: '600',
-            marginRight: '12px',
-          },
-          buttonSkip: {
-            color: '#94a3b8',
-            fontSize: '13px',
-            fontWeight: '500',
-          },
-          spotlight: {
-            borderRadius: '12px',
-            boxShadow: '0 0 0 9999px rgba(10, 14, 39, 0.85), 0 0 40px rgba(20, 241, 149, 0.2)',
-          },
-          beaconInner: {
-            backgroundColor: '#14f195',
-          },
-          beaconOuter: {
-            backgroundColor: 'rgba(20, 241, 149, 0.3)',
-            borderColor: '#14f195',
-          },
-        }}
+        styles={getJoyrideStyles(theme)}
         locale={{
           back: '← Back',
           close: 'Close',
