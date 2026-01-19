@@ -22,48 +22,58 @@ export function getJoyrideStyles(theme: 'light' | 'dark'): Partial<Styles> {
       fontSize: '14px',
       padding: '20px',
       border: isDark 
-        ? '1px solid rgba(148, 163, 184, 0.2)' 
-        : '1px solid rgba(100, 116, 139, 0.2)',
+        ? '1px solid rgba(100, 116, 139, 0.2)' 
+        : '1px solid #e5e7eb',
       boxShadow: isDark
-        ? '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
-        : '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+        ? '0 20px 45px -25px rgba(2, 4, 24, 0.65), 0 0 40px rgba(20, 241, 149, 0.1)'
+        : '0 10px 25px rgba(0, 0, 0, 0.1)',
     },
     tooltipContainer: {
       textAlign: 'left',
     },
     tooltipTitle: {
-      fontSize: '18px',
-      fontWeight: '600',
-      marginBottom: '8px',
+      fontSize: '16px',
+      fontWeight: '700',
+      marginBottom: '12px',
+      lineHeight: '1.4',
     },
     tooltipContent: {
-      padding: '8px 0',
+      fontSize: '14px',
       lineHeight: '1.6',
+      padding: '0',
     },
     buttonNext: {
       backgroundColor: '#14f195',
       color: '#0a0e27',
       borderRadius: '8px',
+      padding: '10px 20px',
       fontSize: '14px',
       fontWeight: '600',
-      padding: '10px 20px',
       border: 'none',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease',
+      boxShadow: '0 0 20px rgba(20, 241, 149, 0.3)',
+      transition: 'all 0.3s ease',
     },
     buttonBack: {
-      color: isDark ? '#94a3b8' : '#64748b',
+      color: '#14f195',
       fontSize: '14px',
-      fontWeight: '500',
+      fontWeight: '600',
       marginRight: '12px',
     },
     buttonSkip: {
-      color: isDark ? '#94a3b8' : '#64748b',
-      fontSize: '14px',
+      color: '#94a3b8',
+      fontSize: '13px',
       fontWeight: '500',
     },
     spotlight: {
-      borderRadius: '8px',
+      borderRadius: '12px',
+      boxShadow: '0 0 0 9999px rgba(10, 14, 39, 0.85), 0 0 40px rgba(20, 241, 149, 0.2)',
+    },
+    beaconInner: {
+      backgroundColor: '#14f195',
+    },
+    beaconOuter: {
+      backgroundColor: 'rgba(20, 241, 149, 0.3)',
+      borderColor: '#14f195',
     },
   };
 }

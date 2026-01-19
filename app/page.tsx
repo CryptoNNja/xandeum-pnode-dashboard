@@ -480,18 +480,7 @@ export default function Page() {
     }
     
     // Show loading toast
-    const toastId = `pdf-export-${Date.now()}`;
-    const toast = document.createElement('div');
-    toast.id = toastId;
-    toast.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3';
-    toast.innerHTML = `
-      <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-      <span>Generating PDF... (${nodeCount} nodes)</span>
-    `;
-    document.body.appendChild(toast);
+    toast.info(`Generating PDF... (${nodeCount} nodes)`, 30000); // 30s duration for long operations
     
     // Use setTimeout to allow UI to update before heavy processing
     setTimeout(() => {
@@ -517,35 +506,13 @@ export default function Page() {
         });
         
         // Success toast
-        toast.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3';
-        toast.innerHTML = `
-          <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-          </svg>
-          <span>PDF exported successfully!</span>
-        `;
-        
-        setTimeout(() => {
-          toast.remove();
-        }, 3000);
+        toast.success('PDF exported successfully!');
       } catch (error) {
         console.error('PDF export failed:', error);
-        
-        // Error toast
-        toast.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3';
-        toast.innerHTML = `
-          <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-          <span>PDF export failed. Please try again.</span>
-        `;
-        
-        setTimeout(() => {
-          toast.remove();
-        }, 5000);
+        toast.error('PDF export failed. Please try again.');
       }
     }, 100);
-  }, [pnodes, publicCount, privateCount, avgCpuUsage, avgRamUsage]);
+  }, [pnodes, publicCount, privateCount, avgCpuUsage, avgRamUsage, toast]);
 
   // Export PDF Report - Selected Nodes (NEW!)
   const exportSelectedPdf = useCallback(() => {
@@ -568,18 +535,7 @@ export default function Page() {
     }
     
     // Show loading toast
-    const toastId = `pdf-export-selected-${Date.now()}`;
-    const toast = document.createElement('div');
-    toast.id = toastId;
-    toast.className = 'fixed top-4 right-4 bg-purple-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3';
-    toast.innerHTML = `
-      <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-      <span>Exporting ${nodeCount} selected nodes...</span>
-    `;
-    document.body.appendChild(toast);
+    toast.info(`Exporting ${nodeCount} selected nodes...`, 30000); // 30s duration for long operations
     
     // Use setTimeout to allow UI to update before heavy processing
     setTimeout(() => {
@@ -611,35 +567,13 @@ export default function Page() {
         });
         
         // Success toast
-        toast.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3';
-        toast.innerHTML = `
-          <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-          </svg>
-          <span>PDF exported successfully!</span>
-        `;
-        
-        setTimeout(() => {
-          toast.remove();
-        }, 3000);
+        toast.success('PDF exported successfully!');
       } catch (error) {
         console.error('PDF export failed:', error);
-        
-        // Error toast
-        toast.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3';
-        toast.innerHTML = `
-          <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-          <span>PDF export failed. Please try again.</span>
-        `;
-        
-        setTimeout(() => {
-          toast.remove();
-        }, 5000);
+        toast.error('PDF export failed. Please try again.');
       }
     }, 100);
-  }, [selectedNodes]);
+  }, [selectedNodes, toast]);
 
   if (loading) {
     return <SkeletonLoader />;
