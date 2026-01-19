@@ -33,11 +33,11 @@ We are intentionally using Next.js 16 (release candidate) for the following reas
 
 ## Type Safety
 
-### Zod v3.23.8 (Not v4.x)
+### Zod v3.25.76 (Not v4.x)
 
 **Why downgrade from v4 to v3?**
 
-While Zod v4 has great new features, we use **v3.23.8** for critical compatibility:
+While Zod v4 has great new features, we use **v3.25.76** for critical compatibility:
 
 1. **AI SDK Compatibility**: The Vercel AI SDK (`@ai-sdk/groq`, `ai@3.4.33`) explicitly requires `zod@^3.0.0`
 2. **Schema Stability**: Zod v3 is battle-tested with Supabase, tRPC, and all our validation logic
@@ -51,11 +51,8 @@ While Zod v4 has great new features, we use **v3.23.8** for critical compatibili
 - ✅ When `@ai-sdk/*` packages officially support Zod v4
 - ✅ When we can test all AI chat validation schemas thoroughly
 
-**Current npm warnings**:
-```
-ERESOLVE overriding peer dependency
-```
-These are **expected and safe** - npm allows the override because v3 and v4 are compatible at runtime for our use cases.
+**npm warnings resolved** ✅:
+By using Zod v3, all peer dependency warnings with AI SDK packages are eliminated. The dependencies are now fully compatible.
 
 ---
 
@@ -98,7 +95,7 @@ const NodesMap = dynamic(() => import("@/components/NodesMap"), {
 
 ## Testing
 
-### Vitest v2.1.8
+### Vitest v1.6.1
 
 **Current Coverage**:
 - ✅ 77 tests passing (scoring, health, KPI, utils)
