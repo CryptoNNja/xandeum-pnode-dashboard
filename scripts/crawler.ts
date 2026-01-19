@@ -9,6 +9,7 @@ import { fetchOfficialRegistries, getCreditsForPubkey } from '../lib/official-ap
 import { calculateConfidence, type PNodeForScoring } from '../lib/confidence-scoring';
 import type { DiscoveredNode, NodeToIncrement, GeolocationResult } from './crawler-types';
 import pLimit from 'p-limit';
+import Bottleneck from 'bottleneck';
 
 // IMPORTANT: this file is imported by Next.js API routes.
 // It must be "import-safe": no env validation, no network calls, and no crawl execution at module load.
@@ -488,13 +489,19 @@ export const main = async () => {
     // ip-api.com free tier: 45 requests/minute, we use 40/min to be safe
     console.log(`📍 Geolocating ${allIps.length} IPs (with cache check)...`);
     const geoStartTime = Date.now();
-    const limit = pLimit(40); // Max 40 concurrent requests
+    
+    // Bottleneck rate limiter: guarantees minimum 1.5s between API calls
+    // This prevents burst requests and respects ip-api.com rate limits
+    const limiter = new Bottleneck({
+        maxConcurrent: 1,        // Only 1 request at a time
+        minTime: 1500,           // Minimum 1.5s between each request (40 req/min)
+    });
     
     const geoTasks = allIps.map(ip => 
-        limit(async () => {
+        limiter.schedule(async () => {
             const existing = existingMap.get(ip);
             if (existing && existing.lat && existing.lng && existing.country_code) {
-                // Return cached geolocation
+                // Return cached geolocation (no API call, no rate limit impact)
                 return {
                     lat: existing.lat,
                     lng: existing.lng,
@@ -504,12 +511,9 @@ export const main = async () => {
                 };
             }
             
-            // Fetch new geolocation
+            // Fetch new geolocation (Bottleneck ensures 1.5s spacing)
             try {
-                const geo = await getGeolocation(ip);
-                // Respect rate limit (40 req/min = 1 req per 1.5s average)
-                await new Promise(r => setTimeout(r, 1500));
-                return geo;
+                return await getGeolocation(ip);
             } catch (error) {
                 console.error(`   Failed to geolocate ${ip}:`, error);
                 return null;
