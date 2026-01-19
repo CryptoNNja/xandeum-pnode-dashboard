@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { X, Camera, Download } from 'lucide-react';
+import { X, Camera } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { Map3DScene } from './Map3DScene';
-import { Map3DControls } from './Map3DControls';
+import { Map3DSidebar } from './Map3DSidebar';
 import { Map3DLegend } from './Map3DLegend';
 import { pnodeToNode3D, getGlobeTheme, filterNodes } from '@/lib/map-3d-utils';
 import type { Node3DData, Globe3DMode, Globe3DFilter, CameraPosition } from '@/lib/types-3d';
@@ -22,6 +22,11 @@ export function Map3DViewer({ pnodes, onClose }: Map3DViewerProps) {
     health: 'all',
     network: 'all',
     activeOnly: false,
+  });
+  const [visualSettings, setVisualSettings] = useState({
+    showHeight: true,
+    showGlow: true,
+    showLabels: false,
   });
   const [cameraPosition, setCameraPosition] = useState<CameraPosition | undefined>();
   const [hoveredNode, setHoveredNode] = useState<Node3DData | null>(null);
@@ -113,8 +118,8 @@ export function Map3DViewer({ pnodes, onClose }: Map3DViewerProps) {
         </div>
       </div>
       
-      {/* Controls */}
-      <Map3DControls
+      {/* Sidebar Controls */}
+      <Map3DSidebar
         mode={mode}
         onModeChange={setMode}
         filter={filter}
@@ -122,8 +127,9 @@ export function Map3DViewer({ pnodes, onClose }: Map3DViewerProps) {
         showArcs={showArcs}
         onToggleArcs={() => setShowArcs(!showArcs)}
         onSearch={handleSearch}
-        totalNodes={allNodes.length}
-        filteredNodes={filteredNodesData.length}
+        stats={stats}
+        visualSettings={visualSettings}
+        onVisualSettingsChange={setVisualSettings}
       />
       
       {/* 3D Scene */}
@@ -142,25 +148,31 @@ export function Map3DViewer({ pnodes, onClose }: Map3DViewerProps) {
         onNodeHover={setHoveredNode}
         showArcs={showArcs}
         cameraPosition={cameraPosition}
+        visualSettings={visualSettings}
       />
       
-      {/* Legend */}
-      <Map3DLegend theme={globeTheme} stats={stats} />
-      
-      {/* Hovered Node Info (floating) */}
-      {hoveredNode && (
-        <div className="absolute top-1/2 right-4 -translate-y-1/2 z-20 bg-bg-card/95 backdrop-blur-sm border border-border-app rounded-xl p-4 shadow-lg max-w-xs">
-          <div className="text-sm font-semibold text-primary mb-2">
-            {hoveredNode.ip}
-          </div>
-          <div className="space-y-1 text-xs text-text-secondary">
-            <div>📍 {hoveredNode.city}, {hoveredNode.country}</div>
-            <div>💚 Health: {hoveredNode.health.toFixed(0)}/100</div>
-            <div>💾 Storage: {hoveredNode.storage.toFixed(2)} GB</div>
-            <div>⏱️ Uptime: {hoveredNode.uptime.toFixed(1)}h</div>
+      {/* Bottom Legend - Compact */}
+      <div className="absolute bottom-6 right-6 z-20 bg-bg-card/95 backdrop-blur-xl border border-border-app rounded-xl p-4 shadow-lg max-w-xs">
+        <div className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
+          Visual Guide
+        </div>
+        <div className="space-y-2 text-xs">
+          {visualSettings.showHeight && (
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-6 bg-gradient-to-t from-red-500 via-yellow-500 to-green-500 rounded" />
+              <span className="text-text-primary">Height = Health Score</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1">
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <div className="w-3 h-3 rounded-full bg-yellow-500" />
+              <div className="w-3 h-3 rounded-full bg-red-500" />
+            </div>
+            <span className="text-text-primary">Color = Health Status</span>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

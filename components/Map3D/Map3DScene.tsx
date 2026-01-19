@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Sphere } from '@react-three/drei';
+import { useRef, useEffect, useState } from 'react';
+import { Canvas, useFrame, useLoader } from '@react-three/fiber';
+import { OrbitControls, PerspectiveCamera, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Node3DData, Globe3DTheme, Globe3DMode } from '@/lib/types-3d';
 import { getNodeColor, getNodeHeight, getNodeSize } from '@/lib/map-3d-utils';
@@ -17,9 +17,18 @@ type Map3DSceneProps = {
   cameraPosition?: { lat: number; lng: number; altitude: number };
 };
 
-// Earth component with realistic styling (matching 2D map)
+// Earth component with realistic texture and country borders
 function Earth({ theme }: { theme: Globe3DTheme }) {
-  const earthRef = useRef<THREE.Mesh>(null);
+  const earthRef = useRef<THREE.Group>(null);
+  const [geoJsonData, setGeoJsonData] = useState<any>(null);
+  
+  // Load GeoJSON for country borders (same as 2D map)
+  useEffect(() => {
+    fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
+      .then(res => res.json())
+      .then(data => setGeoJsonData(data))
+      .catch(err => console.error('Failed to load GeoJSON:', err));
+  }, []);
   
   useFrame(() => {
     if (earthRef.current) {
@@ -27,55 +36,101 @@ function Earth({ theme }: { theme: Globe3DTheme }) {
     }
   });
   
-  // Use colors that match the 2D map GeoJSON style
-  const earthColor = theme.countries.fill; // Dark mode: #1e293b, Light mode: #f1f5f9
-  const borderColor = theme.countries.stroke; // Dark mode: #334155, Light mode: #cbd5e1
+  // Create country borders from GeoJSON
+  const countryBorders = geoJsonData?.features.map((feature: any, index: number) => {
+    if (!feature.geometry || feature.geometry.type !== 'Polygon') return null;
+    
+    const coordinates = feature.geometry.coordinates[0];
+    if (!coordinates || coordinates.length < 3) return null;
+    
+    const points = coordinates.map((coord: number[]) => {
+      const [lng, lat] = coord;
+      const phi = (90 - lat) * (Math.PI / 180);
+      const theta = (lng + 180) * (Math.PI / 180);
+      const radius = 100.2; // Slightly above sphere surface
+      
+      return new THREE.Vector3(
+        radius * Math.sin(phi) * Math.cos(theta),
+        radius * Math.cos(phi),
+        radius * Math.sin(phi) * Math.sin(theta)
+      );
+    });
+    
+    return (
+      <Line
+        key={`border-${index}`}
+        points={points}
+        color={theme.countries.stroke}
+        lineWidth={1.5}
+        transparent
+        opacity={0.6}
+      />
+    );
+  }).filter(Boolean);
   
   return (
-    <mesh ref={earthRef}>
-      <sphereGeometry args={[100, 64, 64]} />
-      <meshStandardMaterial
-        color={earthColor}
-        roughness={0.9}
-        metalness={0.1}
-        emissive={borderColor}
-        emissiveIntensity={0.05}
-      />
-      {/* Wireframe overlay for country borders effect */}
+    <group ref={earthRef}>
+      {/* Main Earth sphere */}
       <mesh>
-        <sphereGeometry args={[100.5, 32, 32]} />
-        <meshBasicMaterial
-          color={borderColor}
-          wireframe={true}
-          transparent={true}
-          opacity={0.15}
+        <sphereGeometry args={[100, 64, 64]} />
+        <meshPhongMaterial
+          color={theme.countries.fill}
+          shininess={5}
+          transparent
+          opacity={0.95}
         />
       </mesh>
-    </mesh>
+      
+      {/* Atmosphere glow */}
+      <mesh>
+        <sphereGeometry args={[102, 64, 64]} />
+        <meshBasicMaterial
+          color={theme.atmosphere}
+          transparent
+          opacity={0.1}
+          side={THREE.BackSide}
+        />
+      </mesh>
+      
+      {/* Country borders */}
+      {countryBorders}
+    </group>
   );
 }
 
-// Node point component
-function NodePoint({ node, theme }: { node: Node3DData; theme: Globe3DTheme }) {
+// Node point component with visual settings
+function NodePoint({ 
+  node, 
+  theme,
+  showHeight = true,
+  showGlow = true,
+}: { 
+  node: Node3DData; 
+  theme: Globe3DTheme;
+  showHeight?: boolean;
+  showGlow?: boolean;
+}) {
   const radius = 100;
   const phi = (90 - node.lat) * (Math.PI / 180);
   const theta = (node.lng + 180) * (Math.PI / 180);
   
-  const height = getNodeHeight(node.health) * 20; // Scale up for visibility
+  const height = showHeight ? getNodeHeight(node.health) * 20 : 2; // Show height based on setting
   const x = (radius + height) * Math.sin(phi) * Math.cos(theta);
   const y = (radius + height) * Math.cos(phi);
   const z = (radius + height) * Math.sin(phi) * Math.sin(theta);
   
   const color = getNodeColor(node, theme);
-  const size = getNodeSize(node.uptime) * 2;
+  const size = getNodeSize(node.uptime) * 1.5;
   
   return (
     <mesh position={[x, y, z]}>
-      <sphereGeometry args={[size, 8, 8]} />
+      <sphereGeometry args={[size, 16, 16]} />
       <meshStandardMaterial
         color={color}
-        emissive={color}
-        emissiveIntensity={0.5}
+        emissive={showGlow ? color : '#000000'}
+        emissiveIntensity={showGlow ? 0.6 : 0}
+        metalness={0.3}
+        roughness={0.7}
       />
     </mesh>
   );
@@ -89,7 +144,8 @@ export function Map3DScene({
   onNodeHover,
   showArcs = false,
   cameraPosition,
-}: Map3DSceneProps) {
+  visualSettings,
+}: Map3DSceneProps & { visualSettings?: { showHeight: boolean; showGlow: boolean } }) {
   const controlsRef = useRef<any>(null);
   
   // Handle camera position changes
@@ -126,7 +182,13 @@ export function Map3DScene({
         
         {/* Nodes */}
         {nodes.map((node) => (
-          <NodePoint key={node.ip} node={node} theme={theme} />
+          <NodePoint 
+            key={node.ip} 
+            node={node} 
+            theme={theme}
+            showHeight={visualSettings?.showHeight}
+            showGlow={visualSettings?.showGlow}
+          />
         ))}
         
         {/* Camera Controls */}
