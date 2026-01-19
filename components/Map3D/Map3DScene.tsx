@@ -98,7 +98,7 @@ function Earth({ theme }: { theme: Globe3DTheme }) {
   );
 }
 
-// Node point component with visual settings
+// Node point component with visual settings and animation
 function NodePoint({ 
   node, 
   theme,
@@ -110,27 +110,37 @@ function NodePoint({
   showHeight?: boolean;
   showGlow?: boolean;
 }) {
+  const meshRef = useRef<THREE.Mesh>(null);
   const radius = 100;
   const phi = (90 - node.lat) * (Math.PI / 180);
   const theta = (node.lng + 180) * (Math.PI / 180);
   
-  const height = showHeight ? getNodeHeight(node.health) * 20 : 2; // Show height based on setting
+  const height = showHeight ? getNodeHeight(node.health) * 20 : 2;
   const x = (radius + height) * Math.sin(phi) * Math.cos(theta);
   const y = (radius + height) * Math.cos(phi);
   const z = (radius + height) * Math.sin(phi) * Math.sin(theta);
   
   const color = getNodeColor(node, theme);
-  const size = getNodeSize(node.uptime) * 1.5;
+  const baseSize = 0.4; // Much smaller base size
+  const size = baseSize + (getNodeSize(node.uptime) * 0.2); // Smaller variation
+  
+  // Subtle pulsation animation for active nodes
+  useFrame((state) => {
+    if (meshRef.current && node.hasActiveStreams) {
+      const pulse = Math.sin(state.clock.elapsedTime * 2 + node.lat + node.lng) * 0.1 + 1;
+      meshRef.current.scale.setScalar(pulse);
+    }
+  });
   
   return (
-    <mesh position={[x, y, z]}>
-      <sphereGeometry args={[size, 16, 16]} />
+    <mesh ref={meshRef} position={[x, y, z]}>
+      <sphereGeometry args={[size, 12, 12]} />
       <meshStandardMaterial
         color={color}
         emissive={showGlow ? color : '#000000'}
-        emissiveIntensity={showGlow ? 0.6 : 0}
-        metalness={0.3}
-        roughness={0.7}
+        emissiveIntensity={showGlow ? 0.5 : 0}
+        metalness={0.2}
+        roughness={0.8}
       />
     </mesh>
   );
