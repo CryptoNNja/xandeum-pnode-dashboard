@@ -490,11 +490,12 @@ export const main = async () => {
     console.log(`📍 Geolocating ${allIps.length} IPs (with cache check)...`);
     const geoStartTime = Date.now();
     
-    // Bottleneck rate limiter: guarantees minimum 1.5s between API calls
-    // This prevents burst requests and respects ip-api.com rate limits
+    // Bottleneck rate limiter: guarantees minimum 1.35s between API calls
+    // This prevents burst requests and respects ip-api.com rate limits (45 req/min free tier)
+    // Using 44 req/min (1.35s) to stay safely under the limit
     const limiter = new Bottleneck({
         maxConcurrent: 1,        // Only 1 request at a time
-        minTime: 1500,           // Minimum 1.5s between each request (40 req/min)
+        minTime: 1350,           // Minimum 1.35s between each request (~44 req/min)
     });
     
     const geoTasks = allIps.map(ip => 

@@ -35,7 +35,7 @@ jobs:
       group: crawler-${{ github.event_name }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
-    timeout-minutes: 10  # Safety timeout
+    timeout-minutes: 15  # Safety timeout (increased for rate-limited geolocation)
     
     steps:
       - name: Checkout code
