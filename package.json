@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest",
     "backfill": "node scripts/backfill.js",
-    "crawler": "tsx scripts/crawler.ts"
+    "crawler": "tsx scripts/crawler.ts",
+    "cleanup-history": "tsx scripts/cleanup-history.ts"
   },
   "overrides": {
     "react-joyride": {
@@ -40,6 +41,7 @@
     "lucide-react": "^0.559.0",
     "next": "16.0.7",
     "next-themes": "^0.4.6",
+    "p-limit": "^7.2.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-joyride": "^2.9.3",
