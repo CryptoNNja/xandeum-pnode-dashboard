@@ -29,6 +29,7 @@ import { useToast } from "@/components/common/Toast";
 import Joyride from 'react-joyride';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { getJoyrideStyles } from '@/lib/joyride-styles';
+import { Map3DWidget } from '@/components/Map3DWidget';
 
 const TOOLTIP_STYLES = `
   .recharts-tooltip-wrapper { outline: none !important; }
@@ -254,6 +255,7 @@ export default function Page() {
   } = useFavorites();
 
   const [isFavoritesModalOpen, setIsFavoritesModalOpen] = useState(false);
+  const [is3DMapOpen, setIs3DMapOpen] = useState(false);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [nodesToCompare, setNodesToCompare] = useState<typeof pnodes>([]);
 
@@ -975,6 +977,9 @@ export default function Page() {
           </div>
         </div>
       )}
+      
+      {/* 3D GLOBE WIDGET */}
+      <Map3DWidget pnodes={pnodes} />
     </main>
   );
 }

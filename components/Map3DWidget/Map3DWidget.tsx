@@ -1,0 +1,41 @@
+'use client';
+
+import { useState, Suspense, lazy } from 'react';
+import { Map3DButton } from './Map3DButton';
+
+// Lazy load the heavy 3D viewer
+const Map3DViewer = lazy(() => 
+  import('../Map3D/Map3DViewer').then(mod => ({ default: mod.Map3DViewer }))
+);
+
+type Map3DWidgetProps = {
+  pnodes: any[];
+};
+
+export function Map3DWidget({ pnodes }: Map3DWidgetProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <>
+      {/* Floating Button */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <Map3DButton onClick={() => setIsOpen(true)} />
+      </div>
+      
+      {/* 3D Viewer Modal */}
+      {isOpen && (
+        <Suspense fallback={
+          <div className="fixed inset-0 z-50 bg-bg-dark flex items-center justify-center">
+            <div className="text-center">
+              <div className="inline-block w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+              <div className="text-text-primary font-medium">Loading 3D Globe...</div>
+              <div className="text-text-secondary text-sm mt-2">Rendering {pnodes.length} nodes</div>
+            </div>
+          </div>
+        }>
+          <Map3DViewer pnodes={pnodes} onClose={() => setIsOpen(false)} />
+        </Suspense>
+      )}
+    </>
+  );
+}
