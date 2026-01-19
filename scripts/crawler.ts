@@ -544,13 +544,14 @@ export const main = async () => {
     );
     
     // Combine cached and new results in original order
+    const cachedMap = new Map<string, GeolocationData | null>(
+        cachedIps.map((ip, idx) => [ip, cachedResults[idx]]),
+    );
+    const newMap = new Map<string, GeolocationData | null>(
+        newIps.map((ip, idx) => [ip, newResults[idx]]),
+    );
     const allGeo: (GeolocationData | null)[] = allIps.map(ip => {
-        const cachedIndex = cachedIps.indexOf(ip);
-        if (cachedIndex !== -1) {
-            return cachedResults[cachedIndex];
-        }
-        const newIndex = newIps.indexOf(ip);
-        return newIndex !== -1 ? newResults[newIndex] : null;
+        return cachedMap.get(ip) ?? newMap.get(ip) ?? null;
     });
     
     const geoElapsed = ((Date.now() - geoStartTime) / 1000).toFixed(1);
