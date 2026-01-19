@@ -1149,8 +1149,9 @@ export const usePnodeDashboard = (theme?: string) => {
 
   const refreshData = useCallback(async () => {
     await loadData(true);
-    await loadSummary();
-  }, [loadData, loadSummary]);
+    // Note: Don't call loadSummary() here as it overwrites lastUpdate with crawler timestamp
+    // We want lastUpdate to reflect when user clicked refresh, not when crawler ran
+  }, [loadData]);
 
   const loadYesterdayScore = useCallback(async () => {
     try {
