@@ -4,12 +4,12 @@
 
 **Professional-grade analytics platform for monitoring Xandeum's decentralized storage network**
 
-[![Live Demo](https://img.shields.io/badge/demo-live-success?style=for-the-badge)](https://xandeum-dashboard.vercel.app)
+[![Live Demo](https://img.shields.io/badge/demo-live-success?style=for-the-badge)](https://xandeum-dashboard-topaz.vercel.app)
 [![Tests](https://img.shields.io/badge/tests-80%20passing-success?style=for-the-badge)](tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 
-[🚀 Live Demo](https://xandeum-dashboard.vercel.app) • [📖 Documentation](docs/) • [🐛 Report Bug](https://github.com/yourusername/xandeum-dashboard/issues)
+[🚀 Live Demo](https://xandeum-dashboard-topaz.vercel.app) • [📖 Documentation](docs/) • [🐛 Report Bug](https://github.com/CryptoNNja/xandeum-pnode-dashboard/issues)
 
 </div>
 
@@ -439,8 +439,8 @@ Automatically detects:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/yourusername/xandeum-dashboard.git
-cd xandeum-dashboard
+git clone https://github.com/CryptoNNja/xandeum-pnode-dashboard.git
+cd xandeum-pnode-dashboard
 
 # 2. Install dependencies
 npm install
@@ -670,9 +670,9 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) for 
 
 ## 💬 Connect
 
-- **Live Demo:** [xandeum-dashboard.vercel.app](https://xandeum-dashboard.vercel.app)
+- **Live Demo:** [xandeum-dashboard-topaz.vercel.app](https://xandeum-dashboard-topaz.vercel.app)
 - **Documentation:** [docs/](docs/)
-- **Issues:** [GitHub Issues](https://github.com/yourusername/xandeum-dashboard/issues)
+- **Issues:** [GitHub Issues](https://github.com/CryptoNNja/xandeum-pnode-dashboard/issues)
 - **Creator:** [@CryptoNNja](https://github.com/CryptoNNja) | [@Crypt0xNinja](https://twitter.com/Crypt0xNinja)
 
 📖 *[About the creator →](docs/ABOUT.md)*
