@@ -27,6 +27,41 @@
 
 ---
 
+## 📑 Table of Contents
+
+- [📋 About](#-about)
+- [✨ Key Features](#-key-features)
+  - [📊 Core Analytics & Monitoring](#-core-analytics--monitoring)
+  - [🎨 Premium UX/UI Design](#-premium-uxui-design)
+  - [🔧 Advanced Analytics Toolkit](#-advanced-analytics-toolkit)
+  - [🗺️ Interactive Map Visualization](#️-interactive-map-visualization)
+  - [🤖 AI-Powered Assistant - Ronin](#-ai-powered-assistant---ronin)
+  - [🧮 STOINC Calculator](#-stoinc-calculator)
+  - [📄 Advanced Filtering & Search](#-advanced-filtering--search)
+  - [📊 Rich Data Visualizations](#-rich-data-visualizations)
+  - [📍 Individual Node Pages](#-individual-node-pages)
+  - [📄 Professional PDF Export](#-professional-pdf-export)
+  - [🔔 Intelligent Alerts System](#-intelligent-alerts-system)
+  - [📱 Mobile-First Responsive Design](#-mobile-first-responsive-design)
+  - [⌨️ Power User Features](#️-power-user-features)
+  - [♿ Accessibility](#-accessibility-wcag-21-aa)
+- [🏆 Bounty Compliance & Excellence](#-bounty-compliance--excellence)
+- [🚀 Quick Start](#-quick-start)
+- [⚙️ Configuration](#️-configuration)
+- [🧪 Testing](#-testing)
+- [🏗️ Tech Stack](#️-tech-stack)
+- [📖 Documentation](#-documentation)
+- [🔧 Available Scripts](#-available-scripts)
+- [📊 Project Statistics](#-project-statistics)
+- [🤝 Contributing](#-contributing)
+- [🐛 Known Limitations](#-known-limitations)
+- [📝 Changelog](#-changelog)
+- [📄 License](#-license)
+- [🙏 Acknowledgments](#-acknowledgments)
+- [💬 Connect](#-connect)
+
+---
+
 ## 📋 About
 
 The **Xandeum pNode Analytics Dashboard** is a comprehensive, production-ready monitoring platform for [Xandeum](https://xandeum.com)'s decentralized storage network. Built for the [Superteam Bounty](https://earn.superteam.fun/listing/build-analytics-platform-for-xandeum-pnodes), this dashboard goes **far beyond the requirements**, delivering a premium analytics experience that rivals commercial platforms like validators.app and stakewiz.com.
