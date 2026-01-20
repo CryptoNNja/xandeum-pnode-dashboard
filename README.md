@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🌐 Xandeum pNode Analytics Dashboard
+<img src="public/logo_ronin_dark.png" alt="Ronin Logo" width="200"/>
+
+# Ronin - Xandeum pNode Analytics Dashboard
 
 **Professional-grade analytics platform for monitoring Xandeum's decentralized storage network**
 
