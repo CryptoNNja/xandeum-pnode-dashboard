@@ -4,7 +4,7 @@
 
 **Professional-grade analytics platform for monitoring Xandeum's decentralized storage network**
 
-[![Live Demo](https://img.shields.io/badge/demo-live-success?style=for-the-badge)](https://xandeum-dashboard.vercel.app)
+[![Live Demo](https://img.shields.io/badge/demo-live-success?style=for-the-badge)]([https://xandeum-dashboard.vercel.app](https://xandeum-dashboard-topaz.vercel.app/))
 [![Tests](https://img.shields.io/badge/tests-80%20passing-success?style=for-the-badge)](tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
