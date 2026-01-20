@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/logo_ronin_dark.png" alt="Ronin Logo" width="200"/>
+<img src="public/logo_ronin_dark.png" alt="Ronin Logo" width="400"/>
 
 # Ronin - Xandeum pNode Analytics Dashboard
 
