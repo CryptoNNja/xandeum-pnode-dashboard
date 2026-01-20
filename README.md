@@ -11,9 +11,19 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 
-[🚀 Live Demo](https://xandeum-dashboard-topaz.vercel.app) • [📖 Documentation](docs/) • [🐛 Report Bug](https://github.com/CryptoNNja/xandeum-pnode-dashboard/issues)
+[🚀 Live Demo](https://xandeum-dashboard-topaz.vercel.app) • [🎥 Demo Video](https://www.youtube.com/watch?v=qB98qc_P8fM) • [📖 Documentation](docs/) • [🐛 Report Bug](https://github.com/CryptoNNja/xandeum-pnode-dashboard/issues)
 
 </div>
+
+---
+
+## 🎥 Video Demo
+
+[![Watch Demo](https://img.youtube.com/vi/qB98qc_P8fM/maxresdefault.jpg)](https://www.youtube.com/watch?v=qB98qc_P8fM)
+
+**[▶️ Watch Full Demo on YouTube](https://www.youtube.com/watch?v=qB98qc_P8fM)**
+
+> **Note:** This demo was recorded at the bounty deadline. Since then, the dashboard has continued to evolve with additional optimizations, enhanced testing coverage (80 automated tests), and this comprehensive documentation you're reading now.
 
 ---
 
