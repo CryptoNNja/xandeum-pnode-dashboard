@@ -207,3 +207,133 @@ export function getOperatorArcs(nodes: Node3DData[]): Array<{ startLat: number; 
   
   return arcs;
 }
+
+/**
+ * Label data for dynamic globe labels
+ */
+export type GlobeLabel = {
+  lat: number;
+  lng: number;
+  text: string;
+  size: number;
+  type: 'city' | 'country';
+  priority: number;
+  count: number;
+};
+
+/**
+ * Get dynamic labels based on camera distance - pGlobe strategy
+ * 4 zoom levels with smart grouping
+ */
+export function getDynamicLabels(nodes: Node3DData[], cameraDistance: number): GlobeLabel[] {
+  const labelMap = new Map<string, { lat: number; lng: number; text: string; size: number; type: 'city' | 'country'; priority: number }>();
+  
+  // Group nodes by location to avoid duplicate labels
+  const locationGroups = new Map<string, Node3DData[]>();
+  nodes.forEach((node) => {
+    if (!node) return;
+    const { city, country } = node;
+    const key = city ? `${city}, ${country}` : country || 'Unknown';
+    if (!locationGroups.has(key)) {
+      locationGroups.set(key, []);
+    }
+    locationGroups.get(key)!.push(node);
+  });
+  
+  locationGroups.forEach((groupNodes, key) => {
+    const node = groupNodes[0];
+    if (!node) return;
+    
+    const { city, country, lat, lng } = node;
+    
+    // Very zoomed in (< 1.2): Show all cities with node counts
+    if (cameraDistance < 1.2 && city) {
+      const cityKey = `${city}-${country}`;
+      if (!labelMap.has(cityKey)) {
+        labelMap.set(cityKey, {
+          lat: lat,
+          lng: lng,
+          text: `${city} (${groupNodes.length})`,
+          size: 1.0,
+          type: 'city',
+          priority: groupNodes.length,
+        });
+      }
+    }
+    // Moderately zoomed (1.2-1.8): Show major cities only
+    else if (cameraDistance < 1.8 && city && groupNodes.length > 1) {
+      const cityKey = `${city}-${country}`;
+      if (!labelMap.has(cityKey)) {
+        labelMap.set(cityKey, {
+          lat: lat,
+          lng: lng,
+          text: city,
+          size: 0.9,
+          type: 'city',
+          priority: groupNodes.length,
+        });
+      }
+    }
+    // Zoomed out (1.8-2.5): Show countries with node counts
+    else if (cameraDistance < 2.5 && country) {
+      const countryKey = country;
+      if (!labelMap.has(countryKey)) {
+        // Calculate average position for country
+        const avgLat = groupNodes.reduce((sum, n) => sum + n.lat, 0) / groupNodes.length;
+        const avgLng = groupNodes.reduce((sum, n) => sum + n.lng, 0) / groupNodes.length;
+        labelMap.set(countryKey, {
+          lat: avgLat,
+          lng: avgLng,
+          text: `${country} (${groupNodes.length})`,
+          size: 1.3,
+          type: 'country',
+          priority: groupNodes.length,
+        });
+      }
+    }
+    // Very zoomed out (> 2.5): Show only countries with many nodes
+    else if (cameraDistance >= 2.5 && country && groupNodes.length >= 3) {
+      const countryKey = country;
+      if (!labelMap.has(countryKey)) {
+        const avgLat = groupNodes.reduce((sum, n) => sum + n.lat, 0) / groupNodes.length;
+        const avgLng = groupNodes.reduce((sum, n) => sum + n.lng, 0) / groupNodes.length;
+        labelMap.set(countryKey, {
+          lat: avgLat,
+          lng: avgLng,
+          text: country,
+          size: 1.5,
+          type: 'country',
+          priority: groupNodes.length,
+        });
+      }
+    }
+  });
+  
+  return Array.from(labelMap.values())
+    .sort((a, b) => b.priority - a.priority)
+    .slice(0, 30)
+    .map(label => ({ ...label, count: label.priority }));
+}
+
+/**
+ * Get view level based on camera distance
+ */
+export function getViewLevel(cameraDistance: number): 'City' | 'Country' | 'Global' {
+  if (cameraDistance < 250) return 'City';
+  if (cameraDistance < 450) return 'Country';
+  return 'Global';
+}
+
+/**
+ * Get flag emoji for country code
+ */
+export function getFlagEmoji(countryCode?: string): string {
+  if (!countryCode || countryCode.length !== 2) return '🌍';
+  
+  const codePoints = countryCode
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt(0));
+  
+  return String.fromCodePoint(...codePoints);
+}

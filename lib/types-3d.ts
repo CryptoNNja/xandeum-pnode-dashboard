@@ -15,6 +15,7 @@ export type Node3DData = {
   city?: string;
   country?: string;
   country_code?: string;
+  pubkey?: string;          // Public key identifier
   
   // Stats
   uptime: number;           // hours (determines size/glow)

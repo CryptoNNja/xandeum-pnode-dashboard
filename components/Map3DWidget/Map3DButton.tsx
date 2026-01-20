@@ -26,7 +26,7 @@ export function Map3DButton({ onClick, isOpen }: Map3DButtonProps) {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         className="
-          fixed bottom-42 right-6 z-50
+          fixed right-6 z-[60]
           w-14 h-14 rounded-full
           bg-gradient-to-r from-blue-500 to-cyan-500
           shadow-lg hover:shadow-2xl
@@ -55,7 +55,7 @@ export function Map3DButton({ onClick, isOpen }: Map3DButtonProps) {
       {/* Tooltip */}
       {isHovered && !isOpen && (
         <div className="
-          fixed right-24 z-50
+          fixed right-24 z-[60]
           px-3 py-2 rounded-lg
           bg-gray-900 text-white text-sm
           whitespace-nowrap
