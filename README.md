@@ -209,7 +209,7 @@ One-click access to deep analytics:
    - Top 10 countries
    - Network diversity score
 
-8. **👥 Manager Profiles**
+8. **👥 Manager Board**
    - Track multi-node operators (same pubkey)
    - Aggregate credits, storage, uptime per manager
    - Network and country distribution

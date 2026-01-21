@@ -1,5 +1,5 @@
 /**
- * API Route: Manager Profiles
+ * API Route: Manager Board
  * 
  * Returns aggregated statistics for multi-node operators
  */
