@@ -9,6 +9,12 @@
  * Uses Solana Web3.js + Metaplex for NFT parsing
  */
 
+import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Metaplex } from '@metaplex-foundation/js';
+
+// Solana RPC endpoint from environment
+const SOLANA_RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+
 // Types for on-chain data
 export interface WalletBalance {
   sol: number;
@@ -56,21 +62,31 @@ const cache = new Map<string, { data: OnChainData; timestamp: number }>();
  */
 export async function fetchWalletBalance(pubkey: string): Promise<WalletBalance | null> {
   try {
-    // TODO: Implement with @solana/web3.js
-    // const connection = new Connection(SOLANA_RPC_URL);
-    // const publicKey = new PublicKey(pubkey);
-    // const balance = await connection.getBalance(publicKey);
-    
-    // Mock data for now
     console.log(`[Blockchain] Fetching balance for ${pubkey.slice(0, 8)}...`);
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
+    const publicKey = new PublicKey(pubkey);
+    
+    // Fetch SOL balance
+    const lamports = await connection.getBalance(publicKey);
+    const sol = lamports / LAMPORTS_PER_SOL;
+    
+    // TODO: Fetch XAND token balance
+    // For now, we'll leave XAND at 0 until we have the XAND token mint address
+    // const xandMint = new PublicKey('XAND_TOKEN_MINT_ADDRESS_HERE');
+    // const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+    //   publicKey,
+    //   { mint: xandMint }
+    // );
+    // const xand = tokenAccounts.value[0]?.account.data.parsed.info.tokenAmount.uiAmount || 0;
+    
+    // Get SOL price (simplified - you can use a price API later)
+    const solPriceUSD = 200; // Approximate, TODO: fetch from CoinGecko API
     
     return {
-      sol: 0,
-      xand: 0,
-      usd: 0,
+      sol,
+      xand: 0, // TODO: Implement when we have XAND mint address
+      usd: sol * solPriceUSD,
     };
   } catch (error) {
     console.error('[Blockchain] Error fetching balance:', error);
@@ -88,16 +104,36 @@ export async function fetchWalletBalance(pubkey: string): Promise<WalletBalance 
  */
 export async function fetchWalletNFTs(pubkey: string): Promise<NFTMetadata[]> {
   try {
-    // TODO: Implement with Metaplex
-    // const metaplex = new Metaplex(connection);
-    // const nfts = await metaplex.nfts().findAllByOwner({ owner: publicKey });
-    
     console.log(`[Blockchain] Fetching NFTs for ${pubkey.slice(0, 8)}...`);
     
-    // Mock data
-    await new Promise(resolve => setTimeout(resolve, 800));
+    const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
+    const metaplex = Metaplex.make(connection);
+    const publicKey = new PublicKey(pubkey);
     
-    return [];
+    // Find all NFTs owned by this wallet
+    const nfts = await metaplex.nfts().findAllByOwner({ owner: publicKey });
+    
+    // Load full metadata for each NFT (limit to first 20 to avoid rate limits)
+    const results: NFTMetadata[] = [];
+    
+    for (const nft of nfts.slice(0, 20)) {
+      try {
+        // Check if nft already has metadata loaded
+        const fullNft = 'json' in nft ? nft : await metaplex.nfts().load({ metadata: nft as any });
+        results.push({
+          mint: nft.address.toBase58(),
+          name: fullNft.name,
+          symbol: fullNft.symbol,
+          image: fullNft.json?.image,
+          collection: fullNft.collection?.address.toBase58(),
+        });
+      } catch (error) {
+        console.error(`[Blockchain] Error loading NFT ${nft.address.toBase58()}:`, error);
+        // Skip failed NFT
+      }
+    }
+    
+    return results;
   } catch (error) {
     console.error('[Blockchain] Error fetching NFTs:', error);
     return [];
@@ -107,6 +143,10 @@ export async function fetchWalletNFTs(pubkey: string): Promise<NFTMetadata[]> {
 /**
  * Fetch SBTs (Soulbound Tokens) owned by wallet
  * 
+ * SBTs are NFTs that are non-transferable (soulbound)
+ * We identify them by checking if they're from known SBT programs
+ * or have specific metadata attributes
+ * 
  * @param pubkey - Public key of the wallet
  * @returns Array of SBTs
  */
@@ -114,10 +154,52 @@ export async function fetchWalletSBTs(pubkey: string): Promise<SBTMetadata[]> {
   try {
     console.log(`[Blockchain] Fetching SBTs for ${pubkey.slice(0, 8)}...`);
     
-    // Mock data
-    await new Promise(resolve => setTimeout(resolve, 600));
+    const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
+    const metaplex = Metaplex.make(connection);
+    const publicKey = new PublicKey(pubkey);
     
-    return [];
+    // Find all NFTs first
+    const nfts = await metaplex.nfts().findAllByOwner({ owner: publicKey });
+    
+    // Filter for SBTs (non-transferable NFTs)
+    // Note: This is a simplified check. You may need to adjust based on your SBT implementation
+    const results: SBTMetadata[] = [];
+    
+    for (const nft of nfts.slice(0, 20)) {
+      try {
+        // Check if nft already has metadata loaded
+        const fullNft = 'json' in nft ? nft : await metaplex.nfts().load({ metadata: nft as any });
+        
+        // Check if it's an SBT (various methods to detect)
+        const isSBT = 
+          !fullNft.isMutable || // Non-mutable NFTs are often SBTs
+          fullNft.json?.attributes?.some((attr: any) => 
+            attr.trait_type?.toLowerCase() === 'soulbound' && attr.value === 'true'
+          ) ||
+          fullNft.name.toLowerCase().includes('sbt') ||
+          fullNft.name.toLowerCase().includes('badge') ||
+          fullNft.name.toLowerCase().includes('achievement');
+        
+        if (isSBT) {
+          results.push({
+            mint: nft.address.toBase58(),
+            name: fullNft.name,
+            description: fullNft.json?.description || '',
+            attributes: fullNft.json?.attributes?.reduce((acc: Record<string, string>, attr: any) => {
+              if (attr.trait_type && attr.value) {
+                acc[attr.trait_type] = attr.value;
+              }
+              return acc;
+            }, {} as Record<string, string>),
+          });
+        }
+      } catch (error) {
+        console.error(`[Blockchain] Error loading potential SBT ${nft.address.toBase58()}:`, error);
+        // Skip failed SBT
+      }
+    }
+    
+    return results;
   } catch (error) {
     console.error('[Blockchain] Error fetching SBTs:', error);
     return [];

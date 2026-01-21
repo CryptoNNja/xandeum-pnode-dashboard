@@ -4,7 +4,7 @@
 > The modal shows "Coming Soon" for on-chain data.  
 > Follow this guide to implement NFT/SBT/Balance fetching.
 
-**Pour:** Manager Profiles - Données On-Chain (NFT/SBT/Balance)
+**Pour:** Manager Board - Données On-Chain (NFT/SBT/Balance)
 
 ---
 
