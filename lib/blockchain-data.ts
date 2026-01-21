@@ -11,6 +11,7 @@
 
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { Metaplex } from '@metaplex-foundation/js';
+import { getManagerWallet } from './manager-mapping';
 
 // Solana RPC endpoint from environment
 // Default to a more reliable public RPC (Project Serum/OpenBook)
@@ -385,17 +386,29 @@ export async function fetchOnChainData(
   pubkey: string,
   forceRefresh: boolean = false
 ): Promise<OnChainData> {
-  // Check cache first
+  // Try to get the manager wallet for this node
+  const managerWallet = getManagerWallet(pubkey);
+  
+  // Use manager wallet if available, otherwise fallback to node pubkey
+  const walletToFetch = managerWallet || pubkey;
+  
+  if (managerWallet) {
+    console.log(`[Blockchain] Found manager wallet for ${pubkey.slice(0, 8)}: ${managerWallet.slice(0, 8)}...`);
+  } else {
+    console.log(`[Blockchain] No manager wallet found, using node pubkey: ${pubkey.slice(0, 8)}...`);
+  }
+  
+  // Check cache first (use walletToFetch for cache key)
   if (!forceRefresh) {
-    const cached = cache.get(pubkey);
+    const cached = cache.get(walletToFetch);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      console.log(`[Blockchain] Using cached data for ${pubkey.slice(0, 8)}`);
+      console.log(`[Blockchain] Using cached data for ${walletToFetch.slice(0, 8)}`);
       return cached.data;
     }
   }
 
   // Fetch fresh data
-  console.log(`[Blockchain] Fetching fresh data for ${pubkey.slice(0, 8)}...`);
+  console.log(`[Blockchain] Fetching fresh data for ${walletToFetch.slice(0, 8)}...`);
   
   const data: OnChainData = {
     pubkey,
@@ -407,11 +420,11 @@ export async function fetchOnChainData(
   };
 
   try {
-    // Fetch all data in parallel
+    // Fetch all data in parallel using the correct wallet
     const [balance, nfts, sbts] = await Promise.all([
-      fetchWalletBalance(pubkey),
-      fetchWalletNFTs(pubkey),
-      fetchWalletSBTs(pubkey),
+      fetchWalletBalance(walletToFetch),
+      fetchWalletNFTs(walletToFetch),
+      fetchWalletSBTs(walletToFetch),
     ]);
 
     data.balance = balance;
@@ -419,8 +432,8 @@ export async function fetchOnChainData(
     data.sbts = sbts;
     data.loading = false;
 
-    // Cache the result
-    cache.set(pubkey, { data, timestamp: Date.now() });
+    // Cache the result (use walletToFetch as cache key)
+    cache.set(walletToFetch, { data, timestamp: Date.now() });
 
     return data;
   } catch (error) {
