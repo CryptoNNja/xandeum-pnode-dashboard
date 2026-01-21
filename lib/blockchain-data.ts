@@ -23,6 +23,25 @@ const FALLBACK_RPCS = [
   'https://rpc.ankr.com/solana',
 ];
 
+// Xandeum Token Mint Addresses
+const XAND_TOKEN_MINT = 'XANDuUoVoUqniKkpcKhrxmvYJybpJvUxJLr21Gaj3Hx';
+const XENO_TOKEN_MINT = 'G2bTxNndhA9zxxy4PZnHFcQo9wQQozrfcmN6AN9Heqoe';
+
+// Keywords to identify Xandeum-related NFTs/SBTs
+const XANDEUM_KEYWORDS = [
+  'xandeum',
+  'xand',
+  'pnode',
+  'manager',
+  'xandash',
+  'sbt',
+  'deepsouth',
+  'dragon',
+  'rabbit',
+  'deep south',
+  'g2btxn'
+];
+
 // Helper to get a working RPC connection
 async function getConnection(): Promise<Connection> {
   // Try primary RPC first
@@ -58,6 +77,7 @@ async function getConnection(): Promise<Connection> {
 export interface WalletBalance {
   sol: number;
   xand: number; // XAND token balance
+  xeno: number; // XENO token balance
   usd: number;  // USD value estimate
 }
 
@@ -110,21 +130,39 @@ export async function fetchWalletBalance(pubkey: string): Promise<WalletBalance 
     const lamports = await connection.getBalance(publicKey);
     const sol = lamports / LAMPORTS_PER_SOL;
     
-    // TODO: Fetch XAND token balance
-    // For now, we'll leave XAND at 0 until we have the XAND token mint address
-    // const xandMint = new PublicKey('XAND_TOKEN_MINT_ADDRESS_HERE');
-    // const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-    //   publicKey,
-    //   { mint: xandMint }
-    // );
-    // const xand = tokenAccounts.value[0]?.account.data.parsed.info.tokenAmount.uiAmount || 0;
+    // Fetch XAND token balance
+    let xand = 0;
+    try {
+      const xandMint = new PublicKey(XAND_TOKEN_MINT);
+      const xandAccounts = await connection.getParsedTokenAccountsByOwner(
+        publicKey,
+        { mint: xandMint }
+      );
+      xand = xandAccounts.value[0]?.account.data.parsed.info.tokenAmount.uiAmount || 0;
+    } catch (error) {
+      console.warn('[Blockchain] Error fetching XAND balance:', error);
+    }
+    
+    // Fetch XENO token balance
+    let xeno = 0;
+    try {
+      const xenoMint = new PublicKey(XENO_TOKEN_MINT);
+      const xenoAccounts = await connection.getParsedTokenAccountsByOwner(
+        publicKey,
+        { mint: xenoMint }
+      );
+      xeno = xenoAccounts.value[0]?.account.data.parsed.info.tokenAmount.uiAmount || 0;
+    } catch (error) {
+      console.warn('[Blockchain] Error fetching XENO balance:', error);
+    }
     
     // Get SOL price (simplified - you can use a price API later)
     const solPriceUSD = 200; // Approximate, TODO: fetch from CoinGecko API
     
     return {
       sol,
-      xand: 0, // TODO: Implement when we have XAND mint address
+      xand,
+      xeno,
       usd: sol * solPriceUSD,
     };
   } catch (error) {
@@ -168,13 +206,26 @@ export async function fetchWalletNFTs(pubkey: string): Promise<NFTMetadata[]> {
       try {
         // Check if nft already has metadata loaded
         const fullNft = 'json' in nft ? nft : await metaplex.nfts().load({ metadata: nft as any });
-        results.push({
-          mint: nft.address.toBase58(),
-          name: fullNft.name,
-          symbol: fullNft.symbol,
-          image: fullNft.json?.image,
-          collection: fullNft.collection?.address.toBase58(),
-        });
+        
+        // Check if it's a Xandeum-related NFT
+        const name = fullNft.name?.toLowerCase() || '';
+        const symbol = fullNft.symbol?.toLowerCase() || '';
+        const description = fullNft.json?.description?.toLowerCase() || '';
+        
+        const isXandeumNFT = XANDEUM_KEYWORDS.some(keyword =>
+          name.includes(keyword) || symbol.includes(keyword) || description.includes(keyword)
+        );
+        
+        // Only include Xandeum-related NFTs
+        if (isXandeumNFT) {
+          results.push({
+            mint: nft.address.toBase58(),
+            name: fullNft.name,
+            symbol: fullNft.symbol,
+            image: fullNft.json?.image,
+            collection: fullNft.collection?.address.toBase58(),
+          });
+        }
         
         // Add delay between requests to avoid rate limiting (50ms)
         if (i < limit - 1) {
@@ -242,15 +293,29 @@ export async function fetchWalletSBTs(pubkey: string): Promise<SBTMetadata[]> {
         // Check if nft already has metadata loaded
         const fullNft = 'json' in nft ? nft : await metaplex.nfts().load({ metadata: nft as any });
         
+        // Check if it's a Xandeum-related NFT first
+        const name = fullNft.name?.toLowerCase() || '';
+        const symbol = fullNft.symbol?.toLowerCase() || '';
+        const description = fullNft.json?.description?.toLowerCase() || '';
+        
+        const isXandeumNFT = XANDEUM_KEYWORDS.some(keyword =>
+          name.includes(keyword) || symbol.includes(keyword) || description.includes(keyword)
+        );
+        
+        // Only check for SBT if it's Xandeum-related
+        if (!isXandeumNFT) {
+          continue; // Skip non-Xandeum NFTs
+        }
+        
         // Check if it's an SBT (various methods to detect)
         const isSBT = 
           !fullNft.isMutable || // Non-mutable NFTs are often SBTs
           fullNft.json?.attributes?.some((attr: any) => 
             attr.trait_type?.toLowerCase() === 'soulbound' && attr.value === 'true'
           ) ||
-          fullNft.name.toLowerCase().includes('sbt') ||
-          fullNft.name.toLowerCase().includes('badge') ||
-          fullNft.name.toLowerCase().includes('achievement');
+          name.includes('sbt') ||
+          name.includes('badge') ||
+          name.includes('achievement');
         
         if (isSBT) {
           results.push({

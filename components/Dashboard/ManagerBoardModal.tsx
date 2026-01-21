@@ -381,16 +381,28 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
                         <div className="px-3 py-2 bg-[var(--bg-bg)] rounded border border-[var(--border-subtle)]">
                           <div className="flex items-center gap-1 mb-1">
                             <Wallet className="w-3 h-3 text-[var(--accent-aqua)]" />
-                            <span className="text-[9px] text-[var(--text-secondary)]">Balance</span>
+                            <span className="text-[9px] text-[var(--text-secondary)]">Tokens</span>
                           </div>
                           {onChainData.balance ? (
                             <div className="space-y-0.5">
                               <div className="text-[10px] font-bold text-[var(--text-main)]">
                                 {onChainData.balance.sol.toFixed(4)} SOL
                               </div>
-                              <div className="text-[9px] text-[var(--text-secondary)]">
-                                ${onChainData.balance.usd.toFixed(2)} USD
-                              </div>
+                              {onChainData.balance.xand > 0 && (
+                                <div className="text-[9px] text-orange-400 font-medium">
+                                  {onChainData.balance.xand.toFixed(2)} XAND
+                                </div>
+                              )}
+                              {onChainData.balance.xeno > 0 && (
+                                <div className="text-[9px] text-purple-400 font-medium">
+                                  {onChainData.balance.xeno.toFixed(2)} XENO
+                                </div>
+                              )}
+                              {onChainData.balance.xand === 0 && onChainData.balance.xeno === 0 && (
+                                <div className="text-[9px] text-[var(--text-secondary)]">
+                                  ${onChainData.balance.usd.toFixed(2)} USD
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <div className="text-[9px] text-[var(--text-secondary)]">No balance</div>
@@ -401,13 +413,13 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
                         <div className="px-3 py-2 bg-[var(--bg-bg)] rounded border border-[var(--border-subtle)]">
                           <div className="flex items-center gap-1 mb-1">
                             <Image className="w-3 h-3 text-purple-400" />
-                            <span className="text-[9px] text-[var(--text-secondary)]">NFTs</span>
+                            <span className="text-[9px] text-[var(--text-secondary)]">Xandeum NFTs</span>
                           </div>
                           <div className="text-[10px] font-bold text-[var(--text-main)]">
                             {onChainData.nfts.length}
                           </div>
                           <div className="text-[9px] text-[var(--text-secondary)]">
-                            {onChainData.nfts.length === 0 ? 'No NFTs' : 'NFTs owned'}
+                            {onChainData.nfts.length === 0 ? 'No Xandeum NFTs' : 'Xandeum NFTs'}
                           </div>
                         </div>
 
@@ -415,13 +427,13 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
                         <div className="px-3 py-2 bg-[var(--bg-bg)] rounded border border-[var(--border-subtle)]">
                           <div className="flex items-center gap-1 mb-1">
                             <BadgeCheck className="w-3 h-3 text-[var(--kpi-excellent)]" />
-                            <span className="text-[9px] text-[var(--text-secondary)]">SBTs</span>
+                            <span className="text-[9px] text-[var(--text-secondary)]">Xandeum SBTs</span>
                           </div>
                           <div className="text-[10px] font-bold text-[var(--text-main)]">
                             {onChainData.sbts.length}
                           </div>
                           <div className="text-[9px] text-[var(--text-secondary)]">
-                            {onChainData.sbts.length === 0 ? 'No badges' : 'Achievements'}
+                            {onChainData.sbts.length === 0 ? 'No badges' : 'Badges/Achievements'}
                           </div>
                         </div>
                       </div>
