@@ -22,7 +22,7 @@ import { SelectionActionBar } from "@/components/SelectionActionBar";
 import { CompareNodesModal } from "@/components/Dashboard/CompareNodesModal";
 import { FavoritesModal } from "@/components/Dashboard/FavoritesModal";
 import { NetworkToggle } from "@/components/Dashboard/NetworkToggle"; // 🆕
-import ManagerProfilesModal from "@/components/Dashboard/ManagerProfilesModalCompact";
+import ManagerBoardModal from "@/components/Dashboard/ManagerBoardModal";
 import { hexToRgba, getKpiColors, getStatusColors } from "@/lib/utils";
 import { generatePDFReport } from "@/lib/pdf-export";
 import { useToast } from "@/components/common/Toast";
@@ -133,7 +133,7 @@ export default function Page() {
   }>({ defaultTab: 'alerts' });
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
   const [isGeographicModalOpen, setIsGeographicModalOpen] = useState(false);
-  const [isManagerProfilesOpen, setIsManagerProfilesOpen] = useState(false);
+  const [isManagerBoardOpen, setIsManagerBoardOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   
@@ -908,23 +908,23 @@ export default function Page() {
         }}
       />
 
-      {/* Manager Profiles Modal */}
-      <ManagerProfilesModal
-        isOpen={isManagerProfilesOpen}
-        onClose={() => setIsManagerProfilesOpen(false)}
+      {/* Manager Board Modal */}
+      <ManagerBoardModal
+        isOpen={isManagerBoardOpen}
+        onClose={() => setIsManagerBoardOpen(false)}
       />
 
-      {/* Floating Manager Profiles Button - Above Calculator */}
+      {/* Floating Manager Board Button - Above Calculator */}
       <button
-        onClick={() => setIsManagerProfilesOpen(true)}
+        onClick={() => setIsManagerBoardOpen(true)}
         className="fixed bottom-[168px] right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg hover:shadow-2xl transform hover:scale-110 active:scale-95 transition-all duration-200 flex items-center justify-center group"
-        aria-label="Open Manager Profiles"
-        title="View Manager Profiles (Multi-Node Operators)"
+        aria-label="Open Manager Board"
+        title="Manager Board - Multi-Node Operators"
       >
         <Users className="w-7 h-7 text-white transition-transform duration-300" />
         
         {/* Pulse animation */}
-        {!isManagerProfilesOpen && (
+        {!isManagerBoardOpen && (
           <span className="absolute inset-0 rounded-full bg-orange-500 animate-ping opacity-20" />
         )}
       </button>

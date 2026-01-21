@@ -39,12 +39,12 @@ interface ManagerStats {
   totalNodesManaged: number;
 }
 
-interface ManagerProfilesModalProps {
+interface ManagerBoardModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function ManagerProfilesModalCompact({ isOpen, onClose }: ManagerProfilesModalProps) {
+export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModalProps) {
   const [managers, setManagers] = useState<ManagerProfile[]>([]);
   const [stats, setStats] = useState<ManagerStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,7 +88,7 @@ export default function ManagerProfilesModalCompact({ isOpen, onClose }: Manager
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-3">
                 <Users className="w-6 h-6 text-orange-500" />
-                <h2 className="text-xl font-bold text-[var(--text-main)]">Manager Profiles</h2>
+                <h2 className="text-xl font-bold text-[var(--text-main)]">Manager Board</h2>
               </div>
               
               {/* Compact stats inline */}

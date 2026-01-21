@@ -1,5 +1,5 @@
 /**
- * Manager Profiles - Track multi-node operators
+ * Manager Board - Track multi-node operators
  * 
  * A "manager" is an operator who runs multiple nodes.
  * This module groups nodes by pubkey and provides aggregate statistics.

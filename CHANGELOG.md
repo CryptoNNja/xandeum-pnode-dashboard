@@ -4,12 +4,12 @@ All notable changes to Xandeum pNode Analytics Dashboard.
 
 ## [Unreleased]
 
-### 👥 Manager Profiles Feature (2026-01-21)
+### 👥 Manager Board Feature (2026-01-21)
 
 **Track multi-node operators with aggregate statistics**
 
 #### Added
-- Manager Profiles modal with split-view layout (40/60)
+- Manager Board modal with split-view layout (40/60)
 - Identify operators running multiple nodes (same pubkey)
 - Aggregate statistics: credits, storage, uptime per manager
 - Network and country distribution analysis
