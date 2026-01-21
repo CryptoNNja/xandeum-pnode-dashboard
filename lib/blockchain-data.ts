@@ -13,7 +13,46 @@ import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { Metaplex } from '@metaplex-foundation/js';
 
 // Solana RPC endpoint from environment
-const SOLANA_RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+// Default to a more reliable public RPC (Project Serum/OpenBook)
+const PRIMARY_RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://solana-api.projectserum.com';
+
+// Fallback RPCs in case primary fails
+const FALLBACK_RPCS = [
+  'https://solana-api.projectserum.com',
+  'https://api.mainnet-beta.solana.com',
+  'https://rpc.ankr.com/solana',
+];
+
+// Helper to get a working RPC connection
+async function getConnection(): Promise<Connection> {
+  // Try primary RPC first
+  try {
+    const connection = new Connection(PRIMARY_RPC_URL, 'confirmed');
+    // Quick health check
+    await connection.getVersion();
+    return connection;
+  } catch (error) {
+    console.warn(`[Blockchain] Primary RPC failed: ${PRIMARY_RPC_URL}`, error);
+  }
+  
+  // Try fallback RPCs
+  for (const rpcUrl of FALLBACK_RPCS) {
+    if (rpcUrl === PRIMARY_RPC_URL) continue; // Skip if already tried
+    
+    try {
+      const connection = new Connection(rpcUrl, 'confirmed');
+      await connection.getVersion();
+      console.log(`[Blockchain] Using fallback RPC: ${rpcUrl}`);
+      return connection;
+    } catch (error) {
+      console.warn(`[Blockchain] Fallback RPC failed: ${rpcUrl}`, error);
+    }
+  }
+  
+  // If all fail, return primary anyway (will error later with more context)
+  console.error('[Blockchain] All RPC endpoints failed, using primary as last resort');
+  return new Connection(PRIMARY_RPC_URL, 'confirmed');
+}
 
 // Types for on-chain data
 export interface WalletBalance {
@@ -64,7 +103,7 @@ export async function fetchWalletBalance(pubkey: string): Promise<WalletBalance 
   try {
     console.log(`[Blockchain] Fetching balance for ${pubkey.slice(0, 8)}...`);
     
-    const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
+    const connection = await getConnection();
     const publicKey = new PublicKey(pubkey);
     
     // Fetch SOL balance
@@ -106,7 +145,7 @@ export async function fetchWalletNFTs(pubkey: string): Promise<NFTMetadata[]> {
   try {
     console.log(`[Blockchain] Fetching NFTs for ${pubkey.slice(0, 8)}...`);
     
-    const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
+    const connection = await getConnection();
     const metaplex = Metaplex.make(connection);
     const publicKey = new PublicKey(pubkey);
     
@@ -178,7 +217,7 @@ export async function fetchWalletSBTs(pubkey: string): Promise<SBTMetadata[]> {
   try {
     console.log(`[Blockchain] Fetching SBTs for ${pubkey.slice(0, 8)}...`);
     
-    const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
+    const connection = await getConnection();
     const metaplex = Metaplex.make(connection);
     const publicKey = new PublicKey(pubkey);
     
