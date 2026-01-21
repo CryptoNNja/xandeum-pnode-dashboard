@@ -218,15 +218,20 @@ export async function fetchWalletNFTs(pubkey: string): Promise<NFTMetadata[]> {
           name.includes(keyword) || symbol.includes(keyword) || description.includes(keyword)
         );
         
-        // Only include Xandeum-related NFTs
+        // Include ALL NFTs (not just Xandeum-related)
+        // This is because node wallets might not have Xandeum NFTs
+        // but could have other NFTs that show activity
+        results.push({
+          mint: nft.address.toBase58(),
+          name: fullNft.name,
+          symbol: fullNft.symbol,
+          image: fullNft.json?.image,
+          collection: fullNft.collection?.address.toBase58(),
+        });
+        
+        // Log if it's Xandeum-related for debugging
         if (isXandeumNFT) {
-          results.push({
-            mint: nft.address.toBase58(),
-            name: fullNft.name,
-            symbol: fullNft.symbol,
-            image: fullNft.json?.image,
-            collection: fullNft.collection?.address.toBase58(),
-          });
+          console.log(`[Blockchain] Found Xandeum NFT: ${fullNft.name}`);
         }
         
         // Add delay between requests to avoid rate limiting (50ms)

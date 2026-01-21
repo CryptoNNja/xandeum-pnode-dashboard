@@ -504,13 +504,13 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
                         <div className="px-3 py-2 bg-[var(--bg-bg)] rounded border border-[var(--border-subtle)]">
                           <div className="flex items-center gap-1 mb-1">
                             <Image className="w-3 h-3 text-purple-400" />
-                            <span className="text-[9px] text-[var(--text-secondary)]">Xandeum NFTs</span>
+                            <span className="text-[9px] text-[var(--text-secondary)]">NFTs</span>
                           </div>
                           <div className="text-[10px] font-bold text-[var(--text-main)]">
                             {onChainData.nfts.length}
                           </div>
                           <div className="text-[9px] text-[var(--text-secondary)]">
-                            {onChainData.nfts.length === 0 ? 'No Xandeum NFTs' : 'Xandeum NFTs'}
+                            {onChainData.nfts.length === 0 ? 'No NFTs' : 'NFTs owned'}
                           </div>
                         </div>
 
@@ -518,13 +518,13 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
                         <div className="px-3 py-2 bg-[var(--bg-bg)] rounded border border-[var(--border-subtle)]">
                           <div className="flex items-center gap-1 mb-1">
                             <BadgeCheck className="w-3 h-3 text-[var(--kpi-excellent)]" />
-                            <span className="text-[9px] text-[var(--text-secondary)]">Xandeum SBTs</span>
+                            <span className="text-[9px] text-[var(--text-secondary)]">SBTs</span>
                           </div>
                           <div className="text-[10px] font-bold text-[var(--text-main)]">
                             {onChainData.sbts.length}
                           </div>
                           <div className="text-[9px] text-[var(--text-secondary)]">
-                            {onChainData.sbts.length === 0 ? 'No badges' : 'Badges/Achievements'}
+                            {onChainData.sbts.length === 0 ? 'No SBTs' : 'Soulbound Tokens'}
                           </div>
                         </div>
                       </div>
