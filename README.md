@@ -168,7 +168,7 @@ Not just decoration—each animation serves a purpose:
 
 ### 🔧 Advanced Analytics Toolkit
 
-#### **11 Specialized Modals**
+#### **12 Specialized Modals**
 
 One-click access to deep analytics:
 
@@ -208,6 +208,14 @@ One-click access to deep analytics:
    - Nodes by country heat map
    - Top 10 countries
    - Network diversity score
+
+8. **👥 Manager Board**
+   - Track multi-node operators (same pubkey)
+   - Aggregate credits, storage, uptime per manager
+   - Network and country distribution
+   - Health status breakdown (active/gossip/stale)
+   - Compact split-view modal (no scroll UX)
+   - On-chain data infrastructure (NFT/SBT/Balance ready)
 
 8. **📦 Data Distribution**
    - Packets sent/received analysis
