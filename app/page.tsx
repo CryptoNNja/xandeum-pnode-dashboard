@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import Image from "next/image";
-import { Search, List, LayoutGrid, MapPin, Download, RefreshCw, Settings, Loader2, CheckCircle, ChevronDown, Check, Star, Github, Twitter } from "lucide-react";
+import { Search, List, LayoutGrid, MapPin, Download, RefreshCw, Settings, Loader2, CheckCircle, ChevronDown, Check, Star, Github, Twitter, Users } from "lucide-react";
 import clsx from "clsx";
 import EnhancedHero from "@/components/EnhancedHero";
 import SkeletonLoader from "@/components/SkeletonLoader";
@@ -22,6 +22,7 @@ import { SelectionActionBar } from "@/components/SelectionActionBar";
 import { CompareNodesModal } from "@/components/Dashboard/CompareNodesModal";
 import { FavoritesModal } from "@/components/Dashboard/FavoritesModal";
 import { NetworkToggle } from "@/components/Dashboard/NetworkToggle"; // 🆕
+import ManagerProfilesModal from "@/components/Dashboard/ManagerProfilesModal";
 import { hexToRgba, getKpiColors, getStatusColors } from "@/lib/utils";
 import { generatePDFReport } from "@/lib/pdf-export";
 import { useToast } from "@/components/common/Toast";
@@ -132,6 +133,7 @@ export default function Page() {
   }>({ defaultTab: 'alerts' });
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
   const [isGeographicModalOpen, setIsGeographicModalOpen] = useState(false);
+  const [isManagerProfilesOpen, setIsManagerProfilesOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   
@@ -905,6 +907,21 @@ export default function Page() {
           toast.success(`Added ${ips.length} nodes to favorites`);
         }}
       />
+
+      {/* Manager Profiles Modal */}
+      <ManagerProfilesModal
+        isOpen={isManagerProfilesOpen}
+        onClose={() => setIsManagerProfilesOpen(false)}
+      />
+
+      {/* Floating Manager Profiles Button */}
+      <button
+        onClick={() => setIsManagerProfilesOpen(true)}
+        className="fixed bottom-6 right-6 z-40 p-4 bg-gradient-to-r from-[var(--accent-aqua)] to-[var(--kpi-excellent)] text-white rounded-full shadow-2xl hover:scale-110 transition-transform duration-200"
+        title="View Manager Profiles (Multi-Node Operators)"
+      >
+        <Users className="w-6 h-6" />
+      </button>
 
       {/* SEARCH MODAL */}
       {isSearchOpen && (
