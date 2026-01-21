@@ -464,7 +464,7 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
                         Error: {onChainData.error}
                       </div>
                     ) : onChainData ? (
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-3">
                         {/* Balance Card */}
                         <div className="px-3 py-2 bg-[var(--bg-bg)] rounded border border-[var(--border-subtle)]">
                           <div className="flex items-center gap-1 mb-1">
@@ -486,7 +486,6 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
                                   {onChainData.balance.xeno.toFixed(2)} XENO
                                 </div>
                               )}
-                              {/* Always show token info even if 0 */}
                               <div className="text-[9px] text-[var(--text-secondary)]">
                                 {onChainData.balance.xand === 0 && onChainData.balance.xeno === 0 ? (
                                   `No XAND/XENO tokens`
@@ -500,32 +499,75 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
                           )}
                         </div>
 
-                        {/* NFTs Card */}
+                        {/* NFTs Section */}
                         <div className="px-3 py-2 bg-[var(--bg-bg)] rounded border border-[var(--border-subtle)]">
-                          <div className="flex items-center gap-1 mb-1">
-                            <Image className="w-3 h-3 text-purple-400" />
-                            <span className="text-[9px] text-[var(--text-secondary)]">NFTs</span>
+                          <div className="flex items-center justify-between gap-1 mb-2">
+                            <div className="flex items-center gap-1">
+                              <Image className="w-3 h-3 text-purple-400" />
+                              <span className="text-[9px] text-[var(--text-secondary)]">Xandeum NFTs</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-[var(--text-main)]">
+                              {onChainData.nfts.length}
+                            </span>
                           </div>
-                          <div className="text-[10px] font-bold text-[var(--text-main)]">
-                            {onChainData.nfts.length}
-                          </div>
-                          <div className="text-[9px] text-[var(--text-secondary)]">
-                            {onChainData.nfts.length === 0 ? 'No NFTs' : 'NFTs owned'}
-                          </div>
+                          {onChainData.nfts.length > 0 ? (
+                            <div className="space-y-1 max-h-32 overflow-y-auto">
+                              {onChainData.nfts.map((nft, idx) => (
+                                <div key={nft.mint} className="flex items-center gap-2 p-1 bg-[var(--bg-card)] rounded">
+                                  {nft.image ? (
+                                    <img src={nft.image} alt={nft.name} className="w-6 h-6 rounded object-cover" />
+                                  ) : (
+                                    <div className="w-6 h-6 rounded bg-purple-500/20 flex items-center justify-center">
+                                      <Image className="w-3 h-3 text-purple-400" />
+                                    </div>
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-[9px] font-medium text-[var(--text-main)] truncate">
+                                      {nft.name}
+                                    </div>
+                                    {nft.symbol && (
+                                      <div className="text-[8px] text-[var(--text-secondary)] truncate">
+                                        {nft.symbol}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-[9px] text-[var(--text-secondary)]">No Xandeum NFTs</div>
+                          )}
                         </div>
 
-                        {/* SBTs Card */}
+                        {/* SBTs Section */}
                         <div className="px-3 py-2 bg-[var(--bg-bg)] rounded border border-[var(--border-subtle)]">
-                          <div className="flex items-center gap-1 mb-1">
-                            <BadgeCheck className="w-3 h-3 text-[var(--kpi-excellent)]" />
-                            <span className="text-[9px] text-[var(--text-secondary)]">SBTs</span>
+                          <div className="flex items-center justify-between gap-1 mb-2">
+                            <div className="flex items-center gap-1">
+                              <BadgeCheck className="w-3 h-3 text-[var(--kpi-excellent)]" />
+                              <span className="text-[9px] text-[var(--text-secondary)]">SBTs / Badges</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-[var(--text-main)]">
+                              {onChainData.sbts.length}
+                            </span>
                           </div>
-                          <div className="text-[10px] font-bold text-[var(--text-main)]">
-                            {onChainData.sbts.length}
-                          </div>
-                          <div className="text-[9px] text-[var(--text-secondary)]">
-                            {onChainData.sbts.length === 0 ? 'No SBTs' : 'Soulbound Tokens'}
-                          </div>
+                          {onChainData.sbts.length > 0 ? (
+                            <div className="space-y-1 max-h-32 overflow-y-auto">
+                              {onChainData.sbts.map((sbt, idx) => (
+                                <div key={sbt.mint} className="p-1 bg-[var(--bg-card)] rounded">
+                                  <div className="text-[9px] font-medium text-[var(--text-main)]">
+                                    {sbt.name}
+                                  </div>
+                                  {sbt.description && (
+                                    <div className="text-[8px] text-[var(--text-secondary)] truncate">
+                                      {sbt.description}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-[9px] text-[var(--text-secondary)]">No SBTs found</div>
+                          )}
                         </div>
                       </div>
                     ) : (
