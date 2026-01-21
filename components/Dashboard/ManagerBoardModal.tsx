@@ -404,10 +404,10 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
                   </div>
                 </div>
 
-                {/* Nodes Table - Ultra Compact */}
+                {/* Nodes Table - Ultra Compact with Pagination */}
                 <div className="flex-1 flex flex-col min-h-0">
                   <div className="text-xs text-[var(--text-secondary)] mb-2 font-medium">
-                    {selectedManager.nodes.length} Nodes
+                    {selectedManager.nodes.length} Nodes (showing first 5)
                   </div>
                   <div className="flex-1 overflow-y-auto bg-[var(--bg-bg)] rounded-lg mb-2">
                     <table className="w-full text-xs">
@@ -420,7 +420,7 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
                         </tr>
                       </thead>
                       <tbody>
-                        {selectedManager.nodes.map((node) => (
+                        {selectedManager.nodes.slice(0, 5).map((node) => (
                           <tr key={node.ip} className="border-b border-[var(--border-subtle)] hover:bg-[var(--bg-hover)]">
                             <td className="p-1.5 font-mono text-[10px]">{node.ip}</td>
                             <td className="p-1.5 text-[10px]">{node.city}, {node.country}</td>

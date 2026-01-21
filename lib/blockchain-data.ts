@@ -146,18 +146,19 @@ export async function fetchWalletBalance(pubkey: string): Promise<WalletBalance 
     }
     
     // Fetch XENO token balance
+    // NOTE: XENO token mint appears to be invalid, commenting out for now
     let xeno = 0;
-    try {
-      const xenoMint = new PublicKey(XENO_TOKEN_MINT);
-      const xenoAccounts = await connection.getParsedTokenAccountsByOwner(
-        publicKey,
-        { mint: xenoMint }
-      );
-      xeno = xenoAccounts.value[0]?.account.data.parsed.info.tokenAmount.uiAmount || 0;
-      console.log(`[Blockchain] XENO balance for ${pubkey.slice(0, 8)}: ${xeno}`);
-    } catch (error: any) {
-      console.warn(`[Blockchain] Error fetching XENO balance for ${pubkey.slice(0, 8)}:`, error?.message || error);
-    }
+    // try {
+    //   const xenoMint = new PublicKey(XENO_TOKEN_MINT);
+    //   const xenoAccounts = await connection.getParsedTokenAccountsByOwner(
+    //     publicKey,
+    //     { mint: xenoMint }
+    //   );
+    //   xeno = xenoAccounts.value[0]?.account.data.parsed.info.tokenAmount.uiAmount || 0;
+    //   console.log(`[Blockchain] XENO balance for ${pubkey.slice(0, 8)}: ${xeno}`);
+    // } catch (error: any) {
+    //   console.warn(`[Blockchain] Error fetching XENO balance for ${pubkey.slice(0, 8)}:`, error?.message || error);
+    // }
     
     // Get SOL price (simplified - you can use a price API later)
     const solPriceUSD = 200; // Approximate, TODO: fetch from CoinGecko API
@@ -317,7 +318,7 @@ export async function fetchWalletSBTs(pubkey: string): Promise<SBTMetadata[]> {
       return [];
     }
     
-    // Filter for SBTs
+    // Filter for SBTs - Removed Xandeum keyword filter to catch all SBTs
     const results: SBTMetadata[] = assets
       .filter((asset: any) => {
         if (asset.interface !== 'V1_NFT') return false;
@@ -325,22 +326,16 @@ export async function fetchWalletSBTs(pubkey: string): Promise<SBTMetadata[]> {
         const metadata = asset.content?.metadata || {};
         const name = (metadata.name || '').toLowerCase();
         const symbol = (metadata.symbol || '').toLowerCase();
-        const description = (metadata.description || '').toLowerCase();
         
-        // Check if Xandeum-related
-        const isXandeum = XANDEUM_KEYWORDS.some(keyword =>
-          name.includes(keyword) || symbol.includes(keyword) || description.includes(keyword)
-        );
-        
-        if (!isXandeum) return false;
-        
-        // Check if it's an SBT
+        // Check if it's an SBT (broader detection)
         const isSBT = 
-          !asset.mutable || // Non-mutable
+          !asset.mutable || // Non-mutable NFTs are often SBTs
           name.includes('sbt') ||
           name.includes('badge') ||
           name.includes('achievement') ||
-          symbol.includes('sbt');
+          name.includes('soul') ||
+          symbol.includes('sbt') ||
+          asset.burnt === true; // Some SBTs are marked as burnt
         
         return isSBT;
       })
