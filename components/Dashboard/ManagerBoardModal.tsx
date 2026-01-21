@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { X, Users, Network, HardDrive, TrendingUp, Globe, Award } from 'lucide-react';
+import { X, Users, Network, HardDrive, TrendingUp, Globe, Award, Wallet, Image, BadgeCheck } from 'lucide-react';
 import { truncatePubkey, formatStorageSize, formatUptime } from '@/lib/manager-profiles';
+import { fetchOnChainData, type OnChainData } from '@/lib/blockchain-data';
 
 interface ManagerNode {
   ip: string;
@@ -50,12 +51,34 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'multi'>('multi');
   const [selectedManager, setSelectedManager] = useState<ManagerProfile | null>(null);
+  const [onChainData, setOnChainData] = useState<OnChainData | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       fetchManagers();
     }
   }, [isOpen, filter]);
+
+  // Fetch blockchain data when a manager is selected
+  useEffect(() => {
+    if (selectedManager) {
+      setOnChainData(null); // Reset previous data
+      fetchOnChainData(selectedManager.pubkey)
+        .then(data => setOnChainData(data))
+        .catch(err => {
+          console.error('Error fetching on-chain data:', err);
+          setOnChainData({
+            pubkey: selectedManager.pubkey,
+            balance: null,
+            nfts: [],
+            sbts: [],
+            lastFetched: Date.now(),
+            loading: false,
+            error: err.message,
+          });
+        });
+    }
+  }, [selectedManager]);
 
   const fetchManagers = async () => {
     setLoading(true);
@@ -337,10 +360,76 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
                     </table>
                   </div>
                   
-                  {/* On-Chain Data - Compact footer */}
-                  <div className="flex-shrink-0 px-2 py-1.5 bg-[var(--bg-bg)] rounded border border-dashed border-[var(--border-subtle)] text-[10px] text-[var(--text-secondary)] flex items-center justify-between">
-                    <span>🔗 On-Chain: NFTs, SBTs, Balance</span>
-                    <span className="text-[var(--kpi-warning)]">Coming Soon</span>
+                  {/* On-Chain Data Section */}
+                  <div className="flex-shrink-0 space-y-2">
+                    <div className="text-xs text-[var(--text-secondary)] font-medium flex items-center gap-2">
+                      <Award className="w-3 h-3" />
+                      On-Chain Data
+                    </div>
+                    
+                    {onChainData?.loading ? (
+                      <div className="px-3 py-2 bg-[var(--bg-bg)] rounded text-[10px] text-[var(--text-secondary)]">
+                        Loading blockchain data...
+                      </div>
+                    ) : onChainData?.error ? (
+                      <div className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded text-[10px] text-red-400">
+                        Error: {onChainData.error}
+                      </div>
+                    ) : onChainData ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        {/* Balance Card */}
+                        <div className="px-3 py-2 bg-[var(--bg-bg)] rounded border border-[var(--border-subtle)]">
+                          <div className="flex items-center gap-1 mb-1">
+                            <Wallet className="w-3 h-3 text-[var(--accent-aqua)]" />
+                            <span className="text-[9px] text-[var(--text-secondary)]">Balance</span>
+                          </div>
+                          {onChainData.balance ? (
+                            <div className="space-y-0.5">
+                              <div className="text-[10px] font-bold text-[var(--text-main)]">
+                                {onChainData.balance.sol.toFixed(4)} SOL
+                              </div>
+                              <div className="text-[9px] text-[var(--text-secondary)]">
+                                ${onChainData.balance.usd.toFixed(2)} USD
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-[9px] text-[var(--text-secondary)]">No balance</div>
+                          )}
+                        </div>
+
+                        {/* NFTs Card */}
+                        <div className="px-3 py-2 bg-[var(--bg-bg)] rounded border border-[var(--border-subtle)]">
+                          <div className="flex items-center gap-1 mb-1">
+                            <Image className="w-3 h-3 text-purple-400" />
+                            <span className="text-[9px] text-[var(--text-secondary)]">NFTs</span>
+                          </div>
+                          <div className="text-[10px] font-bold text-[var(--text-main)]">
+                            {onChainData.nfts.length}
+                          </div>
+                          <div className="text-[9px] text-[var(--text-secondary)]">
+                            {onChainData.nfts.length === 0 ? 'No NFTs' : 'NFTs owned'}
+                          </div>
+                        </div>
+
+                        {/* SBTs Card */}
+                        <div className="px-3 py-2 bg-[var(--bg-bg)] rounded border border-[var(--border-subtle)]">
+                          <div className="flex items-center gap-1 mb-1">
+                            <BadgeCheck className="w-3 h-3 text-[var(--kpi-excellent)]" />
+                            <span className="text-[9px] text-[var(--text-secondary)]">SBTs</span>
+                          </div>
+                          <div className="text-[10px] font-bold text-[var(--text-main)]">
+                            {onChainData.sbts.length}
+                          </div>
+                          <div className="text-[9px] text-[var(--text-secondary)]">
+                            {onChainData.sbts.length === 0 ? 'No badges' : 'Achievements'}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="px-3 py-2 bg-[var(--bg-bg)] rounded border border-dashed border-[var(--border-subtle)] text-[10px] text-[var(--text-secondary)]">
+                        Select a manager to view on-chain data
+                      </div>
+                    )}
                   </div>
                 </div>
 
