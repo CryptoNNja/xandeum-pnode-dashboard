@@ -36,7 +36,7 @@ export function STOINCCalculatorModal({ isOpen, onClose }: STOINCCalculatorModal
   // Core parameters
   const [numPNodes, setNumPNodes] = useState(1);
   const [storageSpace, setStorageSpace] = useState(100); // GB per node
-  const [performanceScore, setPerformanceScore] = useState(0.9); // 0-1 (like pGlobe)
+  const [performanceScore, setPerformanceScore] = useState(0.9); // 0-1 scale
   const [xandStaked, setXandStaked] = useState(0); // XAND tokens staked
   const [nftTier, setNftTier] = useState<keyof typeof NFT_BOOSTS>('none');
   const [purchaseEra, setPurchaseEra] = useState<keyof typeof PURCHASE_ERA_BOOSTS>('none');
