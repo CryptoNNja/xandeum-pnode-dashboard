@@ -185,76 +185,79 @@ export async function fetchWalletNFTs(pubkey: string): Promise<NFTMetadata[]> {
   try {
     console.log(`[Blockchain] Fetching NFTs for ${pubkey.slice(0, 8)}...`);
     
-    const connection = await getConnection();
-    const metaplex = Metaplex.make(connection);
-    const publicKey = new PublicKey(pubkey);
+    // Use Helius DAS API instead of Metaplex (much faster and more reliable)
+    const response = await fetch(`${PRIMARY_RPC_URL}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 'nft-fetch',
+        method: 'getAssetsByOwner',
+        params: {
+          ownerAddress: pubkey,
+          page: 1,
+          limit: 100,
+          displayOptions: {
+            showFungible: false,
+            showNativeBalance: false,
+          }
+        }
+      })
+    });
     
-    // Find all NFTs owned by this wallet
-    const nfts = await metaplex.nfts().findAllByOwner({ owner: publicKey });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
     
-    console.log(`[Blockchain] Found ${nfts.length} NFTs for ${pubkey.slice(0, 8)}`);
+    const data = await response.json();
     
-    // If no NFTs, return early
-    if (nfts.length === 0) {
+    if (data.error) {
+      throw new Error(data.error.message || 'RPC error');
+    }
+    
+    const assets = data.result?.items || [];
+    
+    console.log(`[Blockchain] Found ${assets.length} NFTs for ${pubkey.slice(0, 8)}`);
+    
+    if (assets.length === 0) {
       return [];
     }
     
-    // Load full metadata for each NFT (limit to first 10 to reduce RPC calls)
-    const results: NFTMetadata[] = [];
-    const limit = Math.min(nfts.length, 10);
-    
-    for (let i = 0; i < limit; i++) {
-      const nft = nfts[i];
-      try {
-        // Check if nft already has metadata loaded
-        const fullNft = 'json' in nft ? nft : await metaplex.nfts().load({ metadata: nft as any });
+    // Convert to our NFTMetadata format
+    const results: NFTMetadata[] = assets
+      .filter((asset: any) => asset.interface === 'V1_NFT') // Only NFTs, not tokens
+      .slice(0, 20) // Limit to 20 for UI
+      .map((asset: any) => {
+        const metadata = asset.content?.metadata || {};
+        const name = metadata.name || 'Unknown';
+        const symbol = metadata.symbol || '';
         
-        // Check if it's a Xandeum-related NFT
-        const name = fullNft.name?.toLowerCase() || '';
-        const symbol = fullNft.symbol?.toLowerCase() || '';
-        const description = fullNft.json?.description?.toLowerCase() || '';
-        
-        const isXandeumNFT = XANDEUM_KEYWORDS.some(keyword =>
-          name.includes(keyword) || symbol.includes(keyword) || description.includes(keyword)
+        // Check if Xandeum-related
+        const isXandeum = XANDEUM_KEYWORDS.some(keyword =>
+          name.toLowerCase().includes(keyword) || 
+          symbol.toLowerCase().includes(keyword) ||
+          (metadata.description || '').toLowerCase().includes(keyword)
         );
         
-        // Include ALL NFTs (not just Xandeum-related)
-        // This is because node wallets might not have Xandeum NFTs
-        // but could have other NFTs that show activity
-        results.push({
-          mint: nft.address.toBase58(),
-          name: fullNft.name,
-          symbol: fullNft.symbol,
-          image: fullNft.json?.image,
-          collection: fullNft.collection?.address.toBase58(),
-        });
-        
-        // Log if it's Xandeum-related for debugging
-        if (isXandeumNFT) {
-          console.log(`[Blockchain] Found Xandeum NFT: ${fullNft.name}`);
+        if (isXandeum) {
+          console.log(`[Blockchain] Found Xandeum NFT: ${name}`);
         }
         
-        // Add delay between requests to avoid rate limiting (50ms)
-        if (i < limit - 1) {
-          await new Promise(resolve => setTimeout(resolve, 50));
-        }
-      } catch (error: any) {
-        // Check if it's a rate limit error
-        if (error.message?.includes('429') || error.message?.includes('Too many requests')) {
-          console.warn(`[Blockchain] Rate limit hit, stopping NFT fetch at ${i}/${limit}`);
-          break; // Stop trying to avoid further rate limits
-        }
-        console.error(`[Blockchain] Error loading NFT ${nft.address.toBase58()}:`, error);
-        // Skip failed NFT and continue
-      }
-    }
+        return {
+          mint: asset.id,
+          name,
+          symbol,
+          image: asset.content?.files?.[0]?.uri || asset.content?.links?.image || null,
+          collection: asset.grouping?.find((g: any) => g.group_key === 'collection')?.group_value,
+        };
+      });
     
     return results;
   } catch (error: any) {
     // Handle rate limiting gracefully
     if (error.message?.includes('429') || error.message?.includes('Too many requests')) {
       console.warn('[Blockchain] Rate limit reached while fetching NFTs');
-      return []; // Return empty array instead of throwing
+      return [];
     }
     console.error('[Blockchain] Error fetching NFTs:', error);
     return [];
@@ -275,90 +278,96 @@ export async function fetchWalletSBTs(pubkey: string): Promise<SBTMetadata[]> {
   try {
     console.log(`[Blockchain] Fetching SBTs for ${pubkey.slice(0, 8)}...`);
     
-    const connection = await getConnection();
-    const metaplex = Metaplex.make(connection);
-    const publicKey = new PublicKey(pubkey);
+    // Use Helius DAS API - same as NFTs but filter for SBTs
+    const response = await fetch(`${PRIMARY_RPC_URL}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 'sbt-fetch',
+        method: 'getAssetsByOwner',
+        params: {
+          ownerAddress: pubkey,
+          page: 1,
+          limit: 100,
+          displayOptions: {
+            showFungible: false,
+            showNativeBalance: false,
+          }
+        }
+      })
+    });
     
-    // Find all NFTs first
-    const nfts = await metaplex.nfts().findAllByOwner({ owner: publicKey });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
     
-    console.log(`[Blockchain] Checking ${nfts.length} NFTs for SBTs`);
+    const data = await response.json();
     
-    // If no NFTs, return early
-    if (nfts.length === 0) {
+    if (data.error) {
+      throw new Error(data.error.message || 'RPC error');
+    }
+    
+    const assets = data.result?.items || [];
+    
+    console.log(`[Blockchain] Checking ${assets.length} assets for SBTs`);
+    
+    if (assets.length === 0) {
       return [];
     }
     
-    // Filter for SBTs (non-transferable NFTs)
-    // Note: This is a simplified check. Limit to first 10 to reduce RPC calls
-    const results: SBTMetadata[] = [];
-    const limit = Math.min(nfts.length, 10);
-    
-    for (let i = 0; i < limit; i++) {
-      const nft = nfts[i];
-      try {
-        // Check if nft already has metadata loaded
-        const fullNft = 'json' in nft ? nft : await metaplex.nfts().load({ metadata: nft as any });
+    // Filter for SBTs
+    const results: SBTMetadata[] = assets
+      .filter((asset: any) => {
+        if (asset.interface !== 'V1_NFT') return false;
         
-        // Check if it's a Xandeum-related NFT first
-        const name = fullNft.name?.toLowerCase() || '';
-        const symbol = fullNft.symbol?.toLowerCase() || '';
-        const description = fullNft.json?.description?.toLowerCase() || '';
+        const metadata = asset.content?.metadata || {};
+        const name = (metadata.name || '').toLowerCase();
+        const symbol = (metadata.symbol || '').toLowerCase();
+        const description = (metadata.description || '').toLowerCase();
         
-        const isXandeumNFT = XANDEUM_KEYWORDS.some(keyword =>
+        // Check if Xandeum-related
+        const isXandeum = XANDEUM_KEYWORDS.some(keyword =>
           name.includes(keyword) || symbol.includes(keyword) || description.includes(keyword)
         );
         
-        // Only check for SBT if it's Xandeum-related
-        if (!isXandeumNFT) {
-          continue; // Skip non-Xandeum NFTs
-        }
+        if (!isXandeum) return false;
         
-        // Check if it's an SBT (various methods to detect)
+        // Check if it's an SBT
         const isSBT = 
-          !fullNft.isMutable || // Non-mutable NFTs are often SBTs
-          fullNft.json?.attributes?.some((attr: any) => 
-            attr.trait_type?.toLowerCase() === 'soulbound' && attr.value === 'true'
-          ) ||
+          !asset.mutable || // Non-mutable
           name.includes('sbt') ||
           name.includes('badge') ||
-          name.includes('achievement');
+          name.includes('achievement') ||
+          symbol.includes('sbt');
         
-        if (isSBT) {
-          results.push({
-            mint: nft.address.toBase58(),
-            name: fullNft.name,
-            description: fullNft.json?.description || '',
-            attributes: fullNft.json?.attributes?.reduce((acc: Record<string, string>, attr: any) => {
-              if (attr.trait_type && attr.value) {
-                acc[attr.trait_type] = attr.value;
-              }
-              return acc;
-            }, {} as Record<string, string>),
-          });
-        }
+        return isSBT;
+      })
+      .slice(0, 20)
+      .map((asset: any) => {
+        const metadata = asset.content?.metadata || {};
         
-        // Add delay between requests to avoid rate limiting (50ms)
-        if (i < limit - 1) {
-          await new Promise(resolve => setTimeout(resolve, 50));
-        }
-      } catch (error: any) {
-        // Check if it's a rate limit error
-        if (error.message?.includes('429') || error.message?.includes('Too many requests')) {
-          console.warn(`[Blockchain] Rate limit hit, stopping SBT check at ${i}/${limit}`);
-          break; // Stop trying to avoid further rate limits
-        }
-        console.error(`[Blockchain] Error loading potential SBT ${nft.address.toBase58()}:`, error);
-        // Skip failed SBT and continue
-      }
-    }
+        return {
+          mint: asset.id,
+          name: metadata.name || 'Unknown',
+          description: metadata.description || '',
+          attributes: metadata.attributes?.reduce((acc: Record<string, string>, attr: any) => {
+            if (attr.trait_type && attr.value) {
+              acc[attr.trait_type] = String(attr.value);
+            }
+            return acc;
+          }, {} as Record<string, string>) || {},
+        };
+      });
+    
+    console.log(`[Blockchain] Found ${results.length} SBTs for ${pubkey.slice(0, 8)}`);
     
     return results;
   } catch (error: any) {
     // Handle rate limiting gracefully
     if (error.message?.includes('429') || error.message?.includes('Too many requests')) {
       console.warn('[Blockchain] Rate limit reached while fetching SBTs');
-      return []; // Return empty array instead of throwing
+      return [];
     }
     console.error('[Blockchain] Error fetching SBTs:', error);
     return [];
