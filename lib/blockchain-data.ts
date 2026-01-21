@@ -113,10 +113,19 @@ export async function fetchWalletNFTs(pubkey: string): Promise<NFTMetadata[]> {
     // Find all NFTs owned by this wallet
     const nfts = await metaplex.nfts().findAllByOwner({ owner: publicKey });
     
-    // Load full metadata for each NFT (limit to first 20 to avoid rate limits)
-    const results: NFTMetadata[] = [];
+    console.log(`[Blockchain] Found ${nfts.length} NFTs for ${pubkey.slice(0, 8)}`);
     
-    for (const nft of nfts.slice(0, 20)) {
+    // If no NFTs, return early
+    if (nfts.length === 0) {
+      return [];
+    }
+    
+    // Load full metadata for each NFT (limit to first 10 to reduce RPC calls)
+    const results: NFTMetadata[] = [];
+    const limit = Math.min(nfts.length, 10);
+    
+    for (let i = 0; i < limit; i++) {
+      const nft = nfts[i];
       try {
         // Check if nft already has metadata loaded
         const fullNft = 'json' in nft ? nft : await metaplex.nfts().load({ metadata: nft as any });
@@ -127,14 +136,29 @@ export async function fetchWalletNFTs(pubkey: string): Promise<NFTMetadata[]> {
           image: fullNft.json?.image,
           collection: fullNft.collection?.address.toBase58(),
         });
-      } catch (error) {
+        
+        // Add delay between requests to avoid rate limiting (50ms)
+        if (i < limit - 1) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      } catch (error: any) {
+        // Check if it's a rate limit error
+        if (error.message?.includes('429') || error.message?.includes('Too many requests')) {
+          console.warn(`[Blockchain] Rate limit hit, stopping NFT fetch at ${i}/${limit}`);
+          break; // Stop trying to avoid further rate limits
+        }
         console.error(`[Blockchain] Error loading NFT ${nft.address.toBase58()}:`, error);
-        // Skip failed NFT
+        // Skip failed NFT and continue
       }
     }
     
     return results;
-  } catch (error) {
+  } catch (error: any) {
+    // Handle rate limiting gracefully
+    if (error.message?.includes('429') || error.message?.includes('Too many requests')) {
+      console.warn('[Blockchain] Rate limit reached while fetching NFTs');
+      return []; // Return empty array instead of throwing
+    }
     console.error('[Blockchain] Error fetching NFTs:', error);
     return [];
   }
@@ -161,11 +185,20 @@ export async function fetchWalletSBTs(pubkey: string): Promise<SBTMetadata[]> {
     // Find all NFTs first
     const nfts = await metaplex.nfts().findAllByOwner({ owner: publicKey });
     
-    // Filter for SBTs (non-transferable NFTs)
-    // Note: This is a simplified check. You may need to adjust based on your SBT implementation
-    const results: SBTMetadata[] = [];
+    console.log(`[Blockchain] Checking ${nfts.length} NFTs for SBTs`);
     
-    for (const nft of nfts.slice(0, 20)) {
+    // If no NFTs, return early
+    if (nfts.length === 0) {
+      return [];
+    }
+    
+    // Filter for SBTs (non-transferable NFTs)
+    // Note: This is a simplified check. Limit to first 10 to reduce RPC calls
+    const results: SBTMetadata[] = [];
+    const limit = Math.min(nfts.length, 10);
+    
+    for (let i = 0; i < limit; i++) {
+      const nft = nfts[i];
       try {
         // Check if nft already has metadata loaded
         const fullNft = 'json' in nft ? nft : await metaplex.nfts().load({ metadata: nft as any });
@@ -193,14 +226,29 @@ export async function fetchWalletSBTs(pubkey: string): Promise<SBTMetadata[]> {
             }, {} as Record<string, string>),
           });
         }
-      } catch (error) {
+        
+        // Add delay between requests to avoid rate limiting (50ms)
+        if (i < limit - 1) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      } catch (error: any) {
+        // Check if it's a rate limit error
+        if (error.message?.includes('429') || error.message?.includes('Too many requests')) {
+          console.warn(`[Blockchain] Rate limit hit, stopping SBT check at ${i}/${limit}`);
+          break; // Stop trying to avoid further rate limits
+        }
         console.error(`[Blockchain] Error loading potential SBT ${nft.address.toBase58()}:`, error);
-        // Skip failed SBT
+        // Skip failed SBT and continue
       }
     }
     
     return results;
-  } catch (error) {
+  } catch (error: any) {
+    // Handle rate limiting gracefully
+    if (error.message?.includes('429') || error.message?.includes('Too many requests')) {
+      console.warn('[Blockchain] Rate limit reached while fetching SBTs');
+      return []; // Return empty array instead of throwing
+    }
     console.error('[Blockchain] Error fetching SBTs:', error);
     return [];
   }
