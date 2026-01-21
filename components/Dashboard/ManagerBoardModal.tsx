@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { X, Users, Network, HardDrive, TrendingUp, Globe, Award, Wallet, Image, BadgeCheck, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { X, Users, Network, HardDrive, TrendingUp, Globe, Award, Wallet, Image, BadgeCheck, ArrowUp, ArrowDown } from 'lucide-react';
 import { truncatePubkey, formatStorageSize, formatUptime } from '@/lib/manager-profiles';
 import { fetchOnChainData, type OnChainData } from '@/lib/blockchain-data';
 

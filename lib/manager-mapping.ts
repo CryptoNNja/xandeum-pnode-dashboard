@@ -20,11 +20,11 @@ async function loadMapping(): Promise<Record<string, string>> {
     const response = await fetch('/api/manager-mapping');
     const data = await response.json();
     
-    if (data.success) {
+    if (data.success && data.mapping) {
       cachedMapping = data.mapping;
       cacheTimestamp = Date.now();
-      console.log(`[ManagerMapping] Loaded ${Object.keys(cachedMapping).length} mappings`);
-      return cachedMapping;
+      console.log(`[ManagerMapping] Loaded ${Object.keys(data.mapping).length} mappings`);
+      return data.mapping;
     }
   } catch (error: any) {
     console.error('[ManagerMapping] Failed to load mapping:', error?.message || error);

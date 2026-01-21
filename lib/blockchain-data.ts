@@ -6,11 +6,10 @@
  * - NFTs owned
  * - SBTs (Soulbound Tokens)
  * 
- * Uses Solana Web3.js + Metaplex for NFT parsing
+ * Uses Solana Web3.js + Helius DAS API for NFT/SBT parsing
  */
 
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { Metaplex } from '@metaplex-foundation/js';
 import { getManagerWallet } from './manager-mapping';
 
 // Solana RPC endpoint from environment
@@ -24,9 +23,8 @@ const FALLBACK_RPCS = [
   'https://rpc.ankr.com/solana',
 ];
 
-// Xandeum Token Mint Addresses
+// Xandeum Token Mint Address
 const XAND_TOKEN_MINT = 'XANDuUoVoUqniKkpcKhrxmvYJybpJvUxJLr21Gaj3Hx';
-const XENO_TOKEN_MINT = 'G2bTxNndhA9zxxy4PZnHFcQo9wQQozrfcmN6AN9Heqoe';
 
 // Keywords to identify Xandeum-related NFTs/SBTs
 const XANDEUM_KEYWORDS = [
@@ -177,7 +175,7 @@ export async function fetchWalletBalance(pubkey: string): Promise<WalletBalance 
 /**
  * Fetch NFTs owned by wallet
  * 
- * Uses Metaplex to get NFT metadata
+ * Uses Helius DAS API to get NFT metadata (10x faster than Metaplex)
  * 
  * @param pubkey - Public key of the wallet
  * @returns Array of NFTs
@@ -381,7 +379,7 @@ export async function fetchOnChainData(
   forceRefresh: boolean = false
 ): Promise<OnChainData> {
   // Try to get the manager wallet for this node
-  const managerWallet = getManagerWallet(pubkey);
+  const managerWallet = await getManagerWallet(pubkey);
   
   // Use manager wallet if available, otherwise fallback to node pubkey
   const walletToFetch = managerWallet || pubkey;
