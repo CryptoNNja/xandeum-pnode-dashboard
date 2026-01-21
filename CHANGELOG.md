@@ -4,6 +4,29 @@ All notable changes to Xandeum pNode Analytics Dashboard.
 
 ## [Unreleased]
 
+### 👥 Manager Profiles Feature (2026-01-21)
+
+**Track multi-node operators with aggregate statistics**
+
+#### Added
+- Manager Profiles modal with split-view layout (40/60)
+- Identify operators running multiple nodes (same pubkey)
+- Aggregate statistics: credits, storage, uptime per manager
+- Network and country distribution analysis
+- Health status breakdown (active/gossip/stale)
+- Compact no-scroll UX (90vh modal, ultra-compact sections)
+- Orange floating button with pulse animation
+- API endpoint: `/api/managers` with intelligent caching
+- Blockchain infrastructure ready (NFT/SBT/Balance fetching)
+- Files: `lib/manager-profiles.ts`, `lib/blockchain-data.ts`, `app/api/managers/route.ts`
+
+#### Changed
+- UI: Added third floating button above calculator
+- Spacing: Unified button spacing to 72px
+- Modal count: 11 → 12 specialized modals
+
+---
+
 ### 🎯 MAJOR: Comprehensive pNode Detail View & Export System (2024-12-24)
 
 **Professional individual node analytics with expert-level UX/UI design**

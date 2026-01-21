@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     }
 
     // Group nodes by manager (pubkey)
-    const managers = groupNodesByManager(nodes as PNode[]);
+    const managers = groupNodesByManager(nodes as unknown as PNode[]);
 
     // Get overall statistics
     const stats = getManagerStats(managers);
