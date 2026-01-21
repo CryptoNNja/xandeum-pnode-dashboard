@@ -2,45 +2,36 @@
  * Manager Mapping
  * 
  * Provides the mapping between node pubkeys and manager wallet addresses
- * Source: managers_node_data.json from official Xandeum registry
+ * Fetches data from /api/manager-mapping endpoint
  */
 
-import managersData from '../config/managers_node_data.json';
+// Simple in-memory cache
+let cachedMapping: Record<string, string> | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
-interface ManagerNode {
-  pnode_pubkey: string;
-  registered_time: string;
-  node_label: string;
-}
-
-interface Manager {
-  manager_index: number;
-  manager_address: string;
-  nodes: ManagerNode[];
-}
-
-interface ManagersData {
-  summary: {
-    total_managers: number;
-    total_pnode_pubkeys: number;
-  };
-  managers: Manager[];
-}
-
-// Type the imported JSON
-const data = managersData as ManagersData;
-
-// Create a fast lookup map: pubkey → manager_address
-const pubkeyToManagerMap = new Map<string, string>();
-
-// Build the map
-for (const manager of data.managers) {
-  for (const node of manager.nodes) {
-    pubkeyToManagerMap.set(node.pnode_pubkey, manager.manager_address);
+async function loadMapping(): Promise<Record<string, string>> {
+  // Check cache
+  if (cachedMapping && Date.now() - cacheTimestamp < CACHE_TTL) {
+    return cachedMapping;
   }
+  
+  try {
+    const response = await fetch('/api/manager-mapping');
+    const data = await response.json();
+    
+    if (data.success) {
+      cachedMapping = data.mapping;
+      cacheTimestamp = Date.now();
+      console.log(`[ManagerMapping] Loaded ${Object.keys(cachedMapping).length} mappings`);
+      return cachedMapping;
+    }
+  } catch (error: any) {
+    console.error('[ManagerMapping] Failed to load mapping:', error?.message || error);
+  }
+  
+  return {};
 }
-
-console.log(`[ManagerMapping] Loaded ${pubkeyToManagerMap.size} pubkey→manager mappings`);
 
 /**
  * Get the manager wallet address for a given node pubkey
@@ -48,38 +39,7 @@ console.log(`[ManagerMapping] Loaded ${pubkeyToManagerMap.size} pubkey→manager
  * @param nodePubkey - The pNode pubkey
  * @returns Manager wallet address, or null if not found
  */
-export function getManagerWallet(nodePubkey: string): string | null {
-  return pubkeyToManagerMap.get(nodePubkey) || null;
-}
-
-/**
- * Get all nodes for a given manager wallet
- * 
- * @param managerWallet - The manager wallet address
- * @returns Array of node pubkeys
- */
-export function getManagerNodes(managerWallet: string): string[] {
-  const manager = data.managers.find(m => m.manager_address === managerWallet);
-  return manager ? manager.nodes.map(n => n.pnode_pubkey) : [];
-}
-
-/**
- * Get all managers
- */
-export function getAllManagers(): Manager[] {
-  return data.managers;
-}
-
-/**
- * Get summary statistics
- */
-export function getManagerStats() {
-  return data.summary;
-}
-
-/**
- * Check if a pubkey has a known manager
- */
-export function hasManagerWallet(nodePubkey: string): boolean {
-  return pubkeyToManagerMap.has(nodePubkey);
+export async function getManagerWallet(nodePubkey: string): Promise<string | null> {
+  const mapping = await loadMapping();
+  return mapping[nodePubkey] || null;
 }
