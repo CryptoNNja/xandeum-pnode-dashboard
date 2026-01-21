@@ -139,8 +139,9 @@ export async function fetchWalletBalance(pubkey: string): Promise<WalletBalance 
         { mint: xandMint }
       );
       xand = xandAccounts.value[0]?.account.data.parsed.info.tokenAmount.uiAmount || 0;
-    } catch (error) {
-      console.warn('[Blockchain] Error fetching XAND balance:', error);
+      console.log(`[Blockchain] XAND balance for ${pubkey.slice(0, 8)}: ${xand}`);
+    } catch (error: any) {
+      console.warn(`[Blockchain] Error fetching XAND balance for ${pubkey.slice(0, 8)}:`, error?.message || error);
     }
     
     // Fetch XENO token balance
@@ -152,8 +153,9 @@ export async function fetchWalletBalance(pubkey: string): Promise<WalletBalance 
         { mint: xenoMint }
       );
       xeno = xenoAccounts.value[0]?.account.data.parsed.info.tokenAmount.uiAmount || 0;
-    } catch (error) {
-      console.warn('[Blockchain] Error fetching XENO balance:', error);
+      console.log(`[Blockchain] XENO balance for ${pubkey.slice(0, 8)}: ${xeno}`);
+    } catch (error: any) {
+      console.warn(`[Blockchain] Error fetching XENO balance for ${pubkey.slice(0, 8)}:`, error?.message || error);
     }
     
     // Get SOL price (simplified - you can use a price API later)

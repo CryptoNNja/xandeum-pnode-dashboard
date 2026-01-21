@@ -38,10 +38,17 @@ export async function GET(request: Request) {
     // Get overall statistics
     const stats = getManagerStats(managers);
 
-    // Get top managers or multi-node operators
-    const topManagers = multiNodeOnly 
-      ? getMultiNodeOperators(managers)
-      : getTopManagers(managers, topLimit);
+    // Get managers based on filter
+    let topManagers: ReturnType<typeof getMultiNodeOperators>;
+    
+    if (multiNodeOnly) {
+      // Multi-node operators only (2+ nodes)
+      topManagers = getMultiNodeOperators(managers);
+    } else {
+      // "All" mode - return ALL managers, not just top 10
+      topManagers = Array.from(managers.values())
+        .sort((a, b) => b.nodeCount - a.nodeCount);
+    }
 
     // Convert Sets to Arrays for JSON serialization
     const managersData = topManagers.map((manager) => ({

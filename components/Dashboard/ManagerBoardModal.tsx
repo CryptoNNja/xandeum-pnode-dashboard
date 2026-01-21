@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { X, Users, Network, HardDrive, TrendingUp, Globe, Award, Wallet, Image, BadgeCheck } from 'lucide-react';
+import { X, Users, Network, HardDrive, TrendingUp, Globe, Award, Wallet, Image, BadgeCheck, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { truncatePubkey, formatStorageSize, formatUptime } from '@/lib/manager-profiles';
 import { fetchOnChainData, type OnChainData } from '@/lib/blockchain-data';
 
@@ -45,6 +45,9 @@ interface ManagerBoardModalProps {
   onClose: () => void;
 }
 
+type SortField = 'nodeCount' | 'totalCredits' | 'totalStorage';
+type SortDirection = 'asc' | 'desc';
+
 export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModalProps) {
   const [managers, setManagers] = useState<ManagerProfile[]>([]);
   const [stats, setStats] = useState<ManagerStats | null>(null);
@@ -52,6 +55,8 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
   const [filter, setFilter] = useState<'all' | 'multi'>('multi');
   const [selectedManager, setSelectedManager] = useState<ManagerProfile | null>(null);
   const [onChainData, setOnChainData] = useState<OnChainData | null>(null);
+  const [sortField, setSortField] = useState<SortField>('nodeCount');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   useEffect(() => {
     if (isOpen) {
@@ -95,6 +100,37 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
       console.error('Error fetching managers:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Sort managers based on current sort settings
+  const sortedManagers = [...managers].sort((a, b) => {
+    let comparison = 0;
+    
+    switch (sortField) {
+      case 'nodeCount':
+        comparison = a.nodeCount - b.nodeCount;
+        break;
+      case 'totalCredits':
+        comparison = a.totalCredits - b.totalCredits;
+        break;
+      case 'totalStorage':
+        comparison = a.totalStorage - b.totalStorage;
+        break;
+    }
+    
+    return sortDirection === 'desc' ? -comparison : comparison;
+  });
+
+  // Toggle sort direction or change field
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Toggle direction
+      setSortDirection(sortDirection === 'desc' ? 'asc' : 'desc');
+    } else {
+      // New field, default to descending
+      setSortField(field);
+      setSortDirection('desc');
     }
   };
 
@@ -168,14 +204,70 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
         <div className="flex-1 flex overflow-hidden">
           
           {/* LEFT: Manager List - 40% width */}
-          <div className="w-2/5 border-r border-[var(--border-subtle)] overflow-y-auto">
+          <div className="w-2/5 border-r border-[var(--border-subtle)] flex flex-col">
             {loading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-[var(--text-secondary)]">Loading...</div>
               </div>
             ) : (
-              <div className="p-4 space-y-2">
-                {managers.map((manager) => (
+              <>
+                {/* Sort Controls */}
+                <div className="flex-shrink-0 p-4 border-b border-[var(--border-subtle)] bg-[var(--bg-bg)]">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-[var(--text-secondary)]">
+                      Showing {sortedManagers.length} {filter === 'multi' ? 'multi-node operators' : 'operators'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[var(--text-secondary)]">Sort by:</span>
+                    <button
+                      onClick={() => handleSort('nodeCount')}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
+                        sortField === 'nodeCount'
+                          ? 'bg-orange-500 text-white'
+                          : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                      }`}
+                    >
+                      <Network className="w-3 h-3" />
+                      Nodes
+                      {sortField === 'nodeCount' && (
+                        sortDirection === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleSort('totalCredits')}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
+                        sortField === 'totalCredits'
+                          ? 'bg-orange-500 text-white'
+                          : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                      }`}
+                    >
+                      <TrendingUp className="w-3 h-3" />
+                      Credits
+                      {sortField === 'totalCredits' && (
+                        sortDirection === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleSort('totalStorage')}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
+                        sortField === 'totalStorage'
+                          ? 'bg-orange-500 text-white'
+                          : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                      }`}
+                    >
+                      <HardDrive className="w-3 h-3" />
+                      Storage
+                      {sortField === 'totalStorage' && (
+                        sortDirection === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Manager List */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                  {sortedManagers.map((manager) => (
                   <button
                     key={manager.pubkey}
                     onClick={() => setSelectedManager(manager)}
@@ -220,12 +312,8 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
                   </button>
                 ))}
 
-                {managers.length === 0 && (
-                  <div className="text-center py-12 text-[var(--text-secondary)]">
-                    No managers found
-                  </div>
-                )}
-              </div>
+                </div>
+              </>
             )}
           </div>
 
@@ -398,11 +486,14 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
                                   {onChainData.balance.xeno.toFixed(2)} XENO
                                 </div>
                               )}
-                              {onChainData.balance.xand === 0 && onChainData.balance.xeno === 0 && (
-                                <div className="text-[9px] text-[var(--text-secondary)]">
-                                  ${onChainData.balance.usd.toFixed(2)} USD
-                                </div>
-                              )}
+                              {/* Always show token info even if 0 */}
+                              <div className="text-[9px] text-[var(--text-secondary)]">
+                                {onChainData.balance.xand === 0 && onChainData.balance.xeno === 0 ? (
+                                  `No XAND/XENO tokens`
+                                ) : (
+                                  `$${onChainData.balance.usd.toFixed(2)} USD`
+                                )}
+                              </div>
                             </div>
                           ) : (
                             <div className="text-[9px] text-[var(--text-secondary)]">No balance</div>
