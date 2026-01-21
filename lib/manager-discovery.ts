@@ -5,7 +5,7 @@
  * 1. Checking on-chain program data (Devnet registrar, Mainnet buyer)
  * 2. Scanning transaction history to find who registered the node
  * 
- * Inspired by pGlobe's manager-discovery system
+ * Discovers manager wallets from on-chain transaction history
  */
 
 import { Connection, PublicKey } from '@solana/web3.js';

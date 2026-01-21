@@ -2,7 +2,7 @@
  * Manager Mapping
  * 
  * Provides the mapping between node pubkeys and manager wallet addresses
- * Source: XanDash managers_node_data.json
+ * Source: managers_node_data.json from official Xandeum registry
  */
 
 import managersData from '../config/managers_node_data.json';

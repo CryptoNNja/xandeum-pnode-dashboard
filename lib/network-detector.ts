@@ -10,7 +10,7 @@
  * 4. Machine Learning patterns (analyse des caractéristiques)
  * 5. Apprentissage continu (les nodes se "regroupent" par similarité)
  * 
- * Avantages vs concurrent:
+ * Advantages:
  * - ✅ 100% INDÉPENDANT (pas besoin de leur API)
  * - ✅ Détection intelligente par analyse
  * - ✅ Heuristiques avancées
