@@ -22,7 +22,7 @@ import { SelectionActionBar } from "@/components/SelectionActionBar";
 import { CompareNodesModal } from "@/components/Dashboard/CompareNodesModal";
 import { FavoritesModal } from "@/components/Dashboard/FavoritesModal";
 import { NetworkToggle } from "@/components/Dashboard/NetworkToggle"; // 🆕
-import ManagerProfilesModal from "@/components/Dashboard/ManagerProfilesModal";
+import ManagerProfilesModal from "@/components/Dashboard/ManagerProfilesModalCompact";
 import { hexToRgba, getKpiColors, getStatusColors } from "@/lib/utils";
 import { generatePDFReport } from "@/lib/pdf-export";
 import { useToast } from "@/components/common/Toast";
@@ -914,13 +914,19 @@ export default function Page() {
         onClose={() => setIsManagerProfilesOpen(false)}
       />
 
-      {/* Floating Manager Profiles Button */}
+      {/* Floating Manager Profiles Button - Above Calculator */}
       <button
         onClick={() => setIsManagerProfilesOpen(true)}
-        className="fixed bottom-6 right-6 z-40 p-4 bg-gradient-to-r from-[var(--accent-aqua)] to-[var(--kpi-excellent)] text-white rounded-full shadow-2xl hover:scale-110 transition-transform duration-200"
+        className="fixed bottom-[168px] right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg hover:shadow-2xl transform hover:scale-110 active:scale-95 transition-all duration-200 flex items-center justify-center group"
+        aria-label="Open Manager Profiles"
         title="View Manager Profiles (Multi-Node Operators)"
       >
-        <Users className="w-6 h-6" />
+        <Users className="w-7 h-7 text-white transition-transform duration-300" />
+        
+        {/* Pulse animation */}
+        {!isManagerProfilesOpen && (
+          <span className="absolute inset-0 rounded-full bg-orange-500 animate-ping opacity-20" />
+        )}
       </button>
 
       {/* SEARCH MODAL */}
