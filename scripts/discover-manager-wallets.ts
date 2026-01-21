@@ -23,7 +23,15 @@ const supabase = createClient(
 // Parse command line arguments
 const args = process.argv.slice(2);
 const limitArg = args.find(arg => arg.startsWith('--limit='));
-const limit = limitArg ? parseInt(limitArg.split('=')[1]) : undefined;
+const rawLimit = limitArg ? limitArg.split('=')[1] : undefined;
+const limit = rawLimit !== undefined ? parseInt(rawLimit, 10) : undefined;
+
+// Validate limit argument
+if (rawLimit !== undefined && (!Number.isInteger(limit) || limit! <= 0)) {
+  console.error('❌ Invalid --limit value. It must be a positive integer.');
+  process.exit(1);
+}
+
 const dryRun = args.includes('--dry-run');
 
 async function discoverAndUpdateManagerWallets() {

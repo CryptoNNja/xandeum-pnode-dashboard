@@ -481,14 +481,9 @@ export default function ManagerBoardModal({ isOpen, onClose }: ManagerBoardModal
                                   {onChainData.balance.xand.toFixed(2)} XAND
                                 </div>
                               )}
-                              {onChainData.balance.xeno > 0 && (
-                                <div className="text-[9px] text-purple-400 font-medium">
-                                  {onChainData.balance.xeno.toFixed(2)} XENO
-                                </div>
-                              )}
                               <div className="text-[9px] text-[var(--text-secondary)]">
-                                {onChainData.balance.xand === 0 && onChainData.balance.xeno === 0 ? (
-                                  `No XAND/XENO tokens`
+                                {onChainData.balance.xand === 0 ? (
+                                  `No XAND tokens`
                                 ) : (
                                   `$${onChainData.balance.usd.toFixed(2)} USD`
                                 )}

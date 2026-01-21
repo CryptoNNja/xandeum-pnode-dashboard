@@ -75,7 +75,6 @@ async function getConnection(): Promise<Connection> {
 export interface WalletBalance {
   sol: number;
   xand: number; // XAND token balance
-  xeno: number; // XENO token balance
   usd: number;  // USD value estimate
 }
 
@@ -142,28 +141,12 @@ export async function fetchWalletBalance(pubkey: string): Promise<WalletBalance 
       console.warn(`[Blockchain] Error fetching XAND balance for ${pubkey.slice(0, 8)}:`, error?.message || error);
     }
     
-    // Fetch XENO token balance
-    // NOTE: XENO token mint appears to be invalid, commenting out for now
-    let xeno = 0;
-    // try {
-    //   const xenoMint = new PublicKey(XENO_TOKEN_MINT);
-    //   const xenoAccounts = await connection.getParsedTokenAccountsByOwner(
-    //     publicKey,
-    //     { mint: xenoMint }
-    //   );
-    //   xeno = xenoAccounts.value[0]?.account.data.parsed.info.tokenAmount.uiAmount || 0;
-    //   console.log(`[Blockchain] XENO balance for ${pubkey.slice(0, 8)}: ${xeno}`);
-    // } catch (error: any) {
-    //   console.warn(`[Blockchain] Error fetching XENO balance for ${pubkey.slice(0, 8)}:`, error?.message || error);
-    // }
-    
     // Get SOL price (simplified - you can use a price API later)
     const solPriceUSD = 200; // Approximate, TODO: fetch from CoinGecko API
     
     return {
       sol,
       xand,
-      xeno,
       usd: sol * solPriceUSD,
     };
   } catch (error) {
@@ -254,7 +237,8 @@ export async function fetchWalletNFTs(pubkey: string): Promise<NFTMetadata[]> {
     return results;
   } catch (error: any) {
     // Handle rate limiting gracefully
-    if (error.message?.includes('429') || error.message?.includes('Too many requests')) {
+    const errorMessage = error?.message || String(error);
+    if (errorMessage.includes('429') || errorMessage.includes('Too many requests')) {
       console.warn('[Blockchain] Rate limit reached while fetching NFTs');
       return [];
     }
@@ -358,7 +342,8 @@ export async function fetchWalletSBTs(pubkey: string): Promise<SBTMetadata[]> {
     return results;
   } catch (error: any) {
     // Handle rate limiting gracefully
-    if (error.message?.includes('429') || error.message?.includes('Too many requests')) {
+    const errorMessage = error?.message || String(error);
+    if (errorMessage.includes('429') || errorMessage.includes('Too many requests')) {
       console.warn('[Blockchain] Rate limit reached while fetching SBTs');
       return [];
     }
