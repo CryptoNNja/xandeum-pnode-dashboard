@@ -135,8 +135,13 @@ export default function Page() {
   const [isGeographicModalOpen, setIsGeographicModalOpen] = useState(false);
   const [isManagerBoardOpen, setIsManagerBoardOpen] = useState(false);
   const [isManagerBoardHovered, setIsManagerBoardHovered] = useState(false);
-  const [currentTime, setCurrentTime] = useState(Date.now());
+  const [currentTime, setCurrentTime] = useState(0);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  
+  // Initialize currentTime on mount (React purity rule)
+  useEffect(() => {
+    setCurrentTime(Date.now());
+  }, []);
   
   // Network filter is now handled inside the hook
 
