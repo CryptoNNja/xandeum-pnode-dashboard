@@ -34,7 +34,6 @@ const XANDEUM_KEYWORDS = [
   'xand',
   'pnode',
   'manager',
-  'xandash',
   'sbt',
   'deepsouth',
   'dragon',
