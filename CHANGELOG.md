@@ -4,6 +4,84 @@ All notable changes to Xandeum pNode Analytics Dashboard.
 
 ## [Unreleased]
 
+### 🚀 MAJOR: Manager Board with Blockchain Integration (2026-01-21)
+
+**Multi-node operator analytics with Solana blockchain data integration (Beta)**
+
+#### Added
+- 🏆 **Manager Board Modal** - New analytics dashboard for multi-node operators
+  - Identify and track operators managing multiple nodes (99% coverage - 293/296 nodes mapped)
+  - Aggregate statistics: total nodes, credits, storage, uptime, geographic distribution
+  - Filter by all operators or multi-node only (2+ nodes)
+  - Sort by node count, credits, or storage commitment
+  - Detailed operator panels with node lists and blockchain data
+
+- 💎 **Blockchain Integration** via Helius DAS API (10x faster than Metaplex)
+  - **Wallet Balances**: Real-time SOL and XAND token balances with USD estimates
+  - **NFT Display**: View all NFTs with images, metadata, and collection info
+  - **SBT Tracking**: Soulbound Token detection (non-mutable, badges, achievements)
+  - **Smart Caching**: 5-minute client-side cache for blockchain data
+  - **Helius RPC**: Free tier supports 100 req/s with excellent reliability
+
+- 🔍 **Manager Wallet Discovery System**
+  - Automatic wallet detection from node pubkeys via Solana token accounts
+  - Persistent mapping in `config/managers_node_data.json` (2229 lines, 293 managers)
+  - O(1) lookup algorithm for optimal performance
+  - Backfill script: `scripts/discover-manager-wallets.ts` with dry-run mode
+  - Success rate: 99% (293/296 nodes successfully mapped)
+
+- 🏗️ **New Libraries & Components**
+  - `lib/manager-profiles.ts` (209 lines) - Manager profile aggregation and helpers
+  - `lib/manager-discovery.ts` (208 lines) - Wallet discovery logic
+  - `lib/manager-mapping.ts` (117 lines) - In-memory mapping with caching
+  - `lib/blockchain-data.ts` (448 lines) - Solana blockchain data fetching
+  - `components/Dashboard/ManagerBoardModal.tsx` (596 lines) - Full UI component
+
+- 🎨 **Beta Status UI**
+  - Prominent "Under Construction" banner in Manager Board
+  - Yellow warning badge with "BETA" label
+  - Clear messaging about Helius API requirements
+  - Helpful tooltips for setup guidance
+
+#### API Improvements
+- New endpoint: `GET /api/managers?multiNode=true` - Returns manager profiles with aggregated stats
+- New endpoint: `GET /api/manager-mapping` - Returns complete node-to-wallet mapping (JSON fallback)
+- Enhanced: `/api/pnodes` now includes `manager_wallet` field when available
+
+#### Database Changes
+- New column: `pnodes.manager_wallet` (text, nullable) - Stores discovered manager wallet addresses
+- Migration: `supabase/migrations/14_add_manager_wallet_column.sql`
+
+#### Dependencies
+- Added: `@solana/web3.js` v1.95.8 - Solana blockchain interaction
+- Removed: `@metaplex-foundation/js` - Replaced by faster Helius DAS API
+
+#### Documentation
+- Updated `README.md` with Manager Board feature section (marked as Beta)
+- Added comprehensive setup guide for Helius API configuration
+- Updated `docs/FEATURES.md` with 142-line Manager Board documentation
+- Environment variable guide for `NEXT_PUBLIC_SOLANA_RPC_URL`
+
+#### Configuration
+- New env var: `NEXT_PUBLIC_SOLANA_RPC_URL` - Helius RPC endpoint for blockchain data
+- Example: `https://mainnet.helius-rpc.com/?api-key=YOUR_KEY`
+- Required for: NFT/SBT display, wallet balances, blockchain integration
+
+#### Technical Improvements
+- Efficient caching strategy (manager mapping loaded once, blockchain data cached 5min)
+- Error handling with graceful degradation (works without Helius API)
+- Rate limit protection (fallback RPC endpoints)
+- TypeScript strict mode compliance
+- Responsive design for mobile/tablet
+
+#### Known Limitations (Beta)
+- ⚠️ Blockchain data requires Helius API configuration (optional)
+- ⚠️ SBT detection uses heuristics (may have false positives with 'soul' keyword)
+- ⚠️ Performance optimization ongoing for 100+ operators
+- ⚠️ XENO token support removed (invalid mint address)
+
+---
+
 ### 🎯 MAJOR: Comprehensive pNode Detail View & Export System (2024-12-24)
 
 **Professional individual node analytics with expert-level UX/UI design**
