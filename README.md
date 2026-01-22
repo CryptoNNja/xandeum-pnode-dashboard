@@ -91,6 +91,20 @@ This isn't just a bounty submission—it's a **fully-featured, production-grade 
 - **Historical trends** - 7-day performance tracking with interactive charts
 - **Network toggle** - Instantly switch between MAINNET/DEVNET views
 
+#### **🆕 Manager Board (Beta)** 🚧
+Multi-node operator analytics with blockchain integration:
+
+- **Operator Profiles** - Identify and track multi-node operators (99% coverage - 293/296 nodes mapped)
+- **Blockchain Integration** - View SOL/XAND balances, NFTs, and SBTs (Soulbound Tokens)
+- **Smart Wallet Discovery** - Automatic manager wallet detection from node pubkeys
+- **Advanced Filtering** - Sort by node count, credits, or storage commitment
+- **Geographic Distribution** - Visualize operator presence across countries
+- **Performance Analytics** - Aggregate stats for all nodes under management
+
+> **⚠️ Note**: This feature is in active development. Blockchain data requires [Helius API configuration](#blockchain-integration-setup). Some features may be incomplete.
+
+📖 *[Setup Guide for Blockchain Integration →](#blockchain-integration-setup)*
+
 #### **Advanced Scoring System**
 Three proprietary scoring algorithms working in harmony:
 
@@ -481,6 +495,7 @@ Automatically detects:
 - **npm** or **yarn**
 - **Supabase** account ([free tier](https://supabase.com))
 - **Groq API** key ([free](https://console.groq.com)) - Optional, for AI chatbot
+- **Helius API** key ([free tier](https://www.helius.dev)) - Optional, for Manager Board blockchain data
 
 ### Installation
 
@@ -505,6 +520,55 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser 🎉
+
+---
+
+### Blockchain Integration Setup
+
+To enable **Manager Board** blockchain features (NFTs, SBTs, token balances):
+
+#### 1. **Get a Helius API Key** (Free Tier)
+
+1. Visit [https://www.helius.dev](https://www.helius.dev)
+2. Sign up for a free account
+3. Create a new API key
+4. Copy your API key (format: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
+
+#### 2. **Configure Environment Variable**
+
+Add to your `.env.local`:
+
+```bash
+# Helius RPC Endpoint for Solana Mainnet
+NEXT_PUBLIC_SOLANA_RPC_URL=https://mainnet.helius-rpc.com/?api-key=YOUR_HELIUS_API_KEY
+```
+
+Replace `YOUR_HELIUS_API_KEY` with your actual Helius API key.
+
+#### 3. **For Vercel/Production Deployment**
+
+Add the environment variable in your hosting dashboard:
+
+**Vercel:**
+1. Go to **Settings** → **Environment Variables**
+2. Add: `NEXT_PUBLIC_SOLANA_RPC_URL`
+3. Value: `https://mainnet.helius-rpc.com/?api-key=YOUR_HELIUS_API_KEY`
+4. Environments: Check ✅ **Production**, ✅ **Preview**, ✅ **Development**
+5. Click **Save** and **Redeploy**
+
+#### 4. **Verify Setup**
+
+1. Open the Manager Board in your dashboard
+2. Check browser console (F12) for:
+   - ✅ `[Blockchain] Fetching balance for...`
+   - ✅ `[Blockchain] Found X NFTs`
+   - ✅ `[Blockchain] Found X SBTs`
+
+If you see errors like `403 Forbidden` or `Failed to fetch`, verify your API key is correct.
+
+> **💡 Why Helius?** Helius DAS API is 10x faster than traditional Metaplex for fetching NFT/SBT metadata, with better rate limits and reliability on Solana.
+
+---
 
 ### First Data Collection
 

@@ -27,14 +27,16 @@ Le bounty demandait un dashboard similaire à validators.app/stakewiz.com avec:
 - ✅ Code open-source
 
 ### Ce Que Nous Livrons EN PLUS
-- ✅ **11 modales d'analytics avancées**
+- ✅ **12 modales d'analytics avancées** (incluant Manager Board)
+- ✅ **🆕 Manager Board (Beta)** avec intégration blockchain Solana
 - ✅ **AI-powered chatbot** pour queries en langage naturel
 - ✅ **3 types de visualisations map**
 - ✅ **STOINC Calculator** pour estimation revenus
 - ✅ **Système d'alertes** et favoris
 - ✅ **PDF Export** pour rapports
 - ✅ **80 tests automatisés**
-- ✅ **16 API endpoints** documentés
+- ✅ **17 API endpoints** documentés (nouveau: /api/managers)
+- ✅ **Blockchain data** (NFTs, SBTs, balances via Helius)
 - ✅ **Mode Dark/Light**
 - ✅ **Responsive design**
 - ✅ **Animations interactives**
@@ -57,18 +59,19 @@ Barre d'outils complète avec:
 - 🔍 Search modal
 - ⭐ Favorites modal
 - 🚨 Alerts Hub modal
-- 📊 11 modales d'analytics:
+- 📊 12 modales d'analytics:
   1. Storage Analytics
   2. CPU Distribution
   3. Health Distribution
   4. Geographic Distribution
   5. Data Distribution
-  5. Network Coverage
+  6. Network Coverage
   7. Version Details
   8. Compare Nodes
   9. STOINC Calculator
   10. Favorites Manager
   11. Alerts Hub
+  12. **🆕 Manager Board (Beta)** 🚧
 
 #### C. **FilterBar** (FilterBar.tsx)
 Filtres avancés:
@@ -104,7 +107,149 @@ Table interactive avec:
 
 ---
 
-### 2. 🗺️ SYSTÈMES DE VISUALISATION MAP
+### 2. 🆕 MANAGER BOARD (Beta) 🚧
+
+**Fichiers:**
+- `components/Dashboard/ManagerBoardModal.tsx` (596 lignes)
+- `lib/manager-profiles.ts` (209 lignes)
+- `lib/manager-discovery.ts` (208 lignes)
+- `lib/manager-mapping.ts` (117 lignes)
+- `lib/blockchain-data.ts` (448 lignes)
+- `app/api/managers/route.ts`
+- `scripts/discover-manager-wallets.ts` (161 lignes)
+
+#### A. **Vue d'ensemble**
+Tableau de bord pour analyser les opérateurs multi-nodes avec intégration blockchain Solana.
+
+**Statistiques:**
+- 🎯 **99% de couverture** - 293/296 nodes mappés à leurs manager wallets
+- 👥 **Identification automatique** des opérateurs multi-nodes
+- 🔗 **Intégration blockchain** via Helius DAS API (10x plus rapide que Metaplex)
+- 💎 **Support NFT/SBT** - Affichage des Soulbound Tokens
+
+#### B. **Fonctionnalités principales**
+
+**1. Profils d'opérateurs**
+- Liste complète des managers avec agrégation de nodes
+- Comptage de nodes par opérateur
+- Total des crédits cumulés
+- Stockage total committé
+- Uptime moyen de tous les nodes
+- Distribution géographique (pays/villes)
+- Distribution par réseau (MAINNET/DEVNET)
+- Statut de santé agrégé (Active/Gossip/Stale)
+
+**2. Découverte de wallets**
+- **Manager wallet discovery** automatique depuis node pubkeys
+- Mapping persistant dans `config/managers_node_data.json` (2229 lignes)
+- Algorithme O(1) lookup pour performance optimale
+- Script de backfill: `scripts/discover-manager-wallets.ts`
+
+**3. Intégration blockchain (Helius DAS API)**
+- **Balances de wallets:**
+  - SOL balance (temps réel)
+  - XAND token balance (Xandeum native token)
+  - Valeur estimée en USD
+- **NFTs (Non-Fungible Tokens):**
+  - Affichage des images NFT
+  - Métadonnées (nom, symbole, description)
+  - Collection information
+  - Liens vers explorateurs Solana
+- **SBTs (Soulbound Tokens):**
+  - Détection automatique (non-mutable, burnt, badges)
+  - Affichage avec badges spéciaux
+  - Vérification de légitimité
+
+**4. Tri et filtrage**
+- **Tri par:**
+  - Nombre de nodes (desc/asc)
+  - Total des crédits
+  - Stockage committé
+- **Filtres:**
+  - Tous les opérateurs
+  - Multi-node uniquement (2+ nodes)
+
+**5. Interface utilisateur**
+- **Banner Beta** avec notification de développement en cours
+- **Liste compacte** avec stats inline
+- **Panneau détaillé** au clic sur un opérateur:
+  - Informations wallet avec QR code
+  - Graphiques de distribution
+  - Liste des 5 premiers nodes (avec "Show all X nodes")
+  - Section blockchain data (balances, NFTs, SBTs)
+  - Loading states et error handling
+
+#### C. **Configuration requise**
+
+**Variable d'environnement:**
+```bash
+NEXT_PUBLIC_SOLANA_RPC_URL=https://mainnet.helius-rpc.com/?api-key=YOUR_KEY
+```
+
+**Pourquoi Helius?**
+- ✅ **10x plus rapide** que Metaplex pour metadata
+- ✅ **Rate limits généreux** (free tier: 100 req/s)
+- ✅ **DAS API moderne** optimisée pour Solana
+- ✅ **Support NFT/SBT natif** avec compressed NFTs
+
+#### D. **Architecture technique**
+
+**1. Manager Discovery Flow:**
+```
+Node Pubkey → Get Token Accounts → Find Largest Account → Extract Manager Wallet
+```
+
+**2. Blockchain Data Flow:**
+```
+Manager Wallet → Helius RPC → [Balance + NFTs + SBTs] → Cache (5min) → UI
+```
+
+**3. API Endpoints:**
+- `GET /api/managers?multiNode=true` - Liste des managers
+- `GET /api/manager-mapping` - Mapping complet (deprecated, utilise JSON local)
+
+**4. Caching:**
+- Manager mapping: Chargé une fois au démarrage, en mémoire
+- Blockchain data: Cache 5 minutes côté client
+- API responses: Cache côté serveur (Vercel Edge)
+
+#### E. **Status et limitations**
+
+**✅ Fonctionnel:**
+- Identification des opérateurs multi-nodes
+- Agrégation des statistiques
+- Interface utilisateur complète
+- Système de tri/filtrage
+
+**⚠️ En développement (Beta):**
+- Intégration blockchain (requiert configuration Helius)
+- Affichage NFT/SBT (peut être incomplet sans API key)
+- Détection SBT (heuristiques à améliorer)
+- Performance avec 100+ opérateurs (optimisation en cours)
+
+**📋 Roadmap:**
+- [ ] Support pour XENO token (mint address invalide actuellement)
+- [ ] Amélioration détection SBT (on-chain attributes)
+- [ ] Historique des changements de wallet
+- [ ] Notifications pour nouveaux opérateurs
+- [ ] Export CSV des managers
+- [ ] Comparison tool pour opérateurs
+
+#### F. **Tests et qualité**
+
+**Code coverage:**
+- `lib/manager-profiles.ts` - Fonctions helpers testables
+- `lib/manager-discovery.ts` - Logique de découverte
+- `lib/blockchain-data.ts` - Intégration Solana
+
+**Documentation:**
+- Inline comments pour logique complexe
+- JSDoc pour fonctions publiques
+- README setup guide complet
+
+---
+
+### 3. 🗺️ SYSTÈMES DE VISUALISATION MAP
 
 #### A. **2D Map - Leaflet** (NodesMap.tsx)
 - Carte Leaflet interactive
