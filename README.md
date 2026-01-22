@@ -86,7 +86,7 @@ This isn't just a bounty submission—it's a **fully-featured, production-grade 
 
 #### **Real-Time Network Dashboard**
 - **300+ pNodes monitored** across MAINNET (~28-32 nodes) and DEVNET (~270 nodes)
-- **Live updates every 5 minutes** via automated crawler
+- **Live updates every 30 minutes** via automated crawler
 - **KPI Cards** - Total nodes, network health, storage committed, average uptime
 - **Historical trends** - 7-day performance tracking with interactive charts
 - **Network toggle** - Instantly switch between MAINNET/DEVNET views
