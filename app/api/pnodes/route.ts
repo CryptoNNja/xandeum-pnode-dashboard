@@ -16,8 +16,7 @@ export async function GET(request: NextRequest) {
     // Build Supabase query
     let supaQuery = supabase
       .from("pnodes")
-      .select("*", { count: "exact" })
-      .neq("ip", "127.0.0.1"); // Exclude localhost
+      .select("*", { count: "exact" }); // Include all nodes (localhost is legitimate)
 
     if (statusFilter !== "all") {
       supaQuery = supaQuery.eq("status", statusFilter);

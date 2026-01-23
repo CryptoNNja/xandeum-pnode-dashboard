@@ -25,10 +25,10 @@ export async function GET(_request: NextRequest) {
     // Row count is small (~hundreds), so a single query is simpler and cheap.
     // Note: our generated Supabase types are currently missing some columns (e.g. `network`).
     // Cast to `any` here to avoid breaking the build while keeping runtime behavior correct.
+    // Include localhost - it's a legitimate node with pubkey and storage
     const { data, error } = await (supabase as any)
       .from("pnodes")
-      .select("status, node_type, network, last_crawled_at")
-      .neq("ip", "127.0.0.1");
+      .select("status, node_type, network, last_crawled_at");
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

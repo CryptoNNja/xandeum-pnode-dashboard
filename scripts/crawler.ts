@@ -363,11 +363,11 @@ export const main = async () => {
     }
 
     // --- PHASE 2: DATA ENRICHMENT & SAVING ---
-    // Filter out localhost BEFORE counting network total
-    const allIps = Array.from(discovered).filter(ip => ip !== '127.0.0.1' && ip !== 'localhost');
+    // Include ALL discovered nodes (including localhost - it's a legitimate node with pubkey)
+    const allIps = Array.from(discovered);
     const networkTotal = allIps.length;
     console.log(`✅ Discovery complete. Found ${discovered.size} unique nodes via gossip/RPC.`);
-    console.log(`🔍 Filtered out localhost. Processing ${allIps.length} valid nodes for network total.`);
+    console.log(`🔍 Processing ${allIps.length} nodes for network total (including localhost).`);
 
     // Fetch all metadata first to build maps for version, pubkey, storage_committed, and is_public
     const versionMap = new Map<string, string>();
@@ -395,11 +395,7 @@ export const main = async () => {
             result.value.forEach(pod => {
                 const ip = extractIp(pod.address);
 
-                // Skip localhost - it has aberrant data
-                if (ip === '127.0.0.1' || ip === 'localhost') {
-                    return;
-                }
-
+                // Include localhost - it's a legitimate node with pubkey and storage
                 const version = coerceString(pod.version);
                 const pubkey = coerceString(pod.pubkey);
                 const storageCommitted = coerceNumber(pod.storage_committed);

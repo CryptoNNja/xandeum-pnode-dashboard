@@ -7,25 +7,22 @@ import { supabase } from "@/lib/supabase";
  */
 export async function GET() {
   try {
-    // Get total nodes count
+    // Get total nodes count (include localhost - it's a legitimate node)
     const { count: totalCount } = await supabase
       .from("pnodes")
-      .select("*", { count: "exact", head: true })
-      .neq("ip", "127.0.0.1");
+      .select("*", { count: "exact", head: true });
 
     // Get MAINNET nodes
     const { data: mainnetNodes, count: mainnetCount } = await supabase
       .from("pnodes")
       .select("stats", { count: "exact" })
-      .eq("network", "MAINNET")
-      .neq("ip", "127.0.0.1");
+      .eq("network", "MAINNET");
 
     // Get DEVNET nodes
     const { data: devnetNodes, count: devnetCount } = await supabase
       .from("pnodes")
       .select("stats", { count: "exact" })
-      .eq("network", "DEVNET")
-      .neq("ip", "127.0.0.1");
+      .eq("network", "DEVNET");
 
     // Calculate storage for each network
     const mainnetStorage = mainnetNodes?.reduce((sum, node: any) => {
