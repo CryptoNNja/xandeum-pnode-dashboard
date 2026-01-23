@@ -24,7 +24,7 @@ jobs:
         run: npm ci
         
       - name: Run cleanup script
-        run: npm run cleanup-history
+        run: npx tsx scripts/cleanup-history.ts
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
