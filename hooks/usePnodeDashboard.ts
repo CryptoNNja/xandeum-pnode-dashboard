@@ -669,7 +669,7 @@ export const usePnodeDashboard = (theme?: string) => {
     const STALE_DATA_THRESHOLD = 3600; // 1 hour - data older than this triggers stale warning
     
     allPnodes.forEach((pnode) => {
-      if (pnode.status !== "active") return;
+      if (pnode.node_type !== "public") return;
       const stats = pnode.stats;
       if (!stats) return;
 

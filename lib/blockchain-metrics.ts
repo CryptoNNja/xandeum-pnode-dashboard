@@ -52,7 +52,7 @@ export interface NodeSyncInfo {
  * @returns Network sync statistics
  */
 export function calculateNetworkSyncMetrics(pnodes: PNode[]): NetworkSyncMetrics {
-  const activeNodes = pnodes.filter(p => p.status === "active");
+  const activeNodes = pnodes.filter(p => p.node_type === "public");
   
   if (activeNodes.length === 0) {
     return {
@@ -149,7 +149,7 @@ export function getNodeSyncInfo(
   node: PNode,
   maxNetworkIndex: number
 ): NodeSyncInfo {
-  if (node.status !== "active") {
+  if (node.node_type !== "public") {
     return {
       status: "behind",
       currentIndex: 0,
