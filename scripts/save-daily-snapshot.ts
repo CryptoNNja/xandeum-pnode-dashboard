@@ -59,7 +59,7 @@ async function saveDailySnapshot() {
     const devnetPrivate = devnetNodes.filter(p => p.node_type === "private").length;
 
     const totalStorageBytes = activeNodes.reduce(
-      (sum, p) => sum + (p.stats?.file_size ?? 0),
+      (sum, p) => sum + (p.stats?.storage_committed ?? p.stats?.file_size ?? 0),
       0
     );
 
