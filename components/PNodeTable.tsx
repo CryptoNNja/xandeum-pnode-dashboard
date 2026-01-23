@@ -65,32 +65,16 @@ const PNodeTableComponent = ({
   const allSelected = data.length > 0 && data.every(node => node.ip && selectedNodeIds?.has(node.ip));
 
   const formatUptime = (seconds: number) => {
-    if (seconds === 0) return "-";
-    const totalHours = Math.floor(seconds / 3600);
+    if (!Number.isFinite(seconds) || seconds <= 0) return "—";
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
     
-    // Option A: Double precision compact format
-    if (totalHours < 24) {
-      // Less than 1 day: show hours only
-      return `${totalHours}h`;
-    } else if (totalHours < 24 * 30) {
-      // Less than 30 days: show "Xd Yh"
-      const days = Math.floor(totalHours / 24);
-      const hours = totalHours % 24;
-      return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
-    } else if (totalHours < 24 * 365) {
-      // Less than 1 year: show "Xmo Yd"
-      const totalDays = Math.floor(totalHours / 24);
-      const months = Math.floor(totalDays / 30);
-      const days = totalDays % 30;
-      return days > 0 ? `${months}mo ${days}d` : `${months}mo`;
-    } else {
-      // 1 year or more: show "Xy Zmo"
-      const totalDays = Math.floor(totalHours / 24);
-      const years = Math.floor(totalDays / 365);
-      const remainingDays = totalDays % 365;
-      const months = Math.floor(remainingDays / 30);
-      return months > 0 ? `${years}y ${months}mo` : `${years}y`;
-    }
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    if (minutes > 0) return `${minutes}m ${secs}s`;
+    return `${secs}s`;
   };
 
   const formatPacketValue = (value: number) => {

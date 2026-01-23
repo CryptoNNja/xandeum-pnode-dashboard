@@ -52,15 +52,18 @@ describe('Utils - Data Formatting', () => {
   describe('formatUptime', () => {
     it('should format uptime correctly', () => {
       expect(formatUptime(0)).toBe('—');
-      expect(formatUptime(59)).toBe('0m'); // 0 minutes
-      expect(formatUptime(60)).toBe('1m');
-      expect(formatUptime(3600)).toBe('1h 0m');
-      expect(formatUptime(86400)).toBe('1d 0h');
-      expect(formatUptime(90061)).toBe('1d 1h');
+      expect(formatUptime(30)).toBe('30s'); // 30 seconds
+      expect(formatUptime(59)).toBe('59s'); // 59 seconds
+      expect(formatUptime(60)).toBe('1m 0s'); // 1 minute
+      expect(formatUptime(90)).toBe('1m 30s'); // 1 minute 30 seconds
+      expect(formatUptime(3600)).toBe('1h 0m'); // 1 hour
+      expect(formatUptime(3660)).toBe('1h 1m'); // 1 hour 1 minute
+      expect(formatUptime(86400)).toBe('1d 0h'); // 1 day
+      expect(formatUptime(90061)).toBe('1d 1h'); // 1 day 1 hour
     });
 
     it('should handle complex durations', () => {
-      expect(formatUptime(93784)).toBe('1d 2h');
+      expect(formatUptime(93784)).toBe('1d 2h'); // 1 day 2 hours
     });
   });
 });

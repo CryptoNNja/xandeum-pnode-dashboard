@@ -182,7 +182,7 @@ export function formatStorageSize(bytes: number): string {
 }
 
 /**
- * Format uptime for display
+ * Format uptime for display with seconds for values < 1 hour
  */
 export function formatUptime(seconds: number): string {
   if (!seconds || seconds < 0) return '0s';
@@ -190,13 +190,16 @@ export function formatUptime(seconds: number): string {
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
 
   if (days > 0) {
     return `${days}d ${hours}h`;
   } else if (hours > 0) {
     return `${hours}h ${minutes}m`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${secs}s`;
   } else {
-    return `${minutes}m`;
+    return `${secs}s`;
   }
 }
 
