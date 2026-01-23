@@ -153,10 +153,10 @@ export default function Page() {
   const mainnetCount = pnodesSummary?.mainnet ?? mainnetNodes.length;
   const devnetCount = pnodesSummary?.devnet ?? devnetNodes.length;
 
-  const mainnetPublic = pnodesSummary?.mainnetPublic ?? mainnetNodes.filter(n => n.status === "active").length;
-  const mainnetPrivate = pnodesSummary?.mainnetPrivate ?? mainnetNodes.filter(n => n.status !== "active").length;
-  const devnetPublic = pnodesSummary?.devnetPublic ?? devnetNodes.filter(n => n.status === "active").length;
-  const devnetPrivate = pnodesSummary?.devnetPrivate ?? devnetNodes.filter(n => n.status !== "active").length;
+  const mainnetPublic = pnodesSummary?.mainnetPublic ?? mainnetNodes.filter(n => n.node_type === "public").length;
+  const mainnetPrivate = pnodesSummary?.mainnetPrivate ?? mainnetNodes.filter(n => n.node_type === "private").length;
+  const devnetPublic = pnodesSummary?.devnetPublic ?? devnetNodes.filter(n => n.node_type === "public").length;
+  const devnetPrivate = pnodesSummary?.devnetPrivate ?? devnetNodes.filter(n => n.node_type === "private").length;
 
   // 🆕 Calculate MAINNET registry metrics
   const mainnetOfficialCount = useMemo(() => 
@@ -217,11 +217,11 @@ export default function Page() {
 
   // Recalculate publicCount and privateCount based on filtered nodes
   const filteredPublicCount = useMemo(() => {
-    return filteredAndSortedPNodes.filter(n => n.status === "active").length;
+    return filteredAndSortedPNodes.filter(n => n.node_type === "public").length;
   }, [filteredAndSortedPNodes]);
 
   const filteredPrivateCount = useMemo(() => {
-    return filteredAndSortedPNodes.filter(n => n.status !== "active").length;
+    return filteredAndSortedPNodes.filter(n => n.node_type === "private").length;
   }, [filteredAndSortedPNodes]);
   
   const mainnetStorage = useMemo(() => 
@@ -423,18 +423,18 @@ export default function Page() {
     return pnodes.reduce((sum, p) => sum + (p.stats?.storage_used ?? 0), 0);
   }, [pnodes]);
 
-  // "Storage used" as reported by get-stats (field: total_bytes), summed over ACTIVE nodes.
+  // "Storage used" as reported by get-stats (field: total_bytes), summed over PUBLIC nodes.
   // This is closer to what the official dashboard appears to display.
   const totalStorageUsedStats = useMemo(() => {
     return pnodes
-      .filter((p) => p.status === "active")
+      .filter((p) => p.node_type === "public")
       .reduce((sum, p) => sum + (p.stats?.total_bytes ?? 0), 0);
   }, [pnodes]);
 
   // Calculate total pages across all nodes
   const totalPagesCount = useMemo(() => {
     return pnodes
-      .filter((p) => p.status === "active")
+      .filter((p) => p.node_type === "public")
       .reduce((sum, p) => sum + (p.stats?.total_pages ?? 0), 0);
   }, [pnodes]);
 
@@ -442,7 +442,7 @@ export default function Page() {
   const networkBandwidth = useMemo(() => {
     // Filter nodes that actually have packet data (RPC responded)
     const nodesWithPackets = pnodes.filter((p) => 
-      p.status === "active" && 
+      p.node_type === "public" && 
       ((p.stats?.packets_sent ?? 0) > 0 || (p.stats?.packets_received ?? 0) > 0)
     );
     
@@ -459,7 +459,7 @@ export default function Page() {
     return {
       packetsPerSecond: avgUptime > 0 ? totalPackets / avgUptime : 0,
       reportingNodes: nodesWithPackets.length,
-      totalActiveNodes: pnodes.filter((p) => p.status === "active").length
+      totalActiveNodes: pnodes.filter((p) => p.node_type === "public").length
     };
   }, [pnodes]);
 
@@ -553,8 +553,8 @@ export default function Page() {
 
         const summary = {
           totalNodes: selectedNodes.length,
-          publicNodes: selectedNodes.filter(n => n.status === 'active').length,
-          privateNodes: selectedNodes.filter(n => n.status !== 'active').length,
+          publicNodes: selectedNodes.filter(n => n.node_type === 'public').length,
+          privateNodes: selectedNodes.filter(n => n.node_type === 'private').length,
           avgCPU: selectedNodes.reduce((sum, n) => sum + (n.stats?.cpu_percent || 0), 0) / selectedNodes.length,
           avgRAM: selectedNodes.reduce((sum, n) => {
             const usage = n.stats?.ram_used && n.stats?.ram_total 

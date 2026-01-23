@@ -127,7 +127,7 @@ export function computeVersionOverview(pnodes: PNode[]): VersionOverview {
 
     const detailLabel =
       bucketId === "other"
-        ? node.status !== "active"
+        ? node.node_type !== "public"
           ? "Private (Hidden)"
           : node.version?.trim() && node.version.trim().length > 0
           ? node.version.trim()

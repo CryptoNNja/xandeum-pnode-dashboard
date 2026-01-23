@@ -67,7 +67,7 @@ export interface VersionTier {
  * Returns the most common version among active nodes
  */
 export function detectConsensusVersion(nodes: PNode[]): string | null {
-  const activeNodes = nodes.filter(n => n.status === 'active' && n.version && n.version !== 'unknown');
+  const activeNodes = nodes.filter(n => n.node_type === 'public' && n.version && n.version !== 'unknown');
   
   if (activeNodes.length === 0) return null;
   
@@ -131,7 +131,7 @@ export function calculateVersionTier(
   }
   
   // Calculate adoption rate
-  const activeNodes = nodes.filter(n => n.status === 'active' && n.version);
+  const activeNodes = nodes.filter(n => n.node_type === 'public' && n.version);
   if (activeNodes.length === 0) {
     return {
       tier: 3,
@@ -529,7 +529,7 @@ export function calculateNodeScore(pnode: PNode, allNodes?: PNode[]): number {
     cachedNodes = allNodes;
     cacheTimestamp = Date.now();
     
-    if (pnode.status === 'gossip_only') {
+    if (pnode.node_type === 'private') {
       return calculateGossipNodeScore(pnode, allNodes);
     } else {
       return calculateActiveNodeScore(pnode, allNodes);
@@ -539,7 +539,7 @@ export function calculateNodeScore(pnode: PNode, allNodes?: PNode[]): number {
   // Try to use cached network context
   const now = Date.now();
   if (cachedNodes && (now - cacheTimestamp) < CACHE_TTL) {
-    if (pnode.status === 'gossip_only') {
+    if (pnode.node_type === 'private') {
       return calculateGossipNodeScore(pnode, cachedNodes);
     } else {
       return calculateActiveNodeScore(pnode, cachedNodes);
@@ -548,7 +548,7 @@ export function calculateNodeScore(pnode: PNode, allNodes?: PNode[]): number {
   
   // Fallback: single node (less accurate for version scoring)
   // Version tier will default to "Legacy" without network context
-  if (pnode.status === 'gossip_only') {
+  if (pnode.node_type === 'private') {
     return calculateGossipNodeScore(pnode, [pnode]);
   } else {
     return calculateActiveNodeScore(pnode, [pnode]);
@@ -561,7 +561,7 @@ export function calculateNodeScore(pnode: PNode, allNodes?: PNode[]): number {
 
 export interface ScoreBreakdown {
   totalScore: number;
-  nodeType: 'active' | 'gossip_only' | 'stale' | 'registry_only';
+  nodeType: 'online' | 'offline' | 'stale' | 'registry_only';
   components: {
     version?: { score: number; weight: string; tier: VersionTier };
     storage?: { score: number; weight: string; value: string };
@@ -594,18 +594,18 @@ export function getScoreBreakdown(pnode: PNode, allNodes: PNode[]): ScoreBreakdo
     penalties: {
       versionMultiplier: versionTier.multiplier,
       isWhale,
-      globalCap: (pnode.status === 'gossip_only' || pnode.status === 'stale') ? (isWhale ? 72 : 75) : null
+      globalCap: (pnode.node_type === 'private' || pnode.status === 'stale' || pnode.status === 'registry_only') ? (isWhale ? 72 : 75) : null
     }
   };
   
   // Version (both types)
   breakdown.components.version = {
     score: versionTier.score,
-    weight: pnode.status === 'active' ? '15%' : '25%',
+    weight: pnode.node_type === 'public' ? '15%' : '25%',
     tier: versionTier
   };
   
-  if (pnode.status === 'active') {
+  if (pnode.node_type === 'public') {
     // Active node components
     const storageGB = (stats.storage_committed || 0) / (1024 ** 3);
     const uptimeHours = stats.uptime / 3600;

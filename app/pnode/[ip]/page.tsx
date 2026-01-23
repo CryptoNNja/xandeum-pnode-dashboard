@@ -523,11 +523,11 @@ export default function PNodeDetailPage() {
               </div>
               <div className="bg-bg2 p-4 rounded-lg theme-transition">
                 <p className="text-text-soft text-xs uppercase mb-2">Node Type</p>
-                <p className="text-lg font-bold" style={{ color: pnode.status === 'active' ? 'var(--kpi-excellent)' : 'var(--kpi-good)' }}>
-                  {pnode.status === 'active' ? 'Public Node' : 'Private Node'}
+                <p className="text-lg font-bold" style={{ color: pnode.node_type === 'public' ? 'var(--kpi-excellent)' : 'var(--kpi-good)' }}>
+                  {pnode.node_type === 'public' ? 'Public Node' : 'Private Node'}
                 </p>
                 <p className="text-xs text-text-faint mt-1">
-                  {pnode.status === 'active' ? 'Fully accessible' : 'Gossip only'}
+                  {pnode.node_type === 'public' ? 'Fully accessible' : 'Privacy mode'}
                 </p>
               </div>
               {(pnode.lat !== null && pnode.lng !== null) && (

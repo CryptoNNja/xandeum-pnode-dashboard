@@ -269,7 +269,7 @@ const PNodeTableComponent = ({
               borderColor: hexToRgba(statusColor, 0.3),
             };
 
-            const isPrivate = pnode.status !== "active";
+            const isPrivate = pnode.node_type !== "public";
             const sent = pnode.stats.packets_sent;
             const recv = pnode.stats.packets_received;
             const totalPackets = sent + recv;

@@ -38,7 +38,7 @@ const sanitizeNumber = (value: number | undefined): number => {
  * which impacts the health status calculation.
  */
 export function getHealthStatus(pnode?: PNode | null, allNodes?: PNode[]): HealthStatus {
-  if (!pnode || pnode.status === "gossip_only" || pnode.status === "stale") {
+  if (!pnode || pnode.node_type === "private" || pnode.status === "stale") {
     return "Private";
   }
 

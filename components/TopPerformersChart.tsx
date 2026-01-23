@@ -398,7 +398,8 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
                 return {
                     node: matchedNode || {
                         ip: `${credit.pod_id.slice(0, 4)}...${credit.pod_id.slice(-4)}`, // Show first 4 + last 4
-                        status: "active",
+                        status: "online",
+                        node_type: "public",
                         stats: {},
                     } as PNode,
                     credits: credit.credits,
@@ -543,15 +544,15 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
         });
     };
 
-    const statusIndicator = (status: PNode["status"]) => (
+    const statusIndicator = (nodeType: PNode["node_type"]) => (
         <span
             className="w-2 h-2 rounded-full inline-flex"
             style={{
-                backgroundColor: status === "active" 
+                backgroundColor: nodeType === "public" 
                     ? 'var(--kpi-excellent)' 
                     : 'var(--kpi-good)'
             }}
-            aria-label={status === "active" ? "Public node" : "Private node"}
+            aria-label={nodeType === "public" ? "Public node" : "Private node"}
         />
     );
 
@@ -621,7 +622,7 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
                     <span className="text-2xl font-bold text-text-main leading-none">{entry.score}</span>
                     <div className="flex items-center gap-2 text-xs text-text-soft">
                         <span>Overall score</span>
-                        {statusIndicator(entry.node.status)}
+                        {statusIndicator(entry.node.node_type)}
                     </div>
                 </div>
             </div>
@@ -655,7 +656,7 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
                         {getRankMedal(rank)}
                         <p className="font-mono text-sm text-text-main truncate">{entry.node.ip}</p>
                     </div>
-                    <p className="text-xs text-text-soft">{entry.node.status === "active" ? "Public" : "Private"} node</p>
+                    <p className="text-xs text-text-soft">{entry.node.node_type === "public" ? "Public" : "Private"} node</p>
                 </div>
                 <div className="flex flex-col items-end gap-1 text-right">
                     <span className="text-lg font-bold leading-none" style={{ color: 'var(--accent-aqua)' }}>
@@ -663,7 +664,7 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
                     </span>
                     <div className="flex items-center gap-2 text-xs text-text-soft">
                         <span>Committed</span>
-                        {statusIndicator(entry.node.status)}
+                        {statusIndicator(entry.node.node_type)}
                     </div>
                 </div>
                 <div className="col-span-2 col-start-2 text-xs text-text-soft">
@@ -709,7 +710,7 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
                 </span>
                 <div className="flex items-center gap-2 text-xs text-text-soft">
                     <span>Uptime</span>
-                    {statusIndicator(entry.node.status)}
+                    {statusIndicator(entry.node.node_type)}
                 </div>
             </div>
             <div className="col-span-2 col-start-2 text-xs text-text-soft">

@@ -53,8 +53,8 @@ async function resetToRealSnapshot() {
 
   // 3. Calculate real metrics
   const totalNodes = pnodes.length;
-  const activeNodes = pnodes.filter(p => p.status === "active");
-  const privateNodes = pnodes.filter(p => p.status === "gossip_only");
+  const activeNodes = pnodes.filter(p => p.node_type === "public");
+  const privateNodes = pnodes.filter(p => p.node_type === "private");
 
   const totalStorageBytes = activeNodes.reduce(
     (sum, p) => sum + (p.stats?.file_size ?? 0),

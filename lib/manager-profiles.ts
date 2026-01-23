@@ -87,9 +87,9 @@ export function groupNodesByManager(nodes: PNode[]): Map<string, ManagerProfile>
     }
 
     // Health status breakdown
-    if (node.status === 'active') {
+    if (node.node_type === 'public') {
       manager.healthStatus.active++;
-    } else if (node.status === 'gossip_only') {
+    } else if (node.node_type === 'private') {
       manager.healthStatus.gossipOnly++;
     } else if (node.status === 'stale') {
       manager.healthStatus.stale++;
