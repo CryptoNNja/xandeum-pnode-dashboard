@@ -657,7 +657,11 @@ export const usePnodeDashboard = (theme?: string) => {
   }, [filteredAndSortedPNodes, gridLimit]);
 
   // Derived global states (always based on allPnodes)
-  const activeNodes = useMemo(() => allPnodes.filter((pnode) => pnode.node_type === "public"), [allPnodes]);
+  // Active nodes = public nodes that are currently online (not offline/stale)
+  const activeNodes = useMemo(() => 
+    allPnodes.filter((pnode) => pnode.node_type === "public" && pnode.status === "online"), 
+    [allPnodes]
+  );
   const publicCount = activeNodes.length;
   const privateCount = useMemo(() => allPnodes.filter((pnode) => pnode.node_type === "private").length, [allPnodes]);
   

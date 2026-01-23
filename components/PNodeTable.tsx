@@ -133,7 +133,8 @@ const PNodeTableComponent = ({
     { key: "pubkey", label: "Operator", sortable: true }, // 🆕 New column for pubkey/operator
     { key: "ip", label: "IP Address", sortable: true },
     { key: "credits", label: "Credits", sortable: true }, // 🆕 Credits earned (XAN) - sortable
-    { key: "health", label: "Status", sortable: true },
+    { key: "status", label: "Status", sortable: true }, // 🆕 Node status (online/offline/stale)
+    { key: "health", label: "Health", sortable: true }, // 🆕 Health score (Good/Warning/Critical)
     { key: "version", label: "Version", sortable: true },
     { key: "cpu", label: "CPU", sortable: true },
     { key: "ram", label: "RAM", sortable: true },
@@ -152,22 +153,23 @@ const PNodeTableComponent = ({
       )}
     >
       <div className="w-full overflow-x-auto">
-        <table className="min-w-full text-left border-collapse text-sm" style={{ tableLayout: 'fixed', width: '1100px' }}>
+        <table className="min-w-full text-left border-collapse text-sm" style={{ tableLayout: 'fixed', width: '1200px' }}>
           <colgroup>
             {onToggleSelection && <col style={{ width: '40px' }} />}
             {onToggleFavorite && <col style={{ width: '50px' }} />}
-            <col style={{ width: '60px' }} />
-            <col style={{ width: '65px' }} />
-            <col style={{ width: '115px' }} />
-            <col style={{ width: '145px' }} />
-            <col style={{ width: '95px' }} />
-            <col style={{ width: '95px' }} />
-            <col style={{ width: '80px' }} />
-            <col style={{ width: '70px' }} />
-            <col style={{ width: '75px' }} />
-            <col style={{ width: '100px' }} />
-            <col style={{ width: '95px' }} />
-            <col style={{ width: '85px' }} />
+            <col style={{ width: '60px' }} /> {/* Network */}
+            <col style={{ width: '65px' }} /> {/* Score */}
+            <col style={{ width: '115px' }} /> {/* Operator */}
+            <col style={{ width: '145px' }} /> {/* IP */}
+            <col style={{ width: '95px' }} /> {/* Credits */}
+            <col style={{ width: '85px' }} /> {/* Status (online/offline) */}
+            <col style={{ width: '85px' }} /> {/* Health (Good/Warning) */}
+            <col style={{ width: '80px' }} /> {/* Version */}
+            <col style={{ width: '70px' }} /> {/* CPU */}
+            <col style={{ width: '75px' }} /> {/* RAM */}
+            <col style={{ width: '100px' }} /> {/* Storage */}
+            <col style={{ width: '95px' }} /> {/* Traffic */}
+            <col style={{ width: '85px' }} /> {/* Uptime */}
           </colgroup>
         <thead>
           <tr
@@ -231,7 +233,8 @@ const PNodeTableComponent = ({
           )}
         >
           {data.map((pnode, index) => {
-            const status = (pnode as any)._healthStatus || "Private";
+            const healthStatus = (pnode as any)._healthStatus || "Private";
+            const nodeStatus = pnode.status; // online/offline/stale/registry_only
 
             // Helper to get CSS variable value
             const getCssVar = (varName: string, fallback: string): string => {
@@ -254,16 +257,31 @@ const PNodeTableComponent = ({
               return `rgba(${r}, ${g}, ${b}, ${alpha})`;
             };
 
-            const getStatusColor = (status: string) => {
-              if (status === "Excellent") return getCssVar("--kpi-excellent", "#10B981");
-              if (status === "Good") return getCssVar("--kpi-good", "#3B82F6");
-              if (status === "Warning") return getCssVar("--kpi-warning", "#F59E0B");
-              if (status === "Critical") return getCssVar("--kpi-critical", "#EF4444");
+            const getHealthColor = (health: string) => {
+              if (health === "Excellent") return getCssVar("--kpi-excellent", "#10B981");
+              if (health === "Good") return getCssVar("--kpi-good", "#3B82F6");
+              if (health === "Warning") return getCssVar("--kpi-warning", "#F59E0B");
+              if (health === "Critical") return getCssVar("--kpi-critical", "#EF4444");
               return getCssVar("--kpi-private", "#64748B"); // Private
             };
 
-            const statusColor = getStatusColor(status);
-            const badgeStyle = {
+            const getNodeStatusColor = (status: string) => {
+              if (status === "online") return getCssVar("--kpi-excellent", "#10B981");
+              if (status === "offline") return getCssVar("--kpi-critical", "#EF4444");
+              if (status === "stale") return getCssVar("--kpi-warning", "#F59E0B");
+              if (status === "registry_only") return getCssVar("--kpi-private", "#64748B");
+              return getCssVar("--text-faint", "#64748B");
+            };
+
+            const healthColor = getHealthColor(healthStatus);
+            const healthBadgeStyle = {
+              backgroundColor: hexToRgba(healthColor, 0.2),
+              color: healthColor,
+              borderColor: hexToRgba(healthColor, 0.3),
+            };
+
+            const statusColor = getNodeStatusColor(nodeStatus);
+            const statusBadgeStyle = {
               backgroundColor: hexToRgba(statusColor, 0.2),
               color: statusColor,
               borderColor: hexToRgba(statusColor, 0.3),
@@ -427,9 +445,17 @@ const PNodeTableComponent = ({
                   </span>
                 </td>
 
+                {/* NODE STATUS CELL (online/offline/stale) */}
                 <td className="p-4 align-middle text-center">
-                  <span className="px-3 py-1.5 rounded-full text-[9px] font-bold border uppercase tracking-wide inline-block" style={badgeStyle}>
-                    {status}
+                  <span className="px-3 py-1.5 rounded-full text-[9px] font-bold border uppercase tracking-wide inline-block" style={statusBadgeStyle}>
+                    {nodeStatus === "registry_only" ? "Registry" : nodeStatus}
+                  </span>
+                </td>
+
+                {/* HEALTH STATUS CELL (Good/Warning/Critical) */}
+                <td className="p-4 align-middle text-center">
+                  <span className="px-3 py-1.5 rounded-full text-[9px] font-bold border uppercase tracking-wide inline-block" style={healthBadgeStyle}>
+                    {healthStatus}
                   </span>
                 </td>
 
