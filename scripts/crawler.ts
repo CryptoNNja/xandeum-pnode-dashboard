@@ -995,44 +995,55 @@ export const main = async () => {
 
     // Status + network breakdown (based on final nodes we upsert)
     const summaryCounts = {
-      active: 0,
+      online: 0,
+      public: 0,
       private: 0,
       stale: 0,
       MAINNET: 0,
       DEVNET: 0,
       UNKNOWN: 0,
-      MAINNET_active: 0,
+      MAINNET_online: 0,
+      MAINNET_public: 0,
       MAINNET_private: 0,
       MAINNET_stale: 0,
-      DEVNET_active: 0,
+      DEVNET_online: 0,
+      DEVNET_public: 0,
       DEVNET_private: 0,
       DEVNET_stale: 0,
-      UNKNOWN_active: 0,
+      UNKNOWN_online: 0,
+      UNKNOWN_public: 0,
       UNKNOWN_private: 0,
       UNKNOWN_stale: 0,
     };
 
     for (const n of deduplicatedNodes as any[]) {
-      if (n.status === 'online') summaryCounts.active++;
+      // Count by status
+      if (n.status === 'online') summaryCounts.online++;
       else if (n.status === 'stale') summaryCounts.stale++;
-      else summaryCounts.private++;
+      
+      // Count by node_type (NEW classification)
+      if (n.node_type === 'public') summaryCounts.public++;
+      else if (n.node_type === 'private') summaryCounts.private++;
 
       const net = n.network;
       if (net === 'MAINNET') {
         summaryCounts.MAINNET++;
-        if (n.status === 'online') summaryCounts.MAINNET_active++;
-        else if (n.status === 'stale') summaryCounts.MAINNET_stale++;
-        else summaryCounts.MAINNET_private++;
+        if (n.status === 'online') summaryCounts.MAINNET_online++;
+        if (n.status === 'stale') summaryCounts.MAINNET_stale++;
+        if (n.node_type === 'public') summaryCounts.MAINNET_public++;
+        if (n.node_type === 'private') summaryCounts.MAINNET_private++;
       } else if (net === 'DEVNET') {
         summaryCounts.DEVNET++;
-        if (n.status === 'online') summaryCounts.DEVNET_active++;
-        else if (n.status === 'stale') summaryCounts.DEVNET_stale++;
-        else summaryCounts.DEVNET_private++;
+        if (n.status === 'online') summaryCounts.DEVNET_online++;
+        if (n.status === 'stale') summaryCounts.DEVNET_stale++;
+        if (n.node_type === 'public') summaryCounts.DEVNET_public++;
+        if (n.node_type === 'private') summaryCounts.DEVNET_private++;
       } else {
         summaryCounts.UNKNOWN++;
-        if (n.status === 'online') summaryCounts.UNKNOWN_active++;
-        else if (n.status === 'stale') summaryCounts.UNKNOWN_stale++;
-        else summaryCounts.UNKNOWN_private++;
+        if (n.status === 'online') summaryCounts.UNKNOWN_online++;
+        if (n.status === 'stale') summaryCounts.UNKNOWN_stale++;
+        if (n.node_type === 'public') summaryCounts.UNKNOWN_public++;
+        if (n.node_type === 'private') summaryCounts.UNKNOWN_private++;
       }
     }
 
@@ -1044,15 +1055,18 @@ export const main = async () => {
     console.log(`Final nodes upserted (deduplicated): ${deduplicatedNodes.length}`);
 
     console.log(`Status breakdown:`);
-    console.log(`  - active (public):       ${summaryCounts.active}`);
-    console.log(`  - private (private): ${summaryCounts.private}`);
-    console.log(`  - stale (kept):          ${summaryCounts.stale}`);
+    console.log(`  - online:  ${summaryCounts.online}`);
+    console.log(`  - stale:   ${summaryCounts.stale}`);
+    
+    console.log(`Node type breakdown:`);
+    console.log(`  - public:  ${summaryCounts.public}`);
+    console.log(`  - private: ${summaryCounts.private}`);
 
     console.log(`Network breakdown:`);
-    console.log(`  - MAINNET:  ${summaryCounts.MAINNET} (active ${summaryCounts.MAINNET_active}, private ${summaryCounts.MAINNET_private}, stale ${summaryCounts.MAINNET_stale})`);
-    console.log(`  - DEVNET:   ${summaryCounts.DEVNET} (active ${summaryCounts.DEVNET_active}, private ${summaryCounts.DEVNET_private}, stale ${summaryCounts.DEVNET_stale})`);
+    console.log(`  - MAINNET:  ${summaryCounts.MAINNET} (online ${summaryCounts.MAINNET_online}, public ${summaryCounts.MAINNET_public}, private ${summaryCounts.MAINNET_private}, stale ${summaryCounts.MAINNET_stale})`);
+    console.log(`  - DEVNET:   ${summaryCounts.DEVNET} (online ${summaryCounts.DEVNET_online}, public ${summaryCounts.DEVNET_public}, private ${summaryCounts.DEVNET_private}, stale ${summaryCounts.DEVNET_stale})`);
     if (summaryCounts.UNKNOWN > 0) {
-      console.log(`  - UNKNOWN:  ${summaryCounts.UNKNOWN} (active ${summaryCounts.UNKNOWN_active}, private ${summaryCounts.UNKNOWN_private}, stale ${summaryCounts.UNKNOWN_stale})`);
+      console.log(`  - UNKNOWN:  ${summaryCounts.UNKNOWN} (online ${summaryCounts.UNKNOWN_online}, public ${summaryCounts.UNKNOWN_public}, private ${summaryCounts.UNKNOWN_private}, stale ${summaryCounts.UNKNOWN_stale})`);
     }
 
     console.log(`get-stats calls: ${statsCalls}`);
