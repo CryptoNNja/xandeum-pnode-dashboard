@@ -658,12 +658,13 @@ export const usePnodeDashboard = (theme?: string) => {
 
   // Derived global states (always based on allPnodes)
   // Active nodes = public nodes that are currently online (not offline/stale)
+  // ⚠️ IMPORTANT: Exclude 'stale' nodes from all KPI calculations
   const activeNodes = useMemo(() => 
     allPnodes.filter((pnode) => pnode.node_type === "public" && pnode.status === "online"), 
     [allPnodes]
   );
   const publicCount = activeNodes.length;
-  const privateCount = useMemo(() => allPnodes.filter((pnode) => pnode.node_type === "private").length, [allPnodes]);
+  const privateCount = useMemo(() => allPnodes.filter((pnode) => pnode.node_type === "private" && pnode.status !== "stale").length, [allPnodes]);
   
   // Alert system synchronized with Health Status
   // Generates detailed, actionable alerts based on expert SRE thresholds
@@ -941,16 +942,18 @@ export const usePnodeDashboard = (theme?: string) => {
     let totalUsed = 0;
 
     // allPnodes is already deduplicated by pubkey in loadData()
-    // Storage committed: ALL nodes (even gossip_only)
+    // Storage committed: ALL nodes (even private) BUT exclude 'stale' nodes
     allPnodes.forEach((pnode) => {
+      if (pnode.status === "stale") return; // ⚠️ Exclude stale nodes
       const stats = pnode.stats;
       if (!stats) return;
       const committed = stats.storage_committed ?? 0;
       totalCommitted += Number.isFinite(committed) ? committed : 0;
     });
 
-    // Storage used: ALL nodes (to match storage_committed scope)
+    // Storage used: ALL nodes (to match storage_committed scope) BUT exclude 'stale' nodes
     allPnodes.forEach((pnode) => {
+      if (pnode.status === "stale") return; // ⚠️ Exclude stale nodes
       const stats = pnode.stats;
       if (!stats) return;
       const used = stats.storage_used ?? 0;
@@ -995,7 +998,7 @@ export const usePnodeDashboard = (theme?: string) => {
   );
 
   const avgCpuUsage = useMemo(() => {
-    const allActiveNodes = allPnodes.filter((pnode) => pnode.node_type === "public");
+    const allActiveNodes = allPnodes.filter((pnode) => pnode.node_type === "public" && pnode.status !== "stale"); // ⚠️ Exclude stale
     const activeCpuNodes = allActiveNodes.filter((pnode) => (pnode.stats?.cpu_percent ?? 0) > 0);
     
     if (activeCpuNodes.length === 0) return { 
@@ -1014,7 +1017,7 @@ export const usePnodeDashboard = (theme?: string) => {
   }, [allPnodes]);
 
   const avgRamUsage = useMemo(() => {
-    const allActiveNodes = allPnodes.filter((pnode) => pnode.node_type === "public");
+    const allActiveNodes = allPnodes.filter((pnode) => pnode.node_type === "public" && pnode.status !== "stale"); // ⚠️ Exclude stale
     const activeRamNodes = allActiveNodes.filter((pnode) => (pnode.stats?.ram_total ?? 0) > 0);
     
     if (activeRamNodes.length === 0) return { 
@@ -1042,7 +1045,7 @@ export const usePnodeDashboard = (theme?: string) => {
   }, [allPnodes]);
 
   const networkUptimeStats = useMemo(() => {
-    const publicOnline = allPnodes.filter((pnode) => getHealthStatus(pnode, allPnodes) !== "Private" && pnode.node_type === "public").length;
+    const publicOnline = allPnodes.filter((pnode) => getHealthStatus(pnode, allPnodes) !== "Private" && pnode.node_type === "public" && pnode.status !== "stale").length; // ⚠️ Exclude stale
     const publicTotal = publicCount || 0;
     const percent = publicTotal > 0 ? Number(((publicOnline / publicTotal) * 100).toFixed(1)) : 0;
     return { percent, publicOnline, publicTotal, ...getNetworkUptimeVisuals(percent) };
@@ -1050,7 +1053,7 @@ export const usePnodeDashboard = (theme?: string) => {
 
   const storageDistribution = useMemo(() => STORAGE_BUCKETS.map((bucket) => ({
     range: bucket.label,
-    count: allPnodes.filter((pnode) => (pnode.stats?.storage_committed ?? 0) >= bucket.min && (pnode.stats?.storage_committed ?? 0) < bucket.max).length
+    count: allPnodes.filter((pnode) => pnode.status !== "stale" && (pnode.stats?.storage_committed ?? 0) >= bucket.min && (pnode.stats?.storage_committed ?? 0) < bucket.max).length // ⚠️ Exclude stale
   })), [allPnodes]);
 
   const cpuDistribution = useMemo(() => {
@@ -1059,15 +1062,15 @@ export const usePnodeDashboard = (theme?: string) => {
       range: bucket.label,
       min: bucket.min,
       max: bucket.max,
-      count: allPnodes.filter((pnode) => pnode.node_type === "public" && (pnode.stats?.cpu_percent ?? 0) >= bucket.min && (pnode.stats?.cpu_percent ?? 0) < bucket.max).length,
+      count: allPnodes.filter((pnode) => pnode.node_type === "public" && pnode.status !== "stale" && (pnode.stats?.cpu_percent ?? 0) >= bucket.min && (pnode.stats?.cpu_percent ?? 0) < bucket.max).length, // ⚠️ Exclude stale
       color: bucket.color
     }));
   }, [allPnodes, theme]);
 
   const pagesDistribution = useMemo(() => {
-    // Get all active nodes with pages data
+    // Get all active nodes with pages data (exclude stale nodes)
     const activeNodesWithPages = allPnodes
-      .filter(p => p.node_type === "public" && (p.stats?.total_pages ?? 0) > 0)
+      .filter(p => p.node_type === "public" && p.status !== "stale" && (p.stats?.total_pages ?? 0) > 0) // ⚠️ Exclude stale
       .map(p => p.stats?.total_pages ?? 0)
       .sort((a, b) => a - b);
 
