@@ -157,19 +157,19 @@ const PNodeTableComponent = ({
           <colgroup>
             {onToggleSelection && <col style={{ width: '40px' }} />}
             {onToggleFavorite && <col style={{ width: '50px' }} />}
-            <col style={{ width: '60px' }} /> {/* Network */}
-            <col style={{ width: '65px' }} /> {/* Score */}
-            <col style={{ width: '115px' }} /> {/* Operator */}
-            <col style={{ width: '145px' }} /> {/* IP */}
-            <col style={{ width: '95px' }} /> {/* Credits */}
-            <col style={{ width: '85px' }} /> {/* Status (online/offline) */}
-            <col style={{ width: '85px' }} /> {/* Health (Good/Warning) */}
-            <col style={{ width: '80px' }} /> {/* Version */}
-            <col style={{ width: '70px' }} /> {/* CPU */}
-            <col style={{ width: '75px' }} /> {/* RAM */}
-            <col style={{ width: '100px' }} /> {/* Storage */}
-            <col style={{ width: '95px' }} /> {/* Traffic */}
-            <col style={{ width: '85px' }} /> {/* Uptime */}
+            <col style={{ width: '60px' }} />
+            <col style={{ width: '65px' }} />
+            <col style={{ width: '115px' }} />
+            <col style={{ width: '145px' }} />
+            <col style={{ width: '95px' }} />
+            <col style={{ width: '85px' }} />
+            <col style={{ width: '85px' }} />
+            <col style={{ width: '80px' }} />
+            <col style={{ width: '70px' }} />
+            <col style={{ width: '75px' }} />
+            <col style={{ width: '100px' }} />
+            <col style={{ width: '95px' }} />
+            <col style={{ width: '85px' }} />
           </colgroup>
         <thead>
           <tr
