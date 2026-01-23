@@ -389,7 +389,7 @@ const PNodeTableComponent = ({
                 {/* 🆕 PUBKEY/OPERATOR CELL */}
                 <td className="p-4 align-middle" style={{ textAlign: 'center' }}>
                   {pnode.pubkey ? (
-                    <>
+                    <div className="flex items-center justify-center gap-1">
                       <span className="text-xs text-text-main font-mono">
                         {pnode.pubkey.slice(0, 3)}...{pnode.pubkey.slice(-3)}
                       </span>
@@ -398,12 +398,12 @@ const PNodeTableComponent = ({
                           e.stopPropagation();
                           navigator.clipboard.writeText(pnode.pubkey!);
                         }}
-                        className="ml-1 opacity-0 group-hover:opacity-100 transition-all text-text-faint hover:text-[#00d4ff]"
+                        className="opacity-0 group-hover:opacity-100 transition-all text-text-faint hover:text-[#00d4ff] flex-shrink-0"
                         title="Copy pubkey"
                       >
                         <Copy className="w-3 h-3" />
                       </button>
-                    </>
+                    </div>
                   ) : (
                     <span className="text-xs text-text-faint italic">Unknown</span>
                   )}
