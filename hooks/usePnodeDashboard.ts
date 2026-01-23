@@ -414,7 +414,7 @@ export const usePnodeDashboard = (theme?: string) => {
     let count = 0;
     allPnodes.forEach(p => {
       // Basic visibility
-      if (nodeFilter !== "all" && (nodeFilter === "public" ? p.status !== "active" : p.status !== "gossip_only")) return;
+      if (nodeFilter !== "all" && (nodeFilter === "public" ? p.node_type !== "public" : p.node_type !== "private")) return;
       // Versions
       if (selectedVersions.length > 0) {
         const trimmed = p.version?.trim();
@@ -454,9 +454,9 @@ export const usePnodeDashboard = (theme?: string) => {
         // Status with user-friendly aliases
         const status = p.status.toLowerCase();
         if (status.includes(q)) return true;
-        if (q === "private" && node_type === "private") return true;
-        if (q === "public" && node_type === "public") return true;
-        if (q === "gossip" && node_type === "private") return true;
+        if (q === "private" && p.node_type === "private") return true;
+        if (q === "public" && p.node_type === "public") return true;
+        if (q === "gossip" && p.node_type === "private") return true;
         
         // Geographic fields
         if (p.country?.toLowerCase().includes(q)) return true;
