@@ -58,12 +58,14 @@ async function saveDailySnapshot() {
     const devnetPublic = devnetNodes.filter(p => p.node_type === "public").length;
     const devnetPrivate = devnetNodes.filter(p => p.node_type === "private").length;
 
-    const totalStorageBytes = activeNodes.reduce(
+    // Calculate storage for ALL nodes (not just public)
+    const totalStorageBytes = pnodes.reduce(
       (sum, p) => sum + (p.stats?.storage_committed ?? p.stats?.file_size ?? 0),
       0
     );
 
-    const totalPages = activeNodes.reduce(
+    // Calculate total pages for ALL nodes
+    const totalPages = pnodes.reduce(
       (sum, p) => sum + (p.stats?.total_pages ?? 0),
       0
     );
