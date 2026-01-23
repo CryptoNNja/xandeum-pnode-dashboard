@@ -710,7 +710,7 @@ export default function TopPerformersChart({ nodes, onSelectNode, hideHeader = f
                 </span>
                 <div className="flex items-center gap-2 text-xs text-text-soft">
                     <span>Uptime</span>
-                    {statusIndicator(entry.node.status)}
+                    {statusIndicator(entry.node.node_type)}
                 </div>
             </div>
             <div className="col-span-2 col-start-2 text-xs text-text-soft">
