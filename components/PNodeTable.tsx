@@ -158,18 +158,18 @@ const PNodeTableComponent = ({
             {onToggleSelection && <col style={{ width: '40px' }} />}
             {onToggleFavorite && <col style={{ width: '50px' }} />}
             <col style={{ width: '60px' }} />
-            <col style={{ width: '65px' }} />
-            <col style={{ width: '115px' }} />
-            <col style={{ width: '145px' }} />
-            <col style={{ width: '95px' }} />
-            <col style={{ width: '85px' }} />
-            <col style={{ width: '85px' }} />
-            <col style={{ width: '80px' }} />
-            <col style={{ width: '70px' }} />
-            <col style={{ width: '75px' }} />
+            <col style={{ width: '60px' }} />
             <col style={{ width: '100px' }} />
+            <col style={{ width: '140px' }} />
+            <col style={{ width: '90px' }} />
+            <col style={{ width: '80px' }} />
+            <col style={{ width: '80px' }} />
+            <col style={{ width: '75px' }} />
+            <col style={{ width: '65px' }} />
+            <col style={{ width: '70px' }} />
+            <col style={{ width: '110px' }} />
+            <col style={{ width: '105px' }} />
             <col style={{ width: '95px' }} />
-            <col style={{ width: '85px' }} />
           </colgroup>
         <thead>
           <tr
@@ -237,7 +237,7 @@ const PNodeTableComponent = ({
             const healthStatus = pnode.node_type === "public" 
               ? ((pnode as any)._healthStatus || "Unknown")
               : null; // Private nodes have no public health metrics
-            const nodeStatus = pnode.status; // online/offline/stale/registry_only
+            const nodeType = pnode.node_type; // public/private/unknown
 
             // Helper to get CSS variable value
             const getCssVar = (varName: string, fallback: string): string => {
@@ -268,11 +268,10 @@ const PNodeTableComponent = ({
               return getCssVar("--kpi-private", "#64748B"); // Private
             };
 
-            const getNodeStatusColor = (status: string) => {
-              if (status === "online") return getCssVar("--kpi-excellent", "#10B981");
-              if (status === "offline") return getCssVar("--kpi-critical", "#EF4444");
-              if (status === "stale") return getCssVar("--kpi-warning", "#F59E0B");
-              if (status === "registry_only") return getCssVar("--kpi-private", "#64748B");
+            const getNodeTypeColor = (type: string) => {
+              if (type === "public") return getCssVar("--kpi-excellent", "#10B981");
+              if (type === "private") return getCssVar("--kpi-warning", "#F59E0B");
+              if (type === "unknown") return getCssVar("--text-faint", "#64748B");
               return getCssVar("--text-faint", "#64748B");
             };
 
@@ -283,11 +282,11 @@ const PNodeTableComponent = ({
               borderColor: hexToRgba(healthColor, 0.3),
             };
 
-            const statusColor = getNodeStatusColor(nodeStatus);
-            const statusBadgeStyle = {
-              backgroundColor: hexToRgba(statusColor, 0.2),
-              color: statusColor,
-              borderColor: hexToRgba(statusColor, 0.3),
+            const typeColor = getNodeTypeColor(nodeType);
+            const typeBadgeStyle = {
+              backgroundColor: hexToRgba(typeColor, 0.2),
+              color: typeColor,
+              borderColor: hexToRgba(typeColor, 0.3),
             };
 
             const isPrivate = pnode.node_type !== "public";
@@ -448,10 +447,10 @@ const PNodeTableComponent = ({
                   </span>
                 </td>
 
-                {/* NODE STATUS CELL (online/offline/stale) */}
+                {/* NODE TYPE CELL (Public/Private/Unknown) */}
                 <td className="p-4 align-middle text-center">
-                  <span className="px-3 py-1.5 rounded-full text-[9px] font-bold border uppercase tracking-wide inline-block" style={statusBadgeStyle}>
-                    {nodeStatus === "registry_only" ? "Registry" : nodeStatus}
+                  <span className="px-3 py-1.5 rounded-full text-[9px] font-bold border uppercase tracking-wide inline-block" style={typeBadgeStyle}>
+                    {nodeType === "public" ? "🟢 Public" : nodeType === "private" ? "🟠 Private" : "⚪ Unknown"}
                   </span>
                 </td>
 
