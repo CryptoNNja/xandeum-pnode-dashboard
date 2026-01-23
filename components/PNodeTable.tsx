@@ -1,8 +1,8 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Star, Lock, Globe, Copy } from "lucide-react";
+import { Star, Lock, Globe, Copy, ChevronDown, ChevronRight } from "lucide-react";
 import clsx from "clsx";
 import { calculateNodeScore, getScoreColor } from "@/lib/scoring";
 import { useTheme } from "@/hooks/useTheme";
@@ -55,6 +55,9 @@ const PNodeTableComponent = ({
   const { theme, mounted: themeMounted } = useTheme();
   const router = useRouter();
   const isLight = themeMounted ? theme === "light" : false;
+
+  // State for collapsed/expanded operators
+  const [expandedOperators, setExpandedOperators] = useState<Set<string>>(new Set());
 
   if (!data || !Array.isArray(data)) return null;
   
