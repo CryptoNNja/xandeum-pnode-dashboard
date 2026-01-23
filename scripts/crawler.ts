@@ -574,10 +574,11 @@ export const main = async () => {
         const statsResult = allStats[i];
         const geoResult = allGeo[i];
 
-        // Determine status: active if get-stats responds OR if is_public === true
+        // New classification: status = online (all discovered nodes), node_type = public/private
         const hasStats = statsResult.status === 'fulfilled' && statsResult.value;
-        const isPublic = isPublicMap.get(ip) === true;
-        const status = (hasStats || isPublic) ? 'active' : 'gossip_only';
+        const isPublic = isPublicMap.get(ip);
+        const status: PNodeStatus = 'online'; // All discovered nodes are online
+        const nodeType = isPublic === true ? 'public' : isPublic === false ? 'private' : 'unknown';
         
         // 🆕 NEW ARCHITECTURE: Start with EMPTY_STATS, then enrich from GOSSIP first (all nodes),
         // then enrich from RPC (public nodes only) for metrics not available in gossip
@@ -677,6 +678,8 @@ export const main = async () => {
         pnodesToUpsert.push({
             ip: ip,
             status: status,
+            node_type: nodeType, // New: public/private/unknown classification
+            has_pubkey: !!pubkeyMap.get(ip), // New: track if node has pubkey
             version: versionMap.get(ip) || "unknown",
             pubkey: pubkeyMap.get(ip) || null,
             stats: finalStats as unknown as Json,
