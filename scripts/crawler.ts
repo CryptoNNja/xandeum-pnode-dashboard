@@ -646,7 +646,7 @@ export const main = async () => {
         else if (detectionResult.network === 'DEVNET') devnetCount++;
         else unknownCount++;
 
-        // Save history for ALL nodes (active and gossip_only)
+        // Save history for ALL nodes (active and private)
         // This ensures continuity in charts even when nodes go offline temporarily
         historyToInsert.push({
             ip,
@@ -821,7 +821,7 @@ export const main = async () => {
             // Node has persistent issues despite being in gossip
             node.status = 'stale';
         }
-        // Otherwise keep the status determined earlier (active or gossip_only)
+        // Otherwise keep the status determined earlier (active or private)
     });
     
     // For existing nodes NOT in this crawl, increment their failed_checks
@@ -896,7 +896,7 @@ export const main = async () => {
 
     // Save network metadata (total discovered vs crawled)
     // Use deduplicated count for accurate metadata
-    const activeNodesCount = deduplicatedNodes.filter(p => p.status === 'active').length;
+    const activeNodesCount = deduplicatedNodes.filter(p => p.status === 'online').length;
     console.log(`📊 Updating network metadata: ${networkTotal} total, ${deduplicatedNodes.length} crawled (deduplicated), ${activeNodesCount} active`);
     const { error: metadataError } = await (supabaseAdmin as any)
         .from('network_metadata')
@@ -996,43 +996,43 @@ export const main = async () => {
     // Status + network breakdown (based on final nodes we upsert)
     const summaryCounts = {
       active: 0,
-      gossip_only: 0,
+      private: 0,
       stale: 0,
       MAINNET: 0,
       DEVNET: 0,
       UNKNOWN: 0,
       MAINNET_active: 0,
-      MAINNET_gossip_only: 0,
+      MAINNET_private: 0,
       MAINNET_stale: 0,
       DEVNET_active: 0,
-      DEVNET_gossip_only: 0,
+      DEVNET_private: 0,
       DEVNET_stale: 0,
       UNKNOWN_active: 0,
-      UNKNOWN_gossip_only: 0,
+      UNKNOWN_private: 0,
       UNKNOWN_stale: 0,
     };
 
     for (const n of deduplicatedNodes as any[]) {
-      if (n.status === 'active') summaryCounts.active++;
+      if (n.status === 'online') summaryCounts.active++;
       else if (n.status === 'stale') summaryCounts.stale++;
-      else summaryCounts.gossip_only++;
+      else summaryCounts.private++;
 
       const net = n.network;
       if (net === 'MAINNET') {
         summaryCounts.MAINNET++;
-        if (n.status === 'active') summaryCounts.MAINNET_active++;
+        if (n.status === 'online') summaryCounts.MAINNET_active++;
         else if (n.status === 'stale') summaryCounts.MAINNET_stale++;
-        else summaryCounts.MAINNET_gossip_only++;
+        else summaryCounts.MAINNET_private++;
       } else if (net === 'DEVNET') {
         summaryCounts.DEVNET++;
-        if (n.status === 'active') summaryCounts.DEVNET_active++;
+        if (n.status === 'online') summaryCounts.DEVNET_active++;
         else if (n.status === 'stale') summaryCounts.DEVNET_stale++;
-        else summaryCounts.DEVNET_gossip_only++;
+        else summaryCounts.DEVNET_private++;
       } else {
         summaryCounts.UNKNOWN++;
-        if (n.status === 'active') summaryCounts.UNKNOWN_active++;
+        if (n.status === 'online') summaryCounts.UNKNOWN_active++;
         else if (n.status === 'stale') summaryCounts.UNKNOWN_stale++;
-        else summaryCounts.UNKNOWN_gossip_only++;
+        else summaryCounts.UNKNOWN_private++;
       }
     }
 
@@ -1045,14 +1045,14 @@ export const main = async () => {
 
     console.log(`Status breakdown:`);
     console.log(`  - active (public):       ${summaryCounts.active}`);
-    console.log(`  - gossip_only (private): ${summaryCounts.gossip_only}`);
+    console.log(`  - private (private): ${summaryCounts.private}`);
     console.log(`  - stale (kept):          ${summaryCounts.stale}`);
 
     console.log(`Network breakdown:`);
-    console.log(`  - MAINNET:  ${summaryCounts.MAINNET} (active ${summaryCounts.MAINNET_active}, gossip_only ${summaryCounts.MAINNET_gossip_only}, stale ${summaryCounts.MAINNET_stale})`);
-    console.log(`  - DEVNET:   ${summaryCounts.DEVNET} (active ${summaryCounts.DEVNET_active}, gossip_only ${summaryCounts.DEVNET_gossip_only}, stale ${summaryCounts.DEVNET_stale})`);
+    console.log(`  - MAINNET:  ${summaryCounts.MAINNET} (active ${summaryCounts.MAINNET_active}, private ${summaryCounts.MAINNET_private}, stale ${summaryCounts.MAINNET_stale})`);
+    console.log(`  - DEVNET:   ${summaryCounts.DEVNET} (active ${summaryCounts.DEVNET_active}, private ${summaryCounts.DEVNET_private}, stale ${summaryCounts.DEVNET_stale})`);
     if (summaryCounts.UNKNOWN > 0) {
-      console.log(`  - UNKNOWN:  ${summaryCounts.UNKNOWN} (active ${summaryCounts.UNKNOWN_active}, gossip_only ${summaryCounts.UNKNOWN_gossip_only}, stale ${summaryCounts.UNKNOWN_stale})`);
+      console.log(`  - UNKNOWN:  ${summaryCounts.UNKNOWN} (active ${summaryCounts.UNKNOWN_active}, private ${summaryCounts.UNKNOWN_private}, stale ${summaryCounts.UNKNOWN_stale})`);
     }
 
     console.log(`get-stats calls: ${statsCalls}`);
