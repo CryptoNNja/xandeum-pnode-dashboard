@@ -433,12 +433,13 @@ export const main = async () => {
                     }
                 }
 
-                // 🆕 Capture uptime from gossip network (for private nodes)
-                if (ip && pod.uptime) {
+                // 🆕 Capture uptime from gossip network (for ALL nodes, including uptime=0)
+                if (ip && pod.uptime !== undefined) {
                     const uptimeSeconds = coerceNumber(pod.uptime);
-                    if (uptimeSeconds > 0) {
-                        uptimeGossipMap.set(ip, uptimeSeconds);
-                    }
+                    // Store even if uptime=0 to distinguish between:
+                    // - Node in gossip with uptime=0 (restarting = OK)
+                    // - Node not in gossip at all (zombie = stale)
+                    uptimeGossipMap.set(ip, uptimeSeconds);
                 }
             })
         }
@@ -811,9 +812,9 @@ export const main = async () => {
                              storageCommittedMap.has(node.ip) || 
                              pubkeyMap.has(node.ip);
         
-        // Check if node has uptime=0 and no recent gossip activity
+        // Check if node has uptime=0 AND is not present in gossip network at all
         const nodeUptime = (node.stats as any)?.uptime ?? 0;
-        const hasRecentGossipActivity = uptimeGossipMap.has(node.ip) && uptimeGossipMap.get(node.ip)! > 0;
+        const isInGossipNetwork = uptimeGossipMap.has(node.ip); // Node is in gossip (even with uptime=0)
         
         if (currentFailedChecks >= 2 && !hasGossipData) {
             // Node is truly dead - not even in gossip network
@@ -821,8 +822,9 @@ export const main = async () => {
         } else if (currentFailedChecks >= 4 && hasGossipData) {
             // Node has persistent issues despite being in gossip
             node.status = 'stale';
-        } else if (nodeUptime === 0 && !hasRecentGossipActivity) {
-            // Node has no uptime and no recent gossip activity - likely a zombie
+        } else if (nodeUptime === 0 && !isInGossipNetwork) {
+            // Node has uptime=0 AND is not in gossip network = zombie with stale data
+            // Note: Nodes with uptime=0 but IN gossip are OK (just restarted)
             node.status = 'stale';
         }
         // Otherwise keep the status determined earlier (online or private)
