@@ -818,14 +818,22 @@ export const main = async () => {
         
         if (currentFailedChecks >= 2 && !hasGossipData) {
             // Node is truly dead - not even in gossip network
+            console.log(`   🧟 Marking ${node.ip} as stale: ${currentFailedChecks} failures, no gossip data`);
             node.status = 'stale';
         } else if (currentFailedChecks >= 4 && hasGossipData) {
             // Node has persistent issues despite being in gossip
+            console.log(`   🧟 Marking ${node.ip} as stale: ${currentFailedChecks} failures, has gossip but failing`);
             node.status = 'stale';
         } else if (nodeUptime === 0 && !isInGossipNetwork) {
             // Node has uptime=0 AND is not in gossip network = zombie with stale data
             // Note: Nodes with uptime=0 but IN gossip are OK (just restarted)
+            console.log(`   🧟 Marking ${node.ip} as stale: uptime=0, not in gossip network`);
             node.status = 'stale';
+        }
+        
+        // Debug logging for nodes with uptime=0
+        if (nodeUptime === 0 && isInGossipNetwork) {
+            console.log(`   ℹ️  Node ${node.ip} has uptime=0 but IS in gossip (OK - just restarted)`);
         }
         // Otherwise keep the status determined earlier (online or private)
     });
