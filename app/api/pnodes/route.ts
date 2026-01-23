@@ -63,10 +63,13 @@ export async function GET(request: NextRequest) {
       version: row.version ?? undefined,
       pubkey: row.pubkey ?? undefined,
       stats: row.stats as unknown as import("@/lib/types").PNodeStats,
+      node_type: (row as any).node_type, // 🆕 Node type classification
       network: (row as any).network as NetworkType, // 🆕 Network type
       network_confidence: (row as any).network_confidence, // 🆕 Confidence
       source: (row as any).source, // 🆕 Data source (crawler/registry/both)
       is_official: (row as any).is_official, // 🆕 Official registry flag
+      is_registered: (row as any).is_registered, // 🆕 Registered flag
+      has_pubkey: (row as any).has_pubkey, // 🆕 Has pubkey flag
       last_seen_gossip: (row as any).last_seen_gossip 
         ? new Date((row as any).last_seen_gossip).getTime() / 1000 
         : undefined, // 🆕 Convert ISO timestamp to Unix seconds
