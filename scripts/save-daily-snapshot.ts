@@ -37,6 +37,9 @@ async function saveDailySnapshot() {
       city: row.city,
       country: row.country,
       country_code: (row as any).country_code,
+      node_type: (row as any).node_type,
+      network: (row as any).network,
+      has_pubkey: (row as any).has_pubkey,
     }));
 
     console.log(`📊 Found ${pnodes.length} total nodes`);
