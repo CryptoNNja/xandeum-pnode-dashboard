@@ -26,7 +26,6 @@ export default function RootLayout({
     <html lang="en">
       <ThemeProvider>
         <ThemeBody>
-          <MaintenanceBanner />
           <ErrorBoundary>
             <ToastProvider>
               <TooltipProvider>

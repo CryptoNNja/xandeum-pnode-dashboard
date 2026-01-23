@@ -399,19 +399,3 @@ body {
   z-index: 1;
 }
 
-/* ============================= */
-/*   MAINTENANCE BANNER          */
-/* ============================= */
-
-@keyframes progress-bar {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-.animate-progress-bar {
-  animation: progress-bar 2s ease-in-out infinite;
-}
