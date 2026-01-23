@@ -159,7 +159,7 @@ const PNodeTableComponent = ({
             {onToggleFavorite && <col style={{ width: '50px' }} />}
             <col style={{ width: '60px' }} />
             <col style={{ width: '60px' }} />
-            <col style={{ width: '100px' }} />
+            <col style={{ width: '85px' }} />
             <col style={{ width: '140px' }} />
             <col style={{ width: '90px' }} />
             <col style={{ width: '80px' }} />
@@ -391,7 +391,7 @@ const PNodeTableComponent = ({
                   {pnode.pubkey ? (
                     <>
                       <span className="text-xs text-text-main font-mono">
-                        {pnode.pubkey.slice(0, 8)}...{pnode.pubkey.slice(-4)}
+                        {pnode.pubkey.slice(0, 6)}...{pnode.pubkey.slice(-4)}
                       </span>
                       <button
                         onClick={(e) => {
