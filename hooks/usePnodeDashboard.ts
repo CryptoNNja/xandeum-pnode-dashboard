@@ -145,9 +145,10 @@ export const usePnodeDashboard = (theme?: string) => {
   // Network metadata (gossip discovery stats)
   // Calculate networkMetadata from deduplicated allPnodes instead of fetching from API
   // This ensures consistency with the deduplicated data shown everywhere
+  // ⚠️ IMPORTANT: Exclude 'stale' nodes from counts
   const networkMetadata = useMemo(() => {
-    const totalNodes = allPnodes.length;
-    const activeNodes = allPnodes.filter(p => p.node_type === "public").length;
+    const totalNodes = allPnodes.filter(p => p.status !== "stale").length; // ⚠️ Exclude stale
+    const activeNodes = allPnodes.filter(p => p.node_type === "public" && p.status !== "stale").length; // ⚠️ Exclude stale
     
     return {
       networkTotal: totalNodes,

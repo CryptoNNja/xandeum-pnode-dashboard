@@ -497,7 +497,7 @@ export default function Page() {
         const totalStorage = pnodes.reduce((sum, p) => sum + (p.stats?.storage_committed || 0), 0);
         
         const summary = {
-          totalNodes: pnodes.length,
+          totalNodes: publicCount + privateCount, // ⚠️ Exclude stale nodes
           publicNodes: publicCount,
           privateNodes: privateCount,
           avgCPU: avgCpuUsage.percent,
@@ -631,7 +631,7 @@ export default function Page() {
           totalStorageUsedStats={totalStorageUsedStats}
           networkMetadata={networkMetadata}
           countriesCount={countriesCount}
-          totalNodes={pnodes.length}
+          totalNodes={publicCount + privateCount}
         />
       </div>
 
@@ -640,7 +640,7 @@ export default function Page() {
         <SummaryHeader
           publicCount={publicCount}
           privateCount={privateCount}
-          totalNodes={pnodes.length}
+          totalNodes={publicCount + privateCount}
           networkHealthInsights={networkHealthInsights}
           networkUptimeStats={networkUptimeStats}
           alerts={alerts}
@@ -660,7 +660,7 @@ export default function Page() {
         <KpiCards
           publicCount={publicCount}
           privateCount={privateCount}
-          totalNodes={pnodes.length}
+          totalNodes={publicCount + privateCount}
           networkHealthInsights={networkHealthInsights}
           UptimeIcon={networkUptimeStats.Icon}
           networkUptimeStats={networkUptimeStats}
@@ -862,7 +862,7 @@ export default function Page() {
         isOpen={isAlertHubOpen}
         onClose={() => setIsAlertHubOpen(false)}
         alerts={alerts}
-        totalNodes={pnodes.length}
+        totalNodes={publicCount + privateCount}
         isLight={isLight}
         defaultTab={alertHubConfig.defaultTab}
         defaultFilters={alertHubConfig.defaultFilters}
@@ -883,7 +883,7 @@ export default function Page() {
       <GeographicDistributionModal
         isOpen={isGeographicModalOpen}
         onClose={() => setIsGeographicModalOpen(false)}
-        totalNodes={pnodes.length}
+        totalNodes={publicCount + privateCount}
         countriesCount={countriesCount}
         isLight={isLight}
       />
