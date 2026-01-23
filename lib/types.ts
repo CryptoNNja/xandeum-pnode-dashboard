@@ -19,30 +19,38 @@ export interface PNodeStats {
   last_seen_gossip?: number; // From get-pods-with-stats (timestamp when node was last seen by gossip network)
 }
 
-// Network status of the node as determined by our crawler
-// Node status (current state)
-// - active: telemetry reachable (or explicitly public)
-// - gossip_only: discovered, but no telemetry
-// - stale: previously known, now consistently unreachable (kept for coverage)
+// Node status: connectivity state
+// - online: discovered via gossip and currently active (replaces 'active' and 'gossip_only')
+// - offline: in registry but not responding to gossip
+// - stale: not seen for 24h+
 // - registry_only: in official registry but not yet discovered by crawler (ip = null)
-export type PNodeStatus = "active" | "gossip_only" | "stale" | "registry_only";
+export type PNodeStatus = "online" | "offline" | "stale" | "registry_only";
+
+// Node type: privacy/visibility classification
+// - public: exposes stats via get-stats RPC
+// - private: does not share stats (privacy mode)
+// - unknown: type not determined yet
+export type NodeType = "public" | "private" | "unknown";
 
 // Network type: MAINNET, DEVNET, or UNKNOWN
 export type NetworkType = "MAINNET" | "DEVNET" | "UNKNOWN";
 
 // Standard model for a pNode throughout the frontend
 export interface PNode {
-  ip: string | null; // 🆕 Nullable for registry-only nodes
-  pubkey?: string; // 🆕 Optional - permanent node identifier (may be missing in old data)
-  status: PNodeStatus;
+  ip: string | null; // Nullable for registry-only nodes
+  pubkey?: string; // Optional - permanent node identifier (may be missing in old data)
+  status: PNodeStatus; // Connectivity state (online, offline, stale, registry_only)
+  node_type?: NodeType; // Privacy classification (public, private, unknown)
   stats: PNodeStats;
   version?: string;
   network?: NetworkType; // MAINNET vs DEVNET classification
   network_confidence?: "high" | "medium" | "low"; // Confidence level of network detection
-  source?: "crawler" | "registry" | "both"; // 🆕 Data source tracking
-  is_official?: boolean; // 🆕 True if in official registry
-  credits?: number; // 🆕 Credits earned from official API (XAN tokens)
-  last_seen_gossip?: number; // 🆕 Timestamp from gossip network (DB column, not JSONB stats)
+  source?: "crawler" | "registry" | "both"; // Data source tracking
+  is_official?: boolean; // True if in official registry
+  is_registered?: boolean; // True if registered in official registry (replaces is_official)
+  has_pubkey?: boolean; // True if node has a pubkey (enables manager wallet lookup)
+  credits?: number; // Credits earned from official API (XAN tokens)
+  last_seen_gossip?: number; // Timestamp from gossip network (DB column, not JSONB stats)
   lat?: number | null;
   lng?: number | null;
   city?: string | null;

@@ -74,7 +74,7 @@ export async function GET() {
 
       return {
         ip: record.ip,
-        status: "active" as const, // Historical records are only saved for active nodes
+        status: "online" as const, // Historical records are only saved for online nodes
         version: "unknown",
         stats,
       };

@@ -42,8 +42,8 @@ export function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
     if (!pnodes || pnodes.length === 0) return null;
     
     // Public nodes (active status) + Private nodes (gossip_only status) = All online nodes
-    const publicNodes = pnodes.filter(p => p.status === 'active').length;
-    const privateNodes = pnodes.filter(p => p.status === 'gossip_only').length;
+    const publicNodes = pnodes.filter(p => p.node_type === 'public').length;
+    const privateNodes = pnodes.filter(p => p.node_type === 'private').length;
     const onlineNodes = publicNodes + privateNodes;
     const offlineNodes = pnodes.length - onlineNodes;
     const totalStorage = storageCapacityStats?.totalCommitted || 0;
@@ -71,12 +71,12 @@ export function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
       networkBreakdown: {
         mainnet: {
           total: pnodes.filter(p => p.network === 'MAINNET').length,
-          online: pnodes.filter(p => p.network === 'MAINNET' && (p.status === 'active' || p.status === 'gossip_only')).length,
+          online: pnodes.filter(p => p.network === 'MAINNET' && p.status === 'online').length,
           avgScore: pnodes.filter(p => p.network === 'MAINNET').reduce((sum, p) => sum + (p._score || 0), 0) / (pnodes.filter(p => p.network === 'MAINNET').length || 1),
         },
         devnet: {
           total: pnodes.filter(p => p.network === 'DEVNET').length,
-          online: pnodes.filter(p => p.network === 'DEVNET' && (p.status === 'active' || p.status === 'gossip_only')).length,
+          online: pnodes.filter(p => p.network === 'DEVNET' && p.status === 'online').length,
           avgScore: pnodes.filter(p => p.network === 'DEVNET').reduce((sum, p) => sum + (p._score || 0), 0) / (pnodes.filter(p => p.network === 'DEVNET').length || 1),
         },
       },

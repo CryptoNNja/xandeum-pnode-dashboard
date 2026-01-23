@@ -222,7 +222,7 @@ const DashboardContentComponent = ({
         const score = pnode._score ?? 0;
         const healthStatus = pnode._healthStatus;
         const healthColor = getHealthColor(healthStatus);
-        const isPrivate = pnode.status === "gossip_only";
+        const isPrivate = pnode.node_type === "private";
         
         // Resource calculations
         const cpu = pnode.stats?.cpu_percent ?? 0;
@@ -263,9 +263,9 @@ const DashboardContentComponent = ({
                 <div className="relative">
                   <div className={clsx(
                     "w-2.5 h-2.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]",
-                    pnode.status === "active" ? "bg-green-400 animate-pulse" : isPrivate ? "bg-blue-400" : "bg-gray-500"
+                    pnode.node_type === "public" ? "bg-green-400 animate-pulse" : isPrivate ? "bg-blue-400" : "bg-gray-500"
                   )} />
-                  {pnode.status === "active" && (
+                  {pnode.node_type === "public" && (
                     <div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-40" />
                   )}
                 </div>

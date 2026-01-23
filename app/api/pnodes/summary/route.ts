@@ -27,7 +27,7 @@ export async function GET(_request: NextRequest) {
     // Cast to `any` here to avoid breaking the build while keeping runtime behavior correct.
     const { data, error } = await (supabase as any)
       .from("pnodes")
-      .select("status, network, last_crawled_at")
+      .select("status, node_type, network, last_crawled_at")
       .neq("ip", "127.0.0.1");
 
     if (error) {
@@ -52,18 +52,18 @@ export async function GET(_request: NextRequest) {
 
     for (const r of rows) {
       total++;
-      const status = r.status as PNodeStatus | null;
-      if (status === "active") pub++;
+      const nodeType = (r as any).node_type as string | null;
+      if (nodeType === "public") pub++;
       else priv++;
 
       const net = (r as any).network as NetworkType | null;
       if (net === "MAINNET") {
         mainnet++;
-        if (status === "active") mainnetPublic++;
+        if (nodeType === "public") mainnetPublic++;
         else mainnetPrivate++;
       } else if (net === "DEVNET") {
         devnet++;
-        if (status === "active") devnetPublic++;
+        if (nodeType === "public") devnetPublic++;
         else devnetPrivate++;
       } else {
         unknownNetwork++;
