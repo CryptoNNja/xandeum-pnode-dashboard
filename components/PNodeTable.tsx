@@ -233,7 +233,10 @@ const PNodeTableComponent = ({
           )}
         >
           {data.map((pnode, index) => {
-            const healthStatus = (pnode as any)._healthStatus || "Private";
+            // Health status only for public nodes with stats
+            const healthStatus = pnode.node_type === "public" 
+              ? ((pnode as any)._healthStatus || "Unknown")
+              : null; // Private nodes have no public health metrics
             const nodeStatus = pnode.status; // online/offline/stale/registry_only
 
             // Helper to get CSS variable value
@@ -454,9 +457,13 @@ const PNodeTableComponent = ({
 
                 {/* HEALTH STATUS CELL (Good/Warning/Critical) */}
                 <td className="p-4 align-middle text-center">
-                  <span className="px-3 py-1.5 rounded-full text-[9px] font-bold border uppercase tracking-wide inline-block" style={healthBadgeStyle}>
-                    {healthStatus}
-                  </span>
+                  {healthStatus ? (
+                    <span className="px-3 py-1.5 rounded-full text-[9px] font-bold border uppercase tracking-wide inline-block" style={healthBadgeStyle}>
+                      {healthStatus}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-text-faint">—</span>
+                  )}
                 </td>
 
                 <td className="p-4 text-xs text-text-faint font-mono align-middle text-center">
