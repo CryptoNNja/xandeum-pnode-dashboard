@@ -285,7 +285,7 @@ const PNodeTableComponent = ({
               borderColor: hexToRgba(healthColor, 0.3),
             };
 
-            const typeColor = getNodeTypeColor(nodeType);
+            const typeColor = getNodeTypeColor(nodeType || "unknown");
             const typeBadgeStyle = {
               backgroundColor: hexToRgba(typeColor, 0.2),
               color: typeColor,
