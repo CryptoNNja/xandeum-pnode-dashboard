@@ -133,7 +133,7 @@ const PNodeTableComponent = ({
     { key: "pubkey", label: "Operator", sortable: true }, // 🆕 New column for pubkey/operator
     { key: "ip", label: "IP Address", sortable: true },
     { key: "credits", label: "Credits", sortable: true }, // 🆕 Credits earned (XAN) - sortable
-    { key: "status", label: "Status", sortable: true }, // 🆕 Node status (online/offline/stale)
+    { key: "status", label: "Type", sortable: true }, // 🆕 Node type (Public/Private/Unknown)
     { key: "health", label: "Health", sortable: true }, // 🆕 Health score (Good/Warning/Critical)
     { key: "version", label: "Version", sortable: true },
     { key: "cpu", label: "CPU", sortable: true },
