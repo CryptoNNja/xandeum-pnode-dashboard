@@ -147,7 +147,7 @@ export const usePnodeDashboard = (theme?: string) => {
   // This ensures consistency with the deduplicated data shown everywhere
   const networkMetadata = useMemo(() => {
     const totalNodes = allPnodes.length;
-    const activeNodes = allPnodes.filter(p => p.status === "active").length;
+    const activeNodes = allPnodes.filter(p => p.node_type === "public").length;
     
     return {
       networkTotal: totalNodes,
@@ -454,9 +454,9 @@ export const usePnodeDashboard = (theme?: string) => {
         // Status with user-friendly aliases
         const status = p.status.toLowerCase();
         if (status.includes(q)) return true;
-        if (q === "private" && status === "gossip_only") return true;
-        if (q === "public" && status === "active") return true;
-        if (q === "gossip" && status === "gossip_only") return true;
+        if (q === "private" && node_type === "private") return true;
+        if (q === "public" && node_type === "public") return true;
+        if (q === "gossip" && node_type === "private") return true;
         
         // Geographic fields
         if (p.country?.toLowerCase().includes(q)) return true;
@@ -480,7 +480,7 @@ export const usePnodeDashboard = (theme?: string) => {
     // Visibility filter
     if (nodeFilter !== "all") {
       result = result.filter((p) =>
-        nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only"
+        nodeFilter === "public" ? p.node_type === "public" : p.node_type === "private"
       );
     }
 
@@ -528,9 +528,9 @@ export const usePnodeDashboard = (theme?: string) => {
     if (networkStatusFilters.length > 0 && networkStatusFilters.length < 4) {
       result = result.filter(node => {
         if (node.status === "registry_only" && networkStatusFilters.includes("registry_only")) return true;
-        if (node.status === "active" && networkStatusFilters.includes("active")) return true;
+        if (node.node_type === "public" && networkStatusFilters.includes("active")) return true;
         if (node.status === "stale" && networkStatusFilters.includes("stale")) return true;
-        if (node.status === "gossip_only" && networkStatusFilters.includes("active")) return true; // 🆕 gossip_only = private nodes, show with active
+        if (node.node_type === "private" && networkStatusFilters.includes("active")) return true; // 🆕 gossip_only = private nodes, show with active
         return false;
       });
     }
@@ -657,9 +657,9 @@ export const usePnodeDashboard = (theme?: string) => {
   }, [filteredAndSortedPNodes, gridLimit]);
 
   // Derived global states (always based on allPnodes)
-  const activeNodes = useMemo(() => allPnodes.filter((pnode) => pnode.status === "active"), [allPnodes]);
+  const activeNodes = useMemo(() => allPnodes.filter((pnode) => pnode.node_type === "public"), [allPnodes]);
   const publicCount = activeNodes.length;
-  const privateCount = useMemo(() => allPnodes.filter((pnode) => pnode.status === "gossip_only").length, [allPnodes]);
+  const privateCount = useMemo(() => allPnodes.filter((pnode) => pnode.node_type === "private").length, [allPnodes]);
   
   // Alert system synchronized with Health Status
   // Generates detailed, actionable alerts based on expert SRE thresholds
@@ -991,7 +991,7 @@ export const usePnodeDashboard = (theme?: string) => {
   );
 
   const avgCpuUsage = useMemo(() => {
-    const allActiveNodes = allPnodes.filter((pnode) => pnode.status === "active");
+    const allActiveNodes = allPnodes.filter((pnode) => pnode.node_type === "public");
     const activeCpuNodes = allActiveNodes.filter((pnode) => (pnode.stats?.cpu_percent ?? 0) > 0);
     
     if (activeCpuNodes.length === 0) return { 
@@ -1010,7 +1010,7 @@ export const usePnodeDashboard = (theme?: string) => {
   }, [allPnodes]);
 
   const avgRamUsage = useMemo(() => {
-    const allActiveNodes = allPnodes.filter((pnode) => pnode.status === "active");
+    const allActiveNodes = allPnodes.filter((pnode) => pnode.node_type === "public");
     const activeRamNodes = allActiveNodes.filter((pnode) => (pnode.stats?.ram_total ?? 0) > 0);
     
     if (activeRamNodes.length === 0) return { 
@@ -1038,7 +1038,7 @@ export const usePnodeDashboard = (theme?: string) => {
   }, [allPnodes]);
 
   const networkUptimeStats = useMemo(() => {
-    const publicOnline = allPnodes.filter((pnode) => getHealthStatus(pnode, allPnodes) !== "Private" && pnode.status === "active").length;
+    const publicOnline = allPnodes.filter((pnode) => getHealthStatus(pnode, allPnodes) !== "Private" && pnode.node_type === "public").length;
     const publicTotal = publicCount || 0;
     const percent = publicTotal > 0 ? Number(((publicOnline / publicTotal) * 100).toFixed(1)) : 0;
     return { percent, publicOnline, publicTotal, ...getNetworkUptimeVisuals(percent) };
@@ -1055,7 +1055,7 @@ export const usePnodeDashboard = (theme?: string) => {
       range: bucket.label,
       min: bucket.min,
       max: bucket.max,
-      count: allPnodes.filter((pnode) => pnode.status === "active" && (pnode.stats?.cpu_percent ?? 0) >= bucket.min && (pnode.stats?.cpu_percent ?? 0) < bucket.max).length,
+      count: allPnodes.filter((pnode) => pnode.node_type === "public" && (pnode.stats?.cpu_percent ?? 0) >= bucket.min && (pnode.stats?.cpu_percent ?? 0) < bucket.max).length,
       color: bucket.color
     }));
   }, [allPnodes, theme]);
@@ -1063,7 +1063,7 @@ export const usePnodeDashboard = (theme?: string) => {
   const pagesDistribution = useMemo(() => {
     // Get all active nodes with pages data
     const activeNodesWithPages = allPnodes
-      .filter(p => p.status === "active" && (p.stats?.total_pages ?? 0) > 0)
+      .filter(p => p.node_type === "public" && (p.stats?.total_pages ?? 0) > 0)
       .map(p => p.stats?.total_pages ?? 0)
       .sort((a, b) => a - b);
 
@@ -1122,7 +1122,7 @@ export const usePnodeDashboard = (theme?: string) => {
     return pagesBuckets.map((bucket) => ({
       range: bucket.range,
       count: allPnodes.filter((pnode) =>
-        pnode.status === "active" &&
+        pnode.node_type === "public" &&
         (pnode.stats?.total_pages ?? 0) >= bucket.min &&
         (pnode.stats?.total_pages ?? 0) < bucket.max
       ).length,
@@ -1337,23 +1337,23 @@ export const usePnodeDashboard = (theme?: string) => {
     versionChart,
     healthDistribution: {
       excellent: allPnodes.filter(p => {
-        const isTarget = nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
+        const isTarget = nodeFilter === "all" ? p.node_type === "public" : (nodeFilter === "public" ? p.node_type === "public" : p.node_type === "private");
         return isTarget && p._healthStatus === "Excellent";
       }).length,
       good: allPnodes.filter(p => {
-        const isTarget = nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
+        const isTarget = nodeFilter === "all" ? p.node_type === "public" : (nodeFilter === "public" ? p.node_type === "public" : p.node_type === "private");
         return isTarget && p._healthStatus === "Good";
       }).length,
       warning: allPnodes.filter(p => {
-        const isTarget = nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
+        const isTarget = nodeFilter === "all" ? p.node_type === "public" : (nodeFilter === "public" ? p.node_type === "public" : p.node_type === "private");
         return isTarget && p._healthStatus === "Warning";
       }).length,
       critical: allPnodes.filter(p => {
-        const isTarget = nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
+        const isTarget = nodeFilter === "all" ? p.node_type === "public" : (nodeFilter === "public" ? p.node_type === "public" : p.node_type === "private");
         return isTarget && p._healthStatus === "Critical";
       }).length,
       total: allPnodes.filter(p => {
-        return nodeFilter === "all" ? p.status === "active" : (nodeFilter === "public" ? p.status === "active" : p.status === "gossip_only");
+        return nodeFilter === "all" ? p.node_type === "public" : (nodeFilter === "public" ? p.node_type === "public" : p.node_type === "private");
       }).length,
     },
     exportData,
