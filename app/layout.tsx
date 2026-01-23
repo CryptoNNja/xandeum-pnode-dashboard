@@ -11,7 +11,6 @@ import { STOINCCalculatorWidget } from "@/components/STOINCCalculator";
 import { DashboardProvider } from "@/lib/dashboard-context";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 
 export const metadata: Metadata = {
   title: "Xandeum P-Node Analytics",
