@@ -391,7 +391,7 @@ const PNodeTableComponent = ({
                   {pnode.pubkey ? (
                     <>
                       <span className="text-xs text-text-main font-mono">
-                        {pnode.pubkey.slice(0, 6)}...{pnode.pubkey.slice(-4)}
+                        {pnode.pubkey.slice(0, 3)}...{pnode.pubkey.slice(-3)}
                       </span>
                       <button
                         onClick={(e) => {
