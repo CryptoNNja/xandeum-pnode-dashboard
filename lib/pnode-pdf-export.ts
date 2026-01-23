@@ -83,7 +83,7 @@ export async function exportPNodeToPDF(
   const overviewData = [
     ['IP Address:', pnode.ip || 'Unknown'],
     ['Location:', [pnode.city, pnode.country].filter(Boolean).join(', ') || 'Unknown'],
-    ['Status:', `${health} (${pnode.status === 'active' ? 'Public' : 'Private'} Node)`],
+    ['Status:', `${health} (${pnode.node_type === 'public' ? 'Public' : 'Private'} Node)`],
     ['Version:', pnode.version || 'Unknown'],
   ];
   

@@ -158,7 +158,7 @@ export const generatePDFReport = (data: PDFReportData) => {
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   const topNodesTitle = data.isCustomSelection 
-    ? `Top ${Math.min(data.nodes.filter(n => n.status === 'active').length, 10)} Selected Nodes`
+    ? `Top ${Math.min(data.nodes.filter(n => n.node_type === 'public').length, 10)} Selected Nodes`
     : 'Top 10 Performing Nodes';
   doc.text(topNodesTitle, 14, yPosition);
   
@@ -166,7 +166,7 @@ export const generatePDFReport = (data: PDFReportData) => {
 
   // Sort nodes by score (use _score from augmented nodes or calculate)
   const topNodes = [...data.nodes]
-    .filter(n => n.status === 'active')
+    .filter(n => n.node_type === 'public')
     .sort((a, b) => ((b as any)._score || 0) - ((a as any)._score || 0))
     .slice(0, 10);
 
@@ -290,7 +290,7 @@ export const generatePDFReport = (data: PDFReportData) => {
 
   // Top storage contributors
   const topStorageNodes = [...data.nodes]
-    .filter(n => n.status === 'active')
+    .filter(n => n.node_type === 'public')
     .sort((a, b) => (b.stats?.storage_committed || 0) - (a.stats?.storage_committed || 0))
     .slice(0, 10);
 

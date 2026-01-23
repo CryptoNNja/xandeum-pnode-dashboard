@@ -43,17 +43,17 @@ async function saveDailySnapshot() {
 
     // 2. Calculate metrics
     const totalNodes = pnodes.length;
-    const activeNodes = pnodes.filter(p => p.status === "active");
-    const privateNodes = pnodes.filter(p => p.status === "gossip_only");
+    const activeNodes = pnodes.filter(p => p.node_type === "public");
+    const privateNodes = pnodes.filter(p => p.node_type === "private");
 
     // 🆕 Calculate network-specific breakdown
     const mainnetNodes = pnodes.filter(p => (p as any).network === "MAINNET");
     const devnetNodes = pnodes.filter(p => (p as any).network === "DEVNET");
     
-    const mainnetPublic = mainnetNodes.filter(p => p.status === "active").length;
-    const mainnetPrivate = mainnetNodes.filter(p => p.status === "gossip_only").length;
-    const devnetPublic = devnetNodes.filter(p => p.status === "active").length;
-    const devnetPrivate = devnetNodes.filter(p => p.status === "gossip_only").length;
+    const mainnetPublic = mainnetNodes.filter(p => p.node_type === "public").length;
+    const mainnetPrivate = mainnetNodes.filter(p => p.node_type === "private").length;
+    const devnetPublic = devnetNodes.filter(p => p.node_type === "public").length;
+    const devnetPrivate = devnetNodes.filter(p => p.node_type === "private").length;
 
     const totalStorageBytes = activeNodes.reduce(
       (sum, p) => sum + (p.stats?.file_size ?? 0),

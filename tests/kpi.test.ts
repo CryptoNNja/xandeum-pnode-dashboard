@@ -6,7 +6,7 @@ import { EMPTY_STATS } from "../lib/types";
 // Helper to build a mock PNode object
 const buildNode = (overrides: Partial<PNode> & { ip: string }): PNode => ({
   ip: overrides.ip,
-  status: overrides.status ?? "active",
+  status: overrides.status ?? "online",
   stats: overrides.stats ?? { ...EMPTY_STATS },
   version: overrides.version,
 });
@@ -31,7 +31,7 @@ describe("computeVersionOverview", () => {
       buildNode({ ip: "3.3.3.3", version: "v0.7.1" }),
       buildNode({ ip: "4.4.4.4", version: "v0.6.0" }),
       buildNode({ ip: "5.5.5.5", version: "v0.5.2" }),
-      buildNode({ ip: "6.6.6.6", status: "gossip_only" }),
+      buildNode({ ip: "6.6.6.6", status: "online" }),
       buildNode({ ip: "7.7.7.7", version: "custom-build" }),
       buildNode({ ip: "8.8.8.8", version: "v0.7.0" }), // Another v0.7
     ];

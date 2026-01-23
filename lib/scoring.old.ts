@@ -10,7 +10,7 @@ import type { PNode, PNodeStats } from "./types";
  */
 export function calculateNodeScore(pnode: PNode): number {
   // Private nodes = 0
-  if (pnode.status === 'gossip_only' || pnode.stats.uptime === 0) {
+  if (pnode.node_type === 'private' || pnode.stats.uptime === 0) {
     return 0;
   }
 
