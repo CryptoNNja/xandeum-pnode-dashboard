@@ -19,11 +19,11 @@ on:
       keep_zombies:
         description: 'Keep unreachable nodes (mark as stale) instead of deleting them'
         required: false
-        default: 'false'
+        default: 'true'
         type: choice
         options:
-          - 'false'
           - 'true'
+          - 'false'
   
   # Optional: Run on push to main (for testing)
   # push:
@@ -72,11 +72,12 @@ jobs:
           else
             export CRAWLER_PORT_FALLBACKS=0
           fi
-          # Keep zombies (mark as stale) only when manually requested
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.keep_zombies }}" = "true" ]; then
-            export CRAWLER_KEEP_ZOMBIES=1
-          else
+          # Keep zombies (mark as stale) by DEFAULT for data retention
+          # Only delete when manually requested with keep_zombies=false
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.keep_zombies }}" = "false" ]; then
             export CRAWLER_KEEP_ZOMBIES=0
+          else
+            export CRAWLER_KEEP_ZOMBIES=1
           fi
           echo "Environment check before running:"
           echo "SUPABASE_URL is set: $([ -n \"$SUPABASE_URL\" ] && echo 'YES' || echo 'NO')"

@@ -399,3 +399,104 @@ body {
   z-index: 1;
 }
 
+
+/* Multi-node badge styling - Premium gradient design with glow */
+.multi-node-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  
+  /* Gradient text color */
+  background-image: linear-gradient(135deg, 
+    rgb(139, 92, 246) 0%, 
+    rgb(59, 130, 246) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  
+  /* Positioning for pseudo-element background */
+  position: relative;
+  
+  /* Glow effect */
+  box-shadow: 
+    0 0 8px rgba(139, 92, 246, 0.3),
+    0 0 16px rgba(59, 130, 246, 0.2),
+    inset 0 0 12px rgba(139, 92, 246, 0.1);
+  
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: help;
+}
+
+/* Gradient background using pseudo-element to avoid conflicts */
+.multi-node-badge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  
+  /* Gradient violet → bleu background */
+  background: linear-gradient(135deg, 
+    rgba(139, 92, 246, 0.25) 0%, 
+    rgba(59, 130, 246, 0.25) 100%);
+  
+  /* Gradient border */
+  border: 1.5px solid transparent;
+  background-origin: border-box;
+  
+  z-index: -1;
+}
+
+.multi-node-badge:hover {
+  /* Enhanced glow on hover + animation */
+  box-shadow: 
+    0 0 12px rgba(139, 92, 246, 0.5),
+    0 0 24px rgba(59, 130, 246, 0.3),
+    inset 0 0 16px rgba(139, 92, 246, 0.2);
+  
+  transform: scale(1.08) translateY(-1px);
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+/* Pulse animation for multi-node badge */
+@keyframes badge-pulse {
+  0%, 100% { 
+    box-shadow: 
+      0 0 8px rgba(139, 92, 246, 0.3),
+      0 0 16px rgba(59, 130, 246, 0.2);
+  }
+  50% { 
+    box-shadow: 
+      0 0 12px rgba(139, 92, 246, 0.5),
+      0 0 24px rgba(59, 130, 246, 0.3);
+  }
+}
+
+/* Dark mode enhancements */
+:root[data-theme="dark"] .multi-node-badge {
+  background: linear-gradient(135deg, 
+    rgba(167, 139, 250, 0.3) 0%, 
+    rgba(96, 165, 250, 0.3) 100%);
+  
+  box-shadow: 
+    0 0 10px rgba(167, 139, 250, 0.4),
+    0 0 20px rgba(96, 165, 250, 0.25),
+    inset 0 0 15px rgba(167, 139, 250, 0.15);
+}
+
+:root[data-theme="dark"] .multi-node-badge::before {
+  background: linear-gradient(135deg, 
+    rgb(167, 139, 250) 0%, 
+    rgb(96, 165, 250) 100%);
+}
+
+:root[data-theme="dark"] .multi-node-badge:hover {
+  box-shadow: 
+    0 0 16px rgba(167, 139, 250, 0.6),
+    0 0 32px rgba(96, 165, 250, 0.4),
+    inset 0 0 20px rgba(167, 139, 250, 0.25);
+}

@@ -40,27 +40,32 @@ describe('Utils - Data Formatting', () => {
   });
 
   describe('formatBytesAdaptive', () => {
-    it('should choose appropriate unit', () => {
+    it('should choose appropriate unit with 2 decimal precision', () => {
       expect(formatBytesAdaptive(512)).toBe('0.5 KB');
       expect(formatBytesAdaptive(1536)).toBe('1.5 KB');
-      expect(formatBytesAdaptive(1572864)).toBe('1.5 MB');
-      expect(formatBytesAdaptive(1610612736)).toBe('1.5 GB');
-      expect(formatBytesAdaptive(1649267441664)).toBe('1.5 TB');
+      expect(formatBytesAdaptive(1572864)).toBe('1.50 MB'); // 2 decimals for MB/GB/TB
+      expect(formatBytesAdaptive(1610612736)).toBe('1.50 GB'); // 2 decimals
+      expect(formatBytesAdaptive(1649267441664)).toBe('1.50 TB'); // 2 decimals
+      expect(formatBytesAdaptive(1024 ** 2)).toBe('1.00 MB');
+      expect(formatBytesAdaptive(15.95 * 1024 ** 4)).toBe('15.95 TB'); // Precise values
     });
   });
 
   describe('formatUptime', () => {
     it('should format uptime correctly', () => {
       expect(formatUptime(0)).toBe('—');
-      expect(formatUptime(59)).toBe('0m'); // 0 minutes
-      expect(formatUptime(60)).toBe('1m');
-      expect(formatUptime(3600)).toBe('1h 0m');
-      expect(formatUptime(86400)).toBe('1d 0h');
-      expect(formatUptime(90061)).toBe('1d 1h');
+      expect(formatUptime(30)).toBe('30s'); // 30 seconds
+      expect(formatUptime(59)).toBe('59s'); // 59 seconds
+      expect(formatUptime(60)).toBe('1m 0s'); // 1 minute
+      expect(formatUptime(90)).toBe('1m 30s'); // 1 minute 30 seconds
+      expect(formatUptime(3600)).toBe('1h 0m'); // 1 hour
+      expect(formatUptime(3660)).toBe('1h 1m'); // 1 hour 1 minute
+      expect(formatUptime(86400)).toBe('1d 0h'); // 1 day
+      expect(formatUptime(90061)).toBe('1d 1h'); // 1 day 1 hour
     });
 
     it('should handle complex durations', () => {
-      expect(formatUptime(93784)).toBe('1d 2h');
+      expect(formatUptime(93784)).toBe('1d 2h'); // 1 day 2 hours
     });
   });
 });

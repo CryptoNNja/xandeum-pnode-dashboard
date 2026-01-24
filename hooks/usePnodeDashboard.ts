@@ -54,7 +54,7 @@ export type Alert = {
 
 export const usePnodeDashboard = (theme?: string) => {
   const toast = useToast();
-  const [allPnodes, setAllPnodes] = useState<(PNode & { _score: number; _healthStatus: string })[]>([]);
+  const [allPnodes, setAllPnodes] = useState<(PNode & { _score: number; _healthStatus: string; _combinedStatus: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
@@ -145,9 +145,10 @@ export const usePnodeDashboard = (theme?: string) => {
   // Network metadata (gossip discovery stats)
   // Calculate networkMetadata from deduplicated allPnodes instead of fetching from API
   // This ensures consistency with the deduplicated data shown everywhere
+  // ⚠️ IMPORTANT: Exclude 'stale' nodes from counts
   const networkMetadata = useMemo(() => {
-    const totalNodes = allPnodes.length;
-    const activeNodes = allPnodes.filter(p => p.node_type === "public").length;
+    const totalNodes = allPnodes.filter(p => p.status !== "stale").length; // ⚠️ Exclude stale
+    const activeNodes = allPnodes.filter(p => p.node_type === "public" && p.status !== "stale").length; // ⚠️ Exclude stale
     
     return {
       networkTotal: totalNodes,
@@ -160,7 +161,7 @@ export const usePnodeDashboard = (theme?: string) => {
 
   // 🆕 Nodes grouped by pubkey (for multi-node operator detection)
   const nodesByPubkey = useMemo(() => {
-    const map = new Map<string, (PNode & { _score: number; _healthStatus: string })[]>();
+    const map = new Map<string, (PNode & { _score: number; _healthStatus: string; _combinedStatus: string })[]>();
     allPnodes.forEach(node => {
       if (node.pubkey) {
         const existing = map.get(node.pubkey) || [];
@@ -294,6 +295,25 @@ export const usePnodeDashboard = (theme?: string) => {
           const score = calculateNodeScore(p, uniqueNodes); // ✨ Pass network context
           const healthStatus = getHealthStatus(p, uniqueNodes); // ✨ Pass network context for accurate health
           
+          // 🆕 Calculate combined status for filtering (Online/Warning/Critical/Private)
+          const isPrivate = p.node_type !== "public";
+          let combinedStatus = "Unknown";
+          
+          if (isPrivate) {
+            combinedStatus = "Private";
+          } else {
+            // Public node - map health to combined status
+            if (healthStatus === "Excellent" || healthStatus === "Good") {
+              combinedStatus = "Online";
+            } else if (healthStatus === "Warning") {
+              combinedStatus = "Warning";
+            } else if (healthStatus === "Critical") {
+              combinedStatus = "Critical";
+            } else {
+              combinedStatus = "Unknown";
+            }
+          }
+          
           // 🆕 Enrich with credits from creditsMap
           const credits = p.pubkey ? creditsMap.get(p.pubkey) : undefined;
           
@@ -301,7 +321,8 @@ export const usePnodeDashboard = (theme?: string) => {
             ...p,
             credits, // 🆕 Add credits to node
             _score: score,
-            _healthStatus: healthStatus
+            _healthStatus: healthStatus,
+            _combinedStatus: combinedStatus
           };
         });
         
@@ -427,7 +448,7 @@ export const usePnodeDashboard = (theme?: string) => {
         if (!selectedVersions.includes(bucketId)) return;
       }
       // Health
-      if (selectedHealthStatuses.length > 0 && !selectedHealthStatuses.includes(p._healthStatus)) return;
+      if (selectedHealthStatuses.length > 0 && !selectedHealthStatuses.includes(p._combinedStatus)) return;
       // CPU (instant feedback)
       if (minCpu > 0 && (p.stats?.cpu_percent ?? 0) < minCpu) return;
       // Storage (instant feedback using bytes)
@@ -465,8 +486,9 @@ export const usePnodeDashboard = (theme?: string) => {
         // Pubkey search
         if (p.pubkey?.toLowerCase().includes(q)) return true;
         
-        // Health status search
+        // Health status search (both health and combined status)
         if (p._healthStatus?.toLowerCase().includes(q)) return true;
+        if (p._combinedStatus?.toLowerCase().includes(q)) return true;
         
         return false;
       });
@@ -498,9 +520,9 @@ export const usePnodeDashboard = (theme?: string) => {
       });
     }
 
-    // Advanced: Health Status
+    // Advanced: Combined Status (Online/Warning/Critical/Private)
     if (selectedHealthStatuses.length > 0) {
-      result = result.filter(p => selectedHealthStatuses.includes(p._healthStatus));
+      result = result.filter(p => selectedHealthStatuses.includes(p._combinedStatus));
     }
 
     // Advanced: Min CPU
@@ -657,9 +679,14 @@ export const usePnodeDashboard = (theme?: string) => {
   }, [filteredAndSortedPNodes, gridLimit]);
 
   // Derived global states (always based on allPnodes)
-  const activeNodes = useMemo(() => allPnodes.filter((pnode) => pnode.node_type === "public"), [allPnodes]);
+  // Active nodes = public nodes that are currently online (not offline/stale)
+  // ⚠️ IMPORTANT: Exclude 'stale' nodes from all KPI calculations
+  const activeNodes = useMemo(() => 
+    allPnodes.filter((pnode) => pnode.node_type === "public" && pnode.status === "online"), 
+    [allPnodes]
+  );
   const publicCount = activeNodes.length;
-  const privateCount = useMemo(() => allPnodes.filter((pnode) => pnode.node_type === "private").length, [allPnodes]);
+  const privateCount = useMemo(() => allPnodes.filter((pnode) => pnode.node_type === "private" && pnode.status !== "stale").length, [allPnodes]);
   
   // Alert system synchronized with Health Status
   // Generates detailed, actionable alerts based on expert SRE thresholds
@@ -937,16 +964,18 @@ export const usePnodeDashboard = (theme?: string) => {
     let totalUsed = 0;
 
     // allPnodes is already deduplicated by pubkey in loadData()
-    // Storage committed: ALL nodes (even gossip_only)
+    // Storage committed: ALL nodes (even private) BUT exclude 'stale' nodes
     allPnodes.forEach((pnode) => {
+      if (pnode.status === "stale") return; // ⚠️ Exclude stale nodes
       const stats = pnode.stats;
       if (!stats) return;
       const committed = stats.storage_committed ?? 0;
       totalCommitted += Number.isFinite(committed) ? committed : 0;
     });
 
-    // Storage used: ALL nodes (to match storage_committed scope)
+    // Storage used: ALL nodes (to match storage_committed scope) BUT exclude 'stale' nodes
     allPnodes.forEach((pnode) => {
+      if (pnode.status === "stale") return; // ⚠️ Exclude stale nodes
       const stats = pnode.stats;
       if (!stats) return;
       const used = stats.storage_used ?? 0;
@@ -991,7 +1020,7 @@ export const usePnodeDashboard = (theme?: string) => {
   );
 
   const avgCpuUsage = useMemo(() => {
-    const allActiveNodes = allPnodes.filter((pnode) => pnode.node_type === "public");
+    const allActiveNodes = allPnodes.filter((pnode) => pnode.node_type === "public" && pnode.status !== "stale"); // ⚠️ Exclude stale
     const activeCpuNodes = allActiveNodes.filter((pnode) => (pnode.stats?.cpu_percent ?? 0) > 0);
     
     if (activeCpuNodes.length === 0) return { 
@@ -1010,7 +1039,7 @@ export const usePnodeDashboard = (theme?: string) => {
   }, [allPnodes]);
 
   const avgRamUsage = useMemo(() => {
-    const allActiveNodes = allPnodes.filter((pnode) => pnode.node_type === "public");
+    const allActiveNodes = allPnodes.filter((pnode) => pnode.node_type === "public" && pnode.status !== "stale"); // ⚠️ Exclude stale
     const activeRamNodes = allActiveNodes.filter((pnode) => (pnode.stats?.ram_total ?? 0) > 0);
     
     if (activeRamNodes.length === 0) return { 
@@ -1038,7 +1067,7 @@ export const usePnodeDashboard = (theme?: string) => {
   }, [allPnodes]);
 
   const networkUptimeStats = useMemo(() => {
-    const publicOnline = allPnodes.filter((pnode) => getHealthStatus(pnode, allPnodes) !== "Private" && pnode.node_type === "public").length;
+    const publicOnline = allPnodes.filter((pnode) => getHealthStatus(pnode, allPnodes) !== "Private" && pnode.node_type === "public" && pnode.status !== "stale").length; // ⚠️ Exclude stale
     const publicTotal = publicCount || 0;
     const percent = publicTotal > 0 ? Number(((publicOnline / publicTotal) * 100).toFixed(1)) : 0;
     return { percent, publicOnline, publicTotal, ...getNetworkUptimeVisuals(percent) };
@@ -1046,7 +1075,7 @@ export const usePnodeDashboard = (theme?: string) => {
 
   const storageDistribution = useMemo(() => STORAGE_BUCKETS.map((bucket) => ({
     range: bucket.label,
-    count: allPnodes.filter((pnode) => (pnode.stats?.storage_committed ?? 0) >= bucket.min && (pnode.stats?.storage_committed ?? 0) < bucket.max).length
+    count: allPnodes.filter((pnode) => pnode.status !== "stale" && (pnode.stats?.storage_committed ?? 0) >= bucket.min && (pnode.stats?.storage_committed ?? 0) < bucket.max).length // ⚠️ Exclude stale
   })), [allPnodes]);
 
   const cpuDistribution = useMemo(() => {
@@ -1055,15 +1084,15 @@ export const usePnodeDashboard = (theme?: string) => {
       range: bucket.label,
       min: bucket.min,
       max: bucket.max,
-      count: allPnodes.filter((pnode) => pnode.node_type === "public" && (pnode.stats?.cpu_percent ?? 0) >= bucket.min && (pnode.stats?.cpu_percent ?? 0) < bucket.max).length,
+      count: allPnodes.filter((pnode) => pnode.node_type === "public" && pnode.status !== "stale" && (pnode.stats?.cpu_percent ?? 0) >= bucket.min && (pnode.stats?.cpu_percent ?? 0) < bucket.max).length, // ⚠️ Exclude stale
       color: bucket.color
     }));
   }, [allPnodes, theme]);
 
   const pagesDistribution = useMemo(() => {
-    // Get all active nodes with pages data
+    // Get all active nodes with pages data (exclude stale nodes)
     const activeNodesWithPages = allPnodes
-      .filter(p => p.node_type === "public" && (p.stats?.total_pages ?? 0) > 0)
+      .filter(p => p.node_type === "public" && p.status !== "stale" && (p.stats?.total_pages ?? 0) > 0) // ⚠️ Exclude stale
       .map(p => p.stats?.total_pages ?? 0)
       .sort((a, b) => a - b);
 
