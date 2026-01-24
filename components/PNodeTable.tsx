@@ -373,10 +373,27 @@ const PNodeTableComponent = ({
                 {/* 🆕 PUBKEY/OPERATOR CELL */}
                 <td className="p-4 align-middle" style={{ textAlign: 'center' }}>
                   {pnode.pubkey ? (
-                    <div className="flex items-center justify-center gap-1">
+                    <div className="flex items-center justify-center gap-1.5">
                       <span className="text-xs text-text-main font-mono">
                         {pnode.pubkey.slice(0, 3)}...{pnode.pubkey.slice(-3)}
                       </span>
+                      {(() => {
+                        // Get node count from nodesByPubkey context (passed via props or context)
+                        // For now, count directly from data array
+                        const operatorNodeCount = data.filter(n => n.pubkey === pnode.pubkey).length;
+                        
+                        if (operatorNodeCount > 1) {
+                          return (
+                            <span 
+                              className="multi-node-badge"
+                              title={`This operator runs ${operatorNodeCount} nodes`}
+                            >
+                              {operatorNodeCount}
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
