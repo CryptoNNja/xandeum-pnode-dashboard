@@ -140,22 +140,7 @@ const PNodeTableComponent = ({
     >
       <div className="w-full overflow-x-auto">
         <table className="min-w-full text-left border-collapse text-sm" style={{ tableLayout: 'auto' }}>
-          <colgroup>
-            {onToggleSelection && <col style={{ width: '45px' }} />}
-            {onToggleFavorite && <col style={{ width: '45px' }} />}
-            <col style={{ width: '50px' }} /> {/* Network - compact dot */}
-            <col style={{ width: '65px' }} /> {/* Score - compact circle */}
-            <col style={{ width: '130px' }} /> {/* Operator - with badge */}
-            <col style={{ minWidth: '135px' }} /> {/* IP Address - flexible */}
-            <col style={{ width: '90px' }} /> {/* Credits */}
-            <col style={{ width: '105px' }} /> {/* Status */}
-            <col style={{ width: '75px' }} /> {/* Version */}
-            <col style={{ width: '65px' }} /> {/* CPU */}
-            <col style={{ width: '65px' }} /> {/* RAM */}
-            <col style={{ width: '105px' }} /> {/* Storage - 2 lines compact */}
-            <col style={{ width: '105px' }} /> {/* Traffic - 2 lines compact */}
-            <col style={{ width: '85px' }} /> {/* Uptime */}
-          </colgroup>
+          <colgroup>{onToggleSelection && <col style={{ width: '45px' }} />}{onToggleFavorite && <col style={{ width: '45px' }} />}<col style={{ width: '50px' }} /><col style={{ width: '65px' }} /><col style={{ width: '130px' }} /><col style={{ minWidth: '135px' }} /><col style={{ width: '90px' }} /><col style={{ width: '105px' }} /><col style={{ width: '75px' }} /><col style={{ width: '65px' }} /><col style={{ width: '65px' }} /><col style={{ width: '105px' }} /><col style={{ width: '105px' }} /><col style={{ width: '85px' }} /></colgroup>
         <thead>
           <tr
             className={clsx(
