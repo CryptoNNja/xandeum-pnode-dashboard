@@ -411,14 +411,6 @@ body {
   font-size: 10px;
   font-weight: 700;
   
-  /* Gradient text color */
-  background-image: linear-gradient(135deg, 
-    rgb(139, 92, 246) 0%, 
-    rgb(59, 130, 246) 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  
   /* Positioning for pseudo-element background */
   position: relative;
   
@@ -430,6 +422,22 @@ body {
   
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: help;
+}
+
+/* Icon (emoji) - keep visible, no gradient */
+.multi-node-icon {
+  filter: grayscale(0) brightness(1.2);
+  font-size: 11px;
+}
+
+/* Count number - apply gradient */
+.multi-node-count {
+  background-image: linear-gradient(135deg, 
+    rgb(139, 92, 246) 0%, 
+    rgb(59, 130, 246) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
 }
 
 /* Gradient background using pseudo-element to avoid conflicts */
@@ -478,20 +486,22 @@ body {
 
 /* Dark mode enhancements */
 :root[data-theme="dark"] .multi-node-badge {
-  background: linear-gradient(135deg, 
-    rgba(167, 139, 250, 0.3) 0%, 
-    rgba(96, 165, 250, 0.3) 100%);
-  
   box-shadow: 
     0 0 10px rgba(167, 139, 250, 0.4),
     0 0 20px rgba(96, 165, 250, 0.25),
     inset 0 0 15px rgba(167, 139, 250, 0.15);
 }
 
-:root[data-theme="dark"] .multi-node-badge::before {
-  background: linear-gradient(135deg, 
+:root[data-theme="dark"] .multi-node-count {
+  background-image: linear-gradient(135deg, 
     rgb(167, 139, 250) 0%, 
     rgb(96, 165, 250) 100%);
+}
+
+:root[data-theme="dark"] .multi-node-badge::before {
+  background: linear-gradient(135deg, 
+    rgba(167, 139, 250, 0.3) 0%, 
+    rgba(96, 165, 250, 0.3) 100%);
 }
 
 :root[data-theme="dark"] .multi-node-badge:hover {
