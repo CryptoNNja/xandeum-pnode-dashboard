@@ -374,9 +374,6 @@ const PNodeTableComponent = ({
                 <td className="p-4 align-middle" style={{ textAlign: 'center' }}>
                   {pnode.pubkey ? (
                     <div className="flex items-center justify-center gap-1.5">
-                      <span className="text-xs text-text-main font-mono">
-                        {pnode.pubkey.slice(0, 3)}...{pnode.pubkey.slice(-3)}
-                      </span>
                       {(() => {
                         // Get node count from nodesByPubkey context (passed via props or context)
                         // For now, count directly from data array
@@ -394,6 +391,9 @@ const PNodeTableComponent = ({
                         }
                         return null;
                       })()}
+                      <span className="text-xs text-text-main font-mono">
+                        {pnode.pubkey.slice(0, 3)}...{pnode.pubkey.slice(-3)}
+                      </span>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
