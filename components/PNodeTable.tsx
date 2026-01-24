@@ -139,22 +139,22 @@ const PNodeTableComponent = ({
       )}
     >
       <div className="w-full overflow-x-auto">
-        <table className="min-w-full text-left border-collapse text-sm" style={{ tableLayout: 'fixed', width: '1400px' }}>
+        <table className="min-w-full text-left border-collapse text-sm" style={{ tableLayout: 'auto' }}>
           <colgroup>
-            {onToggleSelection && <col style={{ width: '50px' }} />}
-            {onToggleFavorite && <col style={{ width: '55px' }} />}
-            <col style={{ width: '70px' }} /> {/* Network */}
-            <col style={{ width: '70px' }} /> {/* Score */}
-            <col style={{ width: '140px' }} /> {/* Operator - increased for badge */}
-            <col style={{ width: '150px' }} /> {/* IP Address */}
-            <col style={{ width: '100px' }} /> {/* Credits */}
-            <col style={{ width: '110px' }} /> {/* Status */}
-            <col style={{ width: '85px' }} /> {/* Version */}
-            <col style={{ width: '75px' }} /> {/* CPU */}
-            <col style={{ width: '80px' }} /> {/* RAM */}
-            <col style={{ width: '120px' }} /> {/* Storage */}
-            <col style={{ width: '120px' }} /> {/* Traffic */}
-            <col style={{ width: '100px' }} /> {/* Uptime */}
+            {onToggleSelection && <col style={{ width: '45px' }} />}
+            {onToggleFavorite && <col style={{ width: '45px' }} />}
+            <col style={{ width: '50px' }} /> {/* Network - compact dot */}
+            <col style={{ width: '65px' }} /> {/* Score - compact circle */}
+            <col style={{ width: '130px' }} /> {/* Operator - with badge */}
+            <col style={{ minWidth: '135px' }} /> {/* IP Address - flexible */}
+            <col style={{ width: '90px' }} /> {/* Credits */}
+            <col style={{ width: '105px' }} /> {/* Status */}
+            <col style={{ width: '75px' }} /> {/* Version */}
+            <col style={{ width: '65px' }} /> {/* CPU */}
+            <col style={{ width: '65px' }} /> {/* RAM */}
+            <col style={{ width: '105px' }} /> {/* Storage - 2 lines compact */}
+            <col style={{ width: '105px' }} /> {/* Traffic - 2 lines compact */}
+            <col style={{ width: '85px' }} /> {/* Uptime */}
           </colgroup>
         <thead>
           <tr
