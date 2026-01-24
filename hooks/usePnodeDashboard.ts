@@ -54,7 +54,7 @@ export type Alert = {
 
 export const usePnodeDashboard = (theme?: string) => {
   const toast = useToast();
-  const [allPnodes, setAllPnodes] = useState<(PNode & { _score: number; _healthStatus: string })[]>([]);
+  const [allPnodes, setAllPnodes] = useState<(PNode & { _score: number; _healthStatus: string; _combinedStatus: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
@@ -161,7 +161,7 @@ export const usePnodeDashboard = (theme?: string) => {
 
   // 🆕 Nodes grouped by pubkey (for multi-node operator detection)
   const nodesByPubkey = useMemo(() => {
-    const map = new Map<string, (PNode & { _score: number; _healthStatus: string })[]>();
+    const map = new Map<string, (PNode & { _score: number; _healthStatus: string; _combinedStatus: string })[]>();
     allPnodes.forEach(node => {
       if (node.pubkey) {
         const existing = map.get(node.pubkey) || [];
@@ -295,6 +295,25 @@ export const usePnodeDashboard = (theme?: string) => {
           const score = calculateNodeScore(p, uniqueNodes); // ✨ Pass network context
           const healthStatus = getHealthStatus(p, uniqueNodes); // ✨ Pass network context for accurate health
           
+          // 🆕 Calculate combined status for filtering (Online/Warning/Critical/Private)
+          const isPrivate = p.node_type !== "public";
+          let combinedStatus = "Unknown";
+          
+          if (isPrivate) {
+            combinedStatus = "Private";
+          } else {
+            // Public node - map health to combined status
+            if (healthStatus === "Excellent" || healthStatus === "Good") {
+              combinedStatus = "Online";
+            } else if (healthStatus === "Warning") {
+              combinedStatus = "Warning";
+            } else if (healthStatus === "Critical") {
+              combinedStatus = "Critical";
+            } else {
+              combinedStatus = "Unknown";
+            }
+          }
+          
           // 🆕 Enrich with credits from creditsMap
           const credits = p.pubkey ? creditsMap.get(p.pubkey) : undefined;
           
@@ -302,7 +321,8 @@ export const usePnodeDashboard = (theme?: string) => {
             ...p,
             credits, // 🆕 Add credits to node
             _score: score,
-            _healthStatus: healthStatus
+            _healthStatus: healthStatus,
+            _combinedStatus: combinedStatus
           };
         });
         
@@ -428,7 +448,7 @@ export const usePnodeDashboard = (theme?: string) => {
         if (!selectedVersions.includes(bucketId)) return;
       }
       // Health
-      if (selectedHealthStatuses.length > 0 && !selectedHealthStatuses.includes(p._healthStatus)) return;
+      if (selectedHealthStatuses.length > 0 && !selectedHealthStatuses.includes(p._combinedStatus)) return;
       // CPU (instant feedback)
       if (minCpu > 0 && (p.stats?.cpu_percent ?? 0) < minCpu) return;
       // Storage (instant feedback using bytes)
@@ -466,8 +486,9 @@ export const usePnodeDashboard = (theme?: string) => {
         // Pubkey search
         if (p.pubkey?.toLowerCase().includes(q)) return true;
         
-        // Health status search
+        // Health status search (both health and combined status)
         if (p._healthStatus?.toLowerCase().includes(q)) return true;
+        if (p._combinedStatus?.toLowerCase().includes(q)) return true;
         
         return false;
       });
@@ -499,9 +520,9 @@ export const usePnodeDashboard = (theme?: string) => {
       });
     }
 
-    // Advanced: Health Status
+    // Advanced: Combined Status (Online/Warning/Critical/Private)
     if (selectedHealthStatuses.length > 0) {
-      result = result.filter(p => selectedHealthStatuses.includes(p._healthStatus));
+      result = result.filter(p => selectedHealthStatuses.includes(p._combinedStatus));
     }
 
     // Advanced: Min CPU

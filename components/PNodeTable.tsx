@@ -117,11 +117,10 @@ const PNodeTableComponent = ({
   const headers = [
     { key: "network", label: "Network", sortable: true }, // Network column - sortable
     { key: "score", label: "Score", sortable: true },
-    { key: "pubkey", label: "Operator", sortable: true }, // 🆕 New column for pubkey/operator
+    { key: "pubkey", label: "Operator", sortable: true }, // Pubkey/operator column
     { key: "ip", label: "IP Address", sortable: true },
-    { key: "credits", label: "Credits", sortable: true }, // 🆕 Credits earned (XAN) - sortable
-    { key: "status", label: "Type", sortable: true }, // 🆕 Node type (Public/Private/Unknown)
-    { key: "health", label: "Health", sortable: true }, // 🆕 Health score (Good/Warning/Critical)
+    { key: "credits", label: "Credits", sortable: true }, // Credits earned (XAN) - sortable
+    { key: "status", label: "Status", sortable: true }, // Combined status (Online/Warning/Critical/Private)
     { key: "version", label: "Version", sortable: true },
     { key: "cpu", label: "CPU", sortable: true },
     { key: "ram", label: "RAM", sortable: true },
@@ -149,8 +148,7 @@ const PNodeTableComponent = ({
             <col style={{ width: '85px' }} />
             <col style={{ width: '140px' }} />
             <col style={{ width: '90px' }} />
-            <col style={{ width: '80px' }} />
-            <col style={{ width: '80px' }} />
+            <col style={{ width: '95px' }} />
             <col style={{ width: '75px' }} />
             <col style={{ width: '65px' }} />
             <col style={{ width: '70px' }} />
@@ -220,11 +218,25 @@ const PNodeTableComponent = ({
           )}
         >
           {data.map((pnode, index) => {
-            // Health status only for public nodes with stats
-            const healthStatus = pnode.node_type === "public" 
-              ? ((pnode as any)._healthStatus || "Unknown")
-              : null; // Private nodes have no public health metrics
-            const nodeType = pnode.node_type; // public/private/unknown
+            // Determine combined status based on node type and health
+            const isPrivate = pnode.node_type !== "public";
+            let combinedStatus = "Unknown";
+            
+            if (isPrivate) {
+              combinedStatus = "Private";
+            } else {
+              // Public node - show health status
+              const healthStatus = (pnode as any)._healthStatus || "Unknown";
+              if (healthStatus === "Excellent" || healthStatus === "Good") {
+                combinedStatus = "Online";
+              } else if (healthStatus === "Warning") {
+                combinedStatus = "Warning";
+              } else if (healthStatus === "Critical") {
+                combinedStatus = "Critical";
+              } else {
+                combinedStatus = "Unknown";
+              }
+            }
 
             // Helper to get CSS variable value
             const getCssVar = (varName: string, fallback: string): string => {
@@ -247,36 +259,21 @@ const PNodeTableComponent = ({
               return `rgba(${r}, ${g}, ${b}, ${alpha})`;
             };
 
-            const getHealthColor = (health: string) => {
-              if (health === "Excellent") return getCssVar("--kpi-excellent", "#10B981");
-              if (health === "Good") return getCssVar("--kpi-good", "#3B82F6");
-              if (health === "Warning") return getCssVar("--kpi-warning", "#F59E0B");
-              if (health === "Critical") return getCssVar("--kpi-critical", "#EF4444");
-              return getCssVar("--kpi-private", "#64748B"); // Private
+            const getStatusColor = (status: string) => {
+              if (status === "Online") return getCssVar("--kpi-excellent", "#10B981");
+              if (status === "Warning") return getCssVar("--kpi-warning", "#F59E0B");
+              if (status === "Critical") return getCssVar("--kpi-critical", "#EF4444");
+              if (status === "Private") return getCssVar("--kpi-private", "#64748B");
+              return getCssVar("--text-faint", "#64748B"); // Unknown
             };
 
-            const getNodeTypeColor = (type: string) => {
-              if (type === "public") return getCssVar("--kpi-excellent", "#10B981");
-              if (type === "private") return getCssVar("--kpi-warning", "#F59E0B");
-              if (type === "unknown") return getCssVar("--text-faint", "#64748B");
-              return getCssVar("--text-faint", "#64748B");
+            const statusColor = getStatusColor(combinedStatus);
+            const statusBadgeStyle = {
+              backgroundColor: hexToRgba(statusColor, 0.2),
+              color: statusColor,
+              borderColor: hexToRgba(statusColor, 0.3),
             };
 
-            const healthColor = getHealthColor(healthStatus);
-            const healthBadgeStyle = {
-              backgroundColor: hexToRgba(healthColor, 0.2),
-              color: healthColor,
-              borderColor: hexToRgba(healthColor, 0.3),
-            };
-
-            const typeColor = getNodeTypeColor(nodeType || "unknown");
-            const typeBadgeStyle = {
-              backgroundColor: hexToRgba(typeColor, 0.2),
-              color: typeColor,
-              borderColor: hexToRgba(typeColor, 0.3),
-            };
-
-            const isPrivate = pnode.node_type !== "public";
             const sent = pnode.stats.packets_sent;
             const recv = pnode.stats.packets_received;
             const totalPackets = sent + recv;
@@ -434,22 +431,15 @@ const PNodeTableComponent = ({
                   </span>
                 </td>
 
-                {/* NODE TYPE CELL (Public/Private/Unknown) */}
+                {/* COMBINED STATUS CELL (Online/Warning/Critical/Private) */}
                 <td className="p-4 align-middle text-center">
-                  <span className="px-3 py-1.5 rounded-full text-[9px] font-bold border uppercase tracking-wide inline-block" style={typeBadgeStyle}>
-                    {nodeType === "public" ? "🟢 Public" : nodeType === "private" ? "🟠 Private" : "⚪ Unknown"}
+                  <span className="px-3 py-1.5 rounded-full text-[9px] font-bold border uppercase tracking-wide inline-block" style={statusBadgeStyle}>
+                    {combinedStatus === "Online" && "🟢 Online"}
+                    {combinedStatus === "Warning" && "🟡 Warning"}
+                    {combinedStatus === "Critical" && "🔴 Critical"}
+                    {combinedStatus === "Private" && "🔒 Private"}
+                    {combinedStatus === "Unknown" && "⚪ Unknown"}
                   </span>
-                </td>
-
-                {/* HEALTH STATUS CELL (Good/Warning/Critical) */}
-                <td className="p-4 align-middle text-center">
-                  {healthStatus ? (
-                    <span className="px-3 py-1.5 rounded-full text-[9px] font-bold border uppercase tracking-wide inline-block" style={healthBadgeStyle}>
-                      {healthStatus}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-text-faint">—</span>
-                  )}
                 </td>
 
                 <td className="p-4 text-xs text-text-faint font-mono align-middle text-center">
