@@ -109,6 +109,7 @@ export const formatBytesToTB = (bytes: number) => {
 
 // Adaptive formatter: chooses best unit automatically (KB/MB/GB/TB)
 // Uses binary units (1024) to match pRPC stats + existing tests/UX expectations.
+// Shows precise values with 2 decimal places for accurate comparison
 export const formatBytesAdaptive = (bytes: number) => {
   if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
 
@@ -119,17 +120,17 @@ export const formatBytesAdaptive = (bytes: number) => {
 
   if (bytes >= TB) {
     const v = bytes / TB;
-    return v >= 10 ? `${v.toFixed(0)} TB` : `${v.toFixed(1)} TB`;
+    return `${v.toFixed(2)} TB`; // Show 2 decimals for precision
   }
 
   if (bytes >= GB) {
     const v = bytes / GB;
-    return v >= 10 ? `${v.toFixed(0)} GB` : `${v.toFixed(1)} GB`;
+    return `${v.toFixed(2)} GB`; // Show 2 decimals for precision
   }
 
   if (bytes >= MB) {
     const v = bytes / MB;
-    return v >= 10 ? `${v.toFixed(0)} MB` : `${v.toFixed(1)} MB`;
+    return `${v.toFixed(2)} MB`; // Show 2 decimals for precision
   }
 
   // For small values, prefer showing KB once we cross 0.5 KB for nicer UX (and to match tests)
@@ -146,9 +147,12 @@ export const formatUptime = (seconds: number) => {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    
     if (days > 0) return `${days}d ${hours}h`;
     if (hours > 0) return `${hours}h ${minutes}m`;
-    return `${minutes}m`;
+    if (minutes > 0) return `${minutes}m ${secs}s`;
+    return `${secs}s`;
 };
 
 export const getStorageBarColors = (percent: number) => {

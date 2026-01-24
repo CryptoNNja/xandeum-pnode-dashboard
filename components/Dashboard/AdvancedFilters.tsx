@@ -40,7 +40,7 @@ type AdvancedFiltersProps = {
   setNetworkStatusFilters?: (filters: NetworkStatusFilter[]) => void;
 };
 
-const HEALTH_STATUSES = ["Excellent", "Good", "Warning", "Critical", "Private"];
+const HEALTH_STATUSES = ["Online", "Warning", "Critical", "Private"]; // Combined status (not separate health)
 
 export const AdvancedFilters = ({
   isOpen,

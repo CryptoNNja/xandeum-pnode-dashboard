@@ -433,12 +433,13 @@ export const main = async () => {
                     }
                 }
 
-                // 🆕 Capture uptime from gossip network (for private nodes)
-                if (ip && pod.uptime) {
+                // 🆕 Capture uptime from gossip network (for ALL nodes, including uptime=0)
+                if (ip && pod.uptime !== undefined) {
                     const uptimeSeconds = coerceNumber(pod.uptime);
-                    if (uptimeSeconds > 0) {
-                        uptimeGossipMap.set(ip, uptimeSeconds);
-                    }
+                    // Store even if uptime=0 to distinguish between:
+                    // - Node in gossip with uptime=0 (restarting = OK)
+                    // - Node not in gossip at all (zombie = stale)
+                    uptimeGossipMap.set(ip, uptimeSeconds);
                 }
             })
         }
@@ -802,13 +803,18 @@ export const main = async () => {
         const hasMetadata = versionMap.has(node.ip) || pubkeyMap.has(node.ip);
         node.failed_checks = hasMetadata ? 0 : (existingIpsMap.get(node.ip) ?? 0) + 1;
         
-        // 🆕 HYBRID STALE LOGIC: Mark node as stale based on intelligent criteria
+        // 🆕 ENHANCED STALE LOGIC: Mark node as stale based on intelligent criteria
         // - 2 failed checks WITHOUT gossip data (truly dead - not in network at all)
         // - OR 4 failed checks WITH gossip data (persistent problem despite being in gossip)
+        // - OR uptime=0 AND no recent gossip data (zombie with stale data)
         const currentFailedChecks = node.failed_checks;
         const hasGossipData = versionMap.has(node.ip) || 
                              storageCommittedMap.has(node.ip) || 
                              pubkeyMap.has(node.ip);
+        
+        // Check if node has uptime=0 AND is not present in gossip network at all
+        const nodeUptime = (node.stats as any)?.uptime ?? 0;
+        const isInGossipNetwork = uptimeGossipMap.has(node.ip); // Node is in gossip (even with uptime=0)
         
         if (currentFailedChecks >= 2 && !hasGossipData) {
             // Node is truly dead - not even in gossip network
@@ -816,8 +822,12 @@ export const main = async () => {
         } else if (currentFailedChecks >= 4 && hasGossipData) {
             // Node has persistent issues despite being in gossip
             node.status = 'stale';
+        } else if (nodeUptime === 0 && !isInGossipNetwork) {
+            // Node has uptime=0 AND is not in gossip network = zombie with stale data
+            // Note: Nodes with uptime=0 but IN gossip are OK (just restarted)
+            node.status = 'stale';
         }
-        // Otherwise keep the status determined earlier (active or private)
+        // Otherwise keep the status determined earlier (online or private)
     });
     
     // For existing nodes NOT in this crawl, increment their failed_checks

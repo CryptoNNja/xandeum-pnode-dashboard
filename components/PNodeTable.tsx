@@ -1,8 +1,8 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Star, Lock, Globe, Copy } from "lucide-react";
+import { Star, Lock, Globe, Copy, ChevronDown, ChevronRight } from "lucide-react";
 import clsx from "clsx";
 import { calculateNodeScore, getScoreColor } from "@/lib/scoring";
 import { useTheme } from "@/hooks/useTheme";
@@ -58,36 +58,31 @@ const PNodeTableComponent = ({
 
   if (!data || !Array.isArray(data)) return null;
   
+  // Pre-calculate operator node counts (O(n) instead of O(n²))
+  const operatorNodeCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    data.forEach(node => {
+      if (node.pubkey) {
+        counts.set(node.pubkey, (counts.get(node.pubkey) || 0) + 1);
+      }
+    });
+    return counts;
+  }, [data]);
+  
   const hasSelection = selectedNodeIds && selectedNodeIds.size > 0;
   const allSelected = data.length > 0 && data.every(node => node.ip && selectedNodeIds?.has(node.ip));
 
   const formatUptime = (seconds: number) => {
-    if (seconds === 0) return "-";
-    const totalHours = Math.floor(seconds / 3600);
+    if (!Number.isFinite(seconds) || seconds <= 0) return "—";
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
     
-    // Option A: Double precision compact format
-    if (totalHours < 24) {
-      // Less than 1 day: show hours only
-      return `${totalHours}h`;
-    } else if (totalHours < 24 * 30) {
-      // Less than 30 days: show "Xd Yh"
-      const days = Math.floor(totalHours / 24);
-      const hours = totalHours % 24;
-      return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
-    } else if (totalHours < 24 * 365) {
-      // Less than 1 year: show "Xmo Yd"
-      const totalDays = Math.floor(totalHours / 24);
-      const months = Math.floor(totalDays / 30);
-      const days = totalDays % 30;
-      return days > 0 ? `${months}mo ${days}d` : `${months}mo`;
-    } else {
-      // 1 year or more: show "Xy Zmo"
-      const totalDays = Math.floor(totalHours / 24);
-      const years = Math.floor(totalDays / 365);
-      const remainingDays = totalDays % 365;
-      const months = Math.floor(remainingDays / 30);
-      return months > 0 ? `${years}y ${months}mo` : `${years}y`;
-    }
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    if (minutes > 0) return `${minutes}m ${secs}s`;
+    return `${secs}s`;
   };
 
   const formatPacketValue = (value: number) => {
@@ -130,10 +125,10 @@ const PNodeTableComponent = ({
   const headers = [
     { key: "network", label: "Network", sortable: true }, // Network column - sortable
     { key: "score", label: "Score", sortable: true },
-    { key: "pubkey", label: "Operator", sortable: true }, // 🆕 New column for pubkey/operator
+    { key: "pubkey", label: "Operator", sortable: true }, // Pubkey/operator column
     { key: "ip", label: "IP Address", sortable: true },
-    { key: "credits", label: "Credits", sortable: true }, // 🆕 Credits earned (XAN) - sortable
-    { key: "health", label: "Status", sortable: true },
+    { key: "credits", label: "Credits", sortable: true }, // Credits earned (XAN) - sortable
+    { key: "status", label: "Status", sortable: true }, // Combined status (Online/Warning/Critical/Private)
     { key: "version", label: "Version", sortable: true },
     { key: "cpu", label: "CPU", sortable: true },
     { key: "ram", label: "RAM", sortable: true },
@@ -152,23 +147,8 @@ const PNodeTableComponent = ({
       )}
     >
       <div className="w-full overflow-x-auto">
-        <table className="min-w-full text-left border-collapse text-sm" style={{ tableLayout: 'fixed', width: '1100px' }}>
-          <colgroup>
-            {onToggleSelection && <col style={{ width: '40px' }} />}
-            {onToggleFavorite && <col style={{ width: '50px' }} />}
-            <col style={{ width: '60px' }} />
-            <col style={{ width: '65px' }} />
-            <col style={{ width: '115px' }} />
-            <col style={{ width: '145px' }} />
-            <col style={{ width: '95px' }} />
-            <col style={{ width: '95px' }} />
-            <col style={{ width: '80px' }} />
-            <col style={{ width: '70px' }} />
-            <col style={{ width: '75px' }} />
-            <col style={{ width: '100px' }} />
-            <col style={{ width: '95px' }} />
-            <col style={{ width: '85px' }} />
-          </colgroup>
+        <table className="min-w-full text-left border-collapse text-sm" style={{ tableLayout: 'auto' }}>
+          <colgroup>{onToggleSelection && <col style={{ width: '45px' }} />}{onToggleFavorite && <col style={{ width: '45px' }} />}<col style={{ width: '50px' }} /><col style={{ width: '65px' }} /><col style={{ width: '130px' }} /><col style={{ minWidth: '135px' }} /><col style={{ width: '90px' }} /><col style={{ width: '105px' }} /><col style={{ width: '75px' }} /><col style={{ width: '65px' }} /><col style={{ width: '65px' }} /><col style={{ width: '105px' }} /><col style={{ width: '105px' }} /><col style={{ width: '85px' }} /></colgroup>
         <thead>
           <tr
             className={clsx(
@@ -231,7 +211,25 @@ const PNodeTableComponent = ({
           )}
         >
           {data.map((pnode, index) => {
-            const status = (pnode as any)._healthStatus || "Private";
+            // Determine combined status based on node type and health
+            const isPrivate = pnode.node_type !== "public";
+            let combinedStatus = "Unknown";
+            
+            if (isPrivate) {
+              combinedStatus = "Private";
+            } else {
+              // Public node - show health status
+              const healthStatus = (pnode as any)._healthStatus || "Unknown";
+              if (healthStatus === "Excellent" || healthStatus === "Good") {
+                combinedStatus = "Online";
+              } else if (healthStatus === "Warning") {
+                combinedStatus = "Warning";
+              } else if (healthStatus === "Critical") {
+                combinedStatus = "Critical";
+              } else {
+                combinedStatus = "Unknown";
+              }
+            }
 
             // Helper to get CSS variable value
             const getCssVar = (varName: string, fallback: string): string => {
@@ -255,21 +253,20 @@ const PNodeTableComponent = ({
             };
 
             const getStatusColor = (status: string) => {
-              if (status === "Excellent") return getCssVar("--kpi-excellent", "#10B981");
-              if (status === "Good") return getCssVar("--kpi-good", "#3B82F6");
+              if (status === "Online") return getCssVar("--kpi-excellent", "#10B981");
               if (status === "Warning") return getCssVar("--kpi-warning", "#F59E0B");
               if (status === "Critical") return getCssVar("--kpi-critical", "#EF4444");
-              return getCssVar("--kpi-private", "#64748B"); // Private
+              if (status === "Private") return getCssVar("--kpi-private", "#64748B");
+              return getCssVar("--text-faint", "#64748B"); // Unknown
             };
 
-            const statusColor = getStatusColor(status);
-            const badgeStyle = {
+            const statusColor = getStatusColor(combinedStatus);
+            const statusBadgeStyle = {
               backgroundColor: hexToRgba(statusColor, 0.2),
               color: statusColor,
               borderColor: hexToRgba(statusColor, 0.3),
             };
 
-            const isPrivate = pnode.node_type !== "public";
             const sent = pnode.stats.packets_sent;
             const recv = pnode.stats.packets_received;
             const totalPackets = sent + recv;
@@ -369,21 +366,38 @@ const PNodeTableComponent = ({
                 {/* 🆕 PUBKEY/OPERATOR CELL */}
                 <td className="p-4 align-middle" style={{ textAlign: 'center' }}>
                   {pnode.pubkey ? (
-                    <>
+                    <div className="flex items-center justify-center gap-1.5">
+                      {(() => {
+                        // Get pre-calculated operator node count (O(1) lookup)
+                        const operatorNodeCount = operatorNodeCounts.get(pnode.pubkey) || 1;
+                        
+                        if (operatorNodeCount > 1) {
+                          return (
+                            <span 
+                              className="multi-node-badge"
+                              title={`This operator runs ${operatorNodeCount} nodes`}
+                            >
+                              <span style={{ filter: 'grayscale(0) brightness(1.2)' }}>⚡</span>
+                              {operatorNodeCount}
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
                       <span className="text-xs text-text-main font-mono">
-                        {pnode.pubkey.slice(0, 8)}...{pnode.pubkey.slice(-4)}
+                        {pnode.pubkey.slice(0, 3)}...{pnode.pubkey.slice(-3)}
                       </span>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           navigator.clipboard.writeText(pnode.pubkey!);
                         }}
-                        className="ml-1 opacity-0 group-hover:opacity-100 transition-all text-text-faint hover:text-[#00d4ff]"
+                        className="opacity-0 group-hover:opacity-100 transition-all text-text-faint hover:text-[#00d4ff] flex-shrink-0"
                         title="Copy pubkey"
                       >
                         <Copy className="w-3 h-3" />
                       </button>
-                    </>
+                    </div>
                   ) : (
                     <span className="text-xs text-text-faint italic">Unknown</span>
                   )}
@@ -391,15 +405,18 @@ const PNodeTableComponent = ({
 
                 <td className="p-4 font-mono text-text-main font-medium group-hover:text-accent-aqua transition-colors align-middle" style={{ textAlign: 'center' }}>
                   {pnode.ip ? (
-                    <>
+                    <div className="flex items-center justify-center gap-1 max-w-full">
                       {pnode.ip.startsWith('PRIVATE-') && (
                         <Lock 
-                          className="inline w-3 h-3 text-text-faint mr-1" 
+                          className="w-3 h-3 text-text-faint flex-shrink-0" 
                           strokeWidth={2.5}
                           aria-label="Private node - no public services"
                         />
                       )}
-                      <span className="text-xs" title={pnode.ip}>
+                      <span 
+                        className="text-xs truncate max-w-[100px]" 
+                        title={pnode.ip}
+                      >
                         {pnode.ip}
                       </span>
                       <button
@@ -407,12 +424,12 @@ const PNodeTableComponent = ({
                           e.stopPropagation();
                           navigator.clipboard.writeText(pnode.ip!);
                         }}
-                        className="ml-1 opacity-0 group-hover:opacity-100 transition-all text-text-faint hover:text-[#00d4ff]"
+                        className="opacity-0 group-hover:opacity-100 transition-all text-text-faint hover:text-[#00d4ff] flex-shrink-0"
                         title="Copy IP"
                       >
-                        <Copy className="inline w-3 h-3" />
+                        <Copy className="w-3 h-3" />
                       </button>
-                    </>
+                    </div>
                   ) : (
                     <span className="text-xs text-text-faint italic">Awaiting</span>
                   )}
@@ -427,9 +444,14 @@ const PNodeTableComponent = ({
                   </span>
                 </td>
 
+                {/* COMBINED STATUS CELL (Online/Warning/Critical/Private) */}
                 <td className="p-4 align-middle text-center">
-                  <span className="px-3 py-1.5 rounded-full text-[9px] font-bold border uppercase tracking-wide inline-block" style={badgeStyle}>
-                    {status}
+                  <span className="px-3 py-1.5 rounded-full text-[9px] font-bold border uppercase tracking-wide inline-block" style={statusBadgeStyle}>
+                    {combinedStatus === "Online" && "🟢 Online"}
+                    {combinedStatus === "Warning" && "🟡 Warning"}
+                    {combinedStatus === "Critical" && "🔴 Critical"}
+                    {combinedStatus === "Private" && "🔒 Private"}
+                    {combinedStatus === "Unknown" && "⚪ Unknown"}
                   </span>
                 </td>
 
