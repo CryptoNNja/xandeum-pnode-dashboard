@@ -281,15 +281,32 @@ We prefer showing **more data** and letting users filter, rather than hiding pot
 **Decision:** Use **IP as primary key**, not pubkey
 
 **Rationale:**
-1. **Physical reality** - Each IP = distinct machine/instance
-2. **Infrastructure monitoring** - Track actual hardware
-3. **Operator analytics** - Group by pubkey secondarily
-4. **Debugging** - IP-level troubleshooting
+
+1. **Bounty Requirements Compliance** ⭐
+   - The Xandeum bounty explicitly requires: *"retrieve a list of **all pNodes** appearing in gossip"*
+   - Each IP = 1 distinct pNode (as per network definition)
+   - Grouping by operator (pubkey) would reduce the list to operators, not pNodes
+   - **Our implementation correctly displays all 318 individual pNodes as required**
+
+2. **Physical Reality** - Each IP = distinct machine/instance
+
+3. **Infrastructure Monitoring** - Track actual hardware performance
+
+4. **Operator Analytics** - Group by pubkey secondarily (Phase 2 feature)
+
+5. **Debugging** - IP-level troubleshooting and diagnostics
 
 **Alternative considered:**
 - Deduplicate by pubkey (1 operator = 1 entry)
-- **Rejected:** Loses granularity, can't monitor individual nodes
-- **Future:** Phase 2 will add collapsible grouping by operator
+- **Rejected:** 
+  - Does not meet bounty requirements (shows operators, not pNodes)
+  - Loses granularity, can't monitor individual nodes
+  - Operator with 16 nodes would show as 1 entry (incorrect per bounty spec)
+
+**Future Enhancement (Phase 2):**
+- Add optional **collapsible grouping by operator** (toggle view)
+- Keep IP-based list as primary view (bounty compliant)
+- Allow users to switch between "All pNodes" (318) and "By Operator" (~256)
 
 ---
 
