@@ -140,5 +140,5 @@ tmp_rovodev_*
 !README.md
 !CHANGELOG.md
 !DEPENDENCIES.md
-!TECHNICAL_NOTES.md
+!docs/**/*.md
 !.github/**/*.md

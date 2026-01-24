@@ -756,7 +756,7 @@ Contributions welcome! Please read our workflow:
 - **Browser support** - IE11 not supported (modern browsers only)
 - **Data variance** - Minor differences with official API (~3-5%) due to real-time network discovery
 
-📖 *[Why these differences exist (technical) →](TECHNICAL_NOTES.md)*  
+📖 *[Why these differences exist (technical) →](docs/TECHNICAL_NOTES.md)*  
 📖 *[Roadmap and future improvements →](docs/FEATURES.md#roadmap)*
 
 ---
