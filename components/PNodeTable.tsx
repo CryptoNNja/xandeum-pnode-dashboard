@@ -413,15 +413,18 @@ const PNodeTableComponent = ({
 
                 <td className="p-4 font-mono text-text-main font-medium group-hover:text-accent-aqua transition-colors align-middle" style={{ textAlign: 'center' }}>
                   {pnode.ip ? (
-                    <>
+                    <div className="flex items-center justify-center gap-1 max-w-full">
                       {pnode.ip.startsWith('PRIVATE-') && (
                         <Lock 
-                          className="inline w-3 h-3 text-text-faint mr-1" 
+                          className="w-3 h-3 text-text-faint flex-shrink-0" 
                           strokeWidth={2.5}
                           aria-label="Private node - no public services"
                         />
                       )}
-                      <span className="text-xs" title={pnode.ip}>
+                      <span 
+                        className="text-xs truncate max-w-[100px]" 
+                        title={pnode.ip}
+                      >
                         {pnode.ip}
                       </span>
                       <button
@@ -429,12 +432,12 @@ const PNodeTableComponent = ({
                           e.stopPropagation();
                           navigator.clipboard.writeText(pnode.ip!);
                         }}
-                        className="ml-1 opacity-0 group-hover:opacity-100 transition-all text-text-faint hover:text-[#00d4ff]"
+                        className="opacity-0 group-hover:opacity-100 transition-all text-text-faint hover:text-[#00d4ff] flex-shrink-0"
                         title="Copy IP"
                       >
-                        <Copy className="inline w-3 h-3" />
+                        <Copy className="w-3 h-3" />
                       </button>
-                    </>
+                    </div>
                   ) : (
                     <span className="text-xs text-text-faint italic">Awaiting</span>
                   )}
