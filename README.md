@@ -754,7 +754,9 @@ Contributions welcome! Please read our workflow:
 - **Historical data** - Currently limited to 7 days (configurable)
 - **API rate limits** - Some geolocation APIs have daily quotas
 - **Browser support** - IE11 not supported (modern browsers only)
+- **Data variance** - Minor differences with official API (~3-5%) due to real-time network discovery
 
+📖 *[Why these differences exist (technical) →](TECHNICAL_NOTES.md)*  
 📖 *[Roadmap and future improvements →](docs/FEATURES.md#roadmap)*
 
 ---
