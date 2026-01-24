@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useState, useMemo } from "react";
+import React, { memo, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Star, Lock, Globe, Copy, ChevronDown, ChevronRight } from "lucide-react";
 import clsx from "clsx";
@@ -56,10 +56,18 @@ const PNodeTableComponent = ({
   const router = useRouter();
   const isLight = themeMounted ? theme === "light" : false;
 
-  // State for collapsed/expanded operators
-  const [expandedOperators, setExpandedOperators] = useState<Set<string>>(new Set());
-
   if (!data || !Array.isArray(data)) return null;
+  
+  // Pre-calculate operator node counts (O(n) instead of O(n²))
+  const operatorNodeCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    data.forEach(node => {
+      if (node.pubkey) {
+        counts.set(node.pubkey, (counts.get(node.pubkey) || 0) + 1);
+      }
+    });
+    return counts;
+  }, [data]);
   
   const hasSelection = selectedNodeIds && selectedNodeIds.size > 0;
   const allSelected = data.length > 0 && data.every(node => node.ip && selectedNodeIds?.has(node.ip));
@@ -360,9 +368,8 @@ const PNodeTableComponent = ({
                   {pnode.pubkey ? (
                     <div className="flex items-center justify-center gap-1.5">
                       {(() => {
-                        // Get node count from nodesByPubkey context (passed via props or context)
-                        // For now, count directly from data array
-                        const operatorNodeCount = data.filter(n => n.pubkey === pnode.pubkey).length;
+                        // Get pre-calculated operator node count (O(1) lookup)
+                        const operatorNodeCount = operatorNodeCounts.get(pnode.pubkey) || 1;
                         
                         if (operatorNodeCount > 1) {
                           return (

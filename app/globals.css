@@ -411,22 +411,15 @@ body {
   font-size: 10px;
   font-weight: 700;
   
-  /* Gradient violet → bleu */
-  background: linear-gradient(135deg, 
-    rgba(139, 92, 246, 0.25) 0%, 
-    rgba(59, 130, 246, 0.25) 100%);
-  
   /* Gradient text color */
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
   background-image: linear-gradient(135deg, 
     rgb(139, 92, 246) 0%, 
     rgb(59, 130, 246) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
   
-  /* Bordure gradient */
-  border: 1.5px solid transparent;
-  background-origin: border-box;
+  /* Positioning for pseudo-element background */
   position: relative;
   
   /* Glow effect */
@@ -439,32 +432,34 @@ body {
   cursor: help;
 }
 
-/* Fix for gradient border */
+/* Gradient background using pseudo-element to avoid conflicts */
 .multi-node-badge::before {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 12px;
-  padding: 1.5px;
+  border-radius: inherit;
+  
+  /* Gradient violet → bleu background */
   background: linear-gradient(135deg, 
-    rgb(139, 92, 246) 0%, 
-    rgb(59, 130, 246) 100%);
-  -webkit-mask: 
-    linear-gradient(#fff 0 0) content-box, 
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
+    rgba(139, 92, 246, 0.25) 0%, 
+    rgba(59, 130, 246, 0.25) 100%);
+  
+  /* Gradient border */
+  border: 1.5px solid transparent;
+  background-origin: border-box;
+  
   z-index: -1;
 }
 
 .multi-node-badge:hover {
-  /* Enhanced glow on hover */
+  /* Enhanced glow on hover + animation */
   box-shadow: 
     0 0 12px rgba(139, 92, 246, 0.5),
     0 0 24px rgba(59, 130, 246, 0.3),
     inset 0 0 16px rgba(139, 92, 246, 0.2);
   
   transform: scale(1.08) translateY(-1px);
+  animation: badge-pulse 2s ease-in-out infinite;
 }
 
 /* Pulse animation for multi-node badge */
@@ -479,10 +474,6 @@ body {
       0 0 12px rgba(139, 92, 246, 0.5),
       0 0 24px rgba(59, 130, 246, 0.3);
   }
-}
-
-.multi-node-badge:hover {
-  animation: badge-pulse 2s ease-in-out infinite;
 }
 
 /* Dark mode enhancements */

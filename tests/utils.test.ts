@@ -40,12 +40,14 @@ describe('Utils - Data Formatting', () => {
   });
 
   describe('formatBytesAdaptive', () => {
-    it('should choose appropriate unit', () => {
+    it('should choose appropriate unit with 2 decimal precision', () => {
       expect(formatBytesAdaptive(512)).toBe('0.5 KB');
       expect(formatBytesAdaptive(1536)).toBe('1.5 KB');
-      expect(formatBytesAdaptive(1572864)).toBe('1.5 MB');
-      expect(formatBytesAdaptive(1610612736)).toBe('1.5 GB');
-      expect(formatBytesAdaptive(1649267441664)).toBe('1.5 TB');
+      expect(formatBytesAdaptive(1572864)).toBe('1.50 MB'); // 2 decimals for MB/GB/TB
+      expect(formatBytesAdaptive(1610612736)).toBe('1.50 GB'); // 2 decimals
+      expect(formatBytesAdaptive(1649267441664)).toBe('1.50 TB'); // 2 decimals
+      expect(formatBytesAdaptive(1024 ** 2)).toBe('1.00 MB');
+      expect(formatBytesAdaptive(15.95 * 1024 ** 4)).toBe('15.95 TB'); // Precise values
     });
   });
 
