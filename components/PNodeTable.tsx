@@ -385,6 +385,7 @@ const PNodeTableComponent = ({
                               className="multi-node-badge"
                               title={`This operator runs ${operatorNodeCount} nodes`}
                             >
+                              <span style={{ filter: 'grayscale(0) brightness(1.2)' }}>⚡</span>
                               {operatorNodeCount}
                             </span>
                           );
