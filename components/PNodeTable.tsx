@@ -139,22 +139,22 @@ const PNodeTableComponent = ({
       )}
     >
       <div className="w-full overflow-x-auto">
-        <table className="min-w-full text-left border-collapse text-sm" style={{ tableLayout: 'fixed', width: '1200px' }}>
+        <table className="min-w-full text-left border-collapse text-sm" style={{ tableLayout: 'fixed', width: '1400px' }}>
           <colgroup>
-            {onToggleSelection && <col style={{ width: '40px' }} />}
-            {onToggleFavorite && <col style={{ width: '50px' }} />}
-            <col style={{ width: '60px' }} />
-            <col style={{ width: '60px' }} />
-            <col style={{ width: '85px' }} />
-            <col style={{ width: '140px' }} />
-            <col style={{ width: '90px' }} />
-            <col style={{ width: '95px' }} />
-            <col style={{ width: '75px' }} />
-            <col style={{ width: '65px' }} />
-            <col style={{ width: '70px' }} />
-            <col style={{ width: '110px' }} />
-            <col style={{ width: '105px' }} />
-            <col style={{ width: '95px' }} />
+            {onToggleSelection && <col style={{ width: '50px' }} />}
+            {onToggleFavorite && <col style={{ width: '55px' }} />}
+            <col style={{ width: '70px' }} /> {/* Network */}
+            <col style={{ width: '70px' }} /> {/* Score */}
+            <col style={{ width: '140px' }} /> {/* Operator - increased for badge */}
+            <col style={{ width: '150px' }} /> {/* IP Address */}
+            <col style={{ width: '100px' }} /> {/* Credits */}
+            <col style={{ width: '110px' }} /> {/* Status */}
+            <col style={{ width: '85px' }} /> {/* Version */}
+            <col style={{ width: '75px' }} /> {/* CPU */}
+            <col style={{ width: '80px' }} /> {/* RAM */}
+            <col style={{ width: '120px' }} /> {/* Storage */}
+            <col style={{ width: '120px' }} /> {/* Traffic */}
+            <col style={{ width: '100px' }} /> {/* Uptime */}
           </colgroup>
         <thead>
           <tr
