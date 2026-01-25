@@ -88,6 +88,10 @@ type KpiCardsProps = {
     networkMetadata: {
         networkTotal: number;
         crawledNodes: number;
+        registryOnlyNodes: number;
+        gossipOnlyNodes: number;
+        bothSourcesNodes: number;
+        uncrawledNodes: number;
         activeNodes: number;
         coveragePercent: number;
         lastUpdated: string | null;
@@ -898,6 +902,31 @@ export const KpiCards = ({
                   {networkMetadata.activeNodes} public nodes
                 </span>
               </div>
+            </div>
+
+            {/* ✨ NEW: Coverage Breakdown */}
+            <div className="mt-4 space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-text-soft flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                  Crawled
+                </span>
+                <span className="font-semibold text-text-main">
+                  {networkMetadata.crawledNodes} nodes
+                </span>
+              </div>
+              
+              {networkMetadata.uncrawledNodes > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-text-soft flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                    Unreachable
+                  </span>
+                  <span className="font-semibold text-text-faint">
+                    {networkMetadata.uncrawledNodes} nodes
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="mt-4">

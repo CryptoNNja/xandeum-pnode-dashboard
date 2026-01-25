@@ -143,18 +143,43 @@ export const usePnodeDashboard = (theme?: string) => {
   const [networkParticipation, setNetworkParticipation] = useState<NetworkParticipationMetrics | null>(null);
 
   // Network metadata (gossip discovery stats)
-  // Calculate networkMetadata from deduplicated allPnodes instead of fetching from API
-  // This ensures consistency with the deduplicated data shown everywhere
-  // ⚠️ IMPORTANT: Exclude 'stale' nodes from counts
+  // ✨ ENHANCED: Calculate REAL network coverage based on data sources
+  // Total Known = All nodes discovered (gossip + registry + crawler)
+  // Successfully Crawled = Nodes with full stats (actually reached by crawler)
+  // Coverage % = (Crawled / Total Known) * 100
   const networkMetadata = useMemo(() => {
-    const totalNodes = allPnodes.filter(p => p.status !== "stale").length; // ⚠️ Exclude stale
-    const activeNodes = allPnodes.filter(p => p.node_type === "public" && p.status !== "stale").length; // ⚠️ Exclude stale
+    // All nodes we know about (exclude stale for accuracy)
+    const allKnownNodes = allPnodes.filter(p => p.status !== "stale");
+    const totalKnown = allKnownNodes.length;
+    
+    // Nodes successfully crawled (has stats and not registry-only)
+    const fullyCrawled = allKnownNodes.filter(p => 
+      p.stats !== null && 
+      p.source !== "registry_only" // Registry-only means we know it exists but can't reach it
+    ).length;
+    
+    // Breakdown by source
+    const registryOnlyNodes = allKnownNodes.filter(p => p.source === "registry_only").length;
+    const gossipOnlyNodes = allKnownNodes.filter(p => 
+      p.source === "gossip" && p.stats === null
+    ).length;
+    const bothSources = allKnownNodes.filter(p => p.source === "both").length;
+    
+    // Public nodes for active count
+    const activeNodes = allKnownNodes.filter(p => p.node_type === "public").length;
+    
+    // Calculate REAL coverage percentage
+    const coverage = totalKnown > 0 ? (fullyCrawled / totalKnown) * 100 : 0;
     
     return {
-      networkTotal: totalNodes,
-      crawledNodes: totalNodes, // Same as total since we crawled all we know about
-      activeNodes: activeNodes,
-      coveragePercent: 100, // We show 100% of nodes we've discovered
+      networkTotal: totalKnown,           // All nodes discovered
+      crawledNodes: fullyCrawled,         // Successfully crawled with stats
+      registryOnlyNodes,                  // Known from registry but unreachable
+      gossipOnlyNodes,                    // Known from gossip but unreachable
+      bothSourcesNodes: bothSources,      // Verified in both registry and crawler
+      uncrawledNodes: totalKnown - fullyCrawled, // Can't reach these
+      activeNodes: activeNodes,           // Public nodes
+      coveragePercent: coverage,          // ✅ REAL coverage metric
       lastUpdated: lastUpdate?.toISOString() || null
     };
   }, [allPnodes, lastUpdate]);

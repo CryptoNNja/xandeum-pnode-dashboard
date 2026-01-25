@@ -9,6 +9,10 @@ type NetworkCoverageModalProps = {
   networkMetadata: {
     networkTotal: number;
     crawledNodes: number;
+    registryOnlyNodes: number;
+    gossipOnlyNodes: number;
+    bothSourcesNodes: number;
+    uncrawledNodes: number;
     activeNodes: number;
     coveragePercent: number;
   };
@@ -414,6 +418,55 @@ export const NetworkCoverageModal = ({
               <p className="text-[11px] leading-relaxed" style={{ color: isLight ? "#64748b" : "#94a3b8" }}>
                 Successfully crawled {networkMetadata.coveragePercent.toFixed(1)}% of the network via gossip protocol.
               </p>
+              
+              {/* ✨ NEW: Detailed Breakdown */}
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-1.5" style={{ color: isLight ? "#64748b" : "#94a3b8" }}>
+                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                    Successfully Crawled
+                  </span>
+                  <span className="font-semibold" style={{ color: "#10B981" }}>
+                    {networkMetadata.crawledNodes} nodes
+                  </span>
+                </div>
+                
+                {networkMetadata.registryOnlyNodes > 0 && (
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5" style={{ color: isLight ? "#64748b" : "#94a3b8" }}>
+                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                      Registry Only
+                    </span>
+                    <span className="font-semibold" style={{ color: "#3B82F6" }}>
+                      {networkMetadata.registryOnlyNodes} nodes
+                    </span>
+                  </div>
+                )}
+                
+                {networkMetadata.gossipOnlyNodes > 0 && (
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5" style={{ color: isLight ? "#64748b" : "#94a3b8" }}>
+                      <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                      Gossip Only
+                    </span>
+                    <span className="font-semibold" style={{ color: "#9333EA" }}>
+                      {networkMetadata.gossipOnlyNodes} nodes
+                    </span>
+                  </div>
+                )}
+                
+                {networkMetadata.uncrawledNodes > 0 && (
+                  <div className="flex items-center justify-between text-xs pt-2 border-t" style={{ borderColor: isLight ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.1)" }}>
+                    <span className="flex items-center gap-1.5" style={{ color: isLight ? "#64748b" : "#94a3b8" }}>
+                      <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                      Unreachable
+                    </span>
+                    <span className="font-semibold" style={{ color: "#F59E0B" }}>
+                      {networkMetadata.uncrawledNodes} nodes ({((networkMetadata.uncrawledNodes / networkMetadata.networkTotal) * 100).toFixed(1)}%)
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="p-4 rounded-xl" style={{ 
