@@ -951,45 +951,85 @@ export const KpiCards = ({
               </p>
             </div>
 
-            {/* ✨ NEW: Crawl Timing */}
-            {networkMetadata.lastUpdated && (() => {
-              const lastCrawl = new Date(networkMetadata.lastUpdated);
-              const now = Date.now();
-              const diffMs = now - lastCrawl.getTime();
-              const diffMin = Math.floor(diffMs / 60000);
-              const diffHr = Math.floor(diffMs / 3600000);
-              const diffDays = Math.floor(diffMs / 86400000);
+            {/* ✨ Crawl Status Zone - Consistent with other SYSTEM HEALTH cards */}
+            <div className="mt-auto pt-4 border-t border-border-app-soft">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs uppercase tracking-[0.25em] text-text-soft/70">
+                  Crawler Status
+                </p>
+                {networkMetadata.lastUpdated && (() => {
+                  const lastCrawl = new Date(networkMetadata.lastUpdated);
+                  const now = Date.now();
+                  const untilNextMs = (lastCrawl.getTime() + 30 * 60 * 1000) - now;
+                  const isActive = untilNextMs > 0 && untilNextMs < 30 * 60 * 1000;
+                  
+                  return (
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-2 h-2 rounded-full"
+                        style={{ 
+                          backgroundColor: isActive ? "#10B981" : "#6B7280",
+                          boxShadow: isActive ? "0 0 8px #10B981" : "none",
+                          animation: isActive ? "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" : "none"
+                        }}
+                      />
+                      <span className="text-xs font-mono text-text-soft">
+                        {isActive ? "ACTIVE" : "IDLE"}
+                      </span>
+                    </div>
+                  );
+                })()}
+              </div>
               
-              const lastCrawlText = diffMin < 1 ? 'Just now' :
-                                    diffMin < 60 ? `${diffMin}min ago` :
-                                    diffHr < 24 ? `${diffHr}h ago` :
-                                    `${diffDays}d ago`;
-              
-              // Next crawl in 30 minutes
-              const nextCrawl = new Date(lastCrawl.getTime() + 30 * 60 * 1000);
-              const untilNextMs = nextCrawl.getTime() - now;
-              const untilNextMin = Math.max(0, Math.floor(untilNextMs / 60000));
-              
-              const nextCrawlText = untilNextMin === 0 ? 'now' : `in ${untilNextMin}min`;
-              
-              return (
-                <div 
-                  className="mt-4 pt-4 border-t flex items-center justify-between text-xs"
-                  style={{ borderColor: isLight ? "rgba(15, 23, 42, 0.1)" : "rgba(255, 255, 255, 0.1)" }}
-                >
-                  <div className="flex items-center gap-1.5 text-text-soft">
-                    <Activity className="w-3 h-3" />
-                    <span>Last: <span className="font-semibold text-text-main">{lastCrawlText}</span></span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-text-soft">
-                    <Zap className="w-3 h-3" />
-                    <span>Next: <span className="font-semibold text-text-main">{nextCrawlText}</span></span>
-                  </div>
-                </div>
-              );
-            })()}
+              {/* Crawl Timing Info Container */}
+              <div 
+                className="relative rounded-lg overflow-hidden border p-3"
+                style={{ 
+                  background: isLight 
+                    ? "linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, rgba(59, 130, 246, 0.04) 100%)" 
+                    : "linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)",
+                  borderColor: "var(--border-default)",
+                }}
+              >
+                {networkMetadata.lastUpdated ? (() => {
+                  const lastCrawl = new Date(networkMetadata.lastUpdated);
+                  const now = Date.now();
+                  const diffMs = now - lastCrawl.getTime();
+                  const diffMin = Math.floor(diffMs / 60000);
+                  const diffHr = Math.floor(diffMs / 3600000);
+                  const diffDays = Math.floor(diffMs / 86400000);
+                  
+                  const lastCrawlText = diffMin < 1 ? 'Just now' :
+                                        diffMin < 60 ? `${diffMin}min ago` :
+                                        diffHr < 24 ? `${diffHr}h ago` :
+                                        `${diffDays}d ago`;
+                  
+                  // Next crawl in 30 minutes
+                  const nextCrawl = new Date(lastCrawl.getTime() + 30 * 60 * 1000);
+                  const untilNextMs = nextCrawl.getTime() - now;
+                  const untilNextMin = Math.max(0, Math.floor(untilNextMs / 60000));
+                  
+                  const nextCrawlText = untilNextMin === 0 ? 'now' : `in ${untilNextMin}min`;
+                  
+                  return (
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1.5 text-text-soft">
+                        <Activity className="w-3 h-3" style={{ color: "#10B981" }} />
+                        <span>Last: <span className="font-semibold text-text-main">{lastCrawlText}</span></span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-text-soft">
+                        <Zap className="w-3 h-3" style={{ color: "#3B82F6" }} />
+                        <span>Next: <span className="font-semibold text-text-main">{nextCrawlText}</span></span>
+                      </div>
+                    </div>
+                  );
+                })() : (
+                  <p className="text-xs text-text-faint text-center">Awaiting crawler data...</p>
+                )}
+              </div>
+            </div>
 
-            {/* Click indicator */}
+            {/* Click indicator - BOTTOM RIGHT like other SYSTEM HEALTH cards */}
             <div className="absolute bottom-4 right-4 opacity-30 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1">
               <ChevronRight className="w-5 h-5 text-accent-primary" strokeWidth={2.5} />
             </div>
