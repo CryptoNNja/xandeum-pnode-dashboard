@@ -214,23 +214,10 @@ export const usePnodeDashboard = (theme?: string) => {
     // Public nodes count
     const activeNodes = currentlyActiveNodes.filter(p => p.node_type === "public").length;
     
-    // Get the REAL last crawl timestamp from the most recent node
-    // Use the latest updated_at from all active nodes (more accurate than lastUpdate)
-    const realLastCrawl = currentlyActiveNodes.length > 0
-      ? currentlyActiveNodes.reduce((latest, node) => {
-          // Try multiple timestamp fields in order of preference
-          const nodeTimestamp = node.last_crawled_at || node.updated_at;
-          if (!nodeTimestamp) return latest;
-          const nodeTime = new Date(nodeTimestamp).getTime();
-          return nodeTime > latest ? nodeTime : latest;
-        }, 0)
-      : 0;
-    
-    // Only create timestamp if we have a valid value (> 0)
-    const lastCrawledTimestamp = realLastCrawl > 0 ? new Date(realLastCrawl).toISOString() : null;
-    
-    // Fallback: if no timestamp from nodes, use the lastUpdate from UI refresh
-    const finalTimestamp = lastCrawledTimestamp || lastUpdate?.toISOString() || null;
+    // Use the REAL crawler timestamp from network_metadata table (most accurate)
+    // This is updated by the crawler script on each run
+    // Fallback to lastUpdate only if network_metadata is not available
+    const finalTimestamp = realCrawlerTimestamp || lastUpdate?.toISOString() || null;
     
     return {
       networkTotal: totalHistoricallyDiscovered,  // All nodes ever discovered
