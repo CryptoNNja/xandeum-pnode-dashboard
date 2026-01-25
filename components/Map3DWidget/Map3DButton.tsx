@@ -20,7 +20,7 @@ export function Map3DButton({ onClick, isOpen }: Map3DButtonProps) {
 
   return (
     <>
-      {/* Floating Button - Above Calculator (bottom-42 = 168px) */}
+      {/* Floating Button - Above Manager Board (72px spacing) */}
       <button
         onClick={onClick}
         onMouseEnter={() => setIsHovered(true)}
@@ -35,7 +35,7 @@ export function Map3DButton({ onClick, isOpen }: Map3DButtonProps) {
           flex items-center justify-center
           group
         "
-        style={{ bottom: '10.5rem' }}
+        style={{ bottom: '15rem' }}
         aria-label="Open 3D Network Globe"
       >
         <Globe 
@@ -63,7 +63,7 @@ export function Map3DButton({ onClick, isOpen }: Map3DButtonProps) {
           animate-in fade-in slide-in-from-right-2
           duration-200
         "
-        style={{ bottom: '10.5rem' }}
+        style={{ bottom: '15rem' }}
         >
           3D Network Globe
         </div>
