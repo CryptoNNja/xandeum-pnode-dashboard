@@ -77,7 +77,7 @@ export function Map3DWidget({ pnodes }: Map3DWidgetProps) {
                   uptime: p.uptime || p.stats?.uptime || 0,
                   cpu: p.cpu_usage || p.stats?.cpu_usage || 0,
                   ram: p.ram_usage || p.stats?.ram_usage || 0,
-                  status: p.status === 'stale' ? 'inactive' : 'active',
+                  status: (p.status === 'stale' ? 'inactive' : 'active') as 'active' | 'inactive',
                   isPublic: p.node_type === 'public',
                   operator: p.manager_wallet,
                 };

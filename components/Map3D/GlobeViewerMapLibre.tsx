@@ -2,12 +2,13 @@
 
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Map as MapGL, Marker, Popup, MapRef, Layer, Source } from 'react-map-gl/maplibre';
+import { Map as MapGL, Marker, MapRef, Layer, Source } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Node3DData } from '@/lib/types-3d';
 import { X } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useNodeClustering } from './hooks/useNodeClustering';
+import { NodePopup } from './NodePopup';
 
 interface GlobeViewerMapLibreProps {
   nodes: Node3DData[];
@@ -285,8 +286,27 @@ export function GlobeViewerMapLibre({ nodes, onClose }: GlobeViewerMapLibreProps
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black">
-      {/* Premium popup styles - Black/Green theme */}
+      {/* Premium popup styles - Black/Green theme + Connection line animation */}
       <style>{`
+        @keyframes dash {
+          to {
+            stroke-dashoffset: -10;
+          }
+        }
+        .animate-dash {
+          animation: dash 0.5s linear infinite;
+        }
+        @keyframes bubbleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        
         .node-popup-premium .maplibregl-popup-content {
           background: #0A0E1A !important;
           border: 1px solid #00D4AA !important;
@@ -338,13 +358,22 @@ export function GlobeViewerMapLibre({ nodes, onClose }: GlobeViewerMapLibreProps
         CLOSE
       </button>
 
-      {/* Title */}
+      {/* Title with Dev Badge */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[10001] px-4 py-2 rounded-xl bg-gray-900/90 border border-gray-700 backdrop-blur-sm pointer-events-none">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-          <span className="text-sm font-semibold text-white">
-            3D Network Globe
-          </span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            <span className="text-sm font-semibold text-white">
+              3D Network Globe
+            </span>
+          </div>
+          <div className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider" style={{ 
+            background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+            color: '#000',
+            boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)'
+          }}>
+            In Development
+          </div>
           <span className="text-xs text-gray-400">
             • {nodes.length} nodes
             {totalClusters > 0 && ` • ${totalClusters} clusters`}
@@ -446,146 +475,15 @@ export function GlobeViewerMapLibre({ nodes, onClose }: GlobeViewerMapLibreProps
           );
         })}
 
-        {/* Premium Popup for selected node */}
+        {/* Custom Popup with connection line */}
         {selectedNode && (
-          <Popup
-            longitude={selectedNode.displayLng || selectedNode.lng}
-            latitude={selectedNode.displayLat || selectedNode.lat}
-            anchor="bottom"
+          <NodePopup
+            node={selectedNode}
+            mapRef={mapRef}
             onClose={() => setSelectedNode(null)}
-            closeButton={true}
-            closeOnClick={false}
-            offset={15}
-            className="node-popup-premium"
-          >
-            <div className="p-4 min-w-[320px]" style={{ background: '#0A0E1A' }}>
-              {/* Header with health gradient bar */}
-              <div className="mb-3">
-                {/* Health indicator bar */}
-                <div className="h-1 rounded-full mb-3 overflow-hidden" style={{ background: '#1A1F2E' }}>
-                  <div 
-                    className="h-full transition-all duration-500"
-                    style={{
-                      width: `${selectedNode.health}%`,
-                      background: `linear-gradient(90deg, ${getNodeColor(selectedNode.health)}, #00D4AA)`,
-                      boxShadow: `0 0 8px ${getNodeColor(selectedNode.health)}`,
-                    }}
-                  />
-                </div>
-
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div 
-                        className="w-2.5 h-2.5 rounded-full animate-pulse"
-                        style={{
-                          backgroundColor: '#00D4AA',
-                          boxShadow: '0 0 10px #00D4AA',
-                        }}
-                      />
-                      <div className="font-mono text-base font-bold" style={{ color: '#00D4AA' }}>
-                        {selectedNode.ip}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs" style={{ color: '#6B7280' }}>
-                      <span>{selectedNode.city}</span>
-                      <span>•</span>
-                      <span>{selectedNode.country}</span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs" style={{ color: '#6B7280' }}>Health</div>
-                    <div className="text-xl font-bold" style={{ color: '#00D4AA' }}>
-                      {selectedNode.health.toFixed(0)}
-                      <span className="text-xs" style={{ color: '#6B7280' }}>%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                {/* Storage */}
-                <div className="p-2 rounded-lg" style={{ background: '#1A1F2E' }}>
-                  <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: '#6B7280' }}>
-                    Storage
-                  </div>
-                  <div className="font-bold" style={{ color: selectedNode.storage > 0 ? '#00D4AA' : '#6B7280' }}>
-                    {selectedNode.storage > 0 
-                      ? `${(selectedNode.storage / 1024 / 1024 / 1024).toFixed(1)} GB`
-                      : 'N/A'}
-                  </div>
-                </div>
-
-                {/* Uptime */}
-                <div className="p-2 rounded-lg" style={{ background: '#1A1F2E' }}>
-                  <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: '#6B7280' }}>
-                    Uptime
-                  </div>
-                  <div className="font-bold" style={{ color: selectedNode.uptime > 0 ? '#00D4AA' : '#6B7280' }}>
-                    {selectedNode.uptime > 0 
-                      ? selectedNode.uptime >= 86400 
-                        ? `${Math.floor(selectedNode.uptime / 86400)}d ${Math.floor((selectedNode.uptime % 86400) / 3600)}h`
-                        : `${Math.floor(selectedNode.uptime / 3600)}h`
-                      : 'N/A'}
-                  </div>
-                </div>
-
-                {/* CPU */}
-                <div className="p-2 rounded-lg" style={{ background: '#1A1F2E' }}>
-                  <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: '#6B7280' }}>
-                    CPU Usage
-                  </div>
-                  <div className="font-bold" style={{ color: selectedNode.cpu > 0 ? '#00D4AA' : '#6B7280' }}>
-                    {selectedNode.cpu > 0 ? `${selectedNode.cpu.toFixed(1)}%` : 'N/A'}
-                  </div>
-                </div>
-
-                {/* RAM */}
-                <div className="p-2 rounded-lg" style={{ background: '#1A1F2E' }}>
-                  <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: '#6B7280' }}>
-                    RAM Usage
-                  </div>
-                  <div className="font-bold" style={{ color: selectedNode.ram > 0 ? '#00D4AA' : '#6B7280' }}>
-                    {selectedNode.ram > 0 ? `${selectedNode.ram.toFixed(1)}%` : 'N/A'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Additional Info */}
-              <div className="space-y-2 mb-3 p-2 rounded-lg" style={{ background: '#1A1F2E' }}>
-                <div className="flex justify-between text-xs">
-                  <span style={{ color: '#6B7280' }}>Version</span>
-                  <span className="font-mono" style={{ color: '#9CA3AF' }}>{selectedNode.version || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span style={{ color: '#6B7280' }}>Type</span>
-                  <span className="font-semibold" style={{ color: selectedNode.isPublic ? '#00D4AA' : '#6B7280' }}>
-                    {selectedNode.isPublic ? 'PUBLIC' : 'PRIVATE'}
-                  </span>
-                </div>
-                {selectedNode.hasActiveStreams && (
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                    <span style={{ color: '#10B981' }}>Active Streams</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Action button */}
-              <button
-                onClick={() => navigateToNode(selectedNode.ip)}
-                className="w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 hover:scale-[1.02]"
-                style={{ 
-                  background: 'linear-gradient(135deg, #00D4AA 0%, #00A389 100%)',
-                  color: '#0A0E1A',
-                  boxShadow: '0 4px 12px rgba(0, 212, 170, 0.3)',
-                }}
-              >
-                View Full Details →
-              </button>
-            </div>
-          </Popup>
+            onNavigate={navigateToNode}
+            getNodeColor={getNodeColor}
+          />
         )}
       </MapGL>
     </div>
