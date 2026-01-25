@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useTheme } from '@/hooks/useTheme';
-import { getMapTheme, getNodeColorByHealth, formatNodeTooltip, getStatusColors } from '@/lib/map-theme';
+import { getMapTheme, getNodeColorByHealth, getStatusColors } from '@/lib/map-theme';
 import { filterNodes } from '@/lib/map-3d-utils';
 import { Map3DSidebar } from './Map3DSidebar';
 import type { Node3DData, Globe3DMode, Globe3DFilter } from '@/lib/types-3d';

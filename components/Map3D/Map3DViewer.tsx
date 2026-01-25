@@ -13,8 +13,6 @@ import { generateCountryLabels, generateCityLabels } from '@/lib/label-utils';
 import { calculateMapStats, toMap3DSidebarStats } from '@/lib/map-stats';
 import { clusterNodes, isCluster3D, spiderfyNodes, type Node3D, type Cluster3D } from '@/lib/simple-3d-clustering';
 import type { Node3DData, Globe3DMode, Globe3DFilter } from '@/lib/types-3d';
-import type { ClusterFeature, NodeFeature } from '@/lib/types-clustering';
-import { isCluster } from '@/lib/types-clustering';
 
 // Dynamically import Globe to avoid SSR issues
 const Globe = dynamic(() => import('react-globe.gl'), {
@@ -71,11 +69,6 @@ export function Map3DViewer({ pnodes, onClose }: Map3DViewerProps) {
   const [focusedCountry, setFocusedCountry] = useState<string | null>(null);
   const [currentAltitude, setCurrentAltitude] = useState<number>(2.5);
   const lastClickTime = useRef<number>(0);
-  const clickTimeout = useRef<NodeJS.Timeout | null>(null);
-  
-  // Simple clustering state
-  const [spiderfiedNodes, setSpiderfiedNodes] = useState<Node3D[]>([]);
-  const [selectedCluster, setSelectedCluster] = useState<Cluster3D | null>(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -208,7 +201,6 @@ export function Map3DViewer({ pnodes, onClose }: Map3DViewerProps) {
   // Simple clustering based on altitude (replaces Supercluster)
   const { points, clusters } = useMemo(() => {
     if (!mapTheme || filteredNodes.length === 0) {
-      console.log('[Simple Cluster] Not ready');
       return { points: [], clusters: [] };
     }
 
@@ -252,8 +244,6 @@ export function Map3DViewer({ pnodes, onClose }: Map3DViewerProps) {
     });
 
     const clusterPoints = allPoints.filter((p: any) => isCluster3D(p.node));
-    
-    console.log('[Simple Cluster] Result:', clusterPoints.length, 'clusters,', allPoints.length - clusterPoints.length, 'nodes');
 
     return {
       points: allPoints,
@@ -276,16 +266,9 @@ export function Map3DViewer({ pnodes, onClose }: Map3DViewerProps) {
 
     // Check if it's a cluster
     if (point.node.clusterCount && point.node.clusterCount > 1) {
-      console.log('[Click] Cluster clicked:', point.node.clusterCount, 'nodes at altitude', currentAltitude);
-      
-      // Clear any spiderfy
-      setSpiderfiedNodes([]);
-      setSelectedCluster(null);
-      
       // Simple zoom: reduce altitude by 60% each click, ensuring progressive zoom
       const targetAltitude = Math.max(0.1, currentAltitude * 0.4);
       
-      console.log('[Click] Zooming from', currentAltitude.toFixed(2), 'to', targetAltitude.toFixed(2));
       
       globeEl.current.pointOfView({
         lat: point.lat,
@@ -303,7 +286,6 @@ export function Map3DViewer({ pnodes, onClose }: Map3DViewerProps) {
 
     // Single node - check for double-click to navigate
     if (timeSinceLastClick < 400) {
-      console.log('[Click] Double-click - navigating to', point.node.ip);
       router.push(`/pnode/${encodeURIComponent(point.node.ip)}`);
       lastClickTime.current = 0;
       return;
@@ -312,7 +294,6 @@ export function Map3DViewer({ pnodes, onClose }: Map3DViewerProps) {
     // Single click on node - zoom to it
     lastClickTime.current = now;
     const targetAltitude = 0.2;
-    console.log('[Click] Single node clicked:', point.node.ip);
     
     globeEl.current.pointOfView({
       lat: point.lat,
@@ -334,7 +315,6 @@ export function Map3DViewer({ pnodes, onClose }: Map3DViewerProps) {
       if (globeEl.current) {
         const pov = globeEl.current.pointOfView();
         if (pov && pov.altitude !== undefined && Math.abs(pov.altitude - currentAltitude) > 0.01) {
-          console.log('[Altitude] Manual change detected:', pov.altitude);
           setCurrentAltitude(pov.altitude);
         }
       }
@@ -349,16 +329,12 @@ export function Map3DViewer({ pnodes, onClose }: Map3DViewerProps) {
     if (globeEl.current && isClient) {
       const controls = globeEl.current.controls();
       
-      console.log('[Auto-Rotate] Effect triggered. hasUserInteracted:', hasUserInteracted);
-      
       if (controls) {
         // Start with auto-rotation only if user hasn't interacted yet
         if (!hasUserInteracted) {
-          console.log('[Auto-Rotate] Starting auto-rotation');
           controls.autoRotate = true;
           controls.autoRotateSpeed = 0.5;
         } else {
-          console.log('[Auto-Rotate] Stopping auto-rotation (user interacted)');
           controls.autoRotate = false;
         }
       }
@@ -369,11 +345,9 @@ export function Map3DViewer({ pnodes, onClose }: Map3DViewerProps) {
         const canvas = scene.domElement;
 
         const handleUserInteraction = (e: Event) => {
-          console.log('[Auto-Rotate] User interaction detected:', e.type);
           setHasUserInteracted(true);
           const controls = globeEl.current?.controls();
           if (controls) {
-            console.log('[Auto-Rotate] Stopping rotation immediately');
             controls.autoRotate = false;
           }
         };
@@ -383,10 +357,7 @@ export function Map3DViewer({ pnodes, onClose }: Map3DViewerProps) {
         canvas.addEventListener('wheel', handleUserInteraction);
         canvas.addEventListener('touchstart', handleUserInteraction);
 
-        console.log('[Auto-Rotate] Event listeners attached to canvas');
-
         return () => {
-          console.log('[Auto-Rotate] Cleanup - removing event listeners');
           canvas.removeEventListener('mousedown', handleUserInteraction);
           canvas.removeEventListener('wheel', handleUserInteraction);
           canvas.removeEventListener('touchstart', handleUserInteraction);
@@ -588,7 +559,6 @@ export function Map3DViewer({ pnodes, onClose }: Map3DViewerProps) {
               // Direct click handler on the element
               el.addEventListener('click', (e) => {
                 e.stopPropagation();
-                console.log('[HTML Click] Cluster clicked directly:', d.node.clusterCount);
                 handlePointClick(d);
               });
               

@@ -139,23 +139,13 @@ export function NodePopup({ node, mapRef, onClose, onNavigate, getNodeColor }: N
       rafRef.current = requestAnimationFrame(updatePositions);
     };
 
-    // Start animation loop
+    // Single RAF loop (no map event listeners to avoid overlapping loops)
     rafRef.current = requestAnimationFrame(updatePositions);
-
-    // Also listen to map events for immediate updates
-    map.on('move', updatePositions);
-    map.on('zoom', updatePositions);
-    map.on('rotate', updatePositions);
-    map.on('pitch', updatePositions);
 
     return () => {
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
       }
-      map.off('move', updatePositions);
-      map.off('zoom', updatePositions);
-      map.off('rotate', updatePositions);
-      map.off('pitch', updatePositions);
     };
   }, [node, mapRef]); // eslint-disable-line react-hooks/exhaustive-deps
 

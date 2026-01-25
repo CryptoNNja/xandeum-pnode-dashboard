@@ -52,8 +52,6 @@ export function clusterNodes(nodes: Node3D[], altitude: number): (Node3D | Clust
   const processed = new Set<string>();
   const result: (Node3D | Cluster3D)[] = [];
 
-  console.log('[Simple Cluster] Altitude:', altitude, 'Threshold:', threshold);
-
   for (let i = 0; i < nodes.length; i++) {
     if (processed.has(nodes[i].ip)) continue;
 
@@ -92,8 +90,6 @@ export function clusterNodes(nodes: Node3D[], altitude: number): (Node3D | Clust
   }
 
   result.push(...clusters);
-  
-  console.log('[Simple Cluster] Created', clusters.length, 'clusters,', result.length - clusters.length, 'individual nodes');
   
   return result;
 }

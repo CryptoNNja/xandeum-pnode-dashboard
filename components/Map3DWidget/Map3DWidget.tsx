@@ -75,10 +75,12 @@ export function Map3DWidget({ pnodes }: Map3DWidgetProps) {
                   country_code: p.country_code,
                   pubkey: p.pubkey,
                   uptime: p.uptime || p.stats?.uptime || 0,
-                  cpu: p.cpu_usage || p.stats?.cpu_usage || 0,
-                  ram: p.ram_usage || p.stats?.ram_usage || 0,
-                  status: (p.status === 'stale' ? 'inactive' : 'active') as 'active' | 'inactive',
-                  isPublic: p.node_type === 'public',
+                  cpu: p.stats?.cpu_percent ?? 0,
+                  ram: p.stats && typeof p.stats.ram_used === 'number' && typeof p.stats.ram_total === 'number' && p.stats.ram_total > 0
+                    ? (p.stats.ram_used / p.stats.ram_total) * 100
+                    : 0,
+                  status: (p.status === 'online' ? 'active' : 'inactive') as 'active' | 'inactive',
+                  isPublic: p.node_type === 'public' && p.lat !== null && p.lat !== undefined && p.lng !== null && p.lng !== undefined,
                   operator: p.manager_wallet,
                 };
               });

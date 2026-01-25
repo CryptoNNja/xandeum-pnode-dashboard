@@ -14,7 +14,7 @@ export interface MapStats {
   private: number;
   
   // Pour NetworkOverview
-  active: number;      // nodes avec status === 'active'
+  active: number;      // nodes avec status === 'online'
   gossipOnly: number;  // nodes avec status === 'gossip_only'
   stale: number;       // nodes avec status === 'stale'
   

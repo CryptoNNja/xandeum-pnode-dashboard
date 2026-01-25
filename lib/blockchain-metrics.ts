@@ -262,6 +262,11 @@ export function getSyncStatusBorder(status: SyncStatus): string {
  * Fetch network participation metrics from credits API
  */
 export async function fetchNetworkParticipation(): Promise<NetworkParticipationMetrics | null> {
+  // Only run on client side
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  
   try {
     const response = await fetch('/api/pods-credits', { 
       cache: 'no-store',
@@ -269,7 +274,7 @@ export async function fetchNetworkParticipation(): Promise<NetworkParticipationM
     });
     
     if (!response.ok) {
-      console.error('Failed to fetch participation metrics');
+      console.error('Failed to fetch participation metrics:', response.status);
       return null;
     }
     

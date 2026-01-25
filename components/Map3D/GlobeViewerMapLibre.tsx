@@ -3,7 +3,6 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Map as MapGL, Marker, MapRef, Layer, Source } from 'react-map-gl/maplibre';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Node3DData } from '@/lib/types-3d';
 import { X } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
@@ -33,16 +32,14 @@ export function GlobeViewerMapLibre({ nodes, onClose }: GlobeViewerMapLibreProps
   const { clusteredNodes, connectionLines, totalClusters } = useNodeClustering(nodes, viewState.zoom);
 
 
-  // Custom style with our colors AND labels
+  // Custom style matching our 2D map
   const mapStyle = useMemo(() => ({
     version: 8,
     glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
     sources: {
-      'openmaptiles': {
-        type: 'vector',
-        tiles: ['https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key=get_your_own_OpIi9ZULNHzrESv6T2vL'],
-        minzoom: 0,
-        maxzoom: 14
+      'countries': {
+        type: 'geojson',
+        data: 'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json'
       }
     },
     layers: [
@@ -54,179 +51,22 @@ export function GlobeViewerMapLibre({ nodes, onClose }: GlobeViewerMapLibreProps
         }
       },
       {
-        id: 'water',
+        id: 'countries-fill',
         type: 'fill',
-        source: 'openmaptiles',
-        'source-layer': 'water',
+        source: 'countries',
         paint: {
-          'fill-color': isLight ? '#B8D4E8' : '#0A1929'
+          'fill-color': isLight ? '#FFF8E8' : '#0D1117',
+          'fill-opacity': 1
         }
       },
       {
-        id: 'landcover',
-        type: 'fill',
-        source: 'openmaptiles',
-        'source-layer': 'landcover',
-        paint: {
-          'fill-color': isLight ? '#FEF3E2' : '#000000',
-          'fill-opacity': isLight ? 0.6 : 0.3
-        }
-      },
-      {
-        id: 'landuse',
-        type: 'fill',
-        source: 'openmaptiles',
-        'source-layer': 'landuse',
-        paint: {
-          'fill-color': isLight ? '#FEF3E2' : '#000000',
-          'fill-opacity': isLight ? 0.6 : 0.3
-        }
-      },
-      {
-        id: 'boundary-country',
+        id: 'countries-outline',
         type: 'line',
-        source: 'openmaptiles',
-        'source-layer': 'boundary',
-        filter: ['==', ['get', 'admin_level'], 2],
+        source: 'countries',
         paint: {
           'line-color': isLight ? '#EA580C' : '#00D4AA',
           'line-width': isLight ? 1.5 : 0.8,
           'line-opacity': isLight ? 0.8 : 0.5
-        }
-      },
-      {
-        id: 'place-country',
-        type: 'symbol',
-        source: 'openmaptiles',
-        'source-layer': 'place',
-        filter: ['==', ['get', 'class'], 'country'],
-        layout: {
-          'text-field': ['get', 'name:en'],
-          'text-font': ['Noto Sans Regular'],
-          'text-size': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            1, 10,
-            4, 16
-          ],
-          'text-rotation-alignment': 'viewport',
-          'text-pitch-alignment': 'viewport'
-        },
-        paint: {
-          'text-color': isLight ? '#1F2937' : '#FFFFFF',
-          'text-halo-color': isLight ? '#FFFFFF' : '#000000',
-          'text-halo-width': 1.5
-        }
-      },
-      {
-        id: 'place-city',
-        type: 'symbol',
-        source: 'openmaptiles',
-        'source-layer': 'place',
-        filter: ['in', ['get', 'class'], ['literal', ['city', 'town']]],
-        layout: {
-          'text-field': ['get', 'name:en'],
-          'text-font': ['Noto Sans Regular'],
-          'text-size': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            3, 0,
-            5, 11,
-            8, 15,
-            12, 18
-          ],
-          'text-rotation-alignment': 'viewport',
-          'text-pitch-alignment': 'viewport'
-        },
-        paint: {
-          'text-color': isLight ? '#1F2937' : '#E0E0E0',
-          'text-halo-color': isLight ? '#FFFFFF' : '#000000',
-          'text-halo-width': 1.2
-        }
-      },
-      {
-        id: 'place-village',
-        type: 'symbol',
-        source: 'openmaptiles',
-        'source-layer': 'place',
-        filter: ['in', ['get', 'class'], ['literal', ['village', 'hamlet', 'suburb', 'neighbourhood']]],
-        layout: {
-          'text-field': ['get', 'name:en'],
-          'text-font': ['Noto Sans Regular'],
-          'text-size': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            8, 0,
-            10, 9,
-            12, 12,
-            15, 14
-          ],
-          'text-rotation-alignment': 'viewport',
-          'text-pitch-alignment': 'viewport'
-        },
-        paint: {
-          'text-color': isLight ? '#374151' : '#9CA3AF',
-          'text-halo-color': isLight ? '#FFFFFF' : '#000000',
-          'text-halo-width': 1
-        }
-      },
-      {
-        id: 'road-labels',
-        type: 'symbol',
-        source: 'openmaptiles',
-        'source-layer': 'transportation_name',
-        minzoom: 12,
-        filter: ['in', ['get', 'class'], ['literal', ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'street']]],
-        layout: {
-          'text-field': ['get', 'name:en'],
-          'text-font': ['Noto Sans Regular'],
-          'text-size': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            12, 8,
-            14, 10,
-            16, 11
-          ],
-          'symbol-placement': 'line',
-          'text-rotation-alignment': 'map',
-          'text-pitch-alignment': 'viewport'
-        },
-        paint: {
-          'text-color': isLight ? '#6B7280' : '#6B7280',
-          'text-halo-color': isLight ? '#FFFFFF' : '#000000',
-          'text-halo-width': 1.5
-        }
-      },
-      {
-        id: 'poi-labels',
-        type: 'symbol',
-        source: 'openmaptiles',
-        'source-layer': 'poi',
-        minzoom: 14,
-        layout: {
-          'text-field': ['get', 'name:en'],
-          'text-font': ['Noto Sans Regular'],
-          'text-size': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            14, 9,
-            16, 11,
-            18, 13
-          ],
-          'text-anchor': 'top',
-          'text-offset': [0, 0.5],
-          'text-rotation-alignment': 'viewport',
-          'text-pitch-alignment': 'viewport'
-        },
-        paint: {
-          'text-color': isLight ? '#4B5563' : '#A0A0A0',
-          'text-halo-color': isLight ? '#FFFFFF' : '#000000',
-          'text-halo-width': 1.2
         }
       }
     ]

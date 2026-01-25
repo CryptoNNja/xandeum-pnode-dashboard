@@ -255,7 +255,6 @@ export default function Page() {
   } = useFavorites();
 
   const [isFavoritesModalOpen, setIsFavoritesModalOpen] = useState(false);
-  const [is3DMapOpen, setIs3DMapOpen] = useState(false);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [nodesToCompare, setNodesToCompare] = useState<typeof pnodes>([]);
 

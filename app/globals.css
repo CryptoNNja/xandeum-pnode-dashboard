@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* MapLibre GL CSS - imported globally for production compatibility */
+@import "maplibre-gl/dist/maplibre-gl.css";
+
 /* Path to files scanned by Tailwind */
 @source "../**/*.{js,ts,jsx,tsx}";
 
