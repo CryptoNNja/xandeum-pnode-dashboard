@@ -815,7 +815,7 @@ export const KpiCards = ({
           {/* Network Coverage Card */}
           <div 
             className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-accent-primary/10 hover:border-accent-primary/50 hover:scale-[1.02] group"
-            style={{ minHeight: "420px", height: "auto" }}
+            style={{ minHeight: "500px", height: "auto" }}
             onClick={() => setIsNetworkCoverageModalOpen(true)}
             role="button"
             tabIndex={0}
@@ -952,7 +952,7 @@ export const KpiCards = ({
             </div>
 
             {/* ✨ Crawl Status Zone - Consistent with other SYSTEM HEALTH cards */}
-            <div className="mt-auto pt-4 border-t border-border-app-soft">
+            <div className="mt-auto pt-4 pb-16 border-t border-border-app-soft">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs uppercase tracking-[0.25em] text-text-soft/70">
                   Crawler Status
@@ -1030,7 +1030,7 @@ export const KpiCards = ({
             </div>
 
             {/* Click indicator - BOTTOM RIGHT like other SYSTEM HEALTH cards */}
-            <div className="absolute bottom-8 right-8 opacity-30 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1">
+            <div className="absolute bottom-12 right-8 opacity-30 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1">
               <ChevronRight className="w-5 h-5 text-accent-primary" strokeWidth={2.5} />
             </div>
           </div>
