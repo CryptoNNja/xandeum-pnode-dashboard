@@ -815,6 +815,7 @@ export const KpiCards = ({
           {/* Network Coverage Card */}
           <div 
             className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-accent-primary/10 hover:border-accent-primary/50 hover:scale-[1.02] group"
+            style={{ minHeight: "320px" }}
             onClick={() => setIsNetworkCoverageModalOpen(true)}
             role="button"
             tabIndex={0}
