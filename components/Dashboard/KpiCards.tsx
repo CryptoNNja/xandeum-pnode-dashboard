@@ -950,6 +950,44 @@ export const KpiCards = ({
               </p>
             </div>
 
+            {/* ✨ NEW: Crawl Timing */}
+            {networkMetadata.lastUpdated && (() => {
+              const lastCrawl = new Date(networkMetadata.lastUpdated);
+              const now = Date.now();
+              const diffMs = now - lastCrawl.getTime();
+              const diffMin = Math.floor(diffMs / 60000);
+              const diffHr = Math.floor(diffMs / 3600000);
+              const diffDays = Math.floor(diffMs / 86400000);
+              
+              const lastCrawlText = diffMin < 1 ? 'Just now' :
+                                    diffMin < 60 ? `${diffMin}min ago` :
+                                    diffHr < 24 ? `${diffHr}h ago` :
+                                    `${diffDays}d ago`;
+              
+              // Next crawl in 30 minutes
+              const nextCrawl = new Date(lastCrawl.getTime() + 30 * 60 * 1000);
+              const untilNextMs = nextCrawl.getTime() - now;
+              const untilNextMin = Math.max(0, Math.floor(untilNextMs / 60000));
+              
+              const nextCrawlText = untilNextMin === 0 ? 'now' : `in ${untilNextMin}min`;
+              
+              return (
+                <div 
+                  className="mt-4 pt-4 border-t flex items-center justify-between text-xs"
+                  style={{ borderColor: isLight ? "rgba(15, 23, 42, 0.1)" : "rgba(255, 255, 255, 0.1)" }}
+                >
+                  <div className="flex items-center gap-1.5 text-text-soft">
+                    <Activity className="w-3 h-3" />
+                    <span>Last: <span className="font-semibold text-text-main">{lastCrawlText}</span></span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-text-soft">
+                    <Zap className="w-3 h-3" />
+                    <span>Next: <span className="font-semibold text-text-main">{nextCrawlText}</span></span>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Click indicator */}
             <div className="absolute bottom-4 right-4 opacity-30 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1">
               <ChevronRight className="w-5 h-5 text-accent-primary" strokeWidth={2.5} />
