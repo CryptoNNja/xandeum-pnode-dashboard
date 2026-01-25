@@ -142,22 +142,111 @@ export const usePnodeDashboard = (theme?: string) => {
   // Network participation from credits API
   const [networkParticipation, setNetworkParticipation] = useState<NetworkParticipationMetrics | null>(null);
 
+  // Fetch real crawler timestamp from network_metadata table
+  const [realCrawlerTimestamp, setRealCrawlerTimestamp] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchMetadata = () => {
+      fetch('/api/network-metadata', { signal: controller.signal })
+        .then(res => res.json())
+        .then(data => {
+          if (data.lastUpdated) {
+            setRealCrawlerTimestamp(data.lastUpdated);
+          }
+        })
+        .catch(err => {
+          if (err && err.name === 'AbortError') {
+            // Ignore abort errors triggered on unmount
+            return;
+          }
+          console.error('Failed to fetch network metadata:', err);
+        });
+    };
+
+    // Initial fetch
+    fetchMetadata();
+    
+    // Refresh every 30 seconds to keep it updated
+    const interval = setInterval(() => {
+      fetchMetadata();
+    }, 30000);
+    
+    return () => {
+      clearInterval(interval);
+      controller.abort();
+    };
+  }, []);
+
   // Network metadata (gossip discovery stats)
-  // Calculate networkMetadata from deduplicated allPnodes instead of fetching from API
-  // This ensures consistency with the deduplicated data shown everywhere
-  // ⚠️ IMPORTANT: Exclude 'stale' nodes from counts
+  // ✨ ENHANCED: Calculate REAL network coverage based on historical discovery
+  // Total Discovered (Historical) = All nodes ever discovered (including stale)
+  // Currently Active/Crawled = Nodes with recent data (excluding stale)
+  // Coverage % = (Active / Total Historical) * 100
+  // 
+  // This shows how well we maintain connectivity to historically known nodes.
+  // A drop in coverage indicates network churn (nodes going offline).
   const networkMetadata = useMemo(() => {
-    const totalNodes = allPnodes.filter(p => p.status !== "stale").length; // ⚠️ Exclude stale
-    const activeNodes = allPnodes.filter(p => p.node_type === "public" && p.status !== "stale").length; // ⚠️ Exclude stale
+    // TOTAL DISCOVERED (Historical): All nodes in database (including stale)
+    const totalHistoricallyDiscovered = allPnodes.length;
+    
+    // CURRENTLY ACTIVE: Nodes we can currently crawl (excluding stale)
+    const currentlyActiveNodes = allPnodes.filter(p => p.status !== "stale");
+    const activeCrawledCount = currentlyActiveNodes.length;
+    
+    // STALE NODES: Known but currently unreachable (network churn)
+    const staleNodes = allPnodes.filter(p => p.status === "stale");
+    const staleCount = staleNodes.length;
+    
+    // REAL COVERAGE: Active nodes vs historical discovery
+    // This shows crawler effectiveness at maintaining connectivity
+    const coverage = totalHistoricallyDiscovered > 0 
+      ? (activeCrawledCount / totalHistoricallyDiscovered) * 100 
+      : 0;
+    
+    // Breakdown by source (for modal details)
+    const registryOnlyNodes = currentlyActiveNodes.filter(p => 
+      p.status !== "stale" && (
+        p.status === "registry_only" || 
+        (p.source === "registry" && p.stats === null)
+      )
+    ).length;
+    
+    const gossipOnlyNodes = currentlyActiveNodes.filter(p => 
+      p.status !== "stale" &&
+      p.stats === null && 
+      p.status !== "registry_only" &&
+      p.source !== "registry"
+    ).length;
+    
+    const bothSources = currentlyActiveNodes.filter(p => 
+      p.status !== "stale" && p.source === "both"
+    ).length;
+    
+    // Public nodes count
+    const activeNodes = currentlyActiveNodes.filter(p => 
+      p.status !== "stale" && p.node_type === "public"
+    ).length;
+    
+    // Use the REAL crawler timestamp from network_metadata table (most accurate)
+    // This is updated by the crawler script on each run
+    // Fallback to lastUpdate only if network_metadata is not available
+    const finalTimestamp = realCrawlerTimestamp || lastUpdate?.toISOString() || null;
     
     return {
-      networkTotal: totalNodes,
-      crawledNodes: totalNodes, // Same as total since we crawled all we know about
-      activeNodes: activeNodes,
-      coveragePercent: 100, // We show 100% of nodes we've discovered
-      lastUpdated: lastUpdate?.toISOString() || null
+      networkTotal: totalHistoricallyDiscovered,  // All nodes ever discovered
+      crawledNodes: activeCrawledCount,           // Currently active/crawlable
+      staleNodes: staleCount,                     // Historical nodes now offline
+      registryOnlyNodes,                          // Known from registry, not yet crawled
+      gossipOnlyNodes,                            // Known from gossip, not yet crawled
+      bothSourcesNodes: bothSources,              // Verified in both sources
+      uncrawledNodes: staleCount,                 // Same as stale (historical but unreachable)
+      activeNodes: activeNodes,                   // Public nodes
+      coveragePercent: coverage,                  // ✅ Historical coverage metric
+      lastUpdated: finalTimestamp                 // ✅ REAL last crawl timestamp (with fallback)
     };
-  }, [allPnodes, lastUpdate]);
+  }, [allPnodes, lastUpdate, realCrawlerTimestamp]);
 
   // 🆕 Nodes grouped by pubkey (for multi-node operator detection)
   const nodesByPubkey = useMemo(() => {

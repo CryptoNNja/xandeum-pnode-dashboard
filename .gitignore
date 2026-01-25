@@ -6,6 +6,10 @@ node_modules/
 # testing
 /coverage
 
+# Handoff documents (local only)
+docs/HANDOFF*.md
+**/HANDOFF*.md
+
 # next.js
 /.next/
 /out/
@@ -142,3 +146,4 @@ tmp_rovodev_*
 !DEPENDENCIES.md
 !docs/**/*.md
 !.github/**/*.md
+docs/HANDOFF*.md
