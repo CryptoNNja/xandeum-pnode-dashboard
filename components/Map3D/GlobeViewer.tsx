@@ -43,7 +43,6 @@ export function GlobeViewer({ nodes, onClose }: GlobeViewerProps) {
   const { theme, mounted: themeMounted } = useTheme();
   const [isClient, setIsClient] = useState(false);
   const globeEl = useRef<any>(null);
-  const [countriesData, setCountriesData] = useState<any>(null);
 
   // State
   const [mode, setMode] = useState<Globe3DMode>('free');
@@ -61,12 +60,7 @@ export function GlobeViewer({ nodes, onClose }: GlobeViewerProps) {
 
   useEffect(() => {
     setIsClient(true);
-
-    // Fetch countries GeoJSON for borders
-    fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
-      .then(res => res.json())
-      .then(data => setCountriesData(data))
-      .catch(err => console.error('Failed to load countries:', err));
+    // No need to fetch countries - using globe texture with built-in borders
   }, []);
 
   // Get theme colors
@@ -129,7 +123,7 @@ export function GlobeViewer({ nodes, onClose }: GlobeViewerProps) {
       return {
         lat: node.lat,
         lng: node.lng,
-        size: 0.25,
+        size: 0.5,
         color: color,
         node: node,
         altitude: 0.01,
@@ -229,19 +223,13 @@ export function GlobeViewer({ nodes, onClose }: GlobeViewerProps) {
             width: typeof window !== 'undefined' ? window.innerWidth : 1920,
             height: typeof window !== 'undefined' ? window.innerHeight : 1080,
 
-            // Globe appearance - solid color, no texture
-            backgroundColor: mapTheme.background,
-            globeImageUrl: null,
-            showAtmosphere: true,
-            atmosphereColor: mapTheme.globe.atmosphere,
-            atmosphereAltitude: 0.15,
+            // Globe appearance - Clean with star background
+            backgroundImageUrl: '//unpkg.com/three-globe/example/img/night-sky.png',
+            globeImageUrl: 'https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_4k.jpg',
+            showAtmosphere: false,
 
-            // Countries polygons - Match 2D map style
-            polygonsData: countriesData?.features || [],
-            polygonCapColor: () => mapTheme.countries.fill,
-            polygonSideColor: () => mapTheme.countries.fill,
-            polygonStrokeColor: () => mapTheme.countries.stroke,
-            polygonAltitude: 0.001,
+            // No separate polygons - texture already has country borders
+            polygonsData: [],
 
             // Points (nodes) - Simple fixed points
             pointsData: points,

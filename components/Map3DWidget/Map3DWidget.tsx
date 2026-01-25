@@ -3,9 +3,9 @@
 import { useState, Suspense, lazy } from 'react';
 import { Map3DButton } from './Map3DButton';
 
-// Lazy load GlobeViewer (react-globe.gl - Professional 3D visualization)
+// Lazy load GlobeViewerMapLibre (MapLibre GL - Professional 3D visualization with dark-matter style)
 const Map3DViewer = lazy(() => 
-  import('../Map3D/GlobeViewer').then(mod => ({ default: mod.GlobeViewer }))
+  import('../Map3D/GlobeViewerMapLibre').then(mod => ({ default: mod.GlobeViewerMapLibre }))
 );
 
 type Map3DWidgetProps = {
