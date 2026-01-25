@@ -152,17 +152,26 @@ export const usePnodeDashboard = (theme?: string) => {
     const allKnownNodes = allPnodes.filter(p => p.status !== "stale");
     const totalKnown = allKnownNodes.length;
     
-    // Nodes successfully crawled (has stats and not registry-only)
+    // Nodes successfully crawled = has stats AND not registry_only status
+    // Use status field (more reliable) and stats existence
     const fullyCrawled = allKnownNodes.filter(p => 
       p.stats !== null && 
-      p.source !== "registry_only" // Registry-only means we know it exists but can't reach it
+      p.status !== "registry_only" &&
+      (p.stats.uptime > 0 || p.stats.cpu_percent > 0 || p.stats.ram_total > 0) // Has real data
     ).length;
     
-    // Breakdown by source
-    const registryOnlyNodes = allKnownNodes.filter(p => p.source === "registry_only").length;
-    const gossipOnlyNodes = allKnownNodes.filter(p => 
-      p.source === "gossip" && p.stats === null
+    // Breakdown by status and source
+    const registryOnlyNodes = allKnownNodes.filter(p => 
+      p.status === "registry_only" || 
+      (p.source === "registry" && p.stats === null)
     ).length;
+    
+    const gossipOnlyNodes = allKnownNodes.filter(p => 
+      p.stats === null && 
+      p.status !== "registry_only" &&
+      p.source !== "registry"
+    ).length;
+    
     const bothSources = allKnownNodes.filter(p => p.source === "both").length;
     
     // Public nodes for active count
