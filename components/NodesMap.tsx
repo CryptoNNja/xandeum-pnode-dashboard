@@ -100,9 +100,10 @@ const getGeoJsonStyleForTheme = (isLight: boolean) => ({
 
 export interface NodesMapProps {
   nodes: PNode[];
+  onSwitch3D?: () => void;
 }
 
-const NodesMap = memo(({ nodes }: NodesMapProps) => {
+const NodesMap = memo(({ nodes, onSwitch3D }: NodesMapProps) => {
   const { theme, mounted: themeMounted } = useTheme();
   const isLight = themeMounted && theme === "light";
   const [locations, setLocations] = useState<NodeLocation[]>([]);
@@ -401,6 +402,28 @@ const NodesMap = memo(({ nodes }: NodesMapProps) => {
       }}
     >
       <style>{getMapStyles(isLight)}</style>
+      
+      {/* 3D Toggle Button */}
+      {onSwitch3D && (
+        <button
+          onClick={onSwitch3D}
+          className="absolute top-4 right-4 z-[1000] px-4 py-2 rounded-lg border text-xs font-semibold transition-all hover:scale-105 pointer-events-auto"
+          style={{
+            background: isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(10, 14, 39, 0.95)',
+            borderColor: isLight ? 'rgba(234, 88, 12, 0.3)' : 'rgba(20, 241, 149, 0.3)',
+            color: isLight ? '#EA580C' : '#14f195',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <span className="flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>SWITCH TO 3D</span>
+          </span>
+        </button>
+      )}
+      
       {/* Legend aligned with the rest of the dashboard */}
       <div className="absolute bottom-6 left-6 z-[1000] px-4 py-3 rounded border text-[10px] font-mono pointer-events-none" style={{
         background: isLight ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.8)',
