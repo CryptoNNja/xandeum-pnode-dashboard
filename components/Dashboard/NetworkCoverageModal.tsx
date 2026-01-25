@@ -35,13 +35,26 @@ export const NetworkCoverageModal = ({
   // Tab state
   const [activeTab, setActiveTab] = useState<'overview' | 'trends'>('overview');
 
-  // Reset tab to overview when modal closes
+  // Reset tab to overview when modal opens
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
       setActiveTab('overview');
     }
   }, [isOpen]);
 
+  // Prepare growth data for trends tab (memoized to avoid expensive date formatting on every render)
+  // MUST be before the early return to respect Rules of Hooks
+  const growthData = useMemo(() => {
+    return networkHistory && networkHistory.length > 0
+      ? networkHistory.slice(-30).map(entry => ({
+          date: new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          total: entry.totalNodes ?? entry.nodes ?? 0,
+          public: entry.publicNodes ?? entry.nodes ?? 0,
+        }))
+      : [];
+  }, [networkHistory]);
+
+  // Early return AFTER all hooks
   if (!isOpen) return null;
 
   const coverageColor = networkMetadata.coveragePercent >= 80 ? "#10B981" :
@@ -55,17 +68,6 @@ export const NetworkCoverageModal = ({
   const coverageStatus = networkMetadata.coveragePercent >= 80 ? "Excellent" :
                          networkMetadata.coveragePercent >= 60 ? "Good" :
                          networkMetadata.coveragePercent >= 40 ? "Moderate" : "Limited";
-
-  // Prepare growth data for trends tab (memoized to avoid expensive date formatting on every render)
-  const growthData = useMemo(() => {
-    return networkHistory && networkHistory.length > 0
-      ? networkHistory.slice(-30).map(entry => ({
-          date: new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          total: entry.totalNodes ?? entry.nodes ?? 0,
-          public: entry.publicNodes ?? entry.nodes ?? 0,
-        }))
-      : [];
-  }, [networkHistory]);
 
   return (
     <div
