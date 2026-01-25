@@ -280,7 +280,7 @@ useEffect(() => {
 const networkMetadata = useMemo(() => {
   // Count nodes by source
   const totalKnown = allPnodes.length;
-  const fullyC rawled = allPnodes.filter(p => 
+  const fullyCrawled = allPnodes.filter(p => 
     p.stats !== null && 
     p.status !== "stale" &&
     p.source !== "registry_only" // Has actual crawler data

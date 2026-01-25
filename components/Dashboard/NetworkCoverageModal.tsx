@@ -1,7 +1,7 @@
 "use client";
 
 import { X, Activity, Database, Wifi, AlertTriangle, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { LineChart, Line, ResponsiveContainer, Tooltip, CartesianGrid, XAxis, YAxis } from "recharts";
 
 type NetworkCoverageModalProps = {
@@ -32,10 +32,17 @@ export const NetworkCoverageModal = ({
   isLight,
   networkHistory,
 }: NetworkCoverageModalProps) => {
-  if (!isOpen) return null;
-
   // Tab state
   const [activeTab, setActiveTab] = useState<'overview' | 'trends'>('overview');
+
+  // Reset tab to overview when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setActiveTab('overview');
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
 
   const coverageColor = networkMetadata.coveragePercent >= 80 ? "#10B981" :
                         networkMetadata.coveragePercent >= 60 ? "#3B82F6" :
@@ -49,14 +56,16 @@ export const NetworkCoverageModal = ({
                          networkMetadata.coveragePercent >= 60 ? "Good" :
                          networkMetadata.coveragePercent >= 40 ? "Moderate" : "Limited";
 
-  // Prepare growth data for trends tab
-  const growthData = networkHistory && networkHistory.length > 0
-    ? networkHistory.slice(-30).map(entry => ({
-        date: new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        total: entry.totalNodes ?? entry.nodes ?? 0,
-        public: entry.publicNodes ?? entry.nodes ?? 0,
-      }))
-    : [];
+  // Prepare growth data for trends tab (memoized to avoid expensive date formatting on every render)
+  const growthData = useMemo(() => {
+    return networkHistory && networkHistory.length > 0
+      ? networkHistory.slice(-30).map(entry => ({
+          date: new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          total: entry.totalNodes ?? entry.nodes ?? 0,
+          public: entry.publicNodes ?? entry.nodes ?? 0,
+        }))
+      : [];
+  }, [networkHistory]);
 
   return (
     <div

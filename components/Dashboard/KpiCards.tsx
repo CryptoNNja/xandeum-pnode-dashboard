@@ -960,8 +960,8 @@ export const KpiCards = ({
                 {networkMetadata.lastUpdated && (() => {
                   const lastCrawl = new Date(networkMetadata.lastUpdated);
                   const now = Date.now();
-                  const untilNextMs = (lastCrawl.getTime() + 30 * 60 * 1000) - now;
-                  const isActive = untilNextMs > 0 && untilNextMs < 30 * 60 * 1000;
+                  const timeSinceLastCrawlMs = now - lastCrawl.getTime();
+                  const isActive = timeSinceLastCrawlMs >= 0 && timeSinceLastCrawlMs <= 5 * 60 * 1000;
                   
                   return (
                     <div className="flex items-center gap-2">
@@ -1007,9 +1007,14 @@ export const KpiCards = ({
                   // Next crawl in 30 minutes
                   const nextCrawl = new Date(lastCrawl.getTime() + 30 * 60 * 1000);
                   const untilNextMs = nextCrawl.getTime() - now;
-                  const untilNextMin = Math.max(0, Math.floor(untilNextMs / 60000));
+                  const untilNextMinRaw = Math.floor(untilNextMs / 60000);
                   
-                  const nextCrawlText = untilNextMin === 0 ? 'now' : `in ${untilNextMin}min`;
+                  const nextCrawlText =
+                    untilNextMs < 0
+                      ? "overdue"
+                      : untilNextMinRaw <= 0
+                        ? "now"
+                        : `in ${untilNextMinRaw}min`;
                   
                   return (
                     <div className="flex items-center justify-between text-xs">

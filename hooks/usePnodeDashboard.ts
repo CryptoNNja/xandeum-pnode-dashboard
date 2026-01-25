@@ -146,29 +146,37 @@ export const usePnodeDashboard = (theme?: string) => {
   const [realCrawlerTimestamp, setRealCrawlerTimestamp] = useState<string | null>(null);
   
   useEffect(() => {
-    // Fetch the real crawler timestamp from the API
-    fetch('/api/network-metadata')
-      .then(res => res.json())
-      .then(data => {
-        if (data.lastUpdated) {
-          setRealCrawlerTimestamp(data.lastUpdated);
-        }
-      })
-      .catch(err => console.error('Failed to fetch network metadata:', err));
-    
-    // Refresh every 30 seconds to keep it updated
-    const interval = setInterval(() => {
-      fetch('/api/network-metadata')
+    const controller = new AbortController();
+
+    const fetchMetadata = () => {
+      fetch('/api/network-metadata', { signal: controller.signal })
         .then(res => res.json())
         .then(data => {
           if (data.lastUpdated) {
             setRealCrawlerTimestamp(data.lastUpdated);
           }
         })
-        .catch(err => console.error('Failed to fetch network metadata:', err));
+        .catch(err => {
+          if (err && err.name === 'AbortError') {
+            // Ignore abort errors triggered on unmount
+            return;
+          }
+          console.error('Failed to fetch network metadata:', err);
+        });
+    };
+
+    // Initial fetch
+    fetchMetadata();
+    
+    // Refresh every 30 seconds to keep it updated
+    const interval = setInterval(() => {
+      fetchMetadata();
     }, 30000);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      controller.abort();
+    };
   }, []);
 
   // Network metadata (gossip discovery stats)
@@ -195,24 +203,31 @@ export const usePnodeDashboard = (theme?: string) => {
     // This shows crawler effectiveness at maintaining connectivity
     const coverage = totalHistoricallyDiscovered > 0 
       ? (activeCrawledCount / totalHistoricallyDiscovered) * 100 
-      : 100;
+      : 0;
     
     // Breakdown by source (for modal details)
     const registryOnlyNodes = currentlyActiveNodes.filter(p => 
-      p.status === "registry_only" || 
-      (p.source === "registry" && p.stats === null)
+      p.status !== "stale" && (
+        p.status === "registry_only" || 
+        (p.source === "registry" && p.stats === null)
+      )
     ).length;
     
     const gossipOnlyNodes = currentlyActiveNodes.filter(p => 
+      p.status !== "stale" &&
       p.stats === null && 
       p.status !== "registry_only" &&
       p.source !== "registry"
     ).length;
     
-    const bothSources = currentlyActiveNodes.filter(p => p.source === "both").length;
+    const bothSources = currentlyActiveNodes.filter(p => 
+      p.status !== "stale" && p.source === "both"
+    ).length;
     
     // Public nodes count
-    const activeNodes = currentlyActiveNodes.filter(p => p.node_type === "public").length;
+    const activeNodes = currentlyActiveNodes.filter(p => 
+      p.status !== "stale" && p.node_type === "public"
+    ).length;
     
     // Use the REAL crawler timestamp from network_metadata table (most accurate)
     // This is updated by the crawler script on each run
@@ -223,15 +238,15 @@ export const usePnodeDashboard = (theme?: string) => {
       networkTotal: totalHistoricallyDiscovered,  // All nodes ever discovered
       crawledNodes: activeCrawledCount,           // Currently active/crawlable
       staleNodes: staleCount,                     // Historical nodes now offline
-      registryOnlyNodes,                          // Known from registry but unreachable
-      gossipOnlyNodes,                            // Known from gossip but unreachable
+      registryOnlyNodes,                          // Known from registry, not yet crawled
+      gossipOnlyNodes,                            // Known from gossip, not yet crawled
       bothSourcesNodes: bothSources,              // Verified in both sources
       uncrawledNodes: staleCount,                 // Same as stale (historical but unreachable)
       activeNodes: activeNodes,                   // Public nodes
       coveragePercent: coverage,                  // ✅ Historical coverage metric
       lastUpdated: finalTimestamp                 // ✅ REAL last crawl timestamp (with fallback)
     };
-  }, [allPnodes, lastUpdate]);
+  }, [allPnodes, lastUpdate, realCrawlerTimestamp]);
 
   // 🆕 Nodes grouped by pubkey (for multi-node operator detection)
   const nodesByPubkey = useMemo(() => {
