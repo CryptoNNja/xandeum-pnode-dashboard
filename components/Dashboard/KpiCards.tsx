@@ -931,7 +931,7 @@ export const KpiCards = ({
               )}
             </div>
 
-            <div className="mt-4">
+            <div className="mt-4 mb-6">
               <p
                 className="text-sm font-medium"
                 style={{
@@ -952,7 +952,7 @@ export const KpiCards = ({
             </div>
 
             {/* ✨ Crawl Status Zone - Consistent with other SYSTEM HEALTH cards */}
-            <div className="mt-auto pt-4 pb-16 border-t border-border-app-soft">
+            <div className="mt-auto pt-6 pb-16 border-t border-border-app-soft">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs uppercase tracking-[0.25em] text-text-soft/70">
                   Crawler Status
