@@ -1030,7 +1030,7 @@ export const KpiCards = ({
             </div>
 
             {/* Click indicator - BOTTOM RIGHT like other SYSTEM HEALTH cards */}
-            <div className="absolute bottom-12 right-8 opacity-30 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1">
+            <div className="absolute bottom-4 right-4 opacity-30 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1">
               <ChevronRight className="w-5 h-5 text-accent-primary" strokeWidth={2.5} />
             </div>
           </div>
