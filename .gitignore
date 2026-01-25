@@ -6,6 +6,10 @@ node_modules/
 # testing
 /coverage
 
+# Handoff documents (local only)
+docs/HANDOFF*.md
+**/HANDOFF*.md
+
 # next.js
 /.next/
 /out/
