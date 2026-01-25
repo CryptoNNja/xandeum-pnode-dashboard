@@ -142,6 +142,35 @@ export const usePnodeDashboard = (theme?: string) => {
   // Network participation from credits API
   const [networkParticipation, setNetworkParticipation] = useState<NetworkParticipationMetrics | null>(null);
 
+  // Fetch real crawler timestamp from network_metadata table
+  const [realCrawlerTimestamp, setRealCrawlerTimestamp] = useState<string | null>(null);
+  
+  useEffect(() => {
+    // Fetch the real crawler timestamp from the API
+    fetch('/api/network-metadata')
+      .then(res => res.json())
+      .then(data => {
+        if (data.lastUpdated) {
+          setRealCrawlerTimestamp(data.lastUpdated);
+        }
+      })
+      .catch(err => console.error('Failed to fetch network metadata:', err));
+    
+    // Refresh every 30 seconds to keep it updated
+    const interval = setInterval(() => {
+      fetch('/api/network-metadata')
+        .then(res => res.json())
+        .then(data => {
+          if (data.lastUpdated) {
+            setRealCrawlerTimestamp(data.lastUpdated);
+          }
+        })
+        .catch(err => console.error('Failed to fetch network metadata:', err));
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   // Network metadata (gossip discovery stats)
   // ✨ ENHANCED: Calculate REAL network coverage based on historical discovery
   // Total Discovered (Historical) = All nodes ever discovered (including stale)
@@ -213,9 +242,9 @@ export const usePnodeDashboard = (theme?: string) => {
       uncrawledNodes: staleCount,                 // Same as stale (historical but unreachable)
       activeNodes: activeNodes,                   // Public nodes
       coveragePercent: coverage,                  // ✅ Historical coverage metric
-      lastUpdated: lastCrawledTimestamp          // ✅ REAL last crawl timestamp
+      lastUpdated: finalTimestamp                 // ✅ REAL last crawl timestamp (with fallback)
     };
-  }, [allPnodes]);
+  }, [allPnodes, lastUpdate]);
 
   // 🆕 Nodes grouped by pubkey (for multi-node operator detection)
   const nodesByPubkey = useMemo(() => {
