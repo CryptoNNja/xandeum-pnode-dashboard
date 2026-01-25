@@ -22,10 +22,10 @@ type KPICard = {
 export function NetworkOverview({ nodes, onFilterChange }: NetworkOverviewProps) {
   const stats = useMemo(() => {
     const total = nodes.length;
-    const active = nodes.filter(n => n.status === 'active').length;
-    const gossip = nodes.filter(n => n.status === 'gossip_only').length;
+    const active = nodes.filter(n => n.status === 'online').length;
+    const gossip = nodes.filter(n => n.status === 'registry_only').length;
     const stale = nodes.filter(n => n.status === 'stale').length;
-    const privateNodes = nodes.filter(n => !n.stats || n.status === 'gossip_only' || n.status === 'stale').length;
+    const privateNodes = nodes.filter(n => !n.stats || n.status === 'registry_only' || n.status === 'stale').length;
     
     const totalStorage = nodes.reduce((sum, n) => {
       return sum + (n.stats?.storage_committed || 0);

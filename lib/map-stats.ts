@@ -87,10 +87,10 @@ export function calculateMapStats(nodes: PNode[]): MapStats {
 
     // Stats par statut réseau
     switch (node.status) {
-      case 'active':
+      case 'online':
         stats.active++;
         break;
-      case 'gossip_only':
+      case 'registry_only':
         stats.gossipOnly++;
         break;
       case 'stale':
