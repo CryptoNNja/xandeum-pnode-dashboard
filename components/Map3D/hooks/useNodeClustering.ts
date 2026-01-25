@@ -18,7 +18,7 @@ interface ClusterGroup {
 
 /**
  * Smart clustering hook that spreads co-located nodes in a circular pattern
- * Based on competitor's approach but enhanced with better spacing and animations
+ * Uses progressive radius scaling for optimal visualization
  */
 export function useNodeClustering(nodes: Node3DData[], zoom: number) {
   return useMemo(() => {
