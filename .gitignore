@@ -142,3 +142,4 @@ tmp_rovodev_*
 !DEPENDENCIES.md
 !docs/**/*.md
 !.github/**/*.md
+docs/HANDOFF*.md
