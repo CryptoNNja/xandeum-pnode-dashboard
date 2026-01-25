@@ -143,52 +143,58 @@ export const usePnodeDashboard = (theme?: string) => {
   const [networkParticipation, setNetworkParticipation] = useState<NetworkParticipationMetrics | null>(null);
 
   // Network metadata (gossip discovery stats)
-  // ✨ ENHANCED: Calculate REAL network coverage based on data sources
-  // Total Known = All nodes discovered (gossip + registry + crawler)
-  // Successfully Crawled = Nodes with full stats (actually reached by crawler)
-  // Coverage % = (Crawled / Total Known) * 100
+  // ✨ ENHANCED: Calculate REAL network coverage based on historical discovery
+  // Total Discovered (Historical) = All nodes ever discovered (including stale)
+  // Currently Active/Crawled = Nodes with recent data (excluding stale)
+  // Coverage % = (Active / Total Historical) * 100
+  // 
+  // This shows how well we maintain connectivity to historically known nodes.
+  // A drop in coverage indicates network churn (nodes going offline).
   const networkMetadata = useMemo(() => {
-    // All nodes we know about (exclude stale for accuracy)
-    const allKnownNodes = allPnodes.filter(p => p.status !== "stale");
-    const totalKnown = allKnownNodes.length;
+    // TOTAL DISCOVERED (Historical): All nodes in database (including stale)
+    const totalHistoricallyDiscovered = allPnodes.length;
     
-    // Nodes successfully crawled = has stats AND not registry_only status
-    // Use status field (more reliable) and stats existence
-    const fullyCrawled = allKnownNodes.filter(p => 
-      p.stats !== null && 
-      p.status !== "registry_only" &&
-      (p.stats.uptime > 0 || p.stats.cpu_percent > 0 || p.stats.ram_total > 0) // Has real data
-    ).length;
+    // CURRENTLY ACTIVE: Nodes we can currently crawl (excluding stale)
+    const currentlyActiveNodes = allPnodes.filter(p => p.status !== "stale");
+    const activeCrawledCount = currentlyActiveNodes.length;
     
-    // Breakdown by status and source
-    const registryOnlyNodes = allKnownNodes.filter(p => 
+    // STALE NODES: Known but currently unreachable (network churn)
+    const staleNodes = allPnodes.filter(p => p.status === "stale");
+    const staleCount = staleNodes.length;
+    
+    // REAL COVERAGE: Active nodes vs historical discovery
+    // This shows crawler effectiveness at maintaining connectivity
+    const coverage = totalHistoricallyDiscovered > 0 
+      ? (activeCrawledCount / totalHistoricallyDiscovered) * 100 
+      : 100;
+    
+    // Breakdown by source (for modal details)
+    const registryOnlyNodes = currentlyActiveNodes.filter(p => 
       p.status === "registry_only" || 
       (p.source === "registry" && p.stats === null)
     ).length;
     
-    const gossipOnlyNodes = allKnownNodes.filter(p => 
+    const gossipOnlyNodes = currentlyActiveNodes.filter(p => 
       p.stats === null && 
       p.status !== "registry_only" &&
       p.source !== "registry"
     ).length;
     
-    const bothSources = allKnownNodes.filter(p => p.source === "both").length;
+    const bothSources = currentlyActiveNodes.filter(p => p.source === "both").length;
     
-    // Public nodes for active count
-    const activeNodes = allKnownNodes.filter(p => p.node_type === "public").length;
-    
-    // Calculate REAL coverage percentage
-    const coverage = totalKnown > 0 ? (fullyCrawled / totalKnown) * 100 : 0;
+    // Public nodes count
+    const activeNodes = currentlyActiveNodes.filter(p => p.node_type === "public").length;
     
     return {
-      networkTotal: totalKnown,           // All nodes discovered
-      crawledNodes: fullyCrawled,         // Successfully crawled with stats
-      registryOnlyNodes,                  // Known from registry but unreachable
-      gossipOnlyNodes,                    // Known from gossip but unreachable
-      bothSourcesNodes: bothSources,      // Verified in both registry and crawler
-      uncrawledNodes: totalKnown - fullyCrawled, // Can't reach these
-      activeNodes: activeNodes,           // Public nodes
-      coveragePercent: coverage,          // ✅ REAL coverage metric
+      networkTotal: totalHistoricallyDiscovered,  // All nodes ever discovered
+      crawledNodes: activeCrawledCount,           // Currently active/crawlable
+      staleNodes: staleCount,                     // Historical nodes now offline
+      registryOnlyNodes,                          // Known from registry but unreachable
+      gossipOnlyNodes,                            // Known from gossip but unreachable
+      bothSourcesNodes: bothSources,              // Verified in both sources
+      uncrawledNodes: staleCount,                 // Same as stale (historical but unreachable)
+      activeNodes: activeNodes,                   // Public nodes
+      coveragePercent: coverage,                  // ✅ Historical coverage metric
       lastUpdated: lastUpdate?.toISOString() || null
     };
   }, [allPnodes, lastUpdate]);

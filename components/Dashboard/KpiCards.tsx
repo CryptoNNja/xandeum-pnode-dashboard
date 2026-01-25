@@ -88,6 +88,7 @@ type KpiCardsProps = {
     networkMetadata: {
         networkTotal: number;
         crawledNodes: number;
+        staleNodes: number;
         registryOnlyNodes: number;
         gossipOnlyNodes: number;
         bothSourcesNodes: number;
