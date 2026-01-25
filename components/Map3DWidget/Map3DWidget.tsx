@@ -56,25 +56,34 @@ export function Map3DWidget({ pnodes }: Map3DWidgetProps) {
             </div>
           </div>
         }>
-          <Map3DViewer nodes={pnodes.map((p: any) => ({
-            ip: p.ip,
-            lat: p.locationData?.lat || 0,
-            lng: p.locationData?.lon || 0,
-            health: p._healthStatus === 'healthy' ? 100 : p._healthStatus === 'warning' ? 50 : 20,
-            storage: p.storage_committed || 0,
-            hasActiveStreams: p.active_streams > 0,
-            version: p.version,
-            city: p.locationData?.city,
-            country: p.locationData?.country,
-            country_code: p.locationData?.country_code,
-            pubkey: p.pubkey,
-            uptime: p.uptime || 0,
-            cpu: p.cpu_usage || 0,
-            ram: p.ram_usage || 0,
-            status: p.status === 'stale' ? 'inactive' : 'active',
-            isPublic: p.node_type === 'public',
-            operator: p.manager_wallet,
-          }))} onClose={() => setIsOpen(false)} />
+          <Map3DViewer nodes={(() => {
+            const mapped = pnodes
+              .filter((p: any) => p.lat !== null && p.lat !== undefined && p.lng !== null && p.lng !== undefined)
+              .map((p: any) => {
+                
+                return {
+                  ip: p.ip,
+                  lat: p.lat,
+                  lng: p.lng,
+                  health: p._score || 0,
+                  // Try multiple possible field names
+                  storage: p.storage_committed || p.stats?.storage_committed || 0,
+                  hasActiveStreams: p.active_streams > 0,
+                  version: p.version,
+                  city: p.city || 'Unknown',
+                  country: p.country || 'Unknown',
+                  country_code: p.country_code,
+                  pubkey: p.pubkey,
+                  uptime: p.uptime || p.stats?.uptime || 0,
+                  cpu: p.cpu_usage || p.stats?.cpu_usage || 0,
+                  ram: p.ram_usage || p.stats?.ram_usage || 0,
+                  status: p.status === 'stale' ? 'inactive' : 'active',
+                  isPublic: p.node_type === 'public',
+                  operator: p.manager_wallet,
+                };
+              });
+            return mapped;
+          })()} onClose={() => setIsOpen(false)} />
         </Suspense>
         </>
       )}
