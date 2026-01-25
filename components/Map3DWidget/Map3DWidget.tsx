@@ -3,9 +3,9 @@
 import { useState, Suspense, lazy } from 'react';
 import { Map3DButton } from './Map3DButton';
 
-// Lazy load Map3DViewerDeck (deck.gl - With working clustering)
+// Lazy load GlobeViewer (react-globe.gl - Professional 3D visualization)
 const Map3DViewer = lazy(() => 
-  import('../Map3D/Map3DViewerDeck').then(mod => ({ default: mod.Map3DViewerDeck }))
+  import('../Map3D/GlobeViewer').then(mod => ({ default: mod.GlobeViewer }))
 );
 
 type Map3DWidgetProps = {
@@ -56,7 +56,25 @@ export function Map3DWidget({ pnodes }: Map3DWidgetProps) {
             </div>
           </div>
         }>
-          <Map3DViewer allNodes={pnodes} onClose={() => setIsOpen(false)} />
+          <Map3DViewer nodes={pnodes.map((p: any) => ({
+            ip: p.ip,
+            lat: p.locationData?.lat || 0,
+            lng: p.locationData?.lon || 0,
+            health: p._healthStatus === 'healthy' ? 100 : p._healthStatus === 'warning' ? 50 : 20,
+            storage: p.storage_committed || 0,
+            hasActiveStreams: p.active_streams > 0,
+            version: p.version,
+            city: p.locationData?.city,
+            country: p.locationData?.country,
+            country_code: p.locationData?.country_code,
+            pubkey: p.pubkey,
+            uptime: p.uptime || 0,
+            cpu: p.cpu_usage || 0,
+            ram: p.ram_usage || 0,
+            status: p.status === 'stale' ? 'inactive' : 'active',
+            isPublic: p.node_type === 'public',
+            operator: p.manager_wallet,
+          }))} onClose={() => setIsOpen(false)} />
         </Suspense>
         </>
       )}
