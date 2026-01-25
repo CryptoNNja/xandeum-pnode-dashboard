@@ -195,9 +195,13 @@ export const usePnodeDashboard = (theme?: string) => {
           const nodeTime = new Date(nodeTimestamp).getTime();
           return nodeTime > latest ? nodeTime : latest;
         }, 0)
-      : null;
+      : 0;
     
-    const lastCrawledTimestamp = realLastCrawl ? new Date(realLastCrawl).toISOString() : null;
+    // Only create timestamp if we have a valid value (> 0)
+    const lastCrawledTimestamp = realLastCrawl > 0 ? new Date(realLastCrawl).toISOString() : null;
+    
+    // Fallback: if no timestamp from nodes, use the lastUpdate from UI refresh
+    const finalTimestamp = lastCrawledTimestamp || lastUpdate?.toISOString() || null;
     
     return {
       networkTotal: totalHistoricallyDiscovered,  // All nodes ever discovered
