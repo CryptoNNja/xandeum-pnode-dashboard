@@ -185,6 +185,20 @@ export const usePnodeDashboard = (theme?: string) => {
     // Public nodes count
     const activeNodes = currentlyActiveNodes.filter(p => p.node_type === "public").length;
     
+    // Get the REAL last crawl timestamp from the most recent node
+    // Use the latest updated_at from all active nodes (more accurate than lastUpdate)
+    const realLastCrawl = currentlyActiveNodes.length > 0
+      ? currentlyActiveNodes.reduce((latest, node) => {
+          // Try multiple timestamp fields in order of preference
+          const nodeTimestamp = node.last_crawled_at || node.updated_at;
+          if (!nodeTimestamp) return latest;
+          const nodeTime = new Date(nodeTimestamp).getTime();
+          return nodeTime > latest ? nodeTime : latest;
+        }, 0)
+      : null;
+    
+    const lastCrawledTimestamp = realLastCrawl ? new Date(realLastCrawl).toISOString() : null;
+    
     return {
       networkTotal: totalHistoricallyDiscovered,  // All nodes ever discovered
       crawledNodes: activeCrawledCount,           // Currently active/crawlable
@@ -195,9 +209,9 @@ export const usePnodeDashboard = (theme?: string) => {
       uncrawledNodes: staleCount,                 // Same as stale (historical but unreachable)
       activeNodes: activeNodes,                   // Public nodes
       coveragePercent: coverage,                  // ✅ Historical coverage metric
-      lastUpdated: lastUpdate?.toISOString() || null
+      lastUpdated: lastCrawledTimestamp          // ✅ REAL last crawl timestamp
     };
-  }, [allPnodes, lastUpdate]);
+  }, [allPnodes]);
 
   // 🆕 Nodes grouped by pubkey (for multi-node operator detection)
   const nodesByPubkey = useMemo(() => {
