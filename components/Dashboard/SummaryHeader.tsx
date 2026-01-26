@@ -66,6 +66,7 @@ type SummaryHeaderProps = {
   devnetPrivate?: number;
   devnetCount?: number;
   operatorsMetrics: OperatorsMetrics;
+  networkHistory: Array<{ date: string; totalNodes: number; publicNodes: number }>;
 };
 
 export const SummaryHeader = ({
@@ -85,11 +86,71 @@ export const SummaryHeader = ({
   devnetPrivate = 0,
   devnetCount = 0,
   operatorsMetrics,
+  networkHistory,
 }: SummaryHeaderProps) => {
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const UptimeIcon = networkUptimeStats.Icon;
   const kpiColors = getKpiColors();
   const statusColors = getStatusColors();
+  
+  // Transform networkHistory to sparkline data with mainnet/devnet split
+  // Using current ratios to estimate historical distribution
+  const totalMainnetRatio = totalNodes > 0 ? mainnetCount / totalNodes : 0.8;
+  const totalDevnetRatio = totalNodes > 0 ? devnetCount / totalNodes : 0.2;
+  
+  const publicMainnetRatio = publicCount > 0 ? mainnetPublic / publicCount : 0.8;
+  const publicDevnetRatio = publicCount > 0 ? devnetPublic / publicCount : 0.2;
+  
+  const privateMainnetRatio = privateCount > 0 ? mainnetPrivate / privateCount : 0.8;
+  const privateDevnetRatio = privateCount > 0 ? devnetPrivate / privateCount : 0.2;
+  
+  // Use totalNodes from history data
+  const totalNodesSparkline = networkHistory.map(h => ({
+    mainnet: Math.round(h.totalNodes * totalMainnetRatio),
+    devnet: Math.round(h.totalNodes * totalDevnetRatio)
+  }));
+  
+  // Use publicNodes from history data
+  const publicNodesSparkline = networkHistory.map(h => ({
+    mainnet: Math.round(h.publicNodes * publicMainnetRatio),
+    devnet: Math.round(h.publicNodes * publicDevnetRatio)
+  }));
+  
+  // Calculate private nodes as total - public
+  const privateNodesSparkline = networkHistory.map(h => {
+    const privateNodes = h.totalNodes - h.publicNodes;
+    return {
+      mainnet: Math.round(privateNodes * privateMainnetRatio),
+      devnet: Math.round(privateNodes * privateDevnetRatio)
+    };
+  });
+  
+  // Calculate deltas (current live count vs yesterday's historical data)
+  // Note: We compare live counts (totalNodes, publicCount, privateCount) 
+  // against the second-to-last history point to show change since yesterday
+  const calculateDelta = (current: number, previous: number) => {
+    const delta = current - previous;
+    const percent = previous > 0 ? (delta / previous) * 100 : 0;
+    return { delta, percent };
+  };
+  
+  // Get yesterday's values (second to last point in history)
+  const hasHistory = networkHistory.length >= 2;
+  const yesterday = hasHistory ? networkHistory[networkHistory.length - 2] : null;
+  
+  // Return undefined for delta/percent when no history available
+  // This will hide the badge instead of showing misleading "+0 +0.0%"
+  const totalNodesDelta = yesterday 
+    ? calculateDelta(totalNodes, yesterday.totalNodes)
+    : { delta: undefined, percent: undefined };
+    
+  const publicNodesDelta = yesterday
+    ? calculateDelta(publicCount, yesterday.publicNodes)
+    : { delta: undefined, percent: undefined };
+    
+  const privateNodesDelta = yesterday
+    ? calculateDelta(privateCount, yesterday.totalNodes - yesterday.publicNodes)
+    : { delta: undefined, percent: undefined };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -103,7 +164,9 @@ export const SummaryHeader = ({
         isLight={isLight}
         hexToRgba={hexToRgba}
         showSparkline={true}
-        sparklineData={[]} // TODO: Pass real historical data once collected
+        sparklineData={publicNodesSparkline}
+        delta={publicNodesDelta.delta}
+        deltaPercent={publicNodesDelta.percent}
         backContent={
           <div className="space-y-2.5">
             {/* MAINNET Section */}
@@ -175,7 +238,9 @@ export const SummaryHeader = ({
         isLight={isLight}
         hexToRgba={hexToRgba}
         showSparkline={true}
-        sparklineData={[]} // TODO: Pass real historical data once collected
+        sparklineData={privateNodesSparkline}
+        delta={privateNodesDelta.delta}
+        deltaPercent={privateNodesDelta.percent}
         backContent={
           <div className="space-y-2.5">
             {/* MAINNET Section */}
@@ -247,7 +312,9 @@ export const SummaryHeader = ({
         isLight={isLight}
         hexToRgba={hexToRgba}
         showSparkline={true}
-        sparklineData={[]} // TODO: Pass real historical data once collected
+        sparklineData={totalNodesSparkline}
+        delta={totalNodesDelta.delta}
+        deltaPercent={totalNodesDelta.percent}
         backContent={
           <div className="space-y-2">
             {/* Network Distribution */}

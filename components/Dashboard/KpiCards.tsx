@@ -103,7 +103,7 @@ type KpiCardsProps = {
     totalPagesCount: number;
     networkGrowthRate: number;
     storageGrowthRate: number;
-    networkHistory: Array<{ date: string; nodes: number }>;
+    networkHistory: Array<{ date: string; totalNodes: number; publicNodes: number }>;
     networkBandwidth: {
       packetsPerSecond: number;
       reportingNodes: number;

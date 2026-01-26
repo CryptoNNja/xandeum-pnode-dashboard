@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, ChevronUp, ChevronDown } from 'lucide-react';
 import { Sparkline } from './Sparkline';
 
 type FlipCardProps = {
@@ -25,6 +25,10 @@ type FlipCardProps = {
   sparklineData?: Array<{ mainnet: number; devnet: number }>;
   showSparkline?: boolean;
   
+  // Delta badge (optional)
+  delta?: number; // Change vs yesterday (e.g. +12, -5)
+  deltaPercent?: number; // Percentage change (e.g. 4.2)
+  
   // Extra content on front (optional, for custom widgets like decentralization bar)
   frontExtraContent?: React.ReactNode;
 };
@@ -42,6 +46,8 @@ export const FlipCard = ({
   disableFlip = false,
   sparklineData = [],
   showSparkline = false,
+  delta,
+  deltaPercent,
   frontExtraContent,
 }: FlipCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
@@ -131,21 +137,42 @@ export const FlipCard = ({
             {/* Sparkline or extra content at bottom */}
             <div className="mt-auto">
               {showSparkline && (
-                <div 
-                  className="p-3 rounded-lg border"
-                  style={{ 
-                    background: isLight ? "rgba(15,23,42,0.02)" : "rgba(255,255,255,0.02)",
-                    borderColor: "var(--border-default)"
-                  }}
-                >
-                  <Sparkline
-                    data={sparklineData}
-                    mainnetColor="#10B981"
-                    devnetColor="#F59E0B"
-                    height={32}
-                    hasData={sparklineData.length >= 2}
-                    isLight={isLight}
-                  />
+                <div>
+                  {/* Delta badge - above sparkline box */}
+                  {delta !== undefined && deltaPercent !== undefined && (
+                    <div 
+                      className="flex items-center justify-center gap-1.5 mb-1.5 text-xs"
+                      style={{
+                        color: delta >= 0 ? "#10B981" : "#EF4444",
+                      }}
+                    >
+                      {delta >= 0 ? (
+                        <ChevronUp className="w-3.5 h-3.5" strokeWidth={2.5} />
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5" strokeWidth={2.5} />
+                      )}
+                      <span className="font-semibold">{delta >= 0 ? "+" : ""}{delta}</span>
+                      <span className="opacity-60 font-medium">{deltaPercent >= 0 ? "+" : ""}{deltaPercent.toFixed(1)}%</span>
+                    </div>
+                  )}
+                  
+                  {/* Sparkline box */}
+                  <div 
+                    className="p-3 rounded-lg border"
+                    style={{ 
+                      background: isLight ? "rgba(15,23,42,0.02)" : "rgba(255,255,255,0.02)",
+                      borderColor: "var(--border-default)"
+                    }}
+                  >
+                    <Sparkline
+                      data={sparklineData}
+                      mainnetColor="#10B981"
+                      devnetColor="#F59E0B"
+                      height={32}
+                      hasData={sparklineData.length >= 2}
+                      isLight={isLight}
+                    />
+                  </div>
                 </div>
               )}
               
