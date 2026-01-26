@@ -148,7 +148,36 @@ const PNodeTableComponent = ({
     >
       <div className="w-full overflow-x-auto">
         <table className="min-w-full text-left border-collapse text-sm" style={{ tableLayout: 'auto' }}>
-          <colgroup>{onToggleSelection && <col style={{ width: '45px' }} />}{onToggleFavorite && <col style={{ width: '45px' }} />}<col style={{ width: '50px' }} /><col style={{ width: '65px' }} /><col style={{ width: '130px' }} /><col style={{ minWidth: '135px' }} /><col style={{ width: '90px' }} /><col style={{ width: '105px' }} /><col style={{ width: '75px' }} /><col style={{ width: '65px' }} /><col style={{ width: '65px' }} /><col style={{ width: '105px' }} /><col style={{ width: '105px' }} /><col style={{ width: '85px' }} /></colgroup>
+          <colgroup>
+            {/* Selection checkbox */}
+            {onToggleSelection && <col style={{ width: '40px' }} />}
+            {/* Favorite star */}
+            {onToggleFavorite && <col style={{ width: '40px' }} />}
+            {/* Network indicator */}
+            <col style={{ width: '60px' }} />
+            {/* Score */}
+            <col style={{ width: '70px' }} />
+            {/* Operator/Pubkey */}
+            <col style={{ width: '110px' }} />
+            {/* IP Address */}
+            <col style={{ width: '120px' }} />
+            {/* Credits */}
+            <col style={{ width: '85px' }} />
+            {/* Status */}
+            <col style={{ width: '95px' }} />
+            {/* Version */}
+            <col style={{ width: '70px' }} />
+            {/* CPU */}
+            <col style={{ width: '60px' }} />
+            {/* RAM */}
+            <col style={{ width: '60px' }} />
+            {/* Storage */}
+            <col style={{ width: '95px' }} />
+            {/* Traffic */}
+            <col style={{ width: '85px' }} />
+            {/* Uptime */}
+            <col style={{ width: '80px' }} />
+          </colgroup>
         <thead>
           <tr
             className={clsx(
