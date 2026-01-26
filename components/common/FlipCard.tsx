@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, ChevronUp, ChevronDown } from 'lucide-react';
 import { Sparkline } from './Sparkline';
 
 type FlipCardProps = {
@@ -137,7 +137,26 @@ export const FlipCard = ({
             {/* Sparkline or extra content at bottom */}
             <div className="mt-auto">
               {showSparkline && (
-                <div className="relative">
+                <div>
+                  {/* Delta badge - above sparkline box */}
+                  {delta !== undefined && deltaPercent !== undefined && (
+                    <div 
+                      className="flex items-center justify-center gap-1.5 mb-1.5 text-xs"
+                      style={{
+                        color: delta >= 0 ? "#10B981" : "#EF4444",
+                      }}
+                    >
+                      {delta >= 0 ? (
+                        <ChevronUp className="w-3.5 h-3.5" strokeWidth={2.5} />
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5" strokeWidth={2.5} />
+                      )}
+                      <span className="font-semibold">{delta >= 0 ? "+" : ""}{delta}</span>
+                      <span className="opacity-60 font-medium">{deltaPercent >= 0 ? "+" : ""}{deltaPercent.toFixed(1)}%</span>
+                    </div>
+                  )}
+                  
+                  {/* Sparkline box */}
                   <div 
                     className="p-3 rounded-lg border"
                     style={{ 
@@ -154,24 +173,6 @@ export const FlipCard = ({
                       isLight={isLight}
                     />
                   </div>
-                  
-                  {/* Delta badge - bottom right */}
-                  {delta !== undefined && deltaPercent !== undefined && (
-                    <div 
-                      className="absolute bottom-2 right-2 px-2 py-1 rounded-md flex items-center gap-1 text-xs font-semibold"
-                      style={{
-                        background: delta >= 0 
-                          ? (isLight ? "rgba(16, 185, 129, 0.12)" : "rgba(16, 185, 129, 0.15)")
-                          : (isLight ? "rgba(239, 68, 68, 0.12)" : "rgba(239, 68, 68, 0.15)"),
-                        color: delta >= 0 ? "#10B981" : "#EF4444",
-                        border: `1px solid ${delta >= 0 ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
-                      }}
-                    >
-                      <span>{delta >= 0 ? "↑" : "↓"}</span>
-                      <span>{Math.abs(delta)}</span>
-                      <span className="opacity-75">({deltaPercent >= 0 ? "+" : ""}{deltaPercent.toFixed(1)}%)</span>
-                    </div>
-                  )}
                 </div>
               )}
               
