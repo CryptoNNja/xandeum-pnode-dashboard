@@ -59,12 +59,12 @@ export function STOINCCalculatorButton({ onClick, isOpen }: STOINCCalculatorButt
         <div 
           className="
             fixed right-20 z-50
-          px-3 py-2 rounded-lg
-          bg-gray-900 text-white text-sm
-          whitespace-nowrap
-          shadow-lg
-          animate-in fade-in slide-in-from-right-2
-          duration-200
+            px-3 py-2 rounded-lg
+            bg-gray-900 text-white text-sm
+            whitespace-nowrap
+            shadow-lg
+            animate-in fade-in slide-in-from-right-2
+            duration-200
           "
           style={{ bottom: `${bottomOffset}px` }}
         >

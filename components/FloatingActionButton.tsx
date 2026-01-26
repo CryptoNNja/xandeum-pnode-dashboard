@@ -107,7 +107,7 @@ export default function FloatingActionButton({ actions }: FloatingActionButtonPr
       {/* Main FAB Button */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl cursor-pointer"
+        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full flex items-center justify-center shadow-2xl cursor-pointer"
         style={{
           background: isOpen 
             ? 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
@@ -120,9 +120,9 @@ export default function FloatingActionButton({ actions }: FloatingActionButtonPr
         transition={{ type: 'spring', damping: 20, stiffness: 300 }}
       >
         {isOpen ? (
-          <X className="w-6 h-6 text-white" strokeWidth={3} />
+          <X className="w-5 h-5 text-white" strokeWidth={3} />
         ) : (
-          <Download className="w-6 h-6 text-white" strokeWidth={2.5} />
+          <Download className="w-5 h-5 text-white" strokeWidth={2.5} />
         )}
       </motion.button>
     </>
