@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useFloatingButtonPosition } from "@/hooks/useFloatingButtonPosition";
 import Image from "next/image";
 import { Search, List, LayoutGrid, MapPin, Download, RefreshCw, Settings, Loader2, CheckCircle, ChevronDown, Check, Star, Github, Twitter, Users } from "lucide-react";
 import clsx from "clsx";
@@ -136,6 +137,7 @@ export default function Page() {
   const [isGeographicModalOpen, setIsGeographicModalOpen] = useState(false);
   const [isManagerBoardOpen, setIsManagerBoardOpen] = useState(false);
   const [isManagerBoardHovered, setIsManagerBoardHovered] = useState(false);
+  const managerBoardBottomOffset = useFloatingButtonPosition(144); // 144px base position
   const [currentTime, setCurrentTime] = useState(0);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   
@@ -926,10 +928,11 @@ export default function Page() {
         onClick={() => setIsManagerBoardOpen(true)}
         onMouseEnter={() => setIsManagerBoardHovered(true)}
         onMouseLeave={() => setIsManagerBoardHovered(false)}
-        className="fixed bottom-[168px] right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg hover:shadow-2xl transform hover:scale-110 active:scale-95 transition-all duration-200 flex items-center justify-center group"
+        className="fixed right-6 z-50 w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg hover:shadow-2xl transform hover:scale-110 active:scale-95 transition-all duration-200 flex items-center justify-center group"
+        style={{ bottom: `${managerBoardBottomOffset}px` }}
         aria-label="Open Manager Board"
       >
-        <Users className="w-7 h-7 text-white transition-transform duration-300" />
+        <Users className="w-6 h-6 text-white transition-transform duration-300" />
         
         {/* Pulse animation */}
         {!isManagerBoardOpen && (
@@ -939,7 +942,10 @@ export default function Page() {
 
       {/* Manager Board Tooltip */}
       {isManagerBoardHovered && !isManagerBoardOpen && (
-        <div className="fixed bottom-[168px] right-24 z-50 px-3 py-2 rounded-lg bg-gray-900 text-white text-sm whitespace-nowrap shadow-lg animate-in fade-in slide-in-from-right-2 duration-200">
+        <div 
+          className="fixed right-20 z-50 px-3 py-2 rounded-lg bg-gray-900 text-white text-sm whitespace-nowrap shadow-lg animate-in fade-in slide-in-from-right-2 duration-200"
+          style={{ bottom: `${managerBoardBottomOffset}px` }}
+        >
           Manager Board
         </div>
       )}

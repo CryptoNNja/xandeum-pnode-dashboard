@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Globe } from 'lucide-react';
+import { useFloatingButtonPosition } from '@/hooks/useFloatingButtonPosition';
 
 interface Map3DButtonProps {
   onClick: () => void;
@@ -10,6 +11,7 @@ interface Map3DButtonProps {
 
 export function Map3DButton({ onClick, isOpen }: Map3DButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const bottomOffset = useFloatingButtonPosition(204); // 204px base position
 
   // Reset hover state when modal closes
   useEffect(() => {
@@ -27,7 +29,7 @@ export function Map3DButton({ onClick, isOpen }: Map3DButtonProps) {
         onMouseLeave={() => setIsHovered(false)}
         className="
           fixed right-6 z-[60]
-          w-14 h-14 rounded-full
+          w-12 h-12 rounded-full
           bg-gradient-to-r from-blue-500 to-cyan-500
           shadow-lg hover:shadow-2xl
           transform hover:scale-110 active:scale-95
@@ -35,12 +37,12 @@ export function Map3DButton({ onClick, isOpen }: Map3DButtonProps) {
           flex items-center justify-center
           group
         "
-        style={{ bottom: '15rem' }}
+        style={{ bottom: `${bottomOffset}px` }}
         aria-label="Open 3D Network Globe"
       >
         <Globe 
           className={`
-            w-7 h-7 text-white
+            w-6 h-6 text-white
             transition-transform duration-300
             ${!isOpen ? 'animate-spin-slow' : ''}
           `}
@@ -54,16 +56,17 @@ export function Map3DButton({ onClick, isOpen }: Map3DButtonProps) {
 
       {/* Tooltip */}
       {isHovered && !isOpen && (
-        <div className="
-          fixed right-24 z-[60]
-          px-3 py-2 rounded-lg
-          bg-gray-900 text-white text-sm
-          whitespace-nowrap
-          shadow-lg
-          animate-in fade-in slide-in-from-right-2
-          duration-200
-        "
-        style={{ bottom: '15rem' }}
+        <div 
+          className="
+            fixed right-20 z-[60]
+            px-3 py-2 rounded-lg
+            bg-gray-900 text-white text-sm
+            whitespace-nowrap
+            shadow-lg
+            animate-in fade-in slide-in-from-right-2
+            duration-200
+          "
+          style={{ bottom: `${bottomOffset}px` }}
         >
           3D Network Globe
         </div>
