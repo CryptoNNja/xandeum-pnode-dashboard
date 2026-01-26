@@ -66,7 +66,7 @@ type SummaryHeaderProps = {
   devnetPrivate?: number;
   devnetCount?: number;
   operatorsMetrics: OperatorsMetrics;
-  networkHistory: Array<{ date: string; nodes: number }>;
+  networkHistory: Array<{ date: string; totalNodes: number; publicNodes: number }>;
 };
 
 export const SummaryHeader = ({
@@ -104,22 +104,26 @@ export const SummaryHeader = ({
   const privateMainnetRatio = privateCount > 0 ? mainnetPrivate / privateCount : 0.8;
   const privateDevnetRatio = privateCount > 0 ? devnetPrivate / privateCount : 0.2;
   
+  // Use totalNodes from history data
   const totalNodesSparkline = networkHistory.map(h => ({
-    mainnet: Math.round(h.nodes * totalMainnetRatio),
-    devnet: Math.round(h.nodes * totalDevnetRatio)
+    mainnet: Math.round(h.totalNodes * totalMainnetRatio),
+    devnet: Math.round(h.totalNodes * totalDevnetRatio)
   }));
   
-  const publicRatio = totalNodes > 0 ? publicCount / totalNodes : 0.5;
+  // Use publicNodes from history data
   const publicNodesSparkline = networkHistory.map(h => ({
-    mainnet: Math.round(h.nodes * publicRatio * publicMainnetRatio),
-    devnet: Math.round(h.nodes * publicRatio * publicDevnetRatio)
+    mainnet: Math.round(h.publicNodes * publicMainnetRatio),
+    devnet: Math.round(h.publicNodes * publicDevnetRatio)
   }));
   
-  const privateRatio = totalNodes > 0 ? privateCount / totalNodes : 0.5;
-  const privateNodesSparkline = networkHistory.map(h => ({
-    mainnet: Math.round(h.nodes * privateRatio * privateMainnetRatio),
-    devnet: Math.round(h.nodes * privateRatio * privateDevnetRatio)
-  }));
+  // Calculate private nodes as total - public
+  const privateNodesSparkline = networkHistory.map(h => {
+    const privateNodes = h.totalNodes - h.publicNodes;
+    return {
+      mainnet: Math.round(privateNodes * privateMainnetRatio),
+      devnet: Math.round(privateNodes * privateDevnetRatio)
+    };
+  });
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">

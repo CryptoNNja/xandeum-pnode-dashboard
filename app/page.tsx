@@ -329,7 +329,7 @@ export default function Page() {
   // Growth metrics from historical data
   const [networkGrowthRate, setNetworkGrowthRate] = useState(0);
   const [storageGrowthRate, setStorageGrowthRate] = useState(0);
-  const [networkHistory, setNetworkHistory] = useState<Array<{ date: string; nodes: number }>>([]);
+  const [networkHistory, setNetworkHistory] = useState<Array<{ date: string; totalNodes: number; publicNodes: number }>>([]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
