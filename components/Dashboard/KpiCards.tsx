@@ -108,6 +108,32 @@ type KpiCardsProps = {
       packetsPerSecond: number;
       reportingNodes: number;
       totalActiveNodes: number;
+      bandwidth: {
+        current: number;
+        perNode: number;
+        formatted: string;
+      };
+      trend: {
+        direction: 'up' | 'down' | 'stable';
+        changePercent: number;
+        indicator: '↑' | '↓' | '→';
+      };
+      breakdown: {
+        mainnet: {
+          packetsPerSecond: number;
+          bandwidth: number;
+          bandwidthFormatted: string;
+          activeNodes: number;
+          reportingNodes: number;
+        };
+        devnet: {
+          packetsPerSecond: number;
+          bandwidth: number;
+          bandwidthFormatted: string;
+          activeNodes: number;
+          reportingNodes: number;
+        };
+      };
     };
     versionAdoptionPercent: number;
     onVersionClick?: () => void;
@@ -474,31 +500,56 @@ export const KpiCards = ({
             )}
           </div>
 
-          {/* Network Throughput Card */}
+          {/* Network Throughput Card - 🆕 ENHANCED */}
           <div className="kpi-card relative overflow-hidden p-6 flex flex-col">
             <div className="flex items-start justify-between gap-6">
-              <div>
+              <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <p className="text-xs uppercase tracking-[0.35em] text-text-soft">Network Throughput</p>
-                  <InfoTooltip content="Total network activity measured in packets per second. Higher throughput indicates active data synchronization across nodes." />
+                  <InfoTooltip content="Real-time network bandwidth across all nodes. Measured in Mbps with MAINNET/DEVNET breakdown and trend analysis." />
                 </div>
-                <p className="text-sm text-text-faint">Aggregate bandwidth</p>
+                <p className="text-sm text-text-faint">Aggregate bandwidth & performance</p>
+                
+                {/* 🆕 Primary Metric: Bandwidth in Mbps */}
                 <div className="flex items-baseline gap-2 mt-4">
                   <span 
                     className="text-4xl font-bold tracking-tight"
                     style={{ color: "#3B82F6" }}
                   >
-                    {networkBandwidth.packetsPerSecond >= 1000000 
-                      ? `${(networkBandwidth.packetsPerSecond / 1000000).toFixed(2)}M`
-                      : networkBandwidth.packetsPerSecond >= 1000
-                      ? `${(networkBandwidth.packetsPerSecond / 1000).toFixed(1)}K`
-                      : networkBandwidth.packetsPerSecond.toFixed(0)}
+                    {networkBandwidth.bandwidth.formatted.split(' ')[0]}
                   </span>
-                  <span className="text-sm font-mono text-text-soft">pkt/s</span>
+                  <span className="text-sm font-mono text-text-soft">
+                    {networkBandwidth.bandwidth.formatted.split(' ')[1]}
+                  </span>
+                  
+                  {/* 🆕 Trend Indicator */}
+                  {networkBandwidth.trend.direction !== 'stable' && (
+                    <span 
+                      className="text-xs font-medium px-2 py-1 rounded-full"
+                      style={{
+                        color: networkBandwidth.trend.direction === 'up' ? '#10B981' : '#EF4444',
+                        background: networkBandwidth.trend.direction === 'up' 
+                          ? hexToRgba('#10B981', 0.1) 
+                          : hexToRgba('#EF4444', 0.1)
+                      }}
+                    >
+                      {networkBandwidth.trend.indicator} {networkBandwidth.trend.changePercent.toFixed(1)}%
+                    </span>
+                  )}
                 </div>
+                
+                {/* Secondary: Packets per second */}
+                <p className="text-xs text-text-faint mt-2">
+                  {networkBandwidth.packetsPerSecond >= 1000000 
+                    ? `${(networkBandwidth.packetsPerSecond / 1000000).toFixed(2)}M`
+                    : networkBandwidth.packetsPerSecond >= 1000
+                    ? `${(networkBandwidth.packetsPerSecond / 1000).toFixed(1)}K`
+                    : networkBandwidth.packetsPerSecond.toFixed(0)} pkt/s
+                </p>
               </div>
+              
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center"
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
                 style={{ background: hexToRgba("#3B82F6", 0.12) }}
               >
                 <Wifi 
@@ -509,31 +560,86 @@ export const KpiCards = ({
               </div>
             </div>
 
-            <div className="mt-6">
-              <div className="flex items-center justify-between text-sm">
+            {/* 🆕 Network Breakdown: MAINNET vs DEVNET */}
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              {/* MAINNET */}
+              <div 
+                className="relative p-3 rounded-lg border"
+                style={{ 
+                  background: isLight 
+                    ? "linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(16, 185, 129, 0.03) 100%)"
+                    : "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%)",
+                  borderColor: "var(--border-default)"
+                }}
+              >
+                <p className="text-xs uppercase tracking-wider text-text-soft mb-1.5">MAINNET</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xl font-bold" style={{ color: "#3B82F6" }}>
+                    {networkBandwidth.breakdown.mainnet.bandwidthFormatted.split(' ')[0]}
+                  </span>
+                  <span className="text-xs text-text-soft">
+                    {networkBandwidth.breakdown.mainnet.bandwidthFormatted.split(' ')[1]}
+                  </span>
+                </div>
+                <p className="text-xs text-text-faint mt-1">
+                  {networkBandwidth.breakdown.mainnet.reportingNodes}/{networkBandwidth.breakdown.mainnet.activeNodes} nodes
+                </p>
+              </div>
+              
+              {/* DEVNET */}
+              <div 
+                className="relative p-3 rounded-lg border"
+                style={{ 
+                  background: isLight 
+                    ? "linear-gradient(135deg, rgba(245, 158, 11, 0.03) 0%, rgba(251, 146, 60, 0.03) 100%)"
+                    : "linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(251, 146, 60, 0.08) 100%)",
+                  borderColor: "var(--border-default)"
+                }}
+              >
+                <p className="text-xs uppercase tracking-wider text-text-soft mb-1.5">DEVNET</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xl font-bold" style={{ color: "#F59E0B" }}>
+                    {networkBandwidth.breakdown.devnet.bandwidthFormatted.split(' ')[0]}
+                  </span>
+                  <span className="text-xs text-text-soft">
+                    {networkBandwidth.breakdown.devnet.bandwidthFormatted.split(' ')[1]}
+                  </span>
+                </div>
+                <p className="text-xs text-text-faint mt-1">
+                  {networkBandwidth.breakdown.devnet.reportingNodes}/{networkBandwidth.breakdown.devnet.activeNodes} nodes
+                </p>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="mt-4 space-y-2 text-sm">
+              <div className="flex items-center justify-between">
                 <span className="text-text-soft">Reporting nodes</span>
                 <span className="font-semibold text-text-main">
-                  {networkBandwidth.reportingNodes} of {networkBandwidth.totalActiveNodes}
+                  {networkBandwidth.reportingNodes} / {networkBandwidth.totalActiveNodes}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-sm mt-2">
+              <div className="flex items-center justify-between">
                 <span className="text-text-soft">Avg per node</span>
                 <span className="font-semibold text-text-main">
                   {networkBandwidth.reportingNodes > 0 
-                    ? `${(networkBandwidth.packetsPerSecond / networkBandwidth.reportingNodes).toFixed(0)} pkt/s`
-                    : "0 pkt/s"}
+                    ? `${networkBandwidth.bandwidth.perNode.toFixed(2)} Mbps`
+                    : "0 Mbps"}
                 </span>
               </div>
-              <p className="text-sm text-text-faint mt-4">
-                {networkBandwidth.packetsPerSecond > 1000000 
-                  ? "High network activity" 
-                  : networkBandwidth.packetsPerSecond > 100000
-                  ? "Moderate traffic flow" 
-                  : networkBandwidth.packetsPerSecond > 10000
-                  ? "Light network usage"
-                  : "Minimal activity"}
-              </p>
             </div>
+            
+            <p className="text-sm text-text-faint mt-4">
+              {networkBandwidth.bandwidth.current > 100 
+                ? "Excellent network throughput" 
+                : networkBandwidth.bandwidth.current > 50
+                ? "High network activity" 
+                : networkBandwidth.bandwidth.current > 10
+                ? "Moderate traffic flow"
+                : networkBandwidth.bandwidth.current > 1
+                ? "Light network usage"
+                : "Minimal activity"}
+            </p>
 
             {/* Bandwidth Visualization Zone */}
             <div className="mt-auto pt-4 border-t border-border-app-soft">

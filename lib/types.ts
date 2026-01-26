@@ -78,3 +78,43 @@ export const EMPTY_STATS: PNodeStats = {
   storage_used: 0,
   last_seen_gossip: 0,
 };
+
+// Enhanced Network Bandwidth Metrics (Phase 1: Bandwidth + Trends + Breakdown)
+export interface NetworkBandwidthMetrics {
+  // Legacy metrics (kept for backward compatibility)
+  packetsPerSecond: number;
+  reportingNodes: number;
+  totalActiveNodes: number;
+  
+  // 🆕 NEW: Bandwidth metrics
+  bandwidth: {
+    current: number;        // Mbps
+    perNode: number;        // Mbps per reporting node
+    formatted: string;      // "45.2 Mbps" or "1.2 Gbps"
+  };
+  
+  // 🆕 NEW: Trend analysis
+  trend: {
+    direction: 'up' | 'down' | 'stable';
+    changePercent: number;
+    indicator: '↑' | '↓' | '→';
+  };
+  
+  // 🆕 NEW: Network breakdown (MAINNET vs DEVNET)
+  breakdown: {
+    mainnet: {
+      packetsPerSecond: number;
+      bandwidth: number;           // Mbps
+      bandwidthFormatted: string;
+      activeNodes: number;
+      reportingNodes: number;
+    };
+    devnet: {
+      packetsPerSecond: number;
+      bandwidth: number;           // Mbps
+      bandwidthFormatted: string;
+      activeNodes: number;
+      reportingNodes: number;
+    };
+  };
+}

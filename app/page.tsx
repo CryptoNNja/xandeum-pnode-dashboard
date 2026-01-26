@@ -441,7 +441,9 @@ export default function Page() {
       .reduce((sum, p) => sum + (p.stats?.total_pages ?? 0), 0);
   }, [pnodes]);
 
-  // Calculate network bandwidth (packets per second estimate)
+  // 🆕 Enhanced network bandwidth calculation with trends and breakdown
+  const [previousPacketsPerSecond, setPreviousPacketsPerSecond] = useState<number | undefined>();
+  
   const networkBandwidth = useMemo(() => {
     // Filter nodes that actually have packet data (RPC responded)
     const nodesWithPackets = pnodes.filter((p) => 
@@ -459,12 +461,114 @@ export default function Page() {
       .filter((p) => (p.stats?.uptime ?? 0) > 0)
       .reduce((sum, p, _, arr) => sum + (p.stats?.uptime ?? 0) / arr.length, 0);
     
-    return {
-      packetsPerSecond: avgUptime > 0 ? totalPackets / avgUptime : 0,
-      reportingNodes: nodesWithPackets.length,
-      totalActiveNodes: pnodes.filter((p) => p.node_type === "public").length
+    const packetsPerSecond = avgUptime > 0 ? totalPackets / avgUptime : 0;
+    
+    // Calculate bandwidth in Mbps (using standard 1500 byte packets)
+    const currentBandwidth = (packetsPerSecond * 1500 * 8) / 1_000_000; // bytes to Mbps
+    const perNodeBandwidth = nodesWithPackets.length > 0 ? currentBandwidth / nodesWithPackets.length : 0;
+    
+    // Format bandwidth
+    const formatBandwidth = (mbps: number): string => {
+      if (mbps >= 1000) return `${(mbps / 1000).toFixed(2)} Gbps`;
+      if (mbps >= 1) return `${mbps.toFixed(1)} Mbps`;
+      if (mbps >= 0.001) return `${(mbps * 1000).toFixed(0)} Kbps`;
+      return `${(mbps * 1000000).toFixed(0)} bps`;
     };
-  }, [pnodes]);
+    
+    // Calculate trend
+    const calculateTrend = (): {
+      direction: 'up' | 'down' | 'stable';
+      changePercent: number;
+      indicator: '↑' | '↓' | '→';
+    } => {
+      if (previousPacketsPerSecond === undefined || previousPacketsPerSecond === 0) {
+        return {
+          direction: 'stable',
+          changePercent: 0,
+          indicator: '→'
+        };
+      }
+      
+      const change = packetsPerSecond - previousPacketsPerSecond;
+      const changePercent = (change / previousPacketsPerSecond) * 100;
+      
+      // < 5% change is considered stable
+      if (Math.abs(changePercent) < 5) {
+        return {
+          direction: 'stable',
+          changePercent: 0,
+          indicator: '→'
+        };
+      }
+      
+      return {
+        direction: changePercent > 0 ? 'up' : 'down',
+        changePercent: Math.abs(changePercent),
+        indicator: changePercent > 0 ? '↑' : '↓'
+      };
+    };
+    
+    // Calculate network breakdown (MAINNET vs DEVNET)
+    const calculateBreakdown = () => {
+      const mainnetNodes = pnodes.filter(n => n.network === 'MAINNET' && n.status === 'online');
+      const devnetNodes = pnodes.filter(n => n.network === 'DEVNET' && n.status === 'online');
+      
+      const getBreakdown = (networkNodes: typeof pnodes) => {
+        const reporting = networkNodes.filter(n => 
+          n.node_type === 'public' && 
+          ((n.stats?.packets_sent ?? 0) > 0 || (n.stats?.packets_received ?? 0) > 0)
+        );
+        
+        const packets = reporting.reduce(
+          (sum, n) => sum + (n.stats?.packets_sent ?? 0) + (n.stats?.packets_received ?? 0),
+          0
+        );
+        
+        const uptime = reporting
+          .filter(n => (n.stats?.uptime ?? 0) > 0)
+          .reduce((sum, n, _, arr) => sum + (n.stats?.uptime ?? 0) / arr.length, 0);
+        
+        const pps = uptime > 0 ? packets / uptime : 0;
+        const bw = (pps * 1500 * 8) / 1_000_000;
+        
+        return {
+          packetsPerSecond: pps,
+          bandwidth: bw,
+          bandwidthFormatted: formatBandwidth(bw),
+          activeNodes: networkNodes.length,
+          reportingNodes: reporting.length
+        };
+      };
+      
+      return {
+        mainnet: getBreakdown(mainnetNodes),
+        devnet: getBreakdown(devnetNodes)
+      };
+    };
+    
+    return {
+      // Legacy fields (backward compatibility)
+      packetsPerSecond,
+      reportingNodes: nodesWithPackets.length,
+      totalActiveNodes: pnodes.filter((p) => p.node_type === "public").length,
+      
+      // 🆕 NEW: Enhanced metrics
+      bandwidth: {
+        current: currentBandwidth,
+        perNode: perNodeBandwidth,
+        formatted: formatBandwidth(currentBandwidth)
+      },
+      trend: calculateTrend(),
+      breakdown: calculateBreakdown()
+    };
+  }, [pnodes, previousPacketsPerSecond]);
+  
+  // Update previous packets per second for trend calculation
+  useEffect(() => {
+    if (networkBandwidth.packetsPerSecond > 0) {
+      setPreviousPacketsPerSecond(networkBandwidth.packetsPerSecond);
+    }
+  }, [networkBandwidth.packetsPerSecond]);
 
   // Version adoption percentage (already calculated in versionChart)
   const versionAdoptionPercent = useMemo(() => {
