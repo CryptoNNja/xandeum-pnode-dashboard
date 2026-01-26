@@ -879,11 +879,12 @@ export const main = async () => {
 
     // Prevent overwriting `status` for zombie IPs when KEEP_ZOMBIES is enabled.
     // We want `status='stale'` to survive the upsert.
+    // FIXED: Ensure status is always set to avoid NOT NULL constraint violation
     const nodesForUpsert = (KEEP_ZOMBIES && zombieIpsSet.size > 0)
       ? (deduplicatedNodes.map((n: any) => {
           if (zombieIpsSet.has(n.ip)) {
-            const { status, ...rest } = n;
-            return rest;
+            // Don't remove status - just ensure it's 'stale' for zombies
+            return { ...n, status: 'stale' };
           }
           return n;
         }) as any[])
