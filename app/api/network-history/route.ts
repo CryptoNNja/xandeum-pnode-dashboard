@@ -9,10 +9,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 export async function GET() {
   try {
     // Fetch last 30 days of snapshots for the growth chart
+    // ORDER BY DESC first to get the most recent 30, then reverse for chart display
     const { data: snapshots, error } = await supabase
       .from("network_snapshots")
       .select("snapshot_date, active_nodes, total_nodes, network_health_score")
-      .order("snapshot_date", { ascending: true })
+      .order("snapshot_date", { ascending: false })
       .limit(30);
 
     if (error) {
@@ -30,7 +31,8 @@ export async function GET() {
     }
 
     // Format data for the chart with both public and total nodes
-    const formattedHistory = snapshots.map(snapshot => {
+    // Reverse to show oldest to newest for chart display (left to right)
+    const formattedHistory = snapshots.reverse().map(snapshot => {
       const date = new Date(snapshot.snapshot_date);
       return {
         date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
