@@ -150,33 +150,33 @@ const PNodeTableComponent = ({
         <table className="min-w-full text-left border-collapse text-sm" style={{ tableLayout: 'auto' }}>
           <colgroup>
             {/* Selection checkbox */}
-            {onToggleSelection && <col style={{ width: '40px' }} />}
+            {onToggleSelection && <col style={{ width: '35px' }} />}
             {/* Favorite star */}
-            {onToggleFavorite && <col style={{ width: '40px' }} />}
+            {onToggleFavorite && <col style={{ width: '35px' }} />}
             {/* Network indicator */}
-            <col style={{ width: '50px' }} />
+            <col style={{ width: '45px' }} />
             {/* Score */}
-            <col style={{ width: '55px' }} />
+            <col style={{ width: '50px' }} />
             {/* Operator/Pubkey */}
-            <col style={{ width: '110px' }} />
+            <col style={{ width: '100px' }} />
             {/* IP Address */}
-            <col style={{ width: '120px' }} />
+            <col style={{ width: '110px' }} />
             {/* Credits */}
-            <col style={{ width: '85px' }} />
+            <col style={{ width: '75px' }} />
             {/* Status */}
-            <col style={{ width: '95px' }} />
+            <col style={{ width: '90px' }} />
             {/* Version */}
-            <col style={{ width: '70px' }} />
+            <col style={{ width: '65px' }} />
             {/* CPU */}
-            <col style={{ width: '60px' }} />
+            <col style={{ width: '55px' }} />
             {/* RAM */}
-            <col style={{ width: '60px' }} />
+            <col style={{ width: '55px' }} />
             {/* Storage */}
-            <col style={{ width: '95px' }} />
-            {/* Traffic */}
             <col style={{ width: '85px' }} />
+            {/* Traffic */}
+            <col style={{ width: '75px' }} />
             {/* Uptime */}
-            <col style={{ width: '80px' }} />
+            <col style={{ width: '70px' }} />
           </colgroup>
         <thead>
           <tr
@@ -189,7 +189,7 @@ const PNodeTableComponent = ({
           >
             {/* Selection checkbox header */}
             {onToggleSelection && (
-              <th className="p-4 bg-bg-bg2/50 align-middle" style={{ textAlign: 'center' }}>
+              <th className="p-2 bg-bg-bg2/50 align-middle" style={{ textAlign: 'center' }}>
                 <input
                   type="checkbox"
                   checked={allSelected}
@@ -202,7 +202,7 @@ const PNodeTableComponent = ({
 
             {/* Favorite star header */}
             {onToggleFavorite && (
-              <th className="p-4 bg-bg-bg2/50 text-[11px] align-middle" style={{ textAlign: 'center' }}>
+              <th className="p-2 bg-bg-bg2/50 text-[11px] align-middle" style={{ textAlign: 'center' }}>
                 <Star className="w-4 h-4 text-yellow-500/60 mx-auto" />
               </th>
             )}
@@ -212,7 +212,7 @@ const PNodeTableComponent = ({
                 key={header.key}
                 onClick={() => header.sortable && onSort(header.key)}
                 className={clsx(
-                  "p-4 text-[11px] font-bold uppercase tracking-wider transition-colors select-none group whitespace-nowrap align-middle",
+                  "p-2 text-[11px] font-bold uppercase tracking-wider transition-colors select-none group whitespace-nowrap align-middle",
                   header.sortable ? "cursor-pointer" : "cursor-default",
                   isLight ? "text-black/60" : "text-text-soft"
                 )}
@@ -330,7 +330,7 @@ const PNodeTableComponent = ({
                 {/* SELECTION CHECKBOX */}
                 {onToggleSelection && pnode.ip && (
                   <td 
-                    className="p-4 align-middle"
+                    className="p-2 align-middle"
                     style={{ textAlign: 'center' }}
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -343,12 +343,12 @@ const PNodeTableComponent = ({
                     />
                   </td>
                 )}
-                {onToggleSelection && !pnode.ip && <td className="p-4"></td>}
+                {onToggleSelection && !pnode.ip && <td className="p-2"></td>}
 
                 {/* FAVORITE STAR */}
                 {onToggleFavorite && pnode.ip && (
                   <td 
-                    className="p-4 align-middle"
+                    className="p-2 align-middle"
                     style={{ textAlign: 'center' }}
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -374,10 +374,10 @@ const PNodeTableComponent = ({
                     </button>
                   </td>
                 )}
-                {onToggleFavorite && !pnode.ip && <td className="p-4"></td>}
+                {onToggleFavorite && !pnode.ip && <td className="p-2"></td>}
                 
                 {/* Network indicator - Dedicated column RIGHT AFTER favorites */}
-                <td className="p-4 align-middle text-center">
+                <td className="p-2 align-middle text-center">
                   <span 
                     className={`inline-block w-2 h-2 rounded-full ${
                       pnode.network === "MAINNET" ? "bg-green-500" : "bg-yellow-500"
@@ -386,14 +386,14 @@ const PNodeTableComponent = ({
                   />
                 </td>
 
-                <td className="p-4 text-center align-middle">
+                <td className="p-2 text-center align-middle">
                   <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm ${getScoreColor((pnode as any)._score)}`}>
                     {(pnode as any)._score}
                   </div>
                 </td>
 
                 {/* 🆕 PUBKEY/OPERATOR CELL */}
-                <td className="p-4 align-middle" style={{ textAlign: 'center' }}>
+                <td className="p-2 align-middle" style={{ textAlign: 'center' }}>
                   {pnode.pubkey ? (
                     <div className="flex items-center justify-center gap-1.5">
                       {(() => {
@@ -432,7 +432,7 @@ const PNodeTableComponent = ({
                   )}
                 </td>
 
-                <td className="p-4 font-mono text-text-main font-medium group-hover:text-accent-aqua transition-colors align-middle" style={{ textAlign: 'center' }}>
+                <td className="p-2 font-mono text-text-main font-medium group-hover:text-accent-aqua transition-colors align-middle" style={{ textAlign: 'center' }}>
                   {pnode.ip ? (
                     <div className="flex items-center justify-center gap-1 max-w-full">
                       {pnode.ip.startsWith('PRIVATE-') && (
@@ -465,7 +465,7 @@ const PNodeTableComponent = ({
                 </td>
 
                 {/* 🆕 CREDITS CELL - Premium design */}
-                <td className="p-4 align-middle text-center">
+                <td className="p-2 align-middle text-center">
                   <span className={pnode.credits && pnode.credits > 0 
                     ? "text-sm font-bold font-mono bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent" 
                     : "text-xs text-text-faint italic"}>
@@ -474,7 +474,7 @@ const PNodeTableComponent = ({
                 </td>
 
                 {/* COMBINED STATUS CELL (Online/Warning/Critical/Private) */}
-                <td className="p-4 align-middle text-center">
+                <td className="p-2 align-middle text-center">
                   <span className="px-3 py-1.5 rounded-full text-[9px] font-bold border uppercase tracking-wide inline-block" style={statusBadgeStyle}>
                     {combinedStatus === "Online" && "🟢 Online"}
                     {combinedStatus === "Warning" && "🟡 Warning"}
@@ -484,23 +484,23 @@ const PNodeTableComponent = ({
                   </span>
                 </td>
 
-                <td className="p-4 text-xs text-text-faint font-mono align-middle text-center">
+                <td className="p-2 text-xs text-text-faint font-mono align-middle text-center">
                   <span>{versionLabel}</span>
                 </td>
 
-                <td className="p-4 align-middle text-center">
+                <td className="p-2 align-middle text-center">
                   <span className="text-sm text-text-main font-mono">
                     {Number.isFinite(pnode.stats.cpu_percent) ? `${pnode.stats.cpu_percent.toFixed(1)}%` : '—'}
                   </span>
                 </td>
 
-                <td className="p-4 text-xs text-accent font-semibold align-middle text-center">
+                <td className="p-2 text-xs text-accent font-semibold align-middle text-center">
                   <span className="font-mono">
                     {ramTotal > 0 ? `${((ramUsed / ramTotal) * 100).toFixed(1)}%` : '—'}
                   </span>
                 </td>
 
-                <td className="p-4 text-sm font-semibold align-middle text-center">
+                <td className="p-2 text-sm font-semibold align-middle text-center">
                   <div className="text-sm font-bold whitespace-nowrap" style={{ color: isLight ? '#9945ff' : '#a855f7' }}>
                     {formatBytesAdaptive(committedBytes)}
                   </div>
@@ -509,7 +509,7 @@ const PNodeTableComponent = ({
                   </div>
                 </td>
 
-                <td className="p-4 text-xs text-text-main font-mono align-middle text-center">
+                <td className="p-2 text-xs text-text-main font-mono align-middle text-center">
                   <div className="font-semibold whitespace-nowrap">
                     {formatPacketValue(totalPackets)}
                   </div>
@@ -520,7 +520,7 @@ const PNodeTableComponent = ({
                   </div>
                 </td>
 
-                <td className="p-4 text-sm text-text-main font-mono align-middle text-center">
+                <td className="p-2 text-sm text-text-main font-mono align-middle text-center">
                   <span className="whitespace-nowrap">{formatUptime(pnode.stats.uptime)}</span>
                 </td>
               </tr>
