@@ -25,6 +25,10 @@ type FlipCardProps = {
   sparklineData?: Array<{ mainnet: number; devnet: number }>;
   showSparkline?: boolean;
   
+  // Delta badge (optional)
+  delta?: number; // Change vs yesterday (e.g. +12, -5)
+  deltaPercent?: number; // Percentage change (e.g. 4.2)
+  
   // Extra content on front (optional, for custom widgets like decentralization bar)
   frontExtraContent?: React.ReactNode;
 };
@@ -42,6 +46,8 @@ export const FlipCard = ({
   disableFlip = false,
   sparklineData = [],
   showSparkline = false,
+  delta,
+  deltaPercent,
   frontExtraContent,
 }: FlipCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
@@ -131,21 +137,41 @@ export const FlipCard = ({
             {/* Sparkline or extra content at bottom */}
             <div className="mt-auto">
               {showSparkline && (
-                <div 
-                  className="p-3 rounded-lg border"
-                  style={{ 
-                    background: isLight ? "rgba(15,23,42,0.02)" : "rgba(255,255,255,0.02)",
-                    borderColor: "var(--border-default)"
-                  }}
-                >
-                  <Sparkline
-                    data={sparklineData}
-                    mainnetColor="#10B981"
-                    devnetColor="#F59E0B"
-                    height={32}
-                    hasData={sparklineData.length >= 2}
-                    isLight={isLight}
-                  />
+                <div className="relative">
+                  <div 
+                    className="p-3 rounded-lg border"
+                    style={{ 
+                      background: isLight ? "rgba(15,23,42,0.02)" : "rgba(255,255,255,0.02)",
+                      borderColor: "var(--border-default)"
+                    }}
+                  >
+                    <Sparkline
+                      data={sparklineData}
+                      mainnetColor="#10B981"
+                      devnetColor="#F59E0B"
+                      height={32}
+                      hasData={sparklineData.length >= 2}
+                      isLight={isLight}
+                    />
+                  </div>
+                  
+                  {/* Delta badge - bottom right */}
+                  {delta !== undefined && deltaPercent !== undefined && (
+                    <div 
+                      className="absolute bottom-2 right-2 px-2 py-1 rounded-md flex items-center gap-1 text-xs font-semibold"
+                      style={{
+                        background: delta >= 0 
+                          ? (isLight ? "rgba(16, 185, 129, 0.12)" : "rgba(16, 185, 129, 0.15)")
+                          : (isLight ? "rgba(239, 68, 68, 0.12)" : "rgba(239, 68, 68, 0.15)"),
+                        color: delta >= 0 ? "#10B981" : "#EF4444",
+                        border: `1px solid ${delta >= 0 ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
+                      }}
+                    >
+                      <span>{delta >= 0 ? "↑" : "↓"}</span>
+                      <span>{Math.abs(delta)}</span>
+                      <span className="opacity-75">({deltaPercent >= 0 ? "+" : ""}{deltaPercent.toFixed(1)}%)</span>
+                    </div>
+                  )}
                 </div>
               )}
               

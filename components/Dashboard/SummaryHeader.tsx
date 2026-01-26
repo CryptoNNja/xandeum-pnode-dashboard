@@ -124,6 +124,29 @@ export const SummaryHeader = ({
       devnet: Math.round(privateNodes * privateDevnetRatio)
     };
   });
+  
+  // Calculate deltas (vs yesterday = last data point vs previous)
+  const calculateDelta = (current: number, previous: number) => {
+    const delta = current - previous;
+    const percent = previous > 0 ? (delta / previous) * 100 : 0;
+    return { delta, percent };
+  };
+  
+  // Get yesterday's values (second to last point in history)
+  const hasHistory = networkHistory.length >= 2;
+  const yesterday = hasHistory ? networkHistory[networkHistory.length - 2] : null;
+  
+  const totalNodesDelta = yesterday 
+    ? calculateDelta(totalNodes, yesterday.totalNodes)
+    : { delta: 0, percent: 0 };
+    
+  const publicNodesDelta = yesterday
+    ? calculateDelta(publicCount, yesterday.publicNodes)
+    : { delta: 0, percent: 0 };
+    
+  const privateNodesDelta = yesterday
+    ? calculateDelta(privateCount, yesterday.totalNodes - yesterday.publicNodes)
+    : { delta: 0, percent: 0 };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -138,6 +161,8 @@ export const SummaryHeader = ({
         hexToRgba={hexToRgba}
         showSparkline={true}
         sparklineData={publicNodesSparkline}
+        delta={publicNodesDelta.delta}
+        deltaPercent={publicNodesDelta.percent}
         backContent={
           <div className="space-y-2.5">
             {/* MAINNET Section */}
@@ -210,6 +235,8 @@ export const SummaryHeader = ({
         hexToRgba={hexToRgba}
         showSparkline={true}
         sparklineData={privateNodesSparkline}
+        delta={privateNodesDelta.delta}
+        deltaPercent={privateNodesDelta.percent}
         backContent={
           <div className="space-y-2.5">
             {/* MAINNET Section */}
@@ -282,6 +309,8 @@ export const SummaryHeader = ({
         hexToRgba={hexToRgba}
         showSparkline={true}
         sparklineData={totalNodesSparkline}
+        delta={totalNodesDelta.delta}
+        deltaPercent={totalNodesDelta.percent}
         backContent={
           <div className="space-y-2">
             {/* Network Distribution */}
