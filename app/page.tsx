@@ -657,6 +657,7 @@ export default function Page() {
           devnetPrivate={devnetPrivate}
           devnetCount={devnetCount}
           operatorsMetrics={operatorsMetrics}
+          networkHistory={networkHistory}
         />
 
         {/* DETAILED KPI CARDS */}

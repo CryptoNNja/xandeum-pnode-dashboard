@@ -66,6 +66,7 @@ type SummaryHeaderProps = {
   devnetPrivate?: number;
   devnetCount?: number;
   operatorsMetrics: OperatorsMetrics;
+  networkHistory: Array<{ date: string; nodes: number }>;
 };
 
 export const SummaryHeader = ({
@@ -85,11 +86,40 @@ export const SummaryHeader = ({
   devnetPrivate = 0,
   devnetCount = 0,
   operatorsMetrics,
+  networkHistory,
 }: SummaryHeaderProps) => {
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const UptimeIcon = networkUptimeStats.Icon;
   const kpiColors = getKpiColors();
   const statusColors = getStatusColors();
+  
+  // Transform networkHistory to sparkline data with mainnet/devnet split
+  // Using current ratios to estimate historical distribution
+  const totalMainnetRatio = totalNodes > 0 ? mainnetCount / totalNodes : 0.8;
+  const totalDevnetRatio = totalNodes > 0 ? devnetCount / totalNodes : 0.2;
+  
+  const publicMainnetRatio = publicCount > 0 ? mainnetPublic / publicCount : 0.8;
+  const publicDevnetRatio = publicCount > 0 ? devnetPublic / publicCount : 0.2;
+  
+  const privateMainnetRatio = privateCount > 0 ? mainnetPrivate / privateCount : 0.8;
+  const privateDevnetRatio = privateCount > 0 ? devnetPrivate / privateCount : 0.2;
+  
+  const totalNodesSparkline = networkHistory.map(h => ({
+    mainnet: Math.round(h.nodes * totalMainnetRatio),
+    devnet: Math.round(h.nodes * totalDevnetRatio)
+  }));
+  
+  const publicRatio = totalNodes > 0 ? publicCount / totalNodes : 0.5;
+  const publicNodesSparkline = networkHistory.map(h => ({
+    mainnet: Math.round(h.nodes * publicRatio * publicMainnetRatio),
+    devnet: Math.round(h.nodes * publicRatio * publicDevnetRatio)
+  }));
+  
+  const privateRatio = totalNodes > 0 ? privateCount / totalNodes : 0.5;
+  const privateNodesSparkline = networkHistory.map(h => ({
+    mainnet: Math.round(h.nodes * privateRatio * privateMainnetRatio),
+    devnet: Math.round(h.nodes * privateRatio * privateDevnetRatio)
+  }));
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -103,7 +133,7 @@ export const SummaryHeader = ({
         isLight={isLight}
         hexToRgba={hexToRgba}
         showSparkline={true}
-        sparklineData={[]} // TODO: Pass real historical data once collected
+        sparklineData={publicNodesSparkline}
         backContent={
           <div className="space-y-2.5">
             {/* MAINNET Section */}
@@ -175,7 +205,7 @@ export const SummaryHeader = ({
         isLight={isLight}
         hexToRgba={hexToRgba}
         showSparkline={true}
-        sparklineData={[]} // TODO: Pass real historical data once collected
+        sparklineData={privateNodesSparkline}
         backContent={
           <div className="space-y-2.5">
             {/* MAINNET Section */}
@@ -247,7 +277,7 @@ export const SummaryHeader = ({
         isLight={isLight}
         hexToRgba={hexToRgba}
         showSparkline={true}
-        sparklineData={[]} // TODO: Pass real historical data once collected
+        sparklineData={totalNodesSparkline}
         backContent={
           <div className="space-y-2">
             {/* Network Distribution */}
