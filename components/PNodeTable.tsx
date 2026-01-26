@@ -154,9 +154,9 @@ const PNodeTableComponent = ({
             {/* Favorite star */}
             {onToggleFavorite && <col style={{ width: '40px' }} />}
             {/* Network indicator */}
-            <col style={{ width: '60px' }} />
+            <col style={{ width: '50px' }} />
             {/* Score */}
-            <col style={{ width: '70px' }} />
+            <col style={{ width: '55px' }} />
             {/* Operator/Pubkey */}
             <col style={{ width: '110px' }} />
             {/* IP Address */}
