@@ -9,6 +9,13 @@ node_modules/
 # Handoff documents (local only)
 docs/HANDOFF*.md
 **/HANDOFF*.md
+HANDOFF_SESSION_*.md
+
+# Test/demo files and screenshots (local only)
+test_*.png
+test_*.jpg
+ronin.png
+screenshot_*.png
 
 # next.js
 /.next/
