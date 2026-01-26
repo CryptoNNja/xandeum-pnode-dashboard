@@ -5,7 +5,7 @@
  * including bandwidth, latency, packet loss, and trends.
  */
 
-import { type PNode, type NetworkType } from './types';
+import { type PNode } from './types';
 
 // Constants
 const DEFAULT_PACKET_SIZE_BYTES = 1500; // Standard Ethernet MTU
@@ -25,7 +25,7 @@ export interface NetworkThroughputMetrics {
   bandwidth: {
     current: number;        // Mbps
     perNode: number;        // Mbps per reporting node
-    formattedCurrent: string;
+    formatted: string;      // Formatted bandwidth string
   };
   
   // Trend analysis
@@ -206,7 +206,7 @@ export function calculateNetworkThroughput(
     bandwidth: {
       current: currentBandwidth,
       perNode: perNodeBandwidth,
-      formattedCurrent: formatBandwidth(currentBandwidth)
+      formatted: formatBandwidth(currentBandwidth)
     },
     trend,
     breakdown

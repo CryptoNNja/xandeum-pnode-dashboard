@@ -27,6 +27,7 @@ import ManagerBoardModal from "@/components/Dashboard/ManagerBoardModal";
 import { hexToRgba, getKpiColors, getStatusColors } from "@/lib/utils";
 import { generatePDFReport } from "@/lib/pdf-export";
 import { useToast } from "@/components/common/Toast";
+import { calculateBandwidth, formatBandwidth, calculateTrend } from "@/lib/network-throughput";
 import Joyride from 'react-joyride';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { getJoyrideStyles } from '@/lib/joyride-styles';
@@ -463,50 +464,12 @@ export default function Page() {
     
     const packetsPerSecond = avgUptime > 0 ? totalPackets / avgUptime : 0;
     
-    // Calculate bandwidth in Mbps (using standard 1500 byte packets)
-    const currentBandwidth = (packetsPerSecond * 1500 * 8) / 1_000_000; // bytes to Mbps
+    // Calculate bandwidth using shared utility
+    const currentBandwidth = calculateBandwidth(packetsPerSecond);
     const perNodeBandwidth = nodesWithPackets.length > 0 ? currentBandwidth / nodesWithPackets.length : 0;
     
-    // Format bandwidth
-    const formatBandwidth = (mbps: number): string => {
-      if (mbps >= 1000) return `${(mbps / 1000).toFixed(2)} Gbps`;
-      if (mbps >= 1) return `${mbps.toFixed(1)} Mbps`;
-      if (mbps >= 0.001) return `${(mbps * 1000).toFixed(0)} Kbps`;
-      return `${(mbps * 1000000).toFixed(0)} bps`;
-    };
-    
-    // Calculate trend
-    const calculateTrend = (): {
-      direction: 'up' | 'down' | 'stable';
-      changePercent: number;
-      indicator: '↑' | '↓' | '→';
-    } => {
-      if (previousPacketsPerSecond === undefined || previousPacketsPerSecond === 0) {
-        return {
-          direction: 'stable',
-          changePercent: 0,
-          indicator: '→'
-        };
-      }
-      
-      const change = packetsPerSecond - previousPacketsPerSecond;
-      const changePercent = (change / previousPacketsPerSecond) * 100;
-      
-      // < 5% change is considered stable
-      if (Math.abs(changePercent) < 5) {
-        return {
-          direction: 'stable',
-          changePercent: 0,
-          indicator: '→'
-        };
-      }
-      
-      return {
-        direction: changePercent > 0 ? 'up' : 'down',
-        changePercent: Math.abs(changePercent),
-        indicator: changePercent > 0 ? '↑' : '↓'
-      };
-    };
+    // Calculate trend using shared utility
+    const trend = calculateTrend(packetsPerSecond, previousPacketsPerSecond || 0);
     
     // Calculate network breakdown (MAINNET vs DEVNET)
     const calculateBreakdown = () => {
@@ -558,7 +521,7 @@ export default function Page() {
         perNode: perNodeBandwidth,
         formatted: formatBandwidth(currentBandwidth)
       },
-      trend: calculateTrend(),
+      trend,
       breakdown: calculateBreakdown()
     };
   }, [pnodes, previousPacketsPerSecond]);
