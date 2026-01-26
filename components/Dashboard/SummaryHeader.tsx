@@ -125,7 +125,9 @@ export const SummaryHeader = ({
     };
   });
   
-  // Calculate deltas (vs yesterday = last data point vs previous)
+  // Calculate deltas (current live count vs yesterday's historical data)
+  // Note: We compare live counts (totalNodes, publicCount, privateCount) 
+  // against the second-to-last history point to show change since yesterday
   const calculateDelta = (current: number, previous: number) => {
     const delta = current - previous;
     const percent = previous > 0 ? (delta / previous) * 100 : 0;
@@ -136,17 +138,19 @@ export const SummaryHeader = ({
   const hasHistory = networkHistory.length >= 2;
   const yesterday = hasHistory ? networkHistory[networkHistory.length - 2] : null;
   
+  // Return undefined for delta/percent when no history available
+  // This will hide the badge instead of showing misleading "+0 +0.0%"
   const totalNodesDelta = yesterday 
     ? calculateDelta(totalNodes, yesterday.totalNodes)
-    : { delta: 0, percent: 0 };
+    : { delta: undefined, percent: undefined };
     
   const publicNodesDelta = yesterday
     ? calculateDelta(publicCount, yesterday.publicNodes)
-    : { delta: 0, percent: 0 };
+    : { delta: undefined, percent: undefined };
     
   const privateNodesDelta = yesterday
     ? calculateDelta(privateCount, yesterday.totalNodes - yesterday.publicNodes)
-    : { delta: 0, percent: 0 };
+    : { delta: undefined, percent: undefined };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
