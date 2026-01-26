@@ -39,12 +39,11 @@ async function syncMainnetRegistry(): Promise<SyncStats> {
 
     for (const pubkey of officialPubkeys) {
       try {
-        // Check if node already exists in database
-        const { data: existing, error: fetchError } = await supabase
+        // Check if node already exists in database (can be multiple nodes with same pubkey)
+        const { data: existingNodes, error: fetchError } = await supabase
           .from('pnodes')
           .select('*')
-          .eq('pubkey', pubkey)
-          .maybeSingle();
+          .eq('pubkey', pubkey);
 
         if (fetchError) {
           console.error(`❌ Error fetching node ${pubkey}:`, fetchError);
@@ -52,9 +51,9 @@ async function syncMainnetRegistry(): Promise<SyncStats> {
           continue;
         }
 
-        if (existing) {
-          // Node already exists (discovered by crawler)
-          // Mark as official and update source to 'both'
+        if (existingNodes && existingNodes.length > 0) {
+          // Nodes already exist (discovered by crawler)
+          // Mark ALL nodes with this pubkey as official
           const { error: updateError } = await supabase
             .from('pnodes')
             .update({
@@ -69,8 +68,8 @@ async function syncMainnetRegistry(): Promise<SyncStats> {
             console.error(`❌ Error updating node ${pubkey}:`, updateError);
             stats.errors++;
           } else {
-            console.log(`✓ Marked existing node as official: ${pubkey.slice(0, 8)}...`);
-            stats.markedAsOfficial++;
+            console.log(`✓ Marked ${existingNodes.length} node(s) as official: ${pubkey.slice(0, 8)}...`);
+            stats.markedAsOfficial += existingNodes.length;
           }
         } else {
           // Node not yet discovered - insert as registry-only
