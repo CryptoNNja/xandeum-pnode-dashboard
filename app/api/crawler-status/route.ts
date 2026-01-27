@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-// Temporarily disable edge runtime to test
-// export const runtime = 'edge';
+// Force dynamic rendering (required for external API calls)
+export const dynamic = 'force-dynamic';
 export const revalidate = 60; // Cache for 60 seconds
 
 /**
