@@ -30,9 +30,9 @@ export async function GET() {
       headers['Authorization'] = `Bearer ${githubToken}`;
     }
     
-    // Fetch latest workflow runs
+    // Fetch latest workflow runs (no status filter to get in_progress/queued too)
     const response = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowFileName}/runs?per_page=1&status=completed`,
+      `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowFileName}/runs?per_page=1`,
       {
         headers,
         next: { revalidate: 60 }, // Cache for 60 seconds
