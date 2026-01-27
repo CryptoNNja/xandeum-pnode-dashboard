@@ -36,7 +36,8 @@ export async function GET() {
       `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowFileName}/runs?per_page=1`,
       {
         headers,
-        next: { revalidate: 60 }, // Cache for 60 seconds
+        // Note: Cache headers instead of next.revalidate for better compatibility
+        cache: 'no-store' as RequestCache,
       }
     );
     
