@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-export const runtime = 'edge';
+// Temporarily disable edge runtime to test
+// export const runtime = 'edge';
 export const revalidate = 60; // Cache for 60 seconds
 
 /**
