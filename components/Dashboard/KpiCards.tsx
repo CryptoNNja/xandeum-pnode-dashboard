@@ -228,6 +228,14 @@ export const KpiCards = ({
     // State for credits data
     const [creditsData, setCreditsData] = useState<{ pod_id: string; credits: number }[]>([]);
 
+    // 🆕 State for crawler GitHub Actions status
+    const [crawlerStatus, setCrawlerStatus] = useState<{
+      status: 'success' | 'failure' | 'in_progress' | 'queued' | 'unknown';
+      timeAgo: string;
+      url: string | null;
+      conclusion: string | null;
+    } | null>(null);
+
     // Fetch credits on mount
     useEffect(() => {
       const fetchCredits = async () => {
@@ -244,6 +252,25 @@ export const KpiCards = ({
       
       fetchCredits();
       const interval = setInterval(fetchCredits, 300000); // Refresh every 5 min
+      return () => clearInterval(interval);
+    }, []);
+
+    // 🆕 Fetch crawler status from GitHub Actions
+    useEffect(() => {
+      const fetchCrawlerStatus = async () => {
+        try {
+          const response = await fetch('/api/crawler-status');
+          if (response.ok) {
+            const data = await response.json();
+            setCrawlerStatus(data);
+          }
+        } catch (error) {
+          console.error('Failed to fetch crawler status:', error);
+        }
+      };
+      
+      fetchCrawlerStatus();
+      const interval = setInterval(fetchCrawlerStatus, 60000); // Refresh every 1 min
       return () => clearInterval(interval);
     }, []);
 
@@ -1063,7 +1090,41 @@ export const KpiCards = ({
                 <p className="text-xs uppercase tracking-[0.25em] text-text-soft/70">
                   Crawler Status
                 </p>
-                {networkMetadata.lastUpdated && (() => {
+                {crawlerStatus ? (
+                  <a
+                    href={crawlerStatus.url || 'https://github.com/CryptoNNja/xandeum-pnode-dashboard/actions'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                  >
+                    <div 
+                      className="w-2 h-2 rounded-full"
+                      style={{ 
+                        backgroundColor: 
+                          crawlerStatus.status === 'success' ? "#10B981" :
+                          crawlerStatus.status === 'failure' ? "#EF4444" :
+                          crawlerStatus.status === 'in_progress' ? "#3B82F6" :
+                          crawlerStatus.status === 'queued' ? "#F59E0B" : "#6B7280",
+                        boxShadow: 
+                          crawlerStatus.status === 'success' ? "0 0 8px #10B981" :
+                          crawlerStatus.status === 'failure' ? "0 0 8px #EF4444" :
+                          crawlerStatus.status === 'in_progress' ? "0 0 8px #3B82F6" : "none",
+                        animation: 
+                          crawlerStatus.status === 'in_progress' ? "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" :
+                          crawlerStatus.status === 'success' ? "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" : "none"
+                      }}
+                    />
+                    <span className="text-xs font-mono text-text-soft">
+                      {crawlerStatus.status === 'success' ? '✓ SUCCESS' :
+                       crawlerStatus.status === 'failure' ? '✗ FAILED' :
+                       crawlerStatus.status === 'in_progress' ? '⟳ RUNNING' :
+                       crawlerStatus.status === 'queued' ? '⏱ QUEUED' : '? UNKNOWN'}
+                    </span>
+                    <span className="text-xs text-text-faint">
+                      {crawlerStatus.timeAgo}
+                    </span>
+                  </a>
+                ) : networkMetadata.lastUpdated && (() => {
                   const lastCrawl = new Date(networkMetadata.lastUpdated);
                   const now = Date.now();
                   const timeSinceLastCrawlMs = now - lastCrawl.getTime();
