@@ -28,10 +28,8 @@ import { hexToRgba, getKpiColors, getStatusColors } from "@/lib/utils";
 import { generatePDFReport } from "@/lib/pdf-export";
 import { useToast } from "@/components/common/Toast";
 import { calculateBandwidth, formatBandwidth, calculateTrend } from "@/lib/network-throughput";
-import Joyride from 'react-joyride';
-import { useOnboarding } from '@/hooks/useOnboarding';
-import { getJoyrideStyles } from '@/lib/joyride-styles';
 import { Map3DWidget } from '@/components/Map3DWidget';
+import { OnboardingTour } from '@/components/OnboardingTour';
 
 const TOOLTIP_STYLES = `
   .recharts-tooltip-wrapper { outline: none !important; }
@@ -48,8 +46,6 @@ export default function Page() {
   const { theme } = useTheme();
   const isLight = theme === "light";
 
-  // Onboarding tour
-  const { run, steps, stepIndex, handleJoyrideCallback, resetTour } = useOnboarding();
 
   const {
     pnodes,
@@ -665,27 +661,7 @@ export default function Page() {
       <style>{TOOLTIP_STYLES}</style>
 
       {/* Onboarding Tour */}
-      <Joyride
-        steps={steps}
-        run={run}
-        continuous={true}
-        showSkipButton={true}
-        showProgress={true}
-        scrollToFirstStep={true}
-        scrollOffset={120}
-        disableScrolling={false}
-        disableOverlayClose={true}
-        spotlightClicks={false}
-        callback={handleJoyrideCallback}
-        styles={getJoyrideStyles(theme)}
-        locale={{
-          back: '← Back',
-          close: 'Close',
-          last: 'Finish Tour ✓',
-          next: 'Next →',
-          skip: 'Skip Tour',
-        }}
-      />
+      <OnboardingTour />
 
       <EnhancedHero
         criticalCount={criticalCount}
