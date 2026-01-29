@@ -30,6 +30,7 @@ import { useToast } from "@/components/common/Toast";
 import { calculateBandwidth, formatBandwidth, calculateTrend } from "@/lib/network-throughput";
 import { Map3DWidget } from '@/components/Map3DWidget';
 import { OnboardingTour } from '@/components/OnboardingTour';
+import { useOnboarding } from '@/hooks/useOnboarding';
 
 const TOOLTIP_STYLES = `
   .recharts-tooltip-wrapper { outline: none !important; }
@@ -254,6 +255,9 @@ export default function Page() {
   } = useFavorites();
 
   const [isFavoritesModalOpen, setIsFavoritesModalOpen] = useState(false);
+  
+  // Onboarding tour - only need resetTour for Toolbar
+  const { resetTour } = useOnboarding();
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [nodesToCompare, setNodesToCompare] = useState<typeof pnodes>([]);
 
