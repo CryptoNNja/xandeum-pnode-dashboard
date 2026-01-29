@@ -46,15 +46,18 @@ export function OnboardingTour({
 
   // Create container and root once on mount
   useEffect(() => {
+    console.log('🎯 OnboardingTour: Creating container and root');
     if (!containerRef.current) {
       containerRef.current = document.createElement('div');
       containerRef.current.id = 'joyride-root';
       document.body.appendChild(containerRef.current);
+      console.log('✅ Container created and added to body');
     }
 
     const initRoot = async () => {
       if (!rootRef.current && containerRef.current) {
         rootRef.current = createRoot(containerRef.current);
+        console.log('✅ React root created');
       }
     };
 
@@ -77,10 +80,14 @@ export function OnboardingTour({
 
   // Re-render Joyride when props change
   useEffect(() => {
+    console.log('🔄 OnboardingTour: Re-render effect triggered', { run, stepsCount: steps.length });
     const renderJoyride = async () => {
+      console.log('📦 Importing Joyride...');
       const Joyride = (await import('react-joyride')).default;
+      console.log('✅ Joyride imported');
 
       if (rootRef.current) {
+        console.log('🎨 Rendering Joyride with run=', run);
         rootRef.current.render(
           <>
             <style>{`
