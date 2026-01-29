@@ -975,20 +975,13 @@ export default function Page() {
         onClose={() => setIsManagerBoardOpen(false)}
       />
 
-      {/* Floating Widgets Area Anchor */}
-      <div 
-        id="floating-widgets-area" 
-        className="fixed right-6 bottom-6 pointer-events-none z-40"
-        style={{ width: '80px', height: '400px' }}
-        aria-hidden="true"
-      />
-
       {/* Floating Manager Board Button - Above Calculator */}
       <button
+        id="floating-widgets-area"
         onClick={() => setIsManagerBoardOpen(true)}
         onMouseEnter={() => setIsManagerBoardHovered(true)}
         onMouseLeave={() => setIsManagerBoardHovered(false)}
-        className="fixed right-6 z-50 w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg hover:shadow-2xl transform hover:scale-110 active:scale-95 transition-all duration-200 flex items-center justify-center group pointer-events-auto"
+        className="fixed right-6 z-50 w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg hover:shadow-2xl transform hover:scale-110 active:scale-95 transition-all duration-200 flex items-center justify-center group"
         style={{ bottom: `${managerBoardBottomOffset}px` }}
         aria-label="Open Manager Board"
       >
