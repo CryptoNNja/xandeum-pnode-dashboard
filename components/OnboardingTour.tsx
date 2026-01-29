@@ -1,33 +1,39 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import type { Root } from 'react-dom/client';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import dynamic from 'next/dynamic';
 import { CallBackProps } from 'react-joyride';
 import { getJoyrideStyles } from '@/lib/joyride-styles';
 import { useTheme } from '@/hooks/useTheme';
 
 /**
- * OnboardingTour - Completely isolated Joyride wrapper
+ * OnboardingTour - Presentational Joyride wrapper component
  * 
  * @description
- * This is the PROPER solution for Next.js 15+ params/searchParams issues.
- * We create a completely separate React root that's NOT part of the Next.js
- * component tree, so params/searchParams never reach it.
+ * This component wraps react-joyride with multiple isolation techniques to minimize
+ * Next.js 15+ compatibility issues. While warnings are suppressed at the console level,
+ * this component still uses best practices for isolation.
  * 
- * @solution
- * - Dynamic import of Joyride inside useEffect (client-only)
- * - Separate React root with createRoot (not part of Next.js tree)
- * - Direct DOM manipulation to mount/unmount
- * - Zero connection to Next.js component hierarchy
+ * @techniques
+ * - React Portal: Mounts Joyride directly to document.body
+ * - Dynamic Import: Loads Joyride with ssr: false
+ * - Client-only rendering: useEffect guard ensures browser-only execution
+ * - Props-based state: Single source of truth from parent component
  * 
  * @props
  * - run: Controls whether the tour is active
  * - steps: Array of tour steps configuration
- * - handleJoyrideCallback: Callback for tour events
+ * - handleJoyrideCallback: Callback for tour events (step changes, completion, etc.)
  * 
  * @see hooks/useOnboarding.tsx for state management
  */
+
+// Dynamically import Joyride with no SSR to avoid Next.js params/searchParams issues
+const Joyride = dynamic(
+  () => import('react-joyride'),
+  { ssr: false }
+);
 
 export type OnboardingTourProps = {
   run: boolean;
@@ -41,99 +47,38 @@ export function OnboardingTour({
   handleJoyrideCallback,
 }: OnboardingTourProps) {
   const { theme } = useTheme();
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const rootRef = useRef<Root | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // Create container and root once on mount
   useEffect(() => {
-    console.log('🎯 OnboardingTour: Creating container and root');
-    if (!containerRef.current) {
-      containerRef.current = document.createElement('div');
-      containerRef.current.id = 'joyride-root';
-      document.body.appendChild(containerRef.current);
-      console.log('✅ Container created and added to body');
-    }
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
-    if (!rootRef.current && containerRef.current) {
-      rootRef.current = createRoot(containerRef.current);
-      console.log('✅ React root created');
-      setIsReady(true); // Signal that root is ready
-    }
+  // Only render on client-side and use portal to break out of Next.js component tree
+  if (!mounted) return null;
 
-    // Cleanup only on unmount
-    return () => {
-      setTimeout(() => {
-        if (rootRef.current) {
-          rootRef.current.unmount();
-          rootRef.current = null;
-        }
-        if (containerRef.current && document.body.contains(containerRef.current)) {
-          document.body.removeChild(containerRef.current);
-          containerRef.current = null;
-        }
-      }, 0);
-    };
-  }, []); // Only on mount/unmount
-
-  // Re-render Joyride when props change (only after root is ready)
-  useEffect(() => {
-    if (!isReady) {
-      console.log('⏸️ Waiting for root to be ready...');
-      return;
-    }
-
-    console.log('🔄 OnboardingTour: Re-render effect triggered', { run, stepsCount: steps.length });
-    const renderJoyride = async () => {
-      console.log('📦 Importing Joyride...');
-      const Joyride = (await import('react-joyride')).default;
-      console.log('✅ Joyride imported');
-
-      if (rootRef.current) {
-        console.log('🎨 Rendering Joyride with run=', run);
-        rootRef.current.render(
-          <>
-            <style>{`
-              /* Smooth transitions for Joyride elements */
-              .react-joyride__spotlight {
-                transition: all 0.3s ease-in-out !important;
-              }
-              
-              .react-joyride__overlay {
-                transition: opacity 0.3s ease-in-out !important;
-              }
-            `}</style>
-            <Joyride
-              steps={steps}
-              run={run}
-              continuous={true}
-              showSkipButton={true}
-              showProgress={true}
-              scrollToFirstStep={true}
-              scrollOffset={120}
-              disableScrolling={false}
-              disableOverlayClose={true}
-              spotlightClicks={false}
-              callback={handleJoyrideCallback}
-              styles={getJoyrideStyles(theme)}
-              locale={{
-                back: '← Back',
-                close: 'Close',
-                last: 'Finish Tour ✓',
-                next: 'Next →',
-                skip: 'Skip Tour',
-              }}
-              floaterProps={{
-                disableAnimation: false,
-              }}
-            />
-          </>
-        );
-      }
-    };
-
-    renderJoyride();
-  }, [isReady, run, steps, handleJoyrideCallback, theme]); // Re-render on prop changes (after ready)
-
-  return null; // This component doesn't render anything in the Next.js tree
+  return createPortal(
+    <Joyride
+      steps={steps}
+      run={run}
+      continuous={true}
+      showSkipButton={true}
+      showProgress={true}
+      scrollToFirstStep={true}
+      scrollOffset={120}
+      disableScrolling={false}
+      disableOverlayClose={true}
+      spotlightClicks={false}
+      callback={handleJoyrideCallback}
+      styles={getJoyrideStyles(theme)}
+      locale={{
+        back: '← Back',
+        close: 'Close',
+        last: 'Finish Tour ✓',
+        next: 'Next →',
+        skip: 'Skip Tour',
+      }}
+    />,
+    document.body
+  );
 }
