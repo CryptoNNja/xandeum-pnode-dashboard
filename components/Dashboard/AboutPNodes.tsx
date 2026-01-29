@@ -83,6 +83,34 @@ const AboutPNodesComponent = ({
     return (totalStorageCommitted / TB).toFixed(1);
   }, [totalStorageCommitted]);
 
+  // Calculate MAINNET/DEVNET storage breakdown
+  const storageByNetwork = useMemo(() => {
+    const TB = 1e12;
+    
+    const mainnetStorage = pnodes
+      .filter(n => n.network === 'MAINNET')
+      .reduce((sum, n) => sum + (n.stats?.storage_committed || 0), 0);
+    
+    const devnetStorage = pnodes
+      .filter(n => n.network === 'DEVNET')
+      .reduce((sum, n) => sum + (n.stats?.storage_committed || 0), 0);
+    
+    const total = mainnetStorage + devnetStorage;
+    
+    return {
+      mainnet: {
+        bytes: mainnetStorage,
+        tb: (mainnetStorage / TB).toFixed(1),
+        percentage: total > 0 ? Math.round((mainnetStorage / total) * 100) : 0
+      },
+      devnet: {
+        bytes: devnetStorage,
+        tb: (devnetStorage / TB).toFixed(1),
+        percentage: total > 0 ? Math.round((devnetStorage / total) * 100) : 0
+      }
+    };
+  }, [pnodes]);
+
   const storageUsedPodsFormatted = useMemo(() => {
     // Use decimal units (1e6, 1e9, etc.) to match AboutPNodes display
     const KB = 1e3;
@@ -157,6 +185,36 @@ const AboutPNodesComponent = ({
       value: `${storageCommittedTB} TB`,
       label: "Storage Committed",
       color: "#7B3FF2", // Xandeum Purple
+      extra: (
+        <div className="w-full mt-2 space-y-1">
+          {/* Mini progress bar */}
+          <div className="w-full h-1.5 bg-background-elevated rounded-full overflow-hidden">
+            <div className="h-full flex">
+              <div 
+                className="bg-accent-aqua transition-all duration-300" 
+                style={{ width: `${storageByNetwork.mainnet.percentage}%` }} 
+                title={`MAINNET: ${storageByNetwork.mainnet.tb} TB`}
+              />
+              <div 
+                className="bg-purple-400 transition-all duration-300" 
+                style={{ width: `${storageByNetwork.devnet.percentage}%` }} 
+                title={`DEVNET: ${storageByNetwork.devnet.tb} TB`}
+              />
+            </div>
+          </div>
+          {/* Network labels */}
+          <div className="flex justify-between text-[10px] text-text-faint">
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-accent-aqua"></span>
+              M: {storageByNetwork.mainnet.tb} TB ({storageByNetwork.mainnet.percentage}%)
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+              D: {storageByNetwork.devnet.tb} TB ({storageByNetwork.devnet.percentage}%)
+            </span>
+          </div>
+        </div>
+      ),
     },
     {
       icon: Database,
@@ -292,7 +350,7 @@ const AboutPNodesComponent = ({
                     strokeWidth={2.2}
                   />
                 </div>
-                <div className="text-left">
+                <div className="text-left flex-1">
                   <p
                     className="text-base md:text-lg font-bold tracking-tight leading-none"
                     style={{ color: stat.color }}
@@ -305,6 +363,12 @@ const AboutPNodesComponent = ({
                   >
                     {stat.label}
                   </p>
+                  {/* Extra content (like progress bars) */}
+                  {(stat as any).extra && (
+                    <div className="mt-1">
+                      {(stat as any).extra}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ))}
