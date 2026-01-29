@@ -203,32 +203,45 @@ const AboutPNodesComponent = ({
       label: "Storage Committed",
       color: "#7B3FF2", // Xandeum Purple
       extra: (
-        <div className="w-full mt-2 space-y-1">
-          {/* Mini progress bar */}
-          <div className="w-full h-1.5 bg-background-elevated rounded-full overflow-hidden">
-            <div className="h-full flex">
+        <div className="w-full mt-2 space-y-1.5">
+          {/* MAINNET progress bar */}
+          <div className="space-y-0.5">
+            <div className="flex items-center justify-between text-[10px] text-text-faint">
+              <span className="flex items-center gap-1 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                MAINNET
+              </span>
+              <span className="font-mono">{storageByNetwork.mainnet.tb} TB</span>
+            </div>
+            <div 
+              className="w-full h-1 bg-background-elevated rounded-full overflow-hidden"
+              title={`MAINNET: ${storageByNetwork.mainnet.tb} TB (${storageByNetwork.mainnet.percentage}%)`}
+            >
               <div 
-                className="bg-green-500 transition-all duration-300" 
-                style={{ width: `${storageByNetwork.mainnet.percentage}%` }} 
-                title={`MAINNET: ${storageByNetwork.mainnet.tb} TB`}
-              />
-              <div 
-                className="bg-yellow-500 transition-all duration-300" 
-                style={{ width: `${storageByNetwork.devnet.percentage}%` }} 
-                title={`DEVNET: ${storageByNetwork.devnet.tb} TB`}
+                className="h-full bg-green-500 transition-all duration-300" 
+                style={{ width: `${storageByNetwork.mainnet.percentage}%` }}
               />
             </div>
           </div>
-          {/* Network labels */}
-          <div className="flex justify-between text-[10px] text-text-faint">
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-green-500"></span>
-              M: {storageByNetwork.mainnet.tb} TB ({storageByNetwork.mainnet.percentage}%)
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
-              D: {storageByNetwork.devnet.tb} TB ({storageByNetwork.devnet.percentage}%)
-            </span>
+          
+          {/* DEVNET progress bar */}
+          <div className="space-y-0.5">
+            <div className="flex items-center justify-between text-[10px] text-text-faint">
+              <span className="flex items-center gap-1 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+                DEVNET
+              </span>
+              <span className="font-mono">{storageByNetwork.devnet.tb} TB</span>
+            </div>
+            <div 
+              className="w-full h-1 bg-background-elevated rounded-full overflow-hidden"
+              title={`DEVNET: ${storageByNetwork.devnet.tb} TB (${storageByNetwork.devnet.percentage}%)`}
+            >
+              <div 
+                className="h-full bg-yellow-500 transition-all duration-300" 
+                style={{ width: `${storageByNetwork.devnet.percentage}%` }}
+              />
+            </div>
           </div>
         </div>
       ),
