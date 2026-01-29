@@ -58,27 +58,42 @@ export function OnboardingTour({
   if (!mounted) return null;
 
   return createPortal(
-    <Joyride
-      steps={steps}
-      run={run}
-      continuous={true}
-      showSkipButton={true}
-      showProgress={true}
-      scrollToFirstStep={true}
-      scrollOffset={120}
-      disableScrolling={false}
-      disableOverlayClose={true}
-      spotlightClicks={false}
-      callback={handleJoyrideCallback}
-      styles={getJoyrideStyles(theme)}
-      locale={{
-        back: '← Back',
-        close: 'Close',
-        last: 'Finish Tour ✓',
-        next: 'Next →',
-        skip: 'Skip Tour',
-      }}
-    />,
+    <>
+      <style>{`
+        /* Smooth transitions for Joyride elements */
+        .react-joyride__spotlight {
+          transition: all 0.3s ease-in-out !important;
+        }
+        
+        .react-joyride__overlay {
+          transition: opacity 0.3s ease-in-out !important;
+        }
+      `}</style>
+      <Joyride
+        steps={steps}
+        run={run}
+        continuous={true}
+        showSkipButton={true}
+        showProgress={true}
+        scrollToFirstStep={true}
+        scrollOffset={120}
+        disableScrolling={false}
+        disableOverlayClose={true}
+        spotlightClicks={false}
+        callback={handleJoyrideCallback}
+        styles={getJoyrideStyles(theme)}
+        locale={{
+          back: '← Back',
+          close: 'Close',
+          last: 'Finish Tour ✓',
+          next: 'Next →',
+          skip: 'Skip Tour',
+        }}
+        floaterProps={{
+          disableAnimation: false,
+        }}
+      />
+    </>,
     document.body
   );
 }
