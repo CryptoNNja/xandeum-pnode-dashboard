@@ -349,25 +349,36 @@ const AboutPNodesComponent = ({
     },
     {
       icon: Database,
-      value: avgCommittedPerPodFormatted,
-      label: "Avg Committed/Pod",
-      color: "#00D4AA", // Aqua
-      extra: storageTrend.values.length > 0 ? (
-        <div className="w-full mt-2 flex items-center justify-between gap-2">
-          {/* Sparkline */}
-          <div className="flex-1">
-            <Sparkline 
-              data={storageTrend.values}
-              width={80}
-              height={16}
-              color={storageTrend.isUp ? "#22c55e" : "#ef4444"}
-            />
-          </div>
-          {/* Trend indicator */}
+      value: storageTrend.values.length > 0 ? (
+        <div className="flex items-center gap-2">
+          <span>{avgCommittedPerPodFormatted}</span>
           <div className={`flex items-center gap-0.5 text-xs font-medium ${storageTrend.isUp ? 'text-green-500' : 'text-red-500'}`}>
             {storageTrend.isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
             <span>{storageTrend.percentage.toFixed(1)}%</span>
           </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <span>{avgCommittedPerPodFormatted}</span>
+          <div 
+            className="flex items-center gap-1 text-xs text-text-faint cursor-help"
+            title="📊 Collecting Data - Under Development"
+          >
+            <Loader2 className="w-3 h-3 animate-spin" />
+            <span className="text-[10px]">Under Dev</span>
+          </div>
+        </div>
+      ),
+      label: "Avg Committed/Pod",
+      color: "#00D4AA", // Aqua
+      extra: storageTrend.values.length > 0 ? (
+        <div className="w-full mt-2">
+          <Sparkline 
+            data={storageTrend.values}
+            width={100}
+            height={16}
+            color={storageTrend.isUp ? "#22c55e" : "#ef4444"}
+          />
         </div>
       ) : null,
     },
