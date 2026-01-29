@@ -44,21 +44,41 @@ export function OnboardingTour({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useRef<Root | null>(null);
 
+  // Create container and root once on mount
   useEffect(() => {
-    // Create container element
     if (!containerRef.current) {
       containerRef.current = document.createElement('div');
       containerRef.current.id = 'joyride-root';
       document.body.appendChild(containerRef.current);
     }
 
-    // Dynamically import and render Joyride in separate root
-    const renderJoyride = async () => {
-      const Joyride = (await import('react-joyride')).default;
-      
+    const initRoot = async () => {
       if (!rootRef.current && containerRef.current) {
         rootRef.current = createRoot(containerRef.current);
       }
+    };
+
+    initRoot();
+
+    // Cleanup only on unmount
+    return () => {
+      setTimeout(() => {
+        if (rootRef.current) {
+          rootRef.current.unmount();
+          rootRef.current = null;
+        }
+        if (containerRef.current && document.body.contains(containerRef.current)) {
+          document.body.removeChild(containerRef.current);
+          containerRef.current = null;
+        }
+      }, 0);
+    };
+  }, []); // Only on mount/unmount
+
+  // Re-render Joyride when props change
+  useEffect(() => {
+    const renderJoyride = async () => {
+      const Joyride = (await import('react-joyride')).default;
 
       if (rootRef.current) {
         rootRef.current.render(
@@ -103,21 +123,7 @@ export function OnboardingTour({
     };
 
     renderJoyride();
-
-    // Cleanup - use setTimeout to avoid unmounting during render
-    return () => {
-      setTimeout(() => {
-        if (rootRef.current) {
-          rootRef.current.unmount();
-          rootRef.current = null;
-        }
-        if (containerRef.current && document.body.contains(containerRef.current)) {
-          document.body.removeChild(containerRef.current);
-          containerRef.current = null;
-        }
-      }, 0);
-    };
-  }, [run, steps, handleJoyrideCallback, theme]);
+  }, [run, steps, handleJoyrideCallback, theme]); // Re-render on prop changes
 
   return null; // This component doesn't render anything in the Next.js tree
 }
