@@ -2,7 +2,7 @@
 
 import { memo, useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Database, Radio, Globe, Zap, ChevronRight, ChevronDown, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
+import { Database, Radio, Globe, Zap, ChevronRight, ChevronDown, DollarSign, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { Sparkline } from "@/components/common/Sparkline";
 
