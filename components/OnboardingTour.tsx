@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { CallBackProps } from 'react-joyride';
 import { getJoyrideStyles } from '@/lib/joyride-styles';
@@ -8,8 +10,8 @@ import { useTheme } from '@/hooks/useTheme';
 /**
  * OnboardingTour - Presentational Joyride wrapper component
  * 
- * Uses dynamic import with ssr: false to completely isolate Joyride
- * from Next.js SSR and prevent params/searchParams Promise issues.
+ * Uses React Portal + dynamic import to completely isolate Joyride
+ * from Next.js component tree and prevent params/searchParams Promise issues.
  * 
  * The component receives onboarding state as props from the parent,
  * ensuring a single source of truth for the tour state.
@@ -33,8 +35,17 @@ export function OnboardingTour({
   handleJoyrideCallback,
 }: OnboardingTourProps) {
   const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
-  return (
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  // Only render on client-side and use portal to break out of Next.js component tree
+  if (!mounted) return null;
+
+  return createPortal(
     <Joyride
       steps={steps}
       run={run}
@@ -55,6 +66,7 @@ export function OnboardingTour({
         next: 'Next →',
         skip: 'Skip Tour',
       }}
-    />
+    />,
+    document.body
   );
 }
