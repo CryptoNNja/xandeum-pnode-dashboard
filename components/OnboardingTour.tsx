@@ -1,19 +1,26 @@
 "use client";
 
-import Joyride, { CallBackProps } from 'react-joyride';
+import dynamic from 'next/dynamic';
+import { CallBackProps } from 'react-joyride';
 import { getJoyrideStyles } from '@/lib/joyride-styles';
 import { useTheme } from '@/hooks/useTheme';
 
 /**
  * OnboardingTour - Presentational Joyride wrapper component
  * 
- * This component is isolated to prevent Next.js 15+ params/searchParams
- * Promise unwrapping issues. By separating Joyride into its own component,
- * we avoid the automatic prop passing from Next.js page components.
+ * Uses dynamic import with ssr: false to completely isolate Joyride
+ * from Next.js SSR and prevent params/searchParams Promise issues.
  * 
  * The component receives onboarding state as props from the parent,
  * ensuring a single source of truth for the tour state.
  */
+
+// Dynamically import Joyride with no SSR to avoid Next.js params/searchParams issues
+const Joyride = dynamic(
+  () => import('react-joyride'),
+  { ssr: false }
+);
+
 export type OnboardingTourProps = {
   run: boolean;
   steps: any[];
