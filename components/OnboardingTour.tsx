@@ -10,11 +10,23 @@ import { useTheme } from '@/hooks/useTheme';
 /**
  * OnboardingTour - Presentational Joyride wrapper component
  * 
- * Uses React Portal + dynamic import to completely isolate Joyride
- * from Next.js component tree and prevent params/searchParams Promise issues.
+ * @description
+ * This component wraps react-joyride with multiple isolation techniques to minimize
+ * Next.js 15+ compatibility issues. While warnings are suppressed at the console level,
+ * this component still uses best practices for isolation.
  * 
- * The component receives onboarding state as props from the parent,
- * ensuring a single source of truth for the tour state.
+ * @techniques
+ * - React Portal: Mounts Joyride directly to document.body
+ * - Dynamic Import: Loads Joyride with ssr: false
+ * - Client-only rendering: useEffect guard ensures browser-only execution
+ * - Props-based state: Single source of truth from parent component
+ * 
+ * @props
+ * - run: Controls whether the tour is active
+ * - steps: Array of tour steps configuration
+ * - handleJoyrideCallback: Callback for tour events (step changes, completion, etc.)
+ * 
+ * @see hooks/useOnboarding.tsx for state management
  */
 
 // Dynamically import Joyride with no SSR to avoid Next.js params/searchParams issues

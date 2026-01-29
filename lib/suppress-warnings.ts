@@ -1,12 +1,22 @@
 /**
  * Suppress specific Next.js 15+ warnings that don't affect functionality
  * 
- * This file suppresses console warnings about params/searchParams being Promises
+ * @description
+ * This utility suppresses console warnings about params/searchParams being Promises
  * when using react-joyride. These warnings are cosmetic and don't affect the tour
  * functionality, but clutter the console during development.
  * 
- * Related issue: Next.js 15+ automatically passes params/searchParams as Promises,
- * and react-joyride enumerates component props which triggers these warnings.
+ * @problem
+ * Next.js 15+ automatically passes params/searchParams as Promises to all client
+ * components in the tree. The react-joyride library enumerates component props
+ * internally, which triggers Next.js warnings about accessing these Promises directly.
+ * 
+ * @solution
+ * Since the tour functionality works perfectly and these are only warnings, we
+ * suppress them at the console level to maintain a clean development experience.
+ * 
+ * @see https://nextjs.org/docs/messages/sync-dynamic-apis
+ * @see https://github.com/gilbarbara/react-joyride/issues
  */
 
 if (typeof window !== 'undefined') {
