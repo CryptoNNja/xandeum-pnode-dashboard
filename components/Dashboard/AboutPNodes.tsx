@@ -268,16 +268,16 @@ const AboutPNodesComponent = ({
           {/* Single progress bar with both networks */}
           <div 
             className="w-full h-1.5 bg-background-elevated rounded-full overflow-hidden"
-            title={`MAINNET: ${storageByNetwork.mainnet.tb} TB (${storageByNetwork.mainnet.percentage}%) | DEVNET: ${storageByNetwork.devnet.tb} TB (${storageByNetwork.devnet.percentage}%)`}
+            title={`MAINNET: ${storageUsedByNetwork.mainnet.tb} TB (${storageUsedByNetwork.mainnet.percentage}%) | DEVNET: ${storageUsedByNetwork.devnet.tb} TB (${storageUsedByNetwork.devnet.percentage}%)`}
           >
             <div className="h-full flex">
               <div 
                 className="bg-green-500 transition-all duration-300" 
-                style={{ width: `${storageByNetwork.mainnet.percentage}%` }}
+                style={{ width: `${storageUsedByNetwork.mainnet.percentage}%` }}
               />
               <div 
                 className="bg-yellow-500 transition-all duration-300" 
-                style={{ width: `${storageByNetwork.devnet.percentage}%` }}
+                style={{ width: `${storageUsedByNetwork.devnet.percentage}%` }}
               />
             </div>
           </div>
