@@ -85,7 +85,7 @@ const AboutPNodesComponent = ({
     return (totalStorageCommitted / TB).toFixed(1);
   }, [totalStorageCommitted]);
 
-  // Calculate MAINNET/DEVNET storage breakdown
+  // Calculate MAINNET/DEVNET storage committed breakdown
   const storageByNetwork = useMemo(() => {
     const TB = 1e12;
     
@@ -107,7 +107,7 @@ const AboutPNodesComponent = ({
     
     const total = mainnetStorage + devnetStorage;
     
-    console.log('💾 Storage breakdown:', {
+    console.log('💾 Storage Committed breakdown:', {
       mainnet: `${(mainnetStorage / TB).toFixed(1)} TB`,
       devnet: `${(devnetStorage / TB).toFixed(1)} TB`,
       mainnetPct: total > 0 ? Math.round((mainnetStorage / total) * 100) : 0,
@@ -124,6 +124,41 @@ const AboutPNodesComponent = ({
         bytes: devnetStorage,
         tb: (devnetStorage / TB).toFixed(1),
         percentage: total > 0 ? Math.round((devnetStorage / total) * 100) : 0
+      }
+    };
+  }, [pnodes]);
+
+  // Calculate MAINNET/DEVNET storage used breakdown (from stats.storage_used)
+  const storageUsedByNetwork = useMemo(() => {
+    const TB = 1e12;
+    
+    const mainnetUsed = pnodes
+      .filter(n => n.network === 'MAINNET')
+      .reduce((sum, n) => sum + (n.stats?.storage_used || 0), 0);
+    
+    const devnetUsed = pnodes
+      .filter(n => n.network === 'DEVNET')
+      .reduce((sum, n) => sum + (n.stats?.storage_used || 0), 0);
+    
+    const total = mainnetUsed + devnetUsed;
+    
+    console.log('📦 Storage Used breakdown:', {
+      mainnet: `${(mainnetUsed / TB).toFixed(1)} TB`,
+      devnet: `${(devnetUsed / TB).toFixed(1)} TB`,
+      mainnetPct: total > 0 ? Math.round((mainnetUsed / total) * 100) : 0,
+      devnetPct: total > 0 ? Math.round((devnetUsed / total) * 100) : 0
+    });
+    
+    return {
+      mainnet: {
+        bytes: mainnetUsed,
+        tb: (mainnetUsed / TB).toFixed(2),
+        percentage: total > 0 ? Math.round((mainnetUsed / total) * 100) : 0
+      },
+      devnet: {
+        bytes: devnetUsed,
+        tb: (devnetUsed / TB).toFixed(2),
+        percentage: total > 0 ? Math.round((devnetUsed / total) * 100) : 0
       }
     };
   }, [pnodes]);
@@ -228,6 +263,26 @@ const AboutPNodesComponent = ({
       value: storageUsedPodsFormatted,
       label: "Storage Used",
       color: "#14F195", // Xandeum Green
+      extra: (
+        <div className="w-full mt-2">
+          {/* Single progress bar with both networks */}
+          <div 
+            className="w-full h-1.5 bg-background-elevated rounded-full overflow-hidden"
+            title={`MAINNET: ${storageByNetwork.mainnet.tb} TB (${storageByNetwork.mainnet.percentage}%) | DEVNET: ${storageByNetwork.devnet.tb} TB (${storageByNetwork.devnet.percentage}%)`}
+          >
+            <div className="h-full flex">
+              <div 
+                className="bg-green-500 transition-all duration-300" 
+                style={{ width: `${storageByNetwork.mainnet.percentage}%` }}
+              />
+              <div 
+                className="bg-yellow-500 transition-all duration-300" 
+                style={{ width: `${storageByNetwork.devnet.percentage}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      ),
     },
     {
       icon: Database,
