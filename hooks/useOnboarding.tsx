@@ -688,6 +688,8 @@ export function useOnboarding() {
       ),
       placement: 'left',
       disableBeacon: true,
+      disableScrolling: true,
+      spotlightPadding: 10,
     },
     {
       target: '#help-button',
