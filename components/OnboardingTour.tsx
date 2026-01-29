@@ -104,16 +104,18 @@ export function OnboardingTour({
 
     renderJoyride();
 
-    // Cleanup
+    // Cleanup - use setTimeout to avoid unmounting during render
     return () => {
-      if (rootRef.current) {
-        rootRef.current.unmount();
-        rootRef.current = null;
-      }
-      if (containerRef.current && document.body.contains(containerRef.current)) {
-        document.body.removeChild(containerRef.current);
-        containerRef.current = null;
-      }
+      setTimeout(() => {
+        if (rootRef.current) {
+          rootRef.current.unmount();
+          rootRef.current = null;
+        }
+        if (containerRef.current && document.body.contains(containerRef.current)) {
+          document.body.removeChild(containerRef.current);
+          containerRef.current = null;
+        }
+      }, 0);
     };
   }, [run, steps, handleJoyrideCallback, theme]);
 
