@@ -686,6 +686,7 @@ export default function Page() {
           networkMetadata={networkMetadata}
           countriesCount={countriesCount}
           totalNodes={publicCount + privateCount}
+          pnodes={pnodes}
         />
       </div>
 

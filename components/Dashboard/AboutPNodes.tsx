@@ -62,6 +62,7 @@ interface AboutPNodesProps {
   };
   countriesCount: number;
   totalNodes: number; // Total number of nodes for average calculation
+  pnodes: any[]; // Array of pnodes for network breakdown calculation
 }
 
 const AboutPNodesComponent = ({
@@ -71,6 +72,7 @@ const AboutPNodesComponent = ({
   networkMetadata,
   countriesCount,
   totalNodes,
+  pnodes,
 }: AboutPNodesProps) => {
   const { theme } = useTheme();
   const isLight = theme === "light";
