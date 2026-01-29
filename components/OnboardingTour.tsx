@@ -100,6 +100,15 @@ export function OnboardingTour({
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
+  // Memoize props to prevent re-renders and ensure clean prop passing
+  // MUST be before any conditional returns (Rules of Hooks)
+  const joyrideProps = useMemo(() => ({
+    run,
+    steps,
+    callback: handleJoyrideCallback,
+    theme,
+  }), [run, steps, handleJoyrideCallback, theme]);
+
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
@@ -107,14 +116,6 @@ export function OnboardingTour({
 
   // Only render on client-side and use portal to break out of Next.js component tree
   if (!mounted) return null;
-
-  // Memoize props to prevent re-renders and ensure clean prop passing
-  const joyrideProps = useMemo(() => ({
-    run,
-    steps,
-    callback: handleJoyrideCallback,
-    theme,
-  }), [run, steps, handleJoyrideCallback, theme]);
 
   return createPortal(
     <JoyrideIsolated {...joyrideProps} />,
