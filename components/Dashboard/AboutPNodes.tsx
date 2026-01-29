@@ -203,42 +203,19 @@ const AboutPNodesComponent = ({
       label: "Storage Committed",
       color: "#7B3FF2", // Xandeum Purple
       extra: (
-        <div className="w-full mt-2 space-y-1.5">
-          {/* MAINNET progress bar */}
-          <div className="space-y-0.5">
-            <div className="flex items-center justify-between text-[10px] text-text-faint">
-              <span className="flex items-center gap-1 font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                MAINNET
-              </span>
-              <span className="font-mono">{storageByNetwork.mainnet.tb} TB</span>
-            </div>
-            <div 
-              className="w-full h-1 bg-background-elevated rounded-full overflow-hidden"
-              title={`MAINNET: ${storageByNetwork.mainnet.tb} TB (${storageByNetwork.mainnet.percentage}%)`}
-            >
+        <div className="w-full mt-2">
+          {/* Single progress bar with both networks */}
+          <div 
+            className="w-full h-1.5 bg-background-elevated rounded-full overflow-hidden"
+            title={`MAINNET: ${storageByNetwork.mainnet.tb} TB (${storageByNetwork.mainnet.percentage}%) | DEVNET: ${storageByNetwork.devnet.tb} TB (${storageByNetwork.devnet.percentage}%)`}
+          >
+            <div className="h-full flex">
               <div 
-                className="h-full bg-green-500 transition-all duration-300" 
+                className="bg-green-500 transition-all duration-300" 
                 style={{ width: `${storageByNetwork.mainnet.percentage}%` }}
               />
-            </div>
-          </div>
-          
-          {/* DEVNET progress bar */}
-          <div className="space-y-0.5">
-            <div className="flex items-center justify-between text-[10px] text-text-faint">
-              <span className="flex items-center gap-1 font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
-                DEVNET
-              </span>
-              <span className="font-mono">{storageByNetwork.devnet.tb} TB</span>
-            </div>
-            <div 
-              className="w-full h-1 bg-background-elevated rounded-full overflow-hidden"
-              title={`DEVNET: ${storageByNetwork.devnet.tb} TB (${storageByNetwork.devnet.percentage}%)`}
-            >
               <div 
-                className="h-full bg-yellow-500 transition-all duration-300" 
+                className="bg-yellow-500 transition-all duration-300" 
                 style={{ width: `${storageByNetwork.devnet.percentage}%` }}
               />
             </div>
