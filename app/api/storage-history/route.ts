@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/supabase.mjs';
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 /**
  * GET /api/storage-history
@@ -7,7 +11,19 @@ import { createClient } from '@/lib/supabase';
  */
 export async function GET() {
   try {
-    const supabase = createClient();
+    // Create admin client for server-side query
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json(
+        { error: 'Supabase configuration missing' },
+        { status: 500 }
+      );
+    }
+
+    const supabase = createClient<Database>(
+      SUPABASE_URL,
+      SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { persistSession: false } }
+    );
 
     // Get snapshots from the last 7 days
     const sevenDaysAgo = new Date();
