@@ -51,7 +51,27 @@ export function OnboardingTour({
 
   useEffect(() => {
     setMounted(true);
-    return () => setMounted(false);
+    
+    // Suppress Next.js 15+ params/searchParams warnings from react-joyride
+    const originalError = console.error;
+    const suppressPatterns = [
+      /params are being enumerated/i,
+      /searchParams.*was accessed directly/i,
+      /The keys of.*searchParams.*were accessed directly/i,
+      /must be unwrapped with.*React\.use\(\)/i,
+    ];
+    
+    console.error = (...args: any[]) => {
+      const message = args.join(' ');
+      if (!suppressPatterns.some(pattern => pattern.test(message))) {
+        originalError.apply(console, args);
+      }
+    };
+    
+    return () => {
+      setMounted(false);
+      console.error = originalError;
+    };
   }, []);
 
   // Only render on client-side and use portal to break out of Next.js component tree
