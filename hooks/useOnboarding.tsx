@@ -20,7 +20,12 @@ import {
   Download,
   SlidersHorizontal,
   RefreshCw,
-  HelpCircle
+  HelpCircle,
+  Layers,
+  Calculator,
+  Globe,
+  MessageSquare,
+  Users
 } from 'lucide-react';
 
 export function useOnboarding() {
@@ -77,23 +82,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 2-4: HERO SECTION
-    {
-      target: 'header',
-      title: (
-        <div className="flex items-center gap-2">
-          <Home className="w-5 h-5 text-accent-aqua" />
-          <span>Hero Section</span>
-        </div>
-      ),
-      content: (
-        <p className="text-sm leading-relaxed">
-          Dashboard header with <strong>Xandeum branding</strong> and critical system controls.
-        </p>
-      ),
-      placement: 'bottom',
-      disableBeacon: true,
-    },
+    // STEP 2-3: HERO SECTION
     {
       target: 'header button[type="button"]:first-of-type',
       title: (
@@ -188,7 +177,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 7-8: SUMMARY HEADER (4 KPI Cards dont System Alerts)
+    // STEP 7-8: SUMMARY HEADER (5 KPI Cards: Public, Private, Total, Network Ops, System Alerts)
     {
       target: 'section.max-w-7xl > div.grid.grid-cols-1',
       title: (
@@ -200,7 +189,7 @@ export function useOnboarding() {
       content: (
         <div className="space-y-2">
           <p className="text-sm leading-relaxed">
-            Top-level KPIs for quick network assessment.
+            Top-level KPIs for quick network assessment with MAINNET/DEVNET breakdown.
           </p>
           <div className="grid grid-cols-2 gap-2 text-xs text-text-faint mt-2">
             <div className="flex items-center gap-1">
@@ -213,6 +202,9 @@ export function useOnboarding() {
               <span className="text-blue-400">●</span> Total Nodes
             </div>
             <div className="flex items-center gap-1">
+              <span className="text-orange-400">●</span> Network Ops
+            </div>
+            <div className="flex items-center gap-1">
               <span className="text-red-400">●</span> System Alerts
             </div>
           </div>
@@ -222,7 +214,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     {
-      target: 'section.max-w-7xl > div.grid > div:nth-child(4)',
+      target: 'section.max-w-7xl > div.grid > div:nth-child(5)',
       title: (
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-red-400" />
@@ -654,6 +646,47 @@ export function useOnboarding() {
         </div>
       ),
       placement: 'left',
+      disableBeacon: true,
+    },
+    
+    // STEP 26: FLOATING WIDGETS AREA
+    {
+      target: 'body',
+      title: (
+        <div className="flex items-center gap-2">
+          <Layers className="w-5 h-5 text-accent-aqua" />
+          <span>Widget Area</span>
+        </div>
+      ),
+      content: (
+        <div className="space-y-3">
+          <p className="text-sm leading-relaxed">
+            Access powerful tools via <strong>floating buttons</strong> in the bottom-right corner.
+          </p>
+          <div className="space-y-2 text-xs text-text-faint">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-blue-400" />
+              <span><strong className="text-accent-aqua">3D Map</strong> - Interactive globe visualization of nodes</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-purple-400" />
+              <span><strong className="text-accent-aqua">Operator Board</strong> - Manager leaderboard & analytics</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calculator className="w-4 h-4 text-green-400" />
+              <span><strong className="text-accent-aqua">STOINC Calculator</strong> - Rewards calculator tool</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-orange-400" />
+              <span><strong className="text-accent-aqua">Ronin AI Chatbot</strong> - AI assistant for queries</span>
+            </div>
+          </div>
+          <p className="text-xs text-text-faint italic mt-2">
+            Look for the buttons at the bottom-right of your screen!
+          </p>
+        </div>
+      ),
+      placement: 'center',
       disableBeacon: true,
     },
     {
