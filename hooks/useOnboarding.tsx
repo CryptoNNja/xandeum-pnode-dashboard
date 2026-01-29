@@ -651,7 +651,7 @@ export function useOnboarding() {
     
     // STEP 26: FLOATING WIDGETS AREA
     {
-      target: 'body',
+      target: '#manager-board-button',
       title: (
         <div className="flex items-center gap-2">
           <Layers className="w-5 h-5 text-accent-aqua" />
@@ -682,11 +682,11 @@ export function useOnboarding() {
             </div>
           </div>
           <p className="text-xs text-text-faint italic mt-2">
-            Look for the buttons at the bottom-right of your screen!
+            Scroll down to see all floating buttons stacked vertically!
           </p>
         </div>
       ),
-      placement: 'center',
+      placement: 'left',
       disableBeacon: true,
     },
     {

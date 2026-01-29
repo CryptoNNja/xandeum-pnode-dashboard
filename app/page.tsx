@@ -977,6 +977,7 @@ export default function Page() {
 
       {/* Floating Manager Board Button - Above Calculator */}
       <button
+        id="manager-board-button"
         onClick={() => setIsManagerBoardOpen(true)}
         onMouseEnter={() => setIsManagerBoardHovered(true)}
         onMouseLeave={() => setIsManagerBoardHovered(false)}
