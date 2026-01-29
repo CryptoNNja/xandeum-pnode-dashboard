@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { CallBackProps } from 'react-joyride';
@@ -11,15 +11,14 @@ import { useTheme } from '@/hooks/useTheme';
  * OnboardingTour - Presentational Joyride wrapper component
  * 
  * @description
- * This component wraps react-joyride with multiple isolation techniques to minimize
- * Next.js 15+ compatibility issues. While warnings are suppressed at the console level,
- * this component still uses best practices for isolation.
+ * This component wraps react-joyride and properly isolates it from Next.js 15+ 
+ * params/searchParams props that are automatically passed down the component tree.
  * 
- * @techniques
- * - React Portal: Mounts Joyride directly to document.body
- * - Dynamic Import: Loads Joyride with ssr: false
- * - Client-only rendering: useEffect guard ensures browser-only execution
- * - Props-based state: Single source of truth from parent component
+ * @solution
+ * - Uses a wrapper function component that accepts ONLY the needed props
+ * - Prevents Next.js from passing params/searchParams to Joyride
+ * - React Portal to mount outside the main component tree
+ * - Dynamic import with SSR disabled
  * 
  * @props
  * - run: Controls whether the tour is active
@@ -29,7 +28,7 @@ import { useTheme } from '@/hooks/useTheme';
  * @see hooks/useOnboarding.tsx for state management
  */
 
-// Dynamically import Joyride with no SSR to avoid Next.js params/searchParams issues
+// Dynamically import Joyride with no SSR
 const Joyride = dynamic(
   () => import('react-joyride'),
   { ssr: false }
@@ -41,43 +40,19 @@ export type OnboardingTourProps = {
   handleJoyrideCallback: (data: CallBackProps) => void;
 };
 
-export function OnboardingTour({
-  run,
-  steps,
-  handleJoyrideCallback,
-}: OnboardingTourProps) {
-  const { theme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    
-    // Suppress Next.js 15+ params/searchParams warnings from react-joyride
-    const originalError = console.error;
-    const suppressPatterns = [
-      /params are being enumerated/i,
-      /searchParams.*was accessed directly/i,
-      /The keys of.*searchParams.*were accessed directly/i,
-      /must be unwrapped with.*React\.use\(\)/i,
-    ];
-    
-    console.error = (...args: any[]) => {
-      const message = args.join(' ');
-      if (!suppressPatterns.some(pattern => pattern.test(message))) {
-        originalError.apply(console, args);
-      }
-    };
-    
-    return () => {
-      setMounted(false);
-      console.error = originalError;
-    };
-  }, []);
-
-  // Only render on client-side and use portal to break out of Next.js component tree
-  if (!mounted) return null;
-
-  return createPortal(
+// Inner wrapper that ONLY accepts our specific props - blocks Next.js props
+function JoyrideIsolated({ 
+  run, 
+  steps, 
+  callback,
+  theme 
+}: { 
+  run: boolean; 
+  steps: any[]; 
+  callback: (data: CallBackProps) => void;
+  theme: string;
+}) {
+  return (
     <>
       <style>{`
         /* Smooth transitions for Joyride elements */
@@ -100,7 +75,7 @@ export function OnboardingTour({
         disableScrolling={false}
         disableOverlayClose={true}
         spotlightClicks={false}
-        callback={handleJoyrideCallback}
+        callback={callback}
         styles={getJoyrideStyles(theme)}
         locale={{
           back: '← Back',
@@ -113,7 +88,36 @@ export function OnboardingTour({
           disableAnimation: false,
         }}
       />
-    </>,
+    </>
+  );
+}
+
+export function OnboardingTour({
+  run,
+  steps,
+  handleJoyrideCallback,
+}: OnboardingTourProps) {
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  // Only render on client-side and use portal to break out of Next.js component tree
+  if (!mounted) return null;
+
+  // Memoize props to prevent re-renders and ensure clean prop passing
+  const joyrideProps = useMemo(() => ({
+    run,
+    steps,
+    callback: handleJoyrideCallback,
+    theme,
+  }), [run, steps, handleJoyrideCallback, theme]);
+
+  return createPortal(
+    <JoyrideIsolated {...joyrideProps} />,
     document.body
   );
 }
