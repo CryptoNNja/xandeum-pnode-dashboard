@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import { CallBackProps } from 'react-joyride';
@@ -43,6 +43,7 @@ export function OnboardingTour({
   const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useRef<Root | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
   // Create container and root once on mount
   useEffect(() => {
@@ -54,14 +55,11 @@ export function OnboardingTour({
       console.log('✅ Container created and added to body');
     }
 
-    const initRoot = async () => {
-      if (!rootRef.current && containerRef.current) {
-        rootRef.current = createRoot(containerRef.current);
-        console.log('✅ React root created');
-      }
-    };
-
-    initRoot();
+    if (!rootRef.current && containerRef.current) {
+      rootRef.current = createRoot(containerRef.current);
+      console.log('✅ React root created');
+      setIsReady(true); // Signal that root is ready
+    }
 
     // Cleanup only on unmount
     return () => {
@@ -78,8 +76,13 @@ export function OnboardingTour({
     };
   }, []); // Only on mount/unmount
 
-  // Re-render Joyride when props change
+  // Re-render Joyride when props change (only after root is ready)
   useEffect(() => {
+    if (!isReady) {
+      console.log('⏸️ Waiting for root to be ready...');
+      return;
+    }
+
     console.log('🔄 OnboardingTour: Re-render effect triggered', { run, stepsCount: steps.length });
     const renderJoyride = async () => {
       console.log('📦 Importing Joyride...');
@@ -130,7 +133,7 @@ export function OnboardingTour({
     };
 
     renderJoyride();
-  }, [run, steps, handleJoyrideCallback, theme]); // Re-render on prop changes
+  }, [isReady, run, steps, handleJoyrideCallback, theme]); // Re-render on prop changes (after ready)
 
   return null; // This component doesn't render anything in the Next.js tree
 }
