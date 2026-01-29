@@ -4,6 +4,7 @@ import { memo, useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Database, Radio, Globe, Zap, ChevronRight, ChevronDown, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
+import { Sparkline } from "@/components/common/Sparkline";
 
 interface TokenData {
   price: number;
@@ -98,6 +99,26 @@ const AboutPNodesComponent = ({
   const isLight = theme === "light";
   const [isOpen, setIsOpen] = useState(false); // Collapsed by default
   const tokenData = useTokenPrice();
+  
+  // Fetch storage history for sparkline
+  const [storageHistory, setStorageHistory] = useState<Array<{
+    date: string;
+    avgCommittedPerNode: number;
+    totalNodes: number;
+    totalCommitted: number;
+  }>>([]);
+  
+  useEffect(() => {
+    fetch('/api/storage-history')
+      .then(res => res.json())
+      .then(data => {
+        if (data.history) {
+          setStorageHistory(data.history);
+          console.log('📈 Storage history loaded:', data.history.length, 'days');
+        }
+      })
+      .catch(err => console.error('Failed to fetch storage history:', err));
+  }, []);
 
   const storageCommittedTB = useMemo(() => {
     // Use decimal TB (1e12) to match other storage displays
@@ -226,6 +247,26 @@ const AboutPNodesComponent = ({
   }, [totalStorageUsedStats]);
 
 
+  // Calculate trend from storage history
+  const storageTrend = useMemo(() => {
+    if (storageHistory.length < 2) return { delta: 0, percentage: 0, isUp: false, values: [] };
+    
+    const latest = storageHistory[storageHistory.length - 1];
+    const oldest = storageHistory[0];
+    
+    const delta = latest.avgCommittedPerNode - oldest.avgCommittedPerNode;
+    const percentage = oldest.avgCommittedPerNode > 0 
+      ? ((delta / oldest.avgCommittedPerNode) * 100)
+      : 0;
+    
+    return {
+      delta,
+      percentage: Math.abs(percentage),
+      isUp: delta > 0,
+      values: storageHistory.map(h => h.avgCommittedPerNode)
+    };
+  }, [storageHistory]);
+
   const avgCommittedPerPodFormatted = useMemo(() => {
     if (totalNodes === 0) return "0 bytes";
     
@@ -311,6 +352,24 @@ const AboutPNodesComponent = ({
       value: avgCommittedPerPodFormatted,
       label: "Avg Committed/Pod",
       color: "#00D4AA", // Aqua
+      extra: storageTrend.values.length > 0 ? (
+        <div className="w-full mt-2 flex items-center justify-between gap-2">
+          {/* Sparkline */}
+          <div className="flex-1">
+            <Sparkline 
+              data={storageTrend.values}
+              width={80}
+              height={16}
+              color={storageTrend.isUp ? "#22c55e" : "#ef4444"}
+            />
+          </div>
+          {/* Trend indicator */}
+          <div className={`flex items-center gap-0.5 text-xs font-medium ${storageTrend.isUp ? 'text-green-500' : 'text-red-500'}`}>
+            {storageTrend.isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            <span>{storageTrend.percentage.toFixed(1)}%</span>
+          </div>
+        </div>
+      ) : null,
     },
     {
       icon: Globe,
