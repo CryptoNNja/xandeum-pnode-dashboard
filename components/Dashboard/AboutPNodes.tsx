@@ -89,6 +89,14 @@ const AboutPNodesComponent = ({
   const storageByNetwork = useMemo(() => {
     const TB = 1e12;
     
+    // Debug: log network distribution
+    const networkCounts = pnodes.reduce((acc, n) => {
+      acc[n.network || 'UNKNOWN'] = (acc[n.network || 'UNKNOWN'] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    console.log('📊 Network distribution:', networkCounts);
+    
     const mainnetStorage = pnodes
       .filter(n => n.network === 'MAINNET')
       .reduce((sum, n) => sum + (n.stats?.storage_committed || 0), 0);
@@ -98,6 +106,13 @@ const AboutPNodesComponent = ({
       .reduce((sum, n) => sum + (n.stats?.storage_committed || 0), 0);
     
     const total = mainnetStorage + devnetStorage;
+    
+    console.log('💾 Storage breakdown:', {
+      mainnet: `${(mainnetStorage / TB).toFixed(1)} TB`,
+      devnet: `${(devnetStorage / TB).toFixed(1)} TB`,
+      mainnetPct: total > 0 ? Math.round((mainnetStorage / total) * 100) : 0,
+      devnetPct: total > 0 ? Math.round((devnetStorage / total) * 100) : 0
+    });
     
     return {
       mainnet: {
@@ -193,12 +208,12 @@ const AboutPNodesComponent = ({
           <div className="w-full h-1.5 bg-background-elevated rounded-full overflow-hidden">
             <div className="h-full flex">
               <div 
-                className="bg-accent-aqua transition-all duration-300" 
+                className="bg-green-500 transition-all duration-300" 
                 style={{ width: `${storageByNetwork.mainnet.percentage}%` }} 
                 title={`MAINNET: ${storageByNetwork.mainnet.tb} TB`}
               />
               <div 
-                className="bg-purple-400 transition-all duration-300" 
+                className="bg-yellow-500 transition-all duration-300" 
                 style={{ width: `${storageByNetwork.devnet.percentage}%` }} 
                 title={`DEVNET: ${storageByNetwork.devnet.tb} TB`}
               />
@@ -207,11 +222,11 @@ const AboutPNodesComponent = ({
           {/* Network labels */}
           <div className="flex justify-between text-[10px] text-text-faint">
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-accent-aqua"></span>
+              <span className="w-2 h-2 rounded-full bg-green-500"></span>
               M: {storageByNetwork.mainnet.tb} TB ({storageByNetwork.mainnet.percentage}%)
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+              <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
               D: {storageByNetwork.devnet.tb} TB ({storageByNetwork.devnet.percentage}%)
             </span>
           </div>
