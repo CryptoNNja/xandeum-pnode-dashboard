@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Step, CallBackProps, STATUS } from 'react-joyride';
 import { 
   Sparkles, 
@@ -20,7 +20,12 @@ import {
   Download,
   SlidersHorizontal,
   RefreshCw,
-  HelpCircle
+  HelpCircle,
+  Layers,
+  Calculator,
+  Globe,
+  MessageSquare,
+  Users
 } from 'lucide-react';
 
 export function useOnboarding() {
@@ -77,23 +82,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 2-4: HERO SECTION
-    {
-      target: 'header',
-      title: (
-        <div className="flex items-center gap-2">
-          <Home className="w-5 h-5 text-accent-aqua" />
-          <span>Hero Section</span>
-        </div>
-      ),
-      content: (
-        <p className="text-sm leading-relaxed">
-          Dashboard header with <strong>Xandeum branding</strong> and critical system controls.
-        </p>
-      ),
-      placement: 'bottom',
-      disableBeacon: true,
-    },
+    // STEP 2: System Alerts Button
     {
       target: 'header button[type="button"]:first-of-type',
       title: (
@@ -139,7 +128,9 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 5-6: ABOUT PNODES
+    // STEP 3: Theme Toggle
+    
+    // STEP 4-5: About pNodes Section
     {
       target: 'section.max-w-7xl:first-of-type',
       title: (
@@ -188,7 +179,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 7-8: SUMMARY HEADER (4 KPI Cards dont System Alerts)
+    // STEP 6-7: Summary Header KPI Cards
     {
       target: 'section.max-w-7xl > div.grid.grid-cols-1',
       title: (
@@ -200,7 +191,7 @@ export function useOnboarding() {
       content: (
         <div className="space-y-2">
           <p className="text-sm leading-relaxed">
-            Top-level KPIs for quick network assessment.
+            Top-level KPIs for quick network assessment with MAINNET/DEVNET breakdown.
           </p>
           <div className="grid grid-cols-2 gap-2 text-xs text-text-faint mt-2">
             <div className="flex items-center gap-1">
@@ -213,6 +204,9 @@ export function useOnboarding() {
               <span className="text-blue-400">●</span> Total Nodes
             </div>
             <div className="flex items-center gap-1">
+              <span className="text-orange-400">●</span> Network Ops
+            </div>
+            <div className="flex items-center gap-1">
               <span className="text-red-400">●</span> System Alerts
             </div>
           </div>
@@ -222,7 +216,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     {
-      target: 'section.max-w-7xl > div.grid > div:nth-child(4)',
+      target: 'section.max-w-7xl > div.grid > div:nth-child(5)',
       title: (
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-red-400" />
@@ -245,7 +239,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 9: NETWORK STATUS
+    // STEP 8: Network Status Section
     {
       target: '#network-status-section',
       title: (
@@ -273,7 +267,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 10: SYSTEM HEALTH
+    // STEP 9: System Health Section
     {
       target: '#system-health-section',
       title: (
@@ -301,7 +295,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 11: DATA INSIGHTS
+    // STEP 10: Data Insights Section
     {
       target: '#data-insights-section',
       title: (
@@ -327,7 +321,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 12-17: TABLE VIEW
+    // STEP 11-16: Table View and Features
     {
       target: 'table',
       title: (
@@ -469,7 +463,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 18-25: TOOLBAR
+    // STEP 17-24: Toolbar Features
     {
       target: '#search-button',
       title: (
@@ -656,6 +650,49 @@ export function useOnboarding() {
       placement: 'left',
       disableBeacon: true,
     },
+    
+    // STEP 25: Floating Widgets Area
+    {
+      target: '#manager-board-button',
+      title: (
+        <div className="flex items-center gap-2">
+          <Layers className="w-5 h-5 text-accent-aqua" />
+          <span>Floating Widgets</span>
+        </div>
+      ),
+      content: (
+        <div className="space-y-3">
+          <p className="text-sm leading-relaxed">
+            Access powerful tools via <strong>floating buttons</strong> in the bottom-right corner.
+          </p>
+          <div className="space-y-2 text-xs text-text-faint">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-blue-400" />
+              <span><strong className="text-accent-aqua">3D Map</strong> - Interactive globe visualization of nodes</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-orange-400" />
+              <span><strong className="text-accent-aqua">Operator Board</strong> - Manager leaderboard & analytics</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calculator className="w-4 h-4 text-green-400" />
+              <span><strong className="text-accent-aqua">STOINC Calculator</strong> - Rewards calculator tool</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-purple-400" />
+              <span><strong className="text-accent-aqua">Ronin AI Chatbot</strong> - AI assistant for queries</span>
+            </div>
+          </div>
+          <p className="text-xs text-text-faint italic mt-2">
+            Click any button to open its widget!
+          </p>
+        </div>
+      ),
+      placement: 'left',
+      disableBeacon: true,
+      disableScrolling: true,
+      spotlightPadding: 10,
+    },
     {
       target: '#help-button',
       title: (
@@ -686,7 +723,7 @@ export function useOnboarding() {
     },
   ];
 
-  const handleJoyrideCallback = (data: CallBackProps) => {
+  const handleJoyrideCallback = useCallback((data: CallBackProps) => {
     const { status } = data;
     console.log('Joyride:', status);
 
@@ -695,7 +732,7 @@ export function useOnboarding() {
       setRun(false);
       setStepIndex(0);
     }
-  };
+  }, []); // No dependencies - callback logic is stable
 
   const startTour = () => {
     setStepIndex(0);

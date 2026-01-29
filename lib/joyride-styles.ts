@@ -27,6 +27,7 @@ export function getJoyrideStyles(theme: 'light' | 'dark'): Partial<Styles> {
       boxShadow: isDark
         ? '0 20px 45px -25px rgba(2, 4, 24, 0.65), 0 0 40px rgba(20, 241, 149, 0.1)'
         : '0 10px 25px rgba(0, 0, 0, 0.1)',
+      transition: 'opacity 0.3s ease-in-out',
     },
     tooltipContainer: {
       textAlign: 'left',
