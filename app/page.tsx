@@ -256,8 +256,8 @@ export default function Page() {
 
   const [isFavoritesModalOpen, setIsFavoritesModalOpen] = useState(false);
   
-  // Onboarding tour - only need resetTour for Toolbar
-  const { resetTour } = useOnboarding();
+  // Onboarding tour - single source of truth for tour state
+  const { run, steps, handleJoyrideCallback, resetTour } = useOnboarding();
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [nodesToCompare, setNodesToCompare] = useState<typeof pnodes>([]);
 
@@ -665,7 +665,11 @@ export default function Page() {
       <style>{TOOLTIP_STYLES}</style>
 
       {/* Onboarding Tour */}
-      <OnboardingTour />
+      <OnboardingTour 
+        run={run}
+        steps={steps}
+        handleJoyrideCallback={handleJoyrideCallback}
+      />
 
       <EnhancedHero
         criticalCount={criticalCount}

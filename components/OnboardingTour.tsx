@@ -1,20 +1,31 @@
 "use client";
 
-import Joyride from 'react-joyride';
-import { useOnboarding } from '@/hooks/useOnboarding';
+import Joyride, { CallBackProps } from 'react-joyride';
 import { getJoyrideStyles } from '@/lib/joyride-styles';
 import { useTheme } from '@/hooks/useTheme';
 
 /**
- * OnboardingTour - Isolated component for Joyride tour
+ * OnboardingTour - Presentational Joyride wrapper component
  * 
  * This component is isolated to prevent Next.js 15+ params/searchParams
  * Promise unwrapping issues. By separating Joyride into its own component,
  * we avoid the automatic prop passing from Next.js page components.
+ * 
+ * The component receives onboarding state as props from the parent,
+ * ensuring a single source of truth for the tour state.
  */
-export function OnboardingTour() {
+export type OnboardingTourProps = {
+  run: boolean;
+  steps: any[];
+  handleJoyrideCallback: (data: CallBackProps) => void;
+};
+
+export function OnboardingTour({
+  run,
+  steps,
+  handleJoyrideCallback,
+}: OnboardingTourProps) {
   const { theme } = useTheme();
-  const { run, steps, handleJoyrideCallback } = useOnboarding();
 
   return (
     <Joyride
