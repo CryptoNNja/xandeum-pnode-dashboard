@@ -51,6 +51,26 @@ const useTokenPrice = () => {
   return tokenData;
 };
 
+// Helper function to format bytes adaptively
+const formatBytesAdaptive = (bytes: number): string => {
+  const KB = 1e3;
+  const MB = 1e6;
+  const GB = 1e9;
+  const TB = 1e12;
+  
+  if (bytes >= TB) {
+    return `${(bytes / TB).toFixed(2)} TB`;
+  } else if (bytes >= GB) {
+    return `${(bytes / GB).toFixed(2)} GB`;
+  } else if (bytes >= MB) {
+    return `${(bytes / MB).toFixed(2)} MB`;
+  } else if (bytes >= KB) {
+    return `${(bytes / KB).toFixed(2)} KB`;
+  } else {
+    return `${bytes} B`;
+  }
+};
+
 interface AboutPNodesProps {
   totalStorageCommitted: number;
   totalStorageUsedPods: number;
@@ -117,12 +137,12 @@ const AboutPNodesComponent = ({
     return {
       mainnet: {
         bytes: mainnetStorage,
-        tb: (mainnetStorage / TB).toFixed(1),
+        formatted: formatBytesAdaptive(mainnetStorage),
         percentage: total > 0 ? Math.round((mainnetStorage / total) * 100) : 0
       },
       devnet: {
         bytes: devnetStorage,
-        tb: (devnetStorage / TB).toFixed(1),
+        formatted: formatBytesAdaptive(devnetStorage),
         percentage: total > 0 ? Math.round((devnetStorage / total) * 100) : 0
       }
     };
@@ -152,12 +172,12 @@ const AboutPNodesComponent = ({
     return {
       mainnet: {
         bytes: mainnetUsed,
-        tb: (mainnetUsed / TB).toFixed(2),
+        formatted: formatBytesAdaptive(mainnetUsed),
         percentage: total > 0 ? Math.round((mainnetUsed / total) * 100) : 0
       },
       devnet: {
         bytes: devnetUsed,
-        tb: (devnetUsed / TB).toFixed(2),
+        formatted: formatBytesAdaptive(devnetUsed),
         percentage: total > 0 ? Math.round((devnetUsed / total) * 100) : 0
       }
     };
@@ -241,8 +261,9 @@ const AboutPNodesComponent = ({
         <div className="w-full mt-2">
           {/* Single progress bar with both networks */}
           <div 
-            className="w-full h-1.5 bg-background-elevated rounded-full overflow-hidden"
-            title={`MAINNET: ${storageByNetwork.mainnet.tb} TB (${storageByNetwork.mainnet.percentage}%) | DEVNET: ${storageByNetwork.devnet.tb} TB (${storageByNetwork.devnet.percentage}%)`}
+            className="w-full h-1.5 bg-background-elevated rounded-full overflow-hidden cursor-help"
+            title={`🟢 MAINNET: ${storageByNetwork.mainnet.formatted} (${storageByNetwork.mainnet.percentage}%)
+🟡 DEVNET: ${storageByNetwork.devnet.formatted} (${storageByNetwork.devnet.percentage}%)`}
           >
             <div className="h-full flex">
               <div 
@@ -267,8 +288,9 @@ const AboutPNodesComponent = ({
         <div className="w-full mt-2">
           {/* Single progress bar with both networks */}
           <div 
-            className="w-full h-1.5 bg-background-elevated rounded-full overflow-hidden"
-            title={`MAINNET: ${storageUsedByNetwork.mainnet.tb} TB (${storageUsedByNetwork.mainnet.percentage}%) | DEVNET: ${storageUsedByNetwork.devnet.tb} TB (${storageUsedByNetwork.devnet.percentage}%)`}
+            className="w-full h-1.5 bg-background-elevated rounded-full overflow-hidden cursor-help"
+            title={`🟢 MAINNET: ${storageUsedByNetwork.mainnet.formatted} (${storageUsedByNetwork.mainnet.percentage}%)
+🟡 DEVNET: ${storageUsedByNetwork.devnet.formatted} (${storageUsedByNetwork.devnet.percentage}%)`}
           >
             <div className="h-full flex">
               <div 
