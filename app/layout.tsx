@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import '@/lib/suppress-warnings';
 import "leaflet/dist/leaflet.css";
 import { ThemeProvider } from "@/lib/theme";
 import ThemeBody from "./ThemeBody";
