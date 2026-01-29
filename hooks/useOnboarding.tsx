@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Step, CallBackProps, STATUS } from 'react-joyride';
 import { 
   Sparkles, 
@@ -82,7 +82,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 2-3: HERO SECTION
+    // STEP 2: System Alerts Button
     {
       target: 'header button[type="button"]:first-of-type',
       title: (
@@ -128,7 +128,9 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 5-6: ABOUT PNODES
+    // STEP 3: Theme Toggle
+    
+    // STEP 4-5: About pNodes Section
     {
       target: 'section.max-w-7xl:first-of-type',
       title: (
@@ -177,7 +179,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 7-8: SUMMARY HEADER (5 KPI Cards: Public, Private, Total, Network Ops, System Alerts)
+    // STEP 6-7: Summary Header KPI Cards
     {
       target: 'section.max-w-7xl > div.grid.grid-cols-1',
       title: (
@@ -237,7 +239,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 9: NETWORK STATUS
+    // STEP 8: Network Status Section
     {
       target: '#network-status-section',
       title: (
@@ -265,7 +267,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 10: SYSTEM HEALTH
+    // STEP 9: System Health Section
     {
       target: '#system-health-section',
       title: (
@@ -293,7 +295,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 11: DATA INSIGHTS
+    // STEP 10: Data Insights Section
     {
       target: '#data-insights-section',
       title: (
@@ -319,7 +321,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 12-17: TABLE VIEW
+    // STEP 11-16: Table View and Features
     {
       target: 'table',
       title: (
@@ -461,7 +463,7 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 18-25: TOOLBAR
+    // STEP 17-24: Toolbar Features
     {
       target: '#search-button',
       title: (
@@ -649,9 +651,9 @@ export function useOnboarding() {
       disableBeacon: true,
     },
     
-    // STEP 26: FLOATING WIDGETS AREA
+    // STEP 25: Floating Widgets Area
     {
-      target: '#floating-widgets-area',
+      target: '#manager-board-button',
       title: (
         <div className="flex items-center gap-2">
           <Layers className="w-5 h-5 text-accent-aqua" />
@@ -721,7 +723,7 @@ export function useOnboarding() {
     },
   ];
 
-  const handleJoyrideCallback = (data: CallBackProps) => {
+  const handleJoyrideCallback = useCallback((data: CallBackProps) => {
     const { status } = data;
     console.log('Joyride:', status);
 
@@ -730,7 +732,7 @@ export function useOnboarding() {
       setRun(false);
       setStepIndex(0);
     }
-  };
+  }, []); // No dependencies - callback logic is stable
 
   const startTour = () => {
     setStepIndex(0);
