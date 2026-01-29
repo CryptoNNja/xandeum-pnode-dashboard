@@ -1,38 +1,33 @@
 "use client";
 
-import { useEffect, useState, useMemo } from 'react';
-import { createPortal } from 'react-dom';
-import dynamic from 'next/dynamic';
+import { useEffect, useState, useRef } from 'react';
+import { createRoot } from 'react-dom/client';
+import type { Root } from 'react-dom/client';
 import { CallBackProps } from 'react-joyride';
 import { getJoyrideStyles } from '@/lib/joyride-styles';
 import { useTheme } from '@/hooks/useTheme';
 
 /**
- * OnboardingTour - Presentational Joyride wrapper component
+ * OnboardingTour - Completely isolated Joyride wrapper
  * 
  * @description
- * This component wraps react-joyride and properly isolates it from Next.js 15+ 
- * params/searchParams props that are automatically passed down the component tree.
+ * This is the PROPER solution for Next.js 15+ params/searchParams issues.
+ * We create a completely separate React root that's NOT part of the Next.js
+ * component tree, so params/searchParams never reach it.
  * 
  * @solution
- * - Uses a wrapper function component that accepts ONLY the needed props
- * - Prevents Next.js from passing params/searchParams to Joyride
- * - React Portal to mount outside the main component tree
- * - Dynamic import with SSR disabled
+ * - Dynamic import of Joyride inside useEffect (client-only)
+ * - Separate React root with createRoot (not part of Next.js tree)
+ * - Direct DOM manipulation to mount/unmount
+ * - Zero connection to Next.js component hierarchy
  * 
  * @props
  * - run: Controls whether the tour is active
  * - steps: Array of tour steps configuration
- * - handleJoyrideCallback: Callback for tour events (step changes, completion, etc.)
+ * - handleJoyrideCallback: Callback for tour events
  * 
  * @see hooks/useOnboarding.tsx for state management
  */
-
-// Dynamically import Joyride with no SSR
-const Joyride = dynamic(
-  () => import('react-joyride'),
-  { ssr: false }
-);
 
 export type OnboardingTourProps = {
   run: boolean;
@@ -40,85 +35,87 @@ export type OnboardingTourProps = {
   handleJoyrideCallback: (data: CallBackProps) => void;
 };
 
-// Inner wrapper that ONLY accepts our specific props - blocks Next.js props
-function JoyrideIsolated({ 
-  run, 
-  steps, 
-  callback,
-  theme 
-}: { 
-  run: boolean; 
-  steps: any[]; 
-  callback: (data: CallBackProps) => void;
-  theme: string;
-}) {
-  return (
-    <>
-      <style>{`
-        /* Smooth transitions for Joyride elements */
-        .react-joyride__spotlight {
-          transition: all 0.3s ease-in-out !important;
-        }
-        
-        .react-joyride__overlay {
-          transition: opacity 0.3s ease-in-out !important;
-        }
-      `}</style>
-      <Joyride
-        steps={steps}
-        run={run}
-        continuous={true}
-        showSkipButton={true}
-        showProgress={true}
-        scrollToFirstStep={true}
-        scrollOffset={120}
-        disableScrolling={false}
-        disableOverlayClose={true}
-        spotlightClicks={false}
-        callback={callback}
-        styles={getJoyrideStyles(theme)}
-        locale={{
-          back: '← Back',
-          close: 'Close',
-          last: 'Finish Tour ✓',
-          next: 'Next →',
-          skip: 'Skip Tour',
-        }}
-        floaterProps={{
-          disableAnimation: false,
-        }}
-      />
-    </>
-  );
-}
-
 export function OnboardingTour({
   run,
   steps,
   handleJoyrideCallback,
 }: OnboardingTourProps) {
   const { theme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  // Memoize props to prevent re-renders and ensure clean prop passing
-  // MUST be before any conditional returns (Rules of Hooks)
-  const joyrideProps = useMemo(() => ({
-    run,
-    steps,
-    callback: handleJoyrideCallback,
-    theme,
-  }), [run, steps, handleJoyrideCallback, theme]);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const rootRef = useRef<Root | null>(null);
 
   useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
+    // Create container element
+    if (!containerRef.current) {
+      containerRef.current = document.createElement('div');
+      containerRef.current.id = 'joyride-root';
+      document.body.appendChild(containerRef.current);
+    }
 
-  // Only render on client-side and use portal to break out of Next.js component tree
-  if (!mounted) return null;
+    // Dynamically import and render Joyride in separate root
+    const renderJoyride = async () => {
+      const Joyride = (await import('react-joyride')).default;
+      
+      if (!rootRef.current && containerRef.current) {
+        rootRef.current = createRoot(containerRef.current);
+      }
 
-  return createPortal(
-    <JoyrideIsolated {...joyrideProps} />,
-    document.body
-  );
+      if (rootRef.current) {
+        rootRef.current.render(
+          <>
+            <style>{`
+              /* Smooth transitions for Joyride elements */
+              .react-joyride__spotlight {
+                transition: all 0.3s ease-in-out !important;
+              }
+              
+              .react-joyride__overlay {
+                transition: opacity 0.3s ease-in-out !important;
+              }
+            `}</style>
+            <Joyride
+              steps={steps}
+              run={run}
+              continuous={true}
+              showSkipButton={true}
+              showProgress={true}
+              scrollToFirstStep={true}
+              scrollOffset={120}
+              disableScrolling={false}
+              disableOverlayClose={true}
+              spotlightClicks={false}
+              callback={handleJoyrideCallback}
+              styles={getJoyrideStyles(theme)}
+              locale={{
+                back: '← Back',
+                close: 'Close',
+                last: 'Finish Tour ✓',
+                next: 'Next →',
+                skip: 'Skip Tour',
+              }}
+              floaterProps={{
+                disableAnimation: false,
+              }}
+            />
+          </>
+        );
+      }
+    };
+
+    renderJoyride();
+
+    // Cleanup
+    return () => {
+      if (rootRef.current) {
+        rootRef.current.unmount();
+        rootRef.current = null;
+      }
+      if (containerRef.current && document.body.contains(containerRef.current)) {
+        document.body.removeChild(containerRef.current);
+        containerRef.current = null;
+      }
+    };
+  }, [run, steps, handleJoyrideCallback, theme]);
+
+  return null; // This component doesn't render anything in the Next.js tree
 }
