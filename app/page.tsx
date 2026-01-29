@@ -975,9 +975,10 @@ export default function Page() {
         onClose={() => setIsManagerBoardOpen(false)}
       />
 
+      {/* FLOATING WIDGETS AREA */}
+      <div id="floating-widgets-area">
       {/* Floating Manager Board Button - Above Calculator */}
       <button
-        id="manager-board-button"
         onClick={() => setIsManagerBoardOpen(true)}
         onMouseEnter={() => setIsManagerBoardHovered(true)}
         onMouseLeave={() => setIsManagerBoardHovered(false)}
@@ -1038,6 +1039,8 @@ export default function Page() {
       
       {/* 3D GLOBE WIDGET */}
       <Map3DWidget pnodes={pnodes} />
+      </div>
+      {/* END FLOATING WIDGETS AREA */}
     </main>
   );
 }

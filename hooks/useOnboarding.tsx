@@ -651,11 +651,11 @@ export function useOnboarding() {
     
     // STEP 26: FLOATING WIDGETS AREA
     {
-      target: '#manager-board-button',
+      target: '#floating-widgets-area',
       title: (
         <div className="flex items-center gap-2">
           <Layers className="w-5 h-5 text-accent-aqua" />
-          <span>Widget Area</span>
+          <span>Floating Widgets</span>
         </div>
       ),
       content: (
@@ -669,7 +669,7 @@ export function useOnboarding() {
               <span><strong className="text-accent-aqua">3D Map</strong> - Interactive globe visualization of nodes</span>
             </div>
             <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-purple-400" />
+              <Users className="w-4 h-4 text-orange-400" />
               <span><strong className="text-accent-aqua">Operator Board</strong> - Manager leaderboard & analytics</span>
             </div>
             <div className="flex items-center gap-2">
@@ -677,12 +677,12 @@ export function useOnboarding() {
               <span><strong className="text-accent-aqua">STOINC Calculator</strong> - Rewards calculator tool</span>
             </div>
             <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-orange-400" />
+              <MessageSquare className="w-4 h-4 text-purple-400" />
               <span><strong className="text-accent-aqua">Ronin AI Chatbot</strong> - AI assistant for queries</span>
             </div>
           </div>
           <p className="text-xs text-text-faint italic mt-2">
-            Scroll down to see all floating buttons stacked vertically!
+            Click any button to open its widget!
           </p>
         </div>
       ),
