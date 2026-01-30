@@ -130,17 +130,23 @@ const AboutPNodesComponent = ({
           .order('ts', { ascending: false })
           .limit(2400);
 
+        console.log('📅 Raw timestamps fetched:', timestamps?.length);
+
         if (!timestamps || timestamps.length === 0) return;
 
         const uniqueTimestamps = Array.from(new Set(timestamps.map(t => t.ts)))
           .sort((a, b) => b - a)
           .slice(0, 6);
+          
+        console.log('🎯 Unique timestamps (last 6):', uniqueTimestamps.length, uniqueTimestamps);
 
         // Get all records for these timestamps
         const { data: records } = await supabase
           .from('pnode_history')
           .select('ip, storage_committed, ts')
           .in('ts', uniqueTimestamps);
+
+        console.log('📦 Records fetched:', records?.length);
 
         if (!records) return;
 
