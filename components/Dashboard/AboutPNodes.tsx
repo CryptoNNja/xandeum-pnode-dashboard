@@ -411,14 +411,14 @@ const AboutPNodesComponent = ({
           </div>
 
           {/* Compact Stats - Always Visible */}
-          <div className="flex flex-wrap gap-3 md:gap-5">
+          <div className="flex flex-wrap gap-3 md:gap-5 items-start">
             {compactStats.map((stat, index) => (
               <motion.div
                 key={stat.label}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, delay: 0.1 + index * 0.05 }}
-                className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg border theme-transition min-w-[200px]"
+                className="flex flex-col gap-2.5 px-4 py-2.5 rounded-lg border theme-transition min-w-[200px]"
                 style={{
                   background: isLight
                     ? "rgba(255, 255, 255, 0.7)"
@@ -428,40 +428,42 @@ const AboutPNodesComponent = ({
                     : "rgba(100, 116, 139, 0.2)",
                 }}
               >
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background: isLight
-                      ? `${stat.color}15`
-                      : `${stat.color}20`,
-                  }}
-                >
-                  <stat.icon
-                    className="w-4 h-4"
-                    style={{ color: stat.color }}
-                    strokeWidth={2.2}
-                  />
-                </div>
-                <div className="text-left flex-1">
-                  <p
-                    className="text-base md:text-lg font-bold tracking-tight leading-none"
-                    style={{ color: stat.color }}
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{
+                      background: isLight
+                        ? `${stat.color}15`
+                        : `${stat.color}20`,
+                    }}
                   >
-                    {stat.value}
-                  </p>
-                  <p
-                    className="text-[10px] font-medium uppercase tracking-wider mt-1 leading-none"
-                    style={{ color: isLight ? "#6b7280" : "#64748b" }}
-                  >
-                    {stat.label}
-                  </p>
-                  {/* Extra content (like progress bars) */}
-                  {'extra' in stat && (
-                    <div className="mt-1">
-                      {(stat as { extra: React.ReactNode }).extra}
-                    </div>
-                  )}
+                    <stat.icon
+                      className="w-4 h-4"
+                      style={{ color: stat.color }}
+                      strokeWidth={2.2}
+                    />
+                  </div>
+                  <div className="text-left flex-1">
+                    <p
+                      className="text-base md:text-lg font-bold tracking-tight leading-none"
+                      style={{ color: stat.color }}
+                    >
+                      {stat.value}
+                    </p>
+                    <p
+                      className="text-[10px] font-medium uppercase tracking-wider mt-1 leading-none"
+                      style={{ color: isLight ? "#6b7280" : "#64748b" }}
+                    >
+                      {stat.label}
+                    </p>
+                  </div>
                 </div>
+                {/* Extra content (like progress bars and sparkline) */}
+                {'extra' in stat && (
+                  <div className="w-full">
+                    {(stat as { extra: React.ReactNode }).extra}
+                  </div>
+                )}
               </motion.div>
             ))}
             
