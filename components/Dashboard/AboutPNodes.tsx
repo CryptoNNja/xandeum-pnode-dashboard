@@ -118,30 +118,20 @@ const AboutPNodesComponent = ({
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         );
 
-        // Get 6 most recent distinct timestamps using RPC
-        const { data: uniqueTimestamps, error: tsError } = await supabase.rpc('get_last_n_crawler_timestamps', { n: 6 });
+        // Get 6 most recent distinct timestamps - manual method with high limit
+        const { data: allRecords } = await supabase
+          .from('pnode_history')
+          .select('ts')
+          .order('ts', { ascending: false })
+          .limit(3000);
+          
+        if (!allRecords || allRecords.length === 0) return;
         
-        if (tsError || !uniqueTimestamps || uniqueTimestamps.length === 0) {
-          // Fallback: manual method with higher limit
-          const { data: allRecords } = await supabase
-            .from('pnode_history')
-            .select('ts')
-            .order('ts', { ascending: false })
-            .limit(3000);
-            
-          if (!allRecords || allRecords.length === 0) return;
+        const finalTimestamps = Array.from(new Set(allRecords.map(r => r.ts)))
+          .sort((a, b) => b - a)
+          .slice(0, 6);
           
-          const timestamps = Array.from(new Set(allRecords.map(r => r.ts)))
-            .sort((a, b) => b - a)
-            .slice(0, 6);
-            
-          if (timestamps.length === 0) return;
-          
-          // Use fallback timestamps
-          var finalTimestamps = timestamps;
-        } else {
-          var finalTimestamps = uniqueTimestamps;
-        }
+        if (finalTimestamps.length === 0) return;
 
         // Get all records for these timestamps
         const { data: records } = await supabase
@@ -173,7 +163,6 @@ const AboutPNodesComponent = ({
           })
           .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-        console.log('📊 Storage history fetched:', history.length, 'points');
         setStorageHistory(history);
       } catch (error) {
         console.error('❌ Failed to fetch storage history:', error);
