@@ -101,7 +101,7 @@ const AboutPNodesComponent = ({
   const [isOpen, setIsOpen] = useState(false); // Collapsed by default
   const tokenData = useTokenPrice();
   
-  // Fetch storage history for sparkline
+  // Fetch storage history for sparkline - Direct Supabase call to avoid Vercel API issues
   const [storageHistory, setStorageHistory] = useState<Array<{
     date: string;
     avgCommittedPerNode: number;
@@ -110,16 +110,64 @@ const AboutPNodesComponent = ({
   }>>([]);
   
   useEffect(() => {
-    fetch('/api/storage-trends')
-      .then(res => res.json())
-      .then(data => {
-        if (data.history && data.hasData) {
-          setStorageHistory(data.history);
+    const fetchStorageHistory = async () => {
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+
+        // Get last 6 unique timestamps
+        const { data: timestamps } = await supabase
+          .from('pnode_history')
+          .select('ts')
+          .order('ts', { ascending: false })
+          .limit(2400);
+
+        if (!timestamps || timestamps.length === 0) return;
+
+        const uniqueTimestamps = Array.from(new Set(timestamps.map(t => t.ts)))
+          .sort((a, b) => b - a)
+          .slice(0, 6);
+
+        // Get all records for these timestamps
+        const { data: records } = await supabase
+          .from('pnode_history')
+          .select('ip, storage_committed, ts')
+          .in('ts', uniqueTimestamps);
+
+        if (!records) return;
+
+        // Group by timestamp and calculate averages
+        const grouped = new Map<number, Array<{ ip: string; storage: number }>>();
+        for (const r of records) {
+          if (!grouped.has(r.ts)) grouped.set(r.ts, []);
+          grouped.get(r.ts)!.push({ ip: r.ip, storage: r.storage_committed || 0 });
         }
-      })
-      .catch(() => {
-        // Storage trends is optional and non-critical, fail silently
-      });
+
+        const history = Array.from(grouped.entries())
+          .map(([ts, recs]) => {
+            const uniqueNodes = new Map<string, number>();
+            recs.forEach(r => uniqueNodes.set(r.ip, r.storage));
+            const total = Array.from(uniqueNodes.values()).reduce((a, b) => a + b, 0);
+            const count = uniqueNodes.size;
+            return {
+              date: new Date(ts * 1000).toISOString(),
+              avgCommittedPerNode: count > 0 ? total / count : 0,
+              totalNodes: count,
+              totalCommitted: total
+            };
+          })
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        setStorageHistory(history);
+      } catch (error) {
+        console.error('Failed to fetch storage history:', error);
+      }
+    };
+
+    fetchStorageHistory();
   }, []);
   
   const storageCommittedTB = useMemo(() => {
