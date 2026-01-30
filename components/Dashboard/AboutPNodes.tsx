@@ -303,9 +303,19 @@ const AboutPNodesComponent = ({
         <div className="w-full mt-1">
           <SimpleSparkline
             data={storageHistory.map(h => h.avgCommittedPerNode)}
+            dates={storageHistory.map(h => h.date)}
             color="#00D4AA"
             height={20}
             hasData={storageHistory.length >= 2}
+            formatValue={(value) => {
+              // Format bytes adaptively for tooltip
+              const TB = 1e12;
+              const GB = 1e9;
+              const MB = 1e6;
+              if (value >= TB) return `${(value / TB).toFixed(2)} TB`;
+              if (value >= GB) return `${(value / GB).toFixed(2)} GB`;
+              return `${(value / MB).toFixed(2)} MB`;
+            }}
           />
         </div>
       ),
