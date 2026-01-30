@@ -396,6 +396,12 @@ const AboutPNodesComponent = ({
                     <span className="text-base flex-shrink-0" role="img" aria-label={`Medal ${displayIndex + 1}`}>
                       {medal}
                     </span>
+                    <img
+                      src={`https://flagcdn.com/w20/${country.code.toLowerCase()}.png`}
+                      alt={`${country.country} flag`}
+                      className="w-4 h-3 object-cover rounded-sm flex-shrink-0"
+                      loading="lazy"
+                    />
                     <span className="text-xs font-medium text-text-soft truncate">
                       {country.country}
                     </span>
