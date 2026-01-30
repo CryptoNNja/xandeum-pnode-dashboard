@@ -110,8 +110,10 @@ const AboutPNodesComponent = ({
   }>>([]);
   
   useEffect(() => {
+    console.log('🚀 useEffect triggered - fetching storage history');
     const fetchStorageHistory = async () => {
       try {
+        console.log('📡 Starting Supabase fetch...');
         const { createClient } = await import('@supabase/supabase-js');
         const supabase = createClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -130,6 +132,8 @@ const AboutPNodesComponent = ({
         const finalTimestamps = Array.from(new Set(allRecords.map(r => r.ts)))
           .sort((a, b) => b - a)
           .slice(0, 6);
+        
+        console.log('🎯 Unique timestamps found:', finalTimestamps.length, finalTimestamps);
           
         if (finalTimestamps.length === 0) return;
 
