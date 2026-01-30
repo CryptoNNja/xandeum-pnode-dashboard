@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Database, Globe, Zap, ChevronRight, ChevronDown, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import type { PNode } from "@/lib/types";
+import { SimpleSparkline } from "@/components/common/SimpleSparkline";
 
 interface TokenData {
   price: number;
@@ -95,6 +96,27 @@ const AboutPNodesComponent = ({
   const isLight = theme === "light";
   const [isOpen, setIsOpen] = useState(false); // Collapsed by default
   const tokenData = useTokenPrice();
+  
+  // Fetch storage history for sparkline
+  const [storageHistory, setStorageHistory] = useState<Array<{
+    date: string;
+    avgCommittedPerNode: number;
+    totalNodes: number;
+    totalCommitted: number;
+  }>>([]);
+  
+  useEffect(() => {
+    fetch('/api/storage-history')
+      .then(res => res.json())
+      .then(data => {
+        if (data.history && data.hasData) {
+          setStorageHistory(data.history);
+        }
+      })
+      .catch(() => {
+        // Storage history is optional and non-critical, fail silently
+      });
+  }, []);
   
   const storageCommittedTB = useMemo(() => {
     // Use decimal TB (1e12) to match other storage displays
@@ -277,6 +299,16 @@ const AboutPNodesComponent = ({
       value: avgCommittedPerPodFormatted,
       label: "Avg Committed/Pod",
       color: "#00D4AA", // Aqua
+      extra: (
+        <div className="w-full mt-1">
+          <SimpleSparkline
+            data={storageHistory.map(h => h.avgCommittedPerNode)}
+            color="#00D4AA"
+            height={20}
+            hasData={storageHistory.length >= 2}
+          />
+        </div>
+      ),
     },
     {
       icon: Globe,
