@@ -112,11 +112,16 @@ const AboutPNodesComponent = ({
   useEffect(() => {
     const fetchStorageHistory = async () => {
       try {
+        console.log('🔍 Storage history fetch started');
+        console.log('SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
+        
         const { createClient } = await import('@supabase/supabase-js');
         const supabase = createClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         );
+        
+        console.log('✅ Supabase client created');
 
         // Get last 6 unique timestamps
         const { data: timestamps } = await supabase
@@ -161,9 +166,10 @@ const AboutPNodesComponent = ({
           })
           .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+        console.log('📊 Storage history fetched:', history.length, 'points');
         setStorageHistory(history);
       } catch (error) {
-        console.error('Failed to fetch storage history:', error);
+        console.error('❌ Failed to fetch storage history:', error);
       }
     };
 
