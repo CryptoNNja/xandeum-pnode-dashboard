@@ -8,21 +8,49 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 /**
  * GET /api/storage-history
- * Returns average storage committed per node over the last 24 hours (semi-real-time)
- * Data is aggregated from pnode_history table at 30-minute intervals
+ * Returns average storage committed per node for the last 6 crawler runs (real-time snapshots)
+ * Each data point represents one crawler execution, updated every 30 minutes
  */
 export async function GET() {
   try {
-    const now = Math.floor(Date.now() / 1000);
-    // Temporarily use 3 hours instead of 24 to get only recent data with storage_committed filled
-    // TODO: Change back to 24 hours once we have enough historical data
-    const threeHoursAgo = now - (3 * 3600);
+    // Get distinct crawler timestamps (one per crawl)
+    const { data: timestamps, error: tsError } = await supabase
+      .from('pnode_history')
+      .select('ts')
+      .order('ts', { ascending: false })
+      .limit(6 * 400); // Get enough records to cover 6 crawls (assuming ~400 nodes per crawl)
 
-    // Fetch pnode_history records from the last 3 hours
+    if (tsError) {
+      console.error('Supabase error fetching timestamps:', tsError);
+      return NextResponse.json({ error: tsError.message }, { status: 500 });
+    }
+
+    if (!timestamps || timestamps.length === 0) {
+      return NextResponse.json({
+        history: [],
+        hasData: false,
+        message: 'No historical data available yet. Crawler needs to run to populate data.'
+      });
+    }
+
+    // Get unique timestamps (one per crawler run)
+    const uniqueTimestamps = [...new Set(timestamps.map(t => t.ts))]
+      .sort((a, b) => b - a) // Sort descending (most recent first)
+      .slice(0, 6); // Take last 6 crawls
+
+    if (uniqueTimestamps.length === 0) {
+      return NextResponse.json({
+        history: [],
+        hasData: false,
+        message: 'No crawler runs found yet.'
+      });
+    }
+
+    // Fetch all records for these timestamps
     const { data: historyRecords, error } = await supabase
       .from('pnode_history')
       .select('ip, storage_committed, ts')
-      .gte('ts', threeHoursAgo)
+      .in('ts', uniqueTimestamps)
       .order('ts', { ascending: true });
 
     if (error) {
@@ -39,41 +67,38 @@ export async function GET() {
       });
     }
 
-    // Group records by 30-minute time buckets
-    const bucketSize = 30 * 60 * 1000; // 30 minutes in milliseconds
-    const buckets = new Map<number, Array<{ ip: string; storage_committed: number }>>();
+    // Group records by crawler timestamp (ts)
+    const crawlSnapshots = new Map<number, Array<{ ip: string; storage_committed: number }>>();
 
     for (const record of historyRecords) {
-      const timestamp = record.ts * 1000; // Convert Unix timestamp (seconds) to milliseconds
-      const bucketKey = Math.floor(timestamp / bucketSize) * bucketSize;
-      
+      const ts = record.ts;
       const storageCommitted = record.storage_committed || 0;
       
-      if (!buckets.has(bucketKey)) {
-        buckets.set(bucketKey, []);
+      if (!crawlSnapshots.has(ts)) {
+        crawlSnapshots.set(ts, []);
       }
       
-      buckets.get(bucketKey)!.push({
+      crawlSnapshots.get(ts)!.push({
         ip: record.ip,
         storage_committed: storageCommitted
       });
     }
 
-    // Calculate average storage per node for each bucket
-    const formattedHistory = Array.from(buckets.entries())
-      .map(([bucketKey, records]) => {
-        // Get unique IPs (latest record per IP in this bucket)
-        const latestByIp = new Map<string, number>();
+    // Calculate average storage per node for each crawler snapshot
+    const formattedHistory = Array.from(crawlSnapshots.entries())
+      .map(([ts, records]) => {
+        // Get unique IPs for this crawl
+        const uniqueNodes = new Map<string, number>();
         for (const record of records) {
-          latestByIp.set(record.ip, record.storage_committed);
+          uniqueNodes.set(record.ip, record.storage_committed);
         }
 
-        const totalStorage = Array.from(latestByIp.values()).reduce((sum, val) => sum + val, 0);
-        const nodeCount = latestByIp.size;
+        const totalStorage = Array.from(uniqueNodes.values()).reduce((sum, val) => sum + val, 0);
+        const nodeCount = uniqueNodes.size;
         const avgCommittedPerNode = nodeCount > 0 ? totalStorage / nodeCount : 0;
 
         return {
-          date: new Date(bucketKey).toISOString(),
+          date: new Date(ts * 1000).toISOString(),
           avgCommittedPerNode,
           totalNodes: nodeCount,
           totalCommitted: totalStorage
@@ -81,18 +106,18 @@ export async function GET() {
       })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    // Limit to last 48 data points (24 hours with 30-min intervals)
-    const limitedHistory = formattedHistory.slice(-48);
+    // Already limited to 6 crawls by the query
+    const limitedHistory = formattedHistory;
 
     return NextResponse.json({
       history: limitedHistory,
       hasData: limitedHistory.length >= 2,
       dataPoints: limitedHistory.length,
-      timeRange: '3h',
-      interval: '30min'
+      timeRange: 'last_6_crawls',
+      interval: 'per_crawl'
     }, {
       headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' // 5 min cache for semi-real-time
+        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300' // 2 min cache for real-time updates
       }
     });
 
