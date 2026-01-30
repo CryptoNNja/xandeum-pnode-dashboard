@@ -14,13 +14,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 export async function GET() {
   try {
     const now = Math.floor(Date.now() / 1000);
-    const twentyFourHoursAgo = now - (24 * 3600);
+    // Temporarily use 3 hours instead of 24 to get only recent data with storage_committed filled
+    // TODO: Change back to 24 hours once we have enough historical data
+    const threeHoursAgo = now - (3 * 3600);
 
-    // Fetch pnode_history records from the last 24 hours
+    // Fetch pnode_history records from the last 3 hours
     const { data: historyRecords, error } = await supabase
       .from('pnode_history')
       .select('ip, storage_committed, ts')
-      .gte('ts', twentyFourHoursAgo)
+      .gte('ts', threeHoursAgo)
       .order('ts', { ascending: true });
 
     if (error) {
@@ -86,7 +88,7 @@ export async function GET() {
       history: limitedHistory,
       hasData: limitedHistory.length >= 2,
       dataPoints: limitedHistory.length,
-      timeRange: '24h',
+      timeRange: '3h',
       interval: '30min'
     }, {
       headers: {
