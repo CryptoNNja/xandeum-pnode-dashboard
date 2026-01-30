@@ -654,7 +654,9 @@ export const main = async () => {
             file_size: stats.file_size ?? null,
             uptime: stats.uptime ?? null,
             packets_sent: stats.packets_sent ?? null,
-            packets_received: stats.packets_received ?? null
+            packets_received: stats.packets_received ?? null,
+            storage_committed: stats.storage_committed ?? null,
+            storage_used: stats.storage_used ?? null
         });
 
         const geo = allGeo[i];
