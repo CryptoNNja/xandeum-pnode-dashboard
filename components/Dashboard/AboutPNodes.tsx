@@ -2,8 +2,11 @@
 
 import { memo, useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Database, Radio, Globe, Zap, ChevronRight, ChevronDown, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
+import { Database, Globe, Zap, ChevronRight, ChevronDown, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
+import Image from "next/image";
 import { useTheme } from "@/hooks/useTheme";
+import type { PNode } from "@/lib/types";
+import { SimpleSparkline } from "@/components/common/SimpleSparkline";
 
 interface TokenData {
   price: number;
@@ -36,9 +39,8 @@ const useTokenPrice = () => {
             priceChange24h: data.xandeum.usd_24h_change || 0,
           });
         }
-      } catch (err) {
-        console.warn('Token price fetch failed (API may be rate-limited)');
-        // Silently fail - token price is optional
+      } catch {
+        // Token price fetch failed (API may be rate-limited) - silently fail as this is optional
       }
     };
 
@@ -51,10 +53,32 @@ const useTokenPrice = () => {
   return tokenData;
 };
 
+// Helper function to format bytes adaptively
+// Uses decimal units (1e3, 1e9, 1e12) instead of binary (1024) to match
+// the official Xandeum dashboard display format and maintain consistency
+// across storage visualization cards.
+const formatBytesAdaptive = (bytes: number): string => {
+  const KB = 1e3;
+  const MB = 1e6;
+  const GB = 1e9;
+  const TB = 1e12;
+  
+  if (bytes >= TB) {
+    return `${(bytes / TB).toFixed(2)} TB`;
+  } else if (bytes >= GB) {
+    return `${(bytes / GB).toFixed(2)} GB`;
+  } else if (bytes >= MB) {
+    return `${(bytes / MB).toFixed(2)} MB`;
+  } else if (bytes >= KB) {
+    return `${(bytes / KB).toFixed(2)} KB`;
+  } else {
+    return `${bytes} B`;
+  }
+};
+
 interface AboutPNodesProps {
   totalStorageCommitted: number;
   totalStorageUsedPods: number;
-  totalStorageUsedStats: number;
   networkMetadata: {
     networkTotal: number;
     crawledNodes: number;
@@ -62,26 +86,122 @@ interface AboutPNodesProps {
   };
   countriesCount: number;
   totalNodes: number; // Total number of nodes for average calculation
+  pnodes: PNode[]; // Array of pnodes for network breakdown calculation
 }
 
 const AboutPNodesComponent = ({
   totalStorageCommitted,
   totalStorageUsedPods,
-  totalStorageUsedStats,
-  networkMetadata,
   countriesCount,
   totalNodes,
+  pnodes,
 }: AboutPNodesProps) => {
   const { theme } = useTheme();
   const isLight = theme === "light";
   const [isOpen, setIsOpen] = useState(false); // Collapsed by default
   const tokenData = useTokenPrice();
-
+  
+  // Fetch storage history for sparkline
+  const [storageHistory, setStorageHistory] = useState<Array<{
+    date: string;
+    avgCommittedPerNode: number;
+    totalNodes: number;
+    totalCommitted: number;
+  }>>([]);
+  
+  useEffect(() => {
+    fetch('/api/storage-history')
+      .then(res => res.json())
+      .then(data => {
+        if (data.history && data.hasData) {
+          setStorageHistory(data.history);
+        }
+      })
+      .catch(() => {
+        // Storage history is optional and non-critical, fail silently
+      });
+  }, []);
+  
   const storageCommittedTB = useMemo(() => {
     // Use decimal TB (1e12) to match other storage displays
     const TB = 1e12;
     return (totalStorageCommitted / TB).toFixed(1);
   }, [totalStorageCommitted]);
+
+  // Calculate MAINNET/DEVNET storage committed breakdown
+  // Note: Only MAINNET and DEVNET nodes are included in this breakdown.
+  // Nodes with network='UNKNOWN' or null network are intentionally excluded
+  // as this visualization focuses on the two primary production networks.
+  const storageByNetwork = useMemo(() => {
+    
+    const mainnetStorage = pnodes
+      .filter(n => n.network === 'MAINNET')
+      .reduce((sum, n) => sum + (n.stats?.storage_committed || 0), 0);
+    
+    const devnetStorage = pnodes
+      .filter(n => n.network === 'DEVNET')
+      .reduce((sum, n) => sum + (n.stats?.storage_committed || 0), 0);
+    
+    const total = mainnetStorage + devnetStorage;
+    
+    // Ensure percentages sum to 100%
+    let mainnetPct = 0;
+    let devnetPct = 0;
+    if (total > 0) {
+      mainnetPct = Math.round((mainnetStorage / total) * 100);
+      devnetPct = 100 - mainnetPct; // Ensures sum is exactly 100%
+    }
+    
+    return {
+      mainnet: {
+        bytes: mainnetStorage,
+        formatted: formatBytesAdaptive(mainnetStorage),
+        percentage: mainnetPct
+      },
+      devnet: {
+        bytes: devnetStorage,
+        formatted: formatBytesAdaptive(devnetStorage),
+        percentage: devnetPct
+      }
+    };
+  }, [pnodes]);
+
+  // Calculate MAINNET/DEVNET storage used breakdown (from stats.storage_used)
+  // Note: Only MAINNET and DEVNET nodes are included in this breakdown.
+  // Nodes with network='UNKNOWN' or null network are intentionally excluded.
+  const storageUsedByNetwork = useMemo(() => {
+    
+    const mainnetUsed = pnodes
+      .filter(n => n.network === 'MAINNET')
+      .reduce((sum, n) => sum + (n.stats?.storage_used || 0), 0);
+    
+    const devnetUsed = pnodes
+      .filter(n => n.network === 'DEVNET')
+      .reduce((sum, n) => sum + (n.stats?.storage_used || 0), 0);
+    
+    const total = mainnetUsed + devnetUsed;
+    
+    // Ensure percentages sum to 100%
+    let mainnetPct = 0;
+    let devnetPct = 0;
+    if (total > 0) {
+      mainnetPct = Math.round((mainnetUsed / total) * 100);
+      devnetPct = 100 - mainnetPct; // Ensures sum is exactly 100%
+    }
+    
+    return {
+      mainnet: {
+        bytes: mainnetUsed,
+        formatted: formatBytesAdaptive(mainnetUsed),
+        percentage: mainnetPct
+      },
+      devnet: {
+        bytes: devnetUsed,
+        formatted: formatBytesAdaptive(devnetUsed),
+        percentage: devnetPct
+      }
+    };
+  }, [pnodes]);
 
   const storageUsedPodsFormatted = useMemo(() => {
     // Use decimal units (1e6, 1e9, etc.) to match AboutPNodes display
@@ -102,29 +222,6 @@ const AboutPNodesComponent = ({
       return `${totalStorageUsedPods} bytes`;
     }
   }, [totalStorageUsedPods]);
-
-  // This is the closest metric to the official dashboard: sum(total_bytes) over active nodes.
-  // Use decimal formatting (GB=1e9) to reduce confusion when comparing.
-  const storageUsedStatsFormatted = useMemo(() => {
-    // Format adaptively based on size (decimal)
-    const KB = 1e3;
-    const MB = 1e6;
-    const GB = 1e9;
-    const TB = 1e12;
-
-    if (totalStorageUsedStats >= TB) {
-      return `${(totalStorageUsedStats / TB).toFixed(2)} TB`;
-    } else if (totalStorageUsedStats >= GB) {
-      return `${(totalStorageUsedStats / GB).toFixed(2)} GB`;
-    } else if (totalStorageUsedStats >= MB) {
-      return `${(totalStorageUsedStats / MB).toFixed(2)} MB`;
-    } else if (totalStorageUsedStats >= KB) {
-      return `${(totalStorageUsedStats / KB).toFixed(2)} KB`;
-    } else {
-      return `${totalStorageUsedStats} bytes`;
-    }
-  }, [totalStorageUsedStats]);
-
 
   const avgCommittedPerPodFormatted = useMemo(() => {
     if (totalNodes === 0) return "0 bytes";
@@ -150,6 +247,47 @@ const AboutPNodesComponent = ({
     }
   }, [totalStorageCommitted, totalNodes]);
 
+  // Calculate top 3 countries by node count
+  const topCountries = useMemo(() => {
+    const countryMap = new Map<string, { count: number; code: string }>();
+    
+    pnodes.forEach((node) => {
+      if (node.country && node.country !== "Unknown" && node.country_code) {
+        const normalizedCountry = node.country === "The Netherlands" ? "Netherlands" : node.country;
+        const existing = countryMap.get(normalizedCountry);
+        if (existing) {
+          existing.count++;
+        } else {
+          countryMap.set(normalizedCountry, { 
+            count: 1, 
+            code: node.country_code.toUpperCase() 
+          });
+        }
+      }
+    });
+
+    return Array.from(countryMap.entries())
+      .map(([country, data]) => ({ 
+        country, 
+        count: data.count,
+        code: data.code
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+  }, [pnodes]);
+
+  // Auto-rotating carousel for top countries
+  const [currentCountryIndex, setCurrentCountryIndex] = useState(0);
+  
+  useEffect(() => {
+    if (topCountries.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentCountryIndex((prev) => (prev + 1) % topCountries.length);
+      }, 3000); // Rotate every 3 seconds
+      return () => clearInterval(interval);
+    }
+  }, [topCountries.length]);
+
   // Stats always visible (when collapsed)
   const compactStats = [
     {
@@ -157,24 +295,149 @@ const AboutPNodesComponent = ({
       value: `${storageCommittedTB} TB`,
       label: "Storage Committed",
       color: "#7B3FF2", // Xandeum Purple
+      extra: (
+        <div className="w-full mt-2">
+          {/* Single progress bar with both networks */}
+          <div 
+            className="w-full h-1.5 bg-background-elevated rounded-full overflow-hidden cursor-help"
+            title={`🟢 MAINNET: ${storageByNetwork.mainnet.formatted} (${storageByNetwork.mainnet.percentage}%)
+🟡 DEVNET: ${storageByNetwork.devnet.formatted} (${storageByNetwork.devnet.percentage}%)`}
+          >
+            <div className="h-full flex">
+              <div 
+                className="bg-green-500 transition-all duration-300" 
+                style={{ width: `${storageByNetwork.mainnet.percentage}%` }}
+              />
+              <div 
+                className="bg-yellow-500 transition-all duration-300" 
+                style={{ width: `${storageByNetwork.devnet.percentage}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      ),
     },
     {
       icon: Database,
       value: storageUsedPodsFormatted,
       label: "Storage Used",
       color: "#14F195", // Xandeum Green
+      extra: (
+        <div className="w-full mt-2">
+          {/* Single progress bar with both networks */}
+          <div 
+            className="w-full h-1.5 bg-background-elevated rounded-full overflow-hidden cursor-help"
+            title={`🟢 MAINNET: ${storageUsedByNetwork.mainnet.formatted} (${storageUsedByNetwork.mainnet.percentage}%)
+🟡 DEVNET: ${storageUsedByNetwork.devnet.formatted} (${storageUsedByNetwork.devnet.percentage}%)`}
+          >
+            <div className="h-full flex">
+              <div 
+                className="bg-green-500 transition-all duration-300" 
+                style={{ width: `${storageUsedByNetwork.mainnet.percentage}%` }}
+              />
+              <div 
+                className="bg-yellow-500 transition-all duration-300" 
+                style={{ width: `${storageUsedByNetwork.devnet.percentage}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      ),
     },
     {
       icon: Database,
       value: avgCommittedPerPodFormatted,
       label: "Avg Committed/Pod",
       color: "#00D4AA", // Aqua
+      extra: (
+        <div className="w-full mt-1">
+          <SimpleSparkline
+            data={storageHistory.map(h => h.avgCommittedPerNode)}
+            dates={storageHistory.map(h => h.date)}
+            color="#00D4AA"
+            height={20}
+            hasData={storageHistory.length >= 2}
+            formatValue={(value) => {
+              // Format bytes adaptively for tooltip
+              const TB = 1e12;
+              const GB = 1e9;
+              const MB = 1e6;
+              if (value >= TB) return `${(value / TB).toFixed(2)} TB`;
+              if (value >= GB) return `${(value / GB).toFixed(2)} GB`;
+              return `${(value / MB).toFixed(2)} MB`;
+            }}
+          />
+        </div>
+      ),
     },
     {
       icon: Globe,
       value: countriesCount.toString(),
       label: "Countries",
       color: "#F59E0B", // Orange
+      extra: topCountries.length > 0 ? (
+        <div className="w-full relative overflow-hidden">
+          <AnimatePresence mode="wait">
+            {topCountries.map((country, index) => {
+              const displayIndex = topCountries.findIndex(c => c.country === country.country);
+              const medals = ['🥇', '🥈', '🥉'];
+              const medal = medals[displayIndex] || '🏅';
+              
+              return index === currentCountryIndex ? (
+                <motion.div
+                  key={country.country}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.5 }}
+                  className="flex items-center justify-between gap-2"
+                >
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <span className="text-base flex-shrink-0" role="img" aria-label={`Medal ${displayIndex + 1}`}>
+                      {medal}
+                    </span>
+                    <Image
+                      src={`https://flagcdn.com/w20/${country.code.toLowerCase()}.png`}
+                      alt={`${country.country} flag`}
+                      width={16}
+                      height={12}
+                      className="object-cover rounded-sm flex-shrink-0"
+                      unoptimized
+                    />
+                    <span className="text-xs font-medium text-text-soft truncate">
+                      {country.country}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm font-bold" style={{ color: "#F59E0B" }}>
+                      {country.count}
+                    </span>
+                    <span className="text-[9px] text-text-faint">
+                      {country.count === 1 ? 'node' : 'nodes'}
+                    </span>
+                  </div>
+                </motion.div>
+              ) : null;
+            })}
+          </AnimatePresence>
+          
+          {/* Carousel indicators */}
+          {topCountries.length > 1 && (
+            <div className="flex items-center justify-center gap-1 mt-0.5">
+              {topCountries.map((_, index) => (
+                <div
+                  key={index}
+                  className="w-1 h-1 rounded-full transition-all duration-300"
+                  style={{
+                    backgroundColor: index === currentCountryIndex ? "#F59E0B" : "#94a3b8",
+                    opacity: index === currentCountryIndex ? 1 : 0.3,
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : undefined,
     },
   ];
 
@@ -240,7 +503,7 @@ const AboutPNodesComponent = ({
               className="text-lg md:text-xl font-bold mb-2 leading-tight text-left"
               style={{ color: isLight ? "#0f172a" : "#f8fafc" }}
             >
-              The Backbone of Xandeum's{" "}
+              The Backbone of Xandeum&apos;s{" "}
               <span
                 style={{
                   background: "linear-gradient(90deg, #7B3FF2, #14F195)",
@@ -261,14 +524,14 @@ const AboutPNodesComponent = ({
           </div>
 
           {/* Compact Stats - Always Visible */}
-          <div className="flex flex-wrap gap-3 md:gap-5">
+          <div className="flex flex-wrap gap-3 md:gap-5 items-start">
             {compactStats.map((stat, index) => (
               <motion.div
                 key={stat.label}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, delay: 0.1 + index * 0.05 }}
-                className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg border theme-transition"
+                className="flex flex-col gap-2.5 px-4 py-2.5 rounded-lg border theme-transition w-[220px]"
                 style={{
                   background: isLight
                     ? "rgba(255, 255, 255, 0.7)"
@@ -278,34 +541,42 @@ const AboutPNodesComponent = ({
                     : "rgba(100, 116, 139, 0.2)",
                 }}
               >
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background: isLight
-                      ? `${stat.color}15`
-                      : `${stat.color}20`,
-                  }}
-                >
-                  <stat.icon
-                    className="w-4 h-4"
-                    style={{ color: stat.color }}
-                    strokeWidth={2.2}
-                  />
-                </div>
-                <div className="text-left">
-                  <p
-                    className="text-base md:text-lg font-bold tracking-tight leading-none"
-                    style={{ color: stat.color }}
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{
+                      background: isLight
+                        ? `${stat.color}15`
+                        : `${stat.color}20`,
+                    }}
                   >
-                    {stat.value}
-                  </p>
-                  <p
-                    className="text-[10px] font-medium uppercase tracking-wider mt-1 leading-none"
-                    style={{ color: isLight ? "#6b7280" : "#64748b" }}
-                  >
-                    {stat.label}
-                  </p>
+                    <stat.icon
+                      className="w-4 h-4"
+                      style={{ color: stat.color }}
+                      strokeWidth={2.2}
+                    />
+                  </div>
+                  <div className="text-left flex-1">
+                    <p
+                      className="text-base md:text-lg font-bold tracking-tight leading-none"
+                      style={{ color: stat.color }}
+                    >
+                      {stat.value}
+                    </p>
+                    <p
+                      className="text-[10px] font-medium uppercase tracking-wider mt-1 leading-none"
+                      style={{ color: isLight ? "#6b7280" : "#64748b" }}
+                    >
+                      {stat.label}
+                    </p>
+                  </div>
                 </div>
+                {/* Extra content (like progress bars and sparkline) - Fixed height for alignment */}
+                {'extra' in stat && (
+                  <div className="w-full h-[32px] flex items-center">
+                    {(stat as { extra: React.ReactNode }).extra}
+                  </div>
+                )}
               </motion.div>
             ))}
             
@@ -340,11 +611,11 @@ const AboutPNodesComponent = ({
                       style={{ color: isLight ? "#4b5563" : "#94a3b8" }}
                     >
                       Xandeum is building a scalable, decentralized storage layer for the Solana blockchain. 
-                      It aims to solve the "blockchain storage trilemma" by providing a solution that is scalable, 
-                      smart contract native, and allows for random access. Xandeum's liquid staking pool allows SOL 
+                      It aims to solve the &quot;blockchain storage trilemma&quot; by providing a solution that is scalable, 
+                      smart contract native, and allows for random access. Xandeum&apos;s liquid staking pool allows SOL 
                       holders to earn rewards from both staking and storage fees, making it the first multi-validator 
                       pool sharing block rewards with stakers. The XAND token serves as the governance token, granting 
-                      holders voting rights in the Xandeum DAO to shape the platform's future.
+                      holders voting rights in the Xandeum DAO to shape the platform&apos;s future.
                     </p>
 
                     <a

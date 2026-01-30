@@ -589,13 +589,15 @@ export const main = async () => {
 
         // PHASE 1: Enrich from GOSSIP (for ALL nodes - public + private)
         // These metrics from gossip are PRIORITIZED over RPC as they reflect network consensus
+        
+        // Initialize storage_committed to 0 if not found (important for history tracking)
+        stats.storage_committed = storageCommitted || 0;
         if (storageCommitted && storageCommitted > 0) {
-            stats.storage_committed = storageCommitted;
             stats.file_size = storageCommitted; // Legacy compat
         }
-        if (storageUsed && storageUsed > 0) {
-            stats.storage_used = storageUsed;
-        }
+        
+        // Initialize storage_used to 0 if not found
+        stats.storage_used = storageUsed || 0;
         if (lastSeenGossip && lastSeenGossip > 0) {
             stats.last_seen_gossip = lastSeenGossip;
         }
@@ -654,7 +656,9 @@ export const main = async () => {
             file_size: stats.file_size ?? null,
             uptime: stats.uptime ?? null,
             packets_sent: stats.packets_sent ?? null,
-            packets_received: stats.packets_received ?? null
+            packets_received: stats.packets_received ?? null,
+            storage_committed: stats.storage_committed ?? 0, // Default to 0 instead of null for consistent aggregation
+            storage_used: stats.storage_used ?? 0 // Default to 0 instead of null for consistent aggregation
         });
 
         const geo = allGeo[i];

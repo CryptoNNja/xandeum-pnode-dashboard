@@ -14,90 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
-      pnodes: {
+      network_metadata: {
         Row: {
-          id: number;
-          ip: string | null;
-          status: string;
-          version: string | null;
-          stats: Json;
-          last_crawled_at: string | null;
-          pubkey: string | null;
-          lat: number | null;
-          lng: number | null;
-          city: string | null;
-          country: string | null;
-          country_code: string | null;
-          failed_checks: number | null;
-          network: string | null;
-          network_confidence: string | null;
-          network_detection_method: string | null;
-          source: string | null;
-          is_official: boolean | null;
-          confidence_score: number | null;
-          last_seen_gossip: string | null;
-          last_seen_rpc: string | null;
-          seen_in_official_api: boolean | null;
-          created_at: string | null;
-          updated_at: string | null;
-          last_crawl_at: string | null;
-        };
+          active_nodes: number
+          crawled_nodes: number
+          id: number
+          last_updated: string | null
+          network_total: number
+        }
         Insert: {
-          id?: number;
-          ip?: string | null;
-          status: string;
-          version?: string | null;
-          stats: Json;
-          last_crawled_at?: string | null;
-          pubkey?: string | null;
-          lat?: number | null;
-          lng?: number | null;
-          city?: string | null;
-          country?: string | null;
-          country_code?: string | null;
-          failed_checks?: number | null;
-          network?: string | null;
-          network_confidence?: string | null;
-          network_detection_method?: string | null;
-          source?: string | null;
-          is_official?: boolean | null;
-          confidence_score?: number | null;
-          last_seen_gossip?: string | null;
-          last_seen_rpc?: string | null;
-          seen_in_official_api?: boolean | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-          last_crawl_at?: string | null;
-        };
+          active_nodes?: number
+          crawled_nodes?: number
+          id?: number
+          last_updated?: string | null
+          network_total?: number
+        }
         Update: {
-          id?: number;
-          ip?: string | null;
-          status?: string;
-          version?: string | null;
-          stats?: Json;
-          last_crawled_at?: string | null;
-          pubkey?: string | null;
-          lat?: number | null;
-          lng?: number | null;
-          city?: string | null;
-          country?: string | null;
-          country_code?: string | null;
-          failed_checks?: number | null;
-          network?: string | null;
-          network_confidence?: string | null;
-          network_detection_method?: string | null;
-          source?: string | null;
-          is_official?: boolean | null;
-          confidence_score?: number | null;
-          last_seen_gossip?: string | null;
-          last_seen_rpc?: string | null;
-          seen_in_official_api?: boolean | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-          last_crawl_at?: string | null;
-        };
-        Relationships: [];
-      };
+          active_nodes?: number
+          crawled_nodes?: number
+          id?: number
+          last_updated?: string | null
+          network_total?: number
+        }
+        Relationships: []
+      }
+      network_snapshots: {
+        Row: {
+          active_nodes: number
+          avg_cpu_percent: number | null
+          avg_ram_percent: number | null
+          avg_uptime_hours: number | null
+          created_at: string | null
+          devnet_private: number | null
+          devnet_public: number | null
+          id: number
+          mainnet_private: number | null
+          mainnet_public: number | null
+          network_health_score: number | null
+          private_nodes: number
+          snapshot_date: string
+          total_nodes: number
+          total_pages: number
+          total_storage_bytes: number
+        }
+        Insert: {
+          active_nodes?: number
+          avg_cpu_percent?: number | null
+          avg_ram_percent?: number | null
+          avg_uptime_hours?: number | null
+          created_at?: string | null
+          devnet_private?: number | null
+          devnet_public?: number | null
+          id?: number
+          mainnet_private?: number | null
+          mainnet_public?: number | null
+          network_health_score?: number | null
+          private_nodes?: number
+          snapshot_date: string
+          total_nodes?: number
+          total_pages?: number
+          total_storage_bytes?: number
+        }
+        Update: {
+          active_nodes?: number
+          avg_cpu_percent?: number | null
+          avg_ram_percent?: number | null
+          avg_uptime_hours?: number | null
+          created_at?: string | null
+          devnet_private?: number | null
+          devnet_public?: number | null
+          id?: number
+          mainnet_private?: number | null
+          mainnet_public?: number | null
+          network_health_score?: number | null
+          private_nodes?: number
+          snapshot_date?: string
+          total_nodes?: number
+          total_pages?: number
+          total_storage_bytes?: number
+        }
+        Relationships: []
+      }
       pnode_history: {
         Row: {
           cpu_percent: number | null
@@ -109,6 +106,8 @@ export type Database = {
           packets_sent: number | null
           ram_total: number | null
           ram_used: number | null
+          storage_committed: number | null
+          storage_used: number | null
           ts: number
           uptime: number | null
         }
@@ -122,6 +121,8 @@ export type Database = {
           packets_sent?: number | null
           ram_total?: number | null
           ram_used?: number | null
+          storage_committed?: number | null
+          storage_used?: number | null
           ts: number
           uptime?: number | null
         }
@@ -135,8 +136,100 @@ export type Database = {
           packets_sent?: number | null
           ram_total?: number | null
           ram_used?: number | null
+          storage_committed?: number | null
+          storage_used?: number | null
           ts?: number
           uptime?: number | null
+        }
+        Relationships: []
+      }
+      pnodes: {
+        Row: {
+          city: string | null
+          confidence_score: number | null
+          country: string | null
+          country_code: string | null
+          credits: number | null
+          failed_checks: number | null
+          has_pubkey: boolean | null
+          id: number
+          ip: string | null
+          is_official: boolean | null
+          is_registered: boolean | null
+          last_crawled_at: string | null
+          last_seen_gossip: string | null
+          lat: number | null
+          lng: number | null
+          manager_wallet: string | null
+          network: string | null
+          network_confidence: string | null
+          network_detection_method: string | null
+          node_type: string | null
+          pubkey: string | null
+          source: string | null
+          sources: string[] | null
+          stats: Json | null
+          status: string
+          verified_by_rpc: boolean | null
+          version: string | null
+        }
+        Insert: {
+          city?: string | null
+          confidence_score?: number | null
+          country?: string | null
+          country_code?: string | null
+          credits?: number | null
+          failed_checks?: number | null
+          has_pubkey?: boolean | null
+          id?: number
+          ip?: string | null
+          is_official?: boolean | null
+          is_registered?: boolean | null
+          last_crawled_at?: string | null
+          last_seen_gossip?: string | null
+          lat?: number | null
+          lng?: number | null
+          manager_wallet?: string | null
+          network?: string | null
+          network_confidence?: string | null
+          network_detection_method?: string | null
+          node_type?: string | null
+          pubkey?: string | null
+          source?: string | null
+          sources?: string[] | null
+          stats?: Json | null
+          status: string
+          verified_by_rpc?: boolean | null
+          version?: string | null
+        }
+        Update: {
+          city?: string | null
+          confidence_score?: number | null
+          country?: string | null
+          country_code?: string | null
+          credits?: number | null
+          failed_checks?: number | null
+          has_pubkey?: boolean | null
+          id?: number
+          ip?: string | null
+          is_official?: boolean | null
+          is_registered?: boolean | null
+          last_crawled_at?: string | null
+          last_seen_gossip?: string | null
+          lat?: number | null
+          lng?: number | null
+          manager_wallet?: string | null
+          network?: string | null
+          network_confidence?: string | null
+          network_detection_method?: string | null
+          node_type?: string | null
+          pubkey?: string | null
+          source?: string | null
+          sources?: string[] | null
+          stats?: Json | null
+          status?: string
+          verified_by_rpc?: boolean | null
+          version?: string | null
         }
         Relationships: []
       }
@@ -145,7 +238,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_old_history: {
+        Args: never
+        Returns: {
+          deleted_count: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
