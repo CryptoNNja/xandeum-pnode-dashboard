@@ -112,43 +112,44 @@ const AboutPNodesComponent = ({
   useEffect(() => {
     const fetchStorageHistory = async () => {
       try {
-        console.log('🔍 Storage history fetch started');
-        console.log('SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
-        
         const { createClient } = await import('@supabase/supabase-js');
         const supabase = createClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         );
+
+        // Get 6 most recent distinct timestamps using RPC
+        const { data: uniqueTimestamps, error: tsError } = await supabase.rpc('get_last_n_crawler_timestamps', { n: 6 });
         
-        console.log('✅ Supabase client created');
-
-        // Get last 6 unique timestamps
-        const { data: timestamps } = await supabase
-          .from('pnode_history')
-          .select('ts')
-          .order('ts', { ascending: false })
-          .limit(2400);
-
-        console.log('📅 Raw timestamps fetched:', timestamps?.length);
-
-        if (!timestamps || timestamps.length === 0) return;
-
-        const uniqueTimestamps = Array.from(new Set(timestamps.map(t => t.ts)))
-          .sort((a, b) => b - a)
-          .slice(0, 6);
+        if (tsError || !uniqueTimestamps || uniqueTimestamps.length === 0) {
+          // Fallback: manual method with higher limit
+          const { data: allRecords } = await supabase
+            .from('pnode_history')
+            .select('ts')
+            .order('ts', { ascending: false })
+            .limit(3000);
+            
+          if (!allRecords || allRecords.length === 0) return;
           
-        console.log('🎯 Unique timestamps (last 6):', uniqueTimestamps.length, uniqueTimestamps);
+          const timestamps = Array.from(new Set(allRecords.map(r => r.ts)))
+            .sort((a, b) => b - a)
+            .slice(0, 6);
+            
+          if (timestamps.length === 0) return;
+          
+          // Use fallback timestamps
+          var finalTimestamps = timestamps;
+        } else {
+          var finalTimestamps = uniqueTimestamps;
+        }
 
         // Get all records for these timestamps
         const { data: records } = await supabase
           .from('pnode_history')
           .select('ip, storage_committed, ts')
-          .in('ts', uniqueTimestamps);
+          .in('ts', finalTimestamps);
 
-        console.log('📦 Records fetched:', records?.length);
-
-        if (!records) return;
+        if (!records || records.length === 0) return;
 
         // Group by timestamp and calculate averages
         const grouped = new Map<number, Array<{ ip: string; storage: number }>>();
