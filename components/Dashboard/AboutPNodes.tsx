@@ -110,7 +110,7 @@ const AboutPNodesComponent = ({
   }>>([]);
   
   useEffect(() => {
-    fetch('/api/storage-history')
+    fetch('/api/storage-trends')
       .then(res => res.json())
       .then(data => {
         if (data.history && data.hasData) {
@@ -118,7 +118,7 @@ const AboutPNodesComponent = ({
         }
       })
       .catch(() => {
-        // Storage history is optional and non-critical, fail silently
+        // Storage trends is optional and non-critical, fail silently
       });
   }, []);
   
