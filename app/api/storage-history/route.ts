@@ -34,7 +34,8 @@ export async function GET() {
     }
 
     // Get unique timestamps (one per crawler run)
-    const uniqueTimestamps = [...new Set(timestamps.map(t => t.ts))]
+    const uniqueTimestampsSet = new Set(timestamps.map(t => t.ts));
+    const uniqueTimestamps = Array.from(uniqueTimestampsSet)
       .sort((a, b) => b - a) // Sort descending (most recent first)
       .slice(0, 6); // Take last 6 crawls
 
