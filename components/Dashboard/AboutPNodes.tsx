@@ -2,9 +2,9 @@
 
 import { memo, useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Database, Radio, Globe, Zap, ChevronRight, ChevronDown, DollarSign, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { Database, Globe, Zap, ChevronRight, ChevronDown, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
-import { Sparkline } from "@/components/common/Sparkline";
+import type { PNode } from "@/lib/types";
 
 interface TokenData {
   price: number;
@@ -37,9 +37,8 @@ const useTokenPrice = () => {
             priceChange24h: data.xandeum.usd_24h_change || 0,
           });
         }
-      } catch (err) {
-        console.warn('Token price fetch failed (API may be rate-limited)');
-        // Silently fail - token price is optional
+      } catch {
+        // Token price fetch failed (API may be rate-limited) - silently fail as this is optional
       }
     };
 
@@ -75,7 +74,6 @@ const formatBytesAdaptive = (bytes: number): string => {
 interface AboutPNodesProps {
   totalStorageCommitted: number;
   totalStorageUsedPods: number;
-  totalStorageUsedStats: number;
   networkMetadata: {
     networkTotal: number;
     crawledNodes: number;
@@ -83,14 +81,12 @@ interface AboutPNodesProps {
   };
   countriesCount: number;
   totalNodes: number; // Total number of nodes for average calculation
-  pnodes: any[]; // Array of pnodes for network breakdown calculation
+  pnodes: PNode[]; // Array of pnodes for network breakdown calculation
 }
 
 const AboutPNodesComponent = ({
   totalStorageCommitted,
   totalStorageUsedPods,
-  totalStorageUsedStats,
-  networkMetadata,
   countriesCount,
   totalNodes,
   pnodes,
@@ -100,26 +96,6 @@ const AboutPNodesComponent = ({
   const [isOpen, setIsOpen] = useState(false); // Collapsed by default
   const tokenData = useTokenPrice();
   
-  // Fetch storage history for sparkline
-  const [storageHistory, setStorageHistory] = useState<Array<{
-    date: string;
-    avgCommittedPerNode: number;
-    totalNodes: number;
-    totalCommitted: number;
-  }>>([]);
-  
-  useEffect(() => {
-    fetch('/api/storage-history')
-      .then(res => res.json())
-      .then(data => {
-        if (data.history) {
-          setStorageHistory(data.history);
-          console.log('📈 Storage history loaded:', data.history.length, 'days');
-        }
-      })
-      .catch(err => console.error('Failed to fetch storage history:', err));
-  }, []);
-
   const storageCommittedTB = useMemo(() => {
     // Use decimal TB (1e12) to match other storage displays
     const TB = 1e12;
@@ -128,15 +104,6 @@ const AboutPNodesComponent = ({
 
   // Calculate MAINNET/DEVNET storage committed breakdown
   const storageByNetwork = useMemo(() => {
-    const TB = 1e12;
-    
-    // Debug: log network distribution
-    const networkCounts = pnodes.reduce((acc, n) => {
-      acc[n.network || 'UNKNOWN'] = (acc[n.network || 'UNKNOWN'] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    console.log('📊 Network distribution:', networkCounts);
     
     const mainnetStorage = pnodes
       .filter(n => n.network === 'MAINNET')
@@ -148,30 +115,30 @@ const AboutPNodesComponent = ({
     
     const total = mainnetStorage + devnetStorage;
     
-    console.log('💾 Storage Committed breakdown:', {
-      mainnet: `${(mainnetStorage / TB).toFixed(1)} TB`,
-      devnet: `${(devnetStorage / TB).toFixed(1)} TB`,
-      mainnetPct: total > 0 ? Math.round((mainnetStorage / total) * 100) : 0,
-      devnetPct: total > 0 ? Math.round((devnetStorage / total) * 100) : 0
-    });
+    // Ensure percentages sum to 100%
+    let mainnetPct = 0;
+    let devnetPct = 0;
+    if (total > 0) {
+      mainnetPct = Math.round((mainnetStorage / total) * 100);
+      devnetPct = 100 - mainnetPct; // Ensures sum is exactly 100%
+    }
     
     return {
       mainnet: {
         bytes: mainnetStorage,
         formatted: formatBytesAdaptive(mainnetStorage),
-        percentage: total > 0 ? Math.round((mainnetStorage / total) * 100) : 0
+        percentage: mainnetPct
       },
       devnet: {
         bytes: devnetStorage,
         formatted: formatBytesAdaptive(devnetStorage),
-        percentage: total > 0 ? Math.round((devnetStorage / total) * 100) : 0
+        percentage: devnetPct
       }
     };
   }, [pnodes]);
 
   // Calculate MAINNET/DEVNET storage used breakdown (from stats.storage_used)
   const storageUsedByNetwork = useMemo(() => {
-    const TB = 1e12;
     
     const mainnetUsed = pnodes
       .filter(n => n.network === 'MAINNET')
@@ -183,23 +150,24 @@ const AboutPNodesComponent = ({
     
     const total = mainnetUsed + devnetUsed;
     
-    console.log('📦 Storage Used breakdown:', {
-      mainnet: `${(mainnetUsed / TB).toFixed(1)} TB`,
-      devnet: `${(devnetUsed / TB).toFixed(1)} TB`,
-      mainnetPct: total > 0 ? Math.round((mainnetUsed / total) * 100) : 0,
-      devnetPct: total > 0 ? Math.round((devnetUsed / total) * 100) : 0
-    });
+    // Ensure percentages sum to 100%
+    let mainnetPct = 0;
+    let devnetPct = 0;
+    if (total > 0) {
+      mainnetPct = Math.round((mainnetUsed / total) * 100);
+      devnetPct = 100 - mainnetPct; // Ensures sum is exactly 100%
+    }
     
     return {
       mainnet: {
         bytes: mainnetUsed,
         formatted: formatBytesAdaptive(mainnetUsed),
-        percentage: total > 0 ? Math.round((mainnetUsed / total) * 100) : 0
+        percentage: mainnetPct
       },
       devnet: {
         bytes: devnetUsed,
         formatted: formatBytesAdaptive(devnetUsed),
-        percentage: total > 0 ? Math.round((devnetUsed / total) * 100) : 0
+        percentage: devnetPct
       }
     };
   }, [pnodes]);
@@ -223,49 +191,6 @@ const AboutPNodesComponent = ({
       return `${totalStorageUsedPods} bytes`;
     }
   }, [totalStorageUsedPods]);
-
-  // This is the closest metric to the official dashboard: sum(total_bytes) over active nodes.
-  // Use decimal formatting (GB=1e9) to reduce confusion when comparing.
-  const storageUsedStatsFormatted = useMemo(() => {
-    // Format adaptively based on size (decimal)
-    const KB = 1e3;
-    const MB = 1e6;
-    const GB = 1e9;
-    const TB = 1e12;
-
-    if (totalStorageUsedStats >= TB) {
-      return `${(totalStorageUsedStats / TB).toFixed(2)} TB`;
-    } else if (totalStorageUsedStats >= GB) {
-      return `${(totalStorageUsedStats / GB).toFixed(2)} GB`;
-    } else if (totalStorageUsedStats >= MB) {
-      return `${(totalStorageUsedStats / MB).toFixed(2)} MB`;
-    } else if (totalStorageUsedStats >= KB) {
-      return `${(totalStorageUsedStats / KB).toFixed(2)} KB`;
-    } else {
-      return `${totalStorageUsedStats} bytes`;
-    }
-  }, [totalStorageUsedStats]);
-
-
-  // Calculate trend from storage history
-  const storageTrend = useMemo(() => {
-    if (storageHistory.length < 2) return { delta: 0, percentage: 0, isUp: false, values: [] };
-    
-    const latest = storageHistory[storageHistory.length - 1];
-    const oldest = storageHistory[0];
-    
-    const delta = latest.avgCommittedPerNode - oldest.avgCommittedPerNode;
-    const percentage = oldest.avgCommittedPerNode > 0 
-      ? ((delta / oldest.avgCommittedPerNode) * 100)
-      : 0;
-    
-    return {
-      delta,
-      percentage: Math.abs(percentage),
-      isUp: delta > 0,
-      values: storageHistory.map(h => h.avgCommittedPerNode)
-    };
-  }, [storageHistory]);
 
   const avgCommittedPerPodFormatted = useMemo(() => {
     if (totalNodes === 0) return "0 bytes";
@@ -349,38 +274,9 @@ const AboutPNodesComponent = ({
     },
     {
       icon: Database,
-      value: storageTrend.values.length > 0 ? (
-        <span className="flex items-center gap-2">
-          <span>{avgCommittedPerPodFormatted}</span>
-          <span className={`flex items-center gap-0.5 text-xs font-medium ${storageTrend.isUp ? 'text-green-500' : 'text-red-500'}`}>
-            {storageTrend.isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-            <span>{storageTrend.percentage.toFixed(1)}%</span>
-          </span>
-        </span>
-      ) : (
-        <span className="flex items-center gap-2">
-          <span>{avgCommittedPerPodFormatted}</span>
-          <span 
-            className="flex items-center gap-1 text-xs text-text-faint cursor-help"
-            title="📊 Collecting Data - Under Development"
-          >
-            <Loader2 className="w-3 h-3 animate-spin" />
-            <span className="text-[10px]">Under Dev</span>
-          </span>
-        </span>
-      ),
+      value: avgCommittedPerPodFormatted,
       label: "Avg Committed/Pod",
       color: "#00D4AA", // Aqua
-      extra: storageTrend.values.length > 0 ? (
-        <div className="w-full mt-2">
-          <Sparkline 
-            data={storageTrend.values}
-            width={100}
-            height={16}
-            color={storageTrend.isUp ? "#22c55e" : "#ef4444"}
-          />
-        </div>
-      ) : null,
     },
     {
       icon: Globe,
@@ -452,7 +348,7 @@ const AboutPNodesComponent = ({
               className="text-lg md:text-xl font-bold mb-2 leading-tight text-left"
               style={{ color: isLight ? "#0f172a" : "#f8fafc" }}
             >
-              The Backbone of Xandeum's{" "}
+              The Backbone of Xandeum&apos;s{" "}
               <span
                 style={{
                   background: "linear-gradient(90deg, #7B3FF2, #14F195)",
@@ -518,9 +414,9 @@ const AboutPNodesComponent = ({
                     {stat.label}
                   </p>
                   {/* Extra content (like progress bars) */}
-                  {(stat as any).extra && (
+                  {'extra' in stat && (
                     <div className="mt-1">
-                      {(stat as any).extra}
+                      {(stat as { extra: React.ReactNode }).extra}
                     </div>
                   )}
                 </div>
@@ -558,11 +454,11 @@ const AboutPNodesComponent = ({
                       style={{ color: isLight ? "#4b5563" : "#94a3b8" }}
                     >
                       Xandeum is building a scalable, decentralized storage layer for the Solana blockchain. 
-                      It aims to solve the "blockchain storage trilemma" by providing a solution that is scalable, 
-                      smart contract native, and allows for random access. Xandeum's liquid staking pool allows SOL 
+                      It aims to solve the &quot;blockchain storage trilemma&quot; by providing a solution that is scalable, 
+                      smart contract native, and allows for random access. Xandeum&apos;s liquid staking pool allows SOL 
                       holders to earn rewards from both staking and storage fees, making it the first multi-validator 
                       pool sharing block rewards with stakers. The XAND token serves as the governance token, granting 
-                      holders voting rights in the Xandeum DAO to shape the platform's future.
+                      holders voting rights in the Xandeum DAO to shape the platform&apos;s future.
                     </p>
 
                     <a

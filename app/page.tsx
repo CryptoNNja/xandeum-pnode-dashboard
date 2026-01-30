@@ -428,12 +428,6 @@ export default function Page() {
   }, [pnodes]);
 
   // "Storage used" as reported by get-stats (field: total_bytes), summed over PUBLIC nodes.
-  // This is closer to what the official dashboard appears to display.
-  const totalStorageUsedStats = useMemo(() => {
-    return pnodes
-      .filter((p) => p.node_type === "public")
-      .reduce((sum, p) => sum + (p.stats?.total_bytes ?? 0), 0);
-  }, [pnodes]);
 
   // Calculate total pages across all nodes
   const totalPagesCount = useMemo(() => {
@@ -682,7 +676,6 @@ export default function Page() {
           <AboutPNodes
           totalStorageCommitted={totalStorageCommitted}
           totalStorageUsedPods={totalStorageUsedPods}
-          totalStorageUsedStats={totalStorageUsedStats}
           networkMetadata={networkMetadata}
           countriesCount={countriesCount}
           totalNodes={publicCount + privateCount}
