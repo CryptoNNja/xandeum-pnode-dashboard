@@ -19,9 +19,9 @@ export async function GET() {
     // Fetch pnode_history records from the last 24 hours
     const { data: historyRecords, error } = await supabase
       .from('pnode_history')
-      .select('ip, stats, recorded_at')
-      .gte('recorded_at', new Date(twentyFourHoursAgo * 1000).toISOString())
-      .order('recorded_at', { ascending: true });
+      .select('ip, storage_committed, ts')
+      .gte('ts', twentyFourHoursAgo)
+      .order('ts', { ascending: true });
 
     if (error) {
       console.error('Supabase error:', error);
@@ -42,10 +42,10 @@ export async function GET() {
     const buckets = new Map<number, Array<{ ip: string; storage_committed: number }>>();
 
     for (const record of historyRecords) {
-      const timestamp = new Date(record.recorded_at).getTime();
+      const timestamp = record.ts * 1000; // Convert Unix timestamp (seconds) to milliseconds
       const bucketKey = Math.floor(timestamp / bucketSize) * bucketSize;
       
-      const storageCommitted = record.stats?.storage_committed || 0;
+      const storageCommitted = record.storage_committed || 0;
       
       if (!buckets.has(bucketKey)) {
         buckets.set(bucketKey, []);

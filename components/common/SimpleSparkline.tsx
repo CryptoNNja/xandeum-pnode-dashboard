@@ -72,6 +72,8 @@ export const SimpleSparkline = ({
         style={{ height: `${height}px` }}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
+        role="img"
+        aria-label={`Storage trend chart with ${data.length} data points. Hover to see details.`}
       >
         {/* Trend line */}
         <polyline
@@ -123,8 +125,17 @@ export const SimpleSparkline = ({
         <div
           className="fixed z-50 pointer-events-none"
           style={{
-            left: `${mousePosition.x + 12}px`,
-            top: `${mousePosition.y - 10}px`,
+            left: `${Math.min(
+              mousePosition.x + 12,
+              (typeof window !== 'undefined' ? window.innerWidth - 150 : mousePosition.x + 12)
+            )}px`,
+            top: `${Math.max(
+              10,
+              Math.min(
+                mousePosition.y - 10,
+                (typeof window !== 'undefined' ? window.innerHeight - 80 : mousePosition.y - 10)
+              )
+            )}px`,
           }}
         >
           <div

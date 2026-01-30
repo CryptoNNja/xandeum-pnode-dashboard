@@ -3,6 +3,7 @@
 import { memo, useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Database, Globe, Zap, ChevronRight, ChevronDown, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
+import Image from "next/image";
 import { useTheme } from "@/hooks/useTheme";
 import type { PNode } from "@/lib/types";
 import { SimpleSparkline } from "@/components/common/SimpleSparkline";
@@ -53,6 +54,9 @@ const useTokenPrice = () => {
 };
 
 // Helper function to format bytes adaptively
+// Uses decimal units (1e3, 1e9, 1e12) instead of binary (1024) to match
+// the official Xandeum dashboard display format and maintain consistency
+// across storage visualization cards.
 const formatBytesAdaptive = (bytes: number): string => {
   const KB = 1e3;
   const MB = 1e6;
@@ -70,15 +74,6 @@ const formatBytesAdaptive = (bytes: number): string => {
   } else {
     return `${bytes} B`;
   }
-};
-
-// Helper function to convert country code to flag emoji
-const getFlagEmoji = (countryCode: string): string => {
-  const codePoints = countryCode
-    .toUpperCase()
-    .split('')
-    .map(char => 127397 + char.charCodeAt(0));
-  return String.fromCodePoint(...codePoints);
 };
 
 interface AboutPNodesProps {
@@ -134,6 +129,9 @@ const AboutPNodesComponent = ({
   }, [totalStorageCommitted]);
 
   // Calculate MAINNET/DEVNET storage committed breakdown
+  // Note: Only MAINNET and DEVNET nodes are included in this breakdown.
+  // Nodes with network='UNKNOWN' or null network are intentionally excluded
+  // as this visualization focuses on the two primary production networks.
   const storageByNetwork = useMemo(() => {
     
     const mainnetStorage = pnodes
@@ -169,6 +167,8 @@ const AboutPNodesComponent = ({
   }, [pnodes]);
 
   // Calculate MAINNET/DEVNET storage used breakdown (from stats.storage_used)
+  // Note: Only MAINNET and DEVNET nodes are included in this breakdown.
+  // Nodes with network='UNKNOWN' or null network are intentionally excluded.
   const storageUsedByNetwork = useMemo(() => {
     
     const mainnetUsed = pnodes
@@ -396,11 +396,13 @@ const AboutPNodesComponent = ({
                     <span className="text-base flex-shrink-0" role="img" aria-label={`Medal ${displayIndex + 1}`}>
                       {medal}
                     </span>
-                    <img
+                    <Image
                       src={`https://flagcdn.com/w20/${country.code.toLowerCase()}.png`}
                       alt={`${country.country} flag`}
-                      className="w-4 h-3 object-cover rounded-sm flex-shrink-0"
-                      loading="lazy"
+                      width={16}
+                      height={12}
+                      className="object-cover rounded-sm flex-shrink-0"
+                      unoptimized
                     />
                     <span className="text-xs font-medium text-text-soft truncate">
                       {country.country}
