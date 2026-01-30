@@ -72,6 +72,15 @@ const formatBytesAdaptive = (bytes: number): string => {
   }
 };
 
+// Helper function to convert country code to flag emoji
+const getFlagEmoji = (countryCode: string): string => {
+  const codePoints = countryCode
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
+};
+
 interface AboutPNodesProps {
   totalStorageCommitted: number;
   totalStorageUsedPods: number;
@@ -238,6 +247,47 @@ const AboutPNodesComponent = ({
     }
   }, [totalStorageCommitted, totalNodes]);
 
+  // Calculate top 3 countries by node count
+  const topCountries = useMemo(() => {
+    const countryMap = new Map<string, { count: number; code: string }>();
+    
+    pnodes.forEach((node) => {
+      if (node.country && node.country !== "Unknown" && node.country_code) {
+        const normalizedCountry = node.country === "The Netherlands" ? "Netherlands" : node.country;
+        const existing = countryMap.get(normalizedCountry);
+        if (existing) {
+          existing.count++;
+        } else {
+          countryMap.set(normalizedCountry, { 
+            count: 1, 
+            code: node.country_code.toUpperCase() 
+          });
+        }
+      }
+    });
+
+    return Array.from(countryMap.entries())
+      .map(([country, data]) => ({ 
+        country, 
+        count: data.count,
+        code: data.code
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+  }, [pnodes]);
+
+  // Auto-rotating carousel for top countries
+  const [currentCountryIndex, setCurrentCountryIndex] = useState(0);
+  
+  useEffect(() => {
+    if (topCountries.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentCountryIndex((prev) => (prev + 1) % topCountries.length);
+      }, 3000); // Rotate every 3 seconds
+      return () => clearInterval(interval);
+    }
+  }, [topCountries.length]);
+
   // Stats always visible (when collapsed)
   const compactStats = [
     {
@@ -325,6 +375,57 @@ const AboutPNodesComponent = ({
       value: countriesCount.toString(),
       label: "Countries",
       color: "#F59E0B", // Orange
+      extra: topCountries.length > 0 ? (
+        <div className="w-full relative overflow-hidden">
+          <AnimatePresence mode="wait">
+            {topCountries.map((country, index) => 
+              index === currentCountryIndex ? (
+                <motion.div
+                  key={country.country}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.5 }}
+                  className="flex items-center justify-between gap-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg" role="img" aria-label={country.country}>
+                      {getFlagEmoji(country.code)}
+                    </span>
+                    <span className="text-xs font-medium text-text-soft truncate max-w-[100px]">
+                      {country.country}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm font-bold" style={{ color: "#F59E0B" }}>
+                      {country.count}
+                    </span>
+                    <span className="text-[10px] text-text-faint">
+                      {country.count === 1 ? 'node' : 'nodes'}
+                    </span>
+                  </div>
+                </motion.div>
+              ) : null
+            )}
+          </AnimatePresence>
+          
+          {/* Carousel indicators */}
+          {topCountries.length > 1 && (
+            <div className="flex items-center justify-center gap-1 mt-1">
+              {topCountries.map((_, index) => (
+                <div
+                  key={index}
+                  className="w-1 h-1 rounded-full transition-all duration-300"
+                  style={{
+                    backgroundColor: index === currentCountryIndex ? "#F59E0B" : "#94a3b8",
+                    opacity: index === currentCountryIndex ? 1 : 0.3,
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : undefined,
     },
   ];
 
