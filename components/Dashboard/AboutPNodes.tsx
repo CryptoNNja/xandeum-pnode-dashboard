@@ -458,9 +458,9 @@ const AboutPNodesComponent = ({
                     </p>
                   </div>
                 </div>
-                {/* Extra content (like progress bars and sparkline) */}
+                {/* Extra content (like progress bars and sparkline) - Fixed height for alignment */}
                 {'extra' in stat && (
-                  <div className="w-full">
+                  <div className="w-full h-[32px] flex items-center">
                     {(stat as { extra: React.ReactNode }).extra}
                   </div>
                 )}
