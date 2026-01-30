@@ -378,8 +378,12 @@ const AboutPNodesComponent = ({
       extra: topCountries.length > 0 ? (
         <div className="w-full relative overflow-hidden">
           <AnimatePresence mode="wait">
-            {topCountries.map((country, index) => 
-              index === currentCountryIndex ? (
+            {topCountries.map((country, index) => {
+              const displayIndex = topCountries.findIndex(c => c.country === country.country);
+              const medals = ['🥇', '🥈', '🥉'];
+              const medal = medals[displayIndex] || '🏅';
+              
+              return index === currentCountryIndex ? (
                 <motion.div
                   key={country.country}
                   initial={{ opacity: 0, x: 20 }}
@@ -388,11 +392,19 @@ const AboutPNodesComponent = ({
                   transition={{ duration: 0.5 }}
                   className="flex items-center justify-between gap-2"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg" role="img" aria-label={country.country}>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base" role="img" aria-label={`Medal ${displayIndex + 1}`}>
+                      {medal}
+                    </span>
+                    <span 
+                      className="text-base"
+                      role="img" 
+                      aria-label={country.country}
+                      style={{ fontFamily: '"Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif' }}
+                    >
                       {getFlagEmoji(country.code)}
                     </span>
-                    <span className="text-xs font-medium text-text-soft truncate max-w-[100px]">
+                    <span className="text-xs font-medium text-text-soft truncate max-w-[80px]">
                       {country.country}
                     </span>
                   </div>
@@ -400,18 +412,18 @@ const AboutPNodesComponent = ({
                     <span className="text-sm font-bold" style={{ color: "#F59E0B" }}>
                       {country.count}
                     </span>
-                    <span className="text-[10px] text-text-faint">
+                    <span className="text-[9px] text-text-faint">
                       {country.count === 1 ? 'node' : 'nodes'}
                     </span>
                   </div>
                 </motion.div>
-              ) : null
-            )}
+              ) : null;
+            })}
           </AnimatePresence>
           
           {/* Carousel indicators */}
           {topCountries.length > 1 && (
-            <div className="flex items-center justify-center gap-1 mt-1">
+            <div className="flex items-center justify-center gap-1 mt-0.5">
               {topCountries.map((_, index) => (
                 <div
                   key={index}
