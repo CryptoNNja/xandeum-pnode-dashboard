@@ -146,9 +146,11 @@ export const SimpleSparkline = ({
             </div>
             {dates && dates[hoveredIndex] && (
               <div className="text-[9px] opacity-70 mt-0.5">
-                {new Date(dates[hoveredIndex]).toLocaleDateString('en-US', {
+                {new Date(dates[hoveredIndex]).toLocaleString('en-US', {
                   month: 'short',
                   day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
                 })}
               </div>
             )}

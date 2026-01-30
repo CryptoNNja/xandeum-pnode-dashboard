@@ -8,17 +8,20 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 /**
  * GET /api/storage-history
- * Returns average storage committed per node for the last 7 days
- * Data is fetched from network_snapshots table
+ * Returns average storage committed per node over the last 24 hours (semi-real-time)
+ * Data is aggregated from pnode_history table at 30-minute intervals
  */
 export async function GET() {
   try {
-    // Fetch last 7 days of snapshots for storage trend
-    const { data: snapshots, error } = await supabase
-      .from('network_snapshots')
-      .select('snapshot_date, total_storage_bytes, active_nodes, total_nodes')
-      .order('snapshot_date', { ascending: false })
-      .limit(7);
+    const now = Math.floor(Date.now() / 1000);
+    const twentyFourHoursAgo = now - (24 * 3600);
+
+    // Fetch pnode_history records from the last 24 hours
+    const { data: historyRecords, error } = await supabase
+      .from('pnode_history')
+      .select('ip, stats, recorded_at')
+      .gte('recorded_at', new Date(twentyFourHoursAgo * 1000).toISOString())
+      .order('recorded_at', { ascending: true });
 
     if (error) {
       console.error('Supabase error:', error);
@@ -26,34 +29,68 @@ export async function GET() {
     }
 
     // If no data, return empty array
-    if (!snapshots || snapshots.length === 0) {
+    if (!historyRecords || historyRecords.length === 0) {
       return NextResponse.json({
         history: [],
         hasData: false,
-        message: 'No historical data available yet. Run save-daily-snapshot.ts to populate.'
+        message: 'No historical data available yet. Crawler needs to run to populate data.'
       });
     }
 
-    // Format data for the sparkline (reverse to show oldest to newest)
-    const formattedHistory = snapshots.reverse().map(snapshot => {
-      const totalNodes = snapshot.total_nodes || 1; // Avoid division by zero
-      const avgCommittedPerNode = snapshot.total_storage_bytes / totalNodes;
+    // Group records by 30-minute time buckets
+    const bucketSize = 30 * 60 * 1000; // 30 minutes in milliseconds
+    const buckets = new Map<number, Array<{ ip: string; storage_committed: number }>>();
+
+    for (const record of historyRecords) {
+      const timestamp = new Date(record.recorded_at).getTime();
+      const bucketKey = Math.floor(timestamp / bucketSize) * bucketSize;
       
-      return {
-        date: snapshot.snapshot_date,
-        avgCommittedPerNode,
-        totalNodes: snapshot.total_nodes,
-        totalCommitted: snapshot.total_storage_bytes
-      };
-    });
+      const storageCommitted = record.stats?.storage_committed || 0;
+      
+      if (!buckets.has(bucketKey)) {
+        buckets.set(bucketKey, []);
+      }
+      
+      buckets.get(bucketKey)!.push({
+        ip: record.ip,
+        storage_committed: storageCommitted
+      });
+    }
+
+    // Calculate average storage per node for each bucket
+    const formattedHistory = Array.from(buckets.entries())
+      .map(([bucketKey, records]) => {
+        // Get unique IPs (latest record per IP in this bucket)
+        const latestByIp = new Map<string, number>();
+        for (const record of records) {
+          latestByIp.set(record.ip, record.storage_committed);
+        }
+
+        const totalStorage = Array.from(latestByIp.values()).reduce((sum, val) => sum + val, 0);
+        const nodeCount = latestByIp.size;
+        const avgCommittedPerNode = nodeCount > 0 ? totalStorage / nodeCount : 0;
+
+        return {
+          date: new Date(bucketKey).toISOString(),
+          avgCommittedPerNode,
+          totalNodes: nodeCount,
+          totalCommitted: totalStorage
+        };
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Limit to last 48 data points (24 hours with 30-min intervals)
+    const limitedHistory = formattedHistory.slice(-48);
 
     return NextResponse.json({
-      history: formattedHistory,
-      hasData: true,
-      dataPoints: formattedHistory.length
+      history: limitedHistory,
+      hasData: limitedHistory.length >= 2,
+      dataPoints: limitedHistory.length,
+      timeRange: '24h',
+      interval: '30min'
     }, {
       headers: {
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200'
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' // 5 min cache for semi-real-time
       }
     });
 
