@@ -392,19 +392,11 @@ const AboutPNodesComponent = ({
                   transition={{ duration: 0.5 }}
                   className="flex items-center justify-between gap-2"
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-base" role="img" aria-label={`Medal ${displayIndex + 1}`}>
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <span className="text-base flex-shrink-0" role="img" aria-label={`Medal ${displayIndex + 1}`}>
                       {medal}
                     </span>
-                    <span 
-                      className="text-base"
-                      role="img" 
-                      aria-label={country.country}
-                      style={{ fontFamily: '"Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif' }}
-                    >
-                      {getFlagEmoji(country.code)}
-                    </span>
-                    <span className="text-xs font-medium text-text-soft truncate max-w-[80px]">
+                    <span className="text-xs font-medium text-text-soft truncate">
                       {country.country}
                     </span>
                   </div>
@@ -531,7 +523,7 @@ const AboutPNodesComponent = ({
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, delay: 0.1 + index * 0.05 }}
-                className="flex flex-col gap-2.5 px-4 py-2.5 rounded-lg border theme-transition min-w-[200px]"
+                className="flex flex-col gap-2.5 px-4 py-2.5 rounded-lg border theme-transition w-[220px]"
                 style={{
                   background: isLight
                     ? "rgba(255, 255, 255, 0.7)"
