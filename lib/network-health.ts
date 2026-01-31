@@ -88,7 +88,7 @@ function calculateVersionConsensus(nodes: PNode[]): NetworkHealthComponent {
     score: Math.round(score),
     weight: 0.25,
     label: 'Version Consensus',
-    icon: '✅',
+    icon: 'CheckCircle2',
     color: score >= 80 ? '#10B981' : score >= 60 ? '#F59E0B' : '#EF4444',
     details: {
       consensusVersion,
@@ -152,7 +152,7 @@ function calculateNetworkUptime(nodes: PNode[]): NetworkHealthComponent {
     score: Math.round(avgScore),
     weight: 0.25,
     label: 'Network Uptime',
-    icon: '⚡',
+    icon: 'Zap',
     color: avgScore >= 80 ? '#10B981' : avgScore >= 60 ? '#F59E0B' : '#EF4444',
     details: {
       avgUptimeDays: Math.round((nodes.reduce((sum, n) => sum + (n.stats?.uptime || 0), 0) / nodes.length) / 86400),
@@ -201,7 +201,7 @@ function calculateStorageHealth(nodes: PNode[]): NetworkHealthComponent {
     score: Math.min(100, Math.round(score)),
     weight: 0.20,
     label: 'Storage Health',
-    icon: '💾',
+    icon: 'Database',
     color: score >= 80 ? '#10B981' : score >= 60 ? '#F59E0B' : '#EF4444',
     details: {
       totalStorageTB: Math.round(totalStorage / TB * 100) / 100,
@@ -268,7 +268,7 @@ function calculateResourceEfficiency(nodes: PNode[]): NetworkHealthComponent {
     score: Math.max(0, Math.round(score - criticalPenalty)),
     weight: 0.15,
     label: 'Resource Efficiency',
-    icon: '🔧',
+    icon: 'Cpu',
     color: score >= 80 ? '#10B981' : score >= 60 ? '#F59E0B' : '#EF4444',
     details: {
       avgCpu: Math.round(avgCpu),
@@ -323,7 +323,7 @@ function calculateNetworkConnectivity(nodes: PNode[]): NetworkHealthComponent {
     score: Math.round(avgScore),
     weight: 0.15,
     label: 'Network Connectivity',
-    icon: '🌐',
+    icon: 'Wifi',
     color: avgScore >= 80 ? '#10B981' : avgScore >= 60 ? '#F59E0B' : '#EF4444',
     details: {
       activeNodes: nodes.filter(n => (n.stats?.packets_sent || 0) > 0 || (n.stats?.packets_received || 0) > 0).length,

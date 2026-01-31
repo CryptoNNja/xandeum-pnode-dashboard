@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronUp, HeartPulse } from 'lucide-react';
+import { ChevronDown, ChevronUp, HeartPulse, CheckCircle2, Zap, Database, Cpu, Wifi } from 'lucide-react';
 import { InfoTooltip } from '@/components/common/InfoTooltip';
 import { calculateNetworkHealthV2, getHealthRating, getHealthColor, getHealthGradient } from '@/lib/network-health';
 import type { PNode } from '@/lib/types';
@@ -146,8 +146,9 @@ export function NetworkHealthCardV2({ nodes, className = '' }: NetworkHealthCard
 
         {/* Health Components - Always visible */}
         <div className="space-y-4 pt-6 border-t border-border-app-soft">
-          <div className="text-xs font-medium text-muted-foreground">
-            📊 Health Components
+          <div className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+            <HeartPulse className="w-3.5 h-3.5" strokeWidth={2} />
+            Health Components
           </div>
 
           {/* Component Bars */}
@@ -272,6 +273,17 @@ interface ComponentBarProps {
 function ComponentBar({ component }: ComponentBarProps) {
   const [isHovered, setIsHovered] = useState(false);
 
+  // Map icon names to Lucide components
+  const iconMap: Record<string, any> = {
+    'CheckCircle2': CheckCircle2,
+    'Zap': Zap,
+    'Database': Database,
+    'Cpu': Cpu,
+    'Wifi': Wifi,
+  };
+
+  const IconComponent = iconMap[component.icon] || CheckCircle2;
+
   return (
     <div 
       className="group relative"
@@ -280,7 +292,11 @@ function ComponentBar({ component }: ComponentBarProps) {
     >
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-sm">{component.icon}</span>
+          <IconComponent 
+            className="w-3.5 h-3.5" 
+            style={{ color: component.color }}
+            strokeWidth={2}
+          />
           <span className="text-xs font-medium">{component.label}</span>
         </div>
         <span className="text-xs text-muted-foreground">{component.score}</span>
