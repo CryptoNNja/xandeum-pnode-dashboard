@@ -650,6 +650,7 @@ export const main = async () => {
         historyToInsert.push({
             ip,
             ts: Math.floor(Date.now() / 1000),
+            version: version || null, // 🆕 Add version for historical tracking
             cpu_percent: stats.cpu_percent ?? null,
             ram_used: stats.ram_used ?? null,
             ram_total: stats.ram_total ?? null,
@@ -659,7 +660,7 @@ export const main = async () => {
             packets_received: stats.packets_received ?? null,
             storage_committed: stats.storage_committed ?? 0, // Default to 0 instead of null for consistent aggregation
             storage_used: stats.storage_used ?? 0 // Default to 0 instead of null for consistent aggregation
-        });
+        } as any); // Temporary cast until Supabase types are regenerated
 
         const geo = allGeo[i];
 

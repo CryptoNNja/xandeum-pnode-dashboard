@@ -220,6 +220,7 @@ export function NetworkHealthCardV2({ nodes, className = '' }: NetworkHealthCard
           <ChevronDown className="w-5 h-5 text-primary rotate-[-90deg]" strokeWidth={2.5} />
         </div>
       </div>
+      </div>
 
       {/* Modal */}
       <NetworkHealthModal
