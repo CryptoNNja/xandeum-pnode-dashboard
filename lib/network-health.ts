@@ -229,7 +229,8 @@ function calculateResourceEfficiency(nodes: PNode[]): NetworkHealthComponent {
     const ramTotal = node.stats?.ram_total || 1;
     const ramPercent = (ramUsed / ramTotal) * 100;
 
-    if (node.stats) {
+    // Only count nodes with non-zero stats (actual data)
+    if (node.stats && (cpu > 0 || ramPercent > 0)) {
       totalCpu += cpu;
       totalRam += ramPercent;
       nodesWithStats++;
