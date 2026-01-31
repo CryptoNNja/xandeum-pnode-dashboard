@@ -418,7 +418,10 @@ export default function Page() {
   const totalStorageCommitted = useMemo(() => {
     return pnodes
       .filter(p => p.status !== "stale") // ⚠️ Exclude stale nodes
-      .reduce((sum, p) => sum + (p.stats?.storage_committed ?? 0), 0);
+      .reduce((sum, p) => {
+        const committed = p.stats?.storage_committed ?? 0;
+        return sum + (Number.isFinite(committed) ? committed : 0);
+      }, 0);
   }, [pnodes]);
 
   // Calculate total storage used (exclude stale nodes for consistency with storageCapacityStats)
@@ -428,7 +431,10 @@ export default function Page() {
   const totalStorageUsedPods = useMemo(() => {
     return pnodes
       .filter(p => p.status !== "stale") // ⚠️ Exclude stale nodes
-      .reduce((sum, p) => sum + (p.stats?.storage_used ?? 0), 0);
+      .reduce((sum, p) => {
+        const storageUsed = p.stats?.storage_used ?? 0;
+        return sum + (Number.isFinite(storageUsed) ? storageUsed : 0);
+      }, 0);
   }, [pnodes]);
 
   // "Storage used" as reported by get-stats (field: total_bytes), summed over PUBLIC nodes.
