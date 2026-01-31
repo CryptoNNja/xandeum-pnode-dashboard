@@ -110,70 +110,16 @@ const AboutPNodesComponent = ({
   }>>([]);
   
   useEffect(() => {
-    console.log('🚀 useEffect triggered - fetching storage history');
-    const fetchStorageHistory = async () => {
-      try {
-        console.log('📡 Starting Supabase fetch...');
-        const { createClient } = await import('@supabase/supabase-js');
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
-
-        // Get 6 most recent distinct timestamps - manual method with high limit
-        const { data: allRecords } = await supabase
-          .from('pnode_history')
-          .select('ts')
-          .order('ts', { ascending: false })
-          .limit(3000);
-          
-        if (!allRecords || allRecords.length === 0) return;
-        
-        const finalTimestamps = Array.from(new Set(allRecords.map(r => r.ts)))
-          .sort((a, b) => b - a)
-          .slice(0, 6);
-        
-        console.log('🎯 Unique timestamps found:', finalTimestamps.length, finalTimestamps);
-          
-        if (finalTimestamps.length === 0) return;
-
-        // Get all records for these timestamps
-        const { data: records } = await supabase
-          .from('pnode_history')
-          .select('ip, storage_committed, ts')
-          .in('ts', finalTimestamps);
-
-        if (!records || records.length === 0) return;
-
-        // Group by timestamp and calculate averages
-        const grouped = new Map<number, Array<{ ip: string; storage: number }>>();
-        for (const r of records) {
-          if (!grouped.has(r.ts)) grouped.set(r.ts, []);
-          grouped.get(r.ts)!.push({ ip: r.ip, storage: r.storage_committed || 0 });
+    fetch('/api/storage-trends')
+      .then(res => res.json())
+      .then(data => {
+        if (data.history && data.hasData) {
+          setStorageHistory(data.history);
         }
-
-        const history = Array.from(grouped.entries())
-          .map(([ts, recs]) => {
-            const uniqueNodes = new Map<string, number>();
-            recs.forEach(r => uniqueNodes.set(r.ip, r.storage));
-            const total = Array.from(uniqueNodes.values()).reduce((a, b) => a + b, 0);
-            const count = uniqueNodes.size;
-            return {
-              date: new Date(ts * 1000).toISOString(),
-              avgCommittedPerNode: count > 0 ? total / count : 0,
-              totalNodes: count,
-              totalCommitted: total
-            };
-          })
-          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-        setStorageHistory(history);
-      } catch (error) {
-        console.error('❌ Failed to fetch storage history:', error);
-      }
-    };
-
-    fetchStorageHistory();
+      })
+      .catch(() => {
+        // Storage trends is optional, fail silently
+      });
   }, []);
   
   const storageCommittedTB = useMemo(() => {
@@ -400,7 +346,18 @@ const AboutPNodesComponent = ({
     },
     {
       icon: Database,
-      value: avgCommittedPerPodFormatted,
+      value: storageHistory.length > 0 
+        ? (() => {
+            // Use the last historical snapshot value to match the sparkline
+            const lastSnapshot = storageHistory[storageHistory.length - 1].avgCommittedPerNode;
+            const TB = 1e12;
+            const GB = 1e9;
+            const MB = 1e6;
+            if (lastSnapshot >= TB) return `${(lastSnapshot / TB).toFixed(2)} TB`;
+            if (lastSnapshot >= GB) return `${(lastSnapshot / GB).toFixed(2)} GB`;
+            return `${(lastSnapshot / MB).toFixed(2)} MB`;
+          })()
+        : avgCommittedPerPodFormatted, // Fallback to calculated value if no history
       label: "Avg Committed/Pod",
       color: "#00D4AA", // Aqua
       extra: (
