@@ -316,26 +316,58 @@ function ComponentBar({ component }: ComponentBarProps) {
 
       {/* Tooltip on hover - Fixed background */}
       <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10">
-        <div className="bg-card border border-border rounded p-2 text-xs shadow-lg min-w-[200px] backdrop-blur-sm"
+        <div className="bg-card border border-border rounded p-3 text-xs shadow-xl min-w-[220px] backdrop-blur-sm"
           style={{ backgroundColor: 'var(--card)' }}
         >
-          <div className="font-medium mb-1 text-text-main">{component.label}</div>
-          <div className="text-text-soft space-y-0.5">
+          <div className="font-semibold mb-2 text-text-main flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: component.color }} />
+            {component.label}
+          </div>
+          <div className="text-text-soft space-y-1">
             {Object.entries(component.details).map(([key, value]) => {
-              // Format value based on type
+              // Skip rendering distribution as a single line
+              if (key === 'distribution' && typeof value === 'object') {
+                return (
+                  <div key={key} className="pt-1 mt-1 border-t border-border space-y-0.5">
+                    <div className="font-medium text-text-main text-[10px] uppercase tracking-wider mb-1">Distribution:</div>
+                    {Object.entries(value as Record<string, any>).map(([distKey, distValue]) => {
+                      // Format distribution keys nicely
+                      const labelMap: Record<string, string> = {
+                        'moreThan30d': '30+ days',
+                        'between7And30d': '7-30 days',
+                        'between1And7d': '1-7 days',
+                        'lessThan1d': '<1 day',
+                      };
+                      const label = labelMap[distKey] || distKey;
+                      
+                      return (
+                        <div key={distKey} className="flex justify-between gap-4 pl-2">
+                          <span className="text-[10px]">{label}:</span>
+                          <span className="font-medium text-text-main">{distValue} nodes</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              }
+              
+              // Format regular values
               let displayValue: string;
               if (typeof value === 'object' && value !== null) {
-                // For nested objects (like distribution), format nicely
-                displayValue = Object.entries(value)
-                  .map(([k, v]) => `${k}: ${v}`)
-                  .join(', ');
+                displayValue = JSON.stringify(value);
               } else {
                 displayValue = String(value);
               }
               
+              // Format key nicely
+              const formattedKey = key
+                .replace(/([A-Z])/g, ' $1')
+                .replace(/^./, str => str.toUpperCase())
+                .trim();
+              
               return (
                 <div key={key} className="flex justify-between gap-4">
-                  <span className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                  <span>{formattedKey}:</span>
                   <span className="font-medium text-text-main">{displayValue}</span>
                 </div>
               );
