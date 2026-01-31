@@ -59,34 +59,21 @@ export function NetworkHealthCardV2({ nodes, className = '' }: NetworkHealthCard
             <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
               Network Health
             </p>
-            <InfoTooltip content="Comprehensive health score based on version consensus, uptime, storage, resources, and connectivity. Click to expand detailed breakdown." />
+            <InfoTooltip content="Comprehensive health score based on version consensus, uptime, storage, resources, and connectivity. Click card for detailed modal (coming soon)." />
           </div>
           <p className="text-sm text-text-faint">Component-based scoring</p>
         </div>
-        <div className="flex items-center gap-2">
-          <div
-            className="w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-110"
-            style={{ 
-              background: `${getHealthColor(healthData.rating)}20` 
-            }}
-          >
-            <HeartPulse
-              className="w-5 h-5"
-              strokeWidth={2.3}
-              style={{ color: getHealthColor(healthData.rating) }}
-            />
-          </div>
-          <button
-            className="p-1 hover:bg-muted rounded transition-colors"
-            onClick={() => setIsExpanded(!isExpanded)}
-            title={isExpanded ? "Collapse" : "Expand"}
-          >
-            {isExpanded ? (
-              <ChevronUp className="w-4 h-4 text-muted-foreground" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            )}
-          </button>
+        <div
+          className="w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-110"
+          style={{ 
+            background: 'rgba(16, 185, 129, 0.12)' 
+          }}
+        >
+          <HeartPulse
+            className="w-5 h-5"
+            strokeWidth={2.3}
+            style={{ color: '#10B981' }}
+          />
         </div>
       </div>
 
@@ -157,60 +144,58 @@ export function NetworkHealthCardV2({ nodes, className = '' }: NetworkHealthCard
         </div>
 
 
-        {/* Expand hint */}
-        {!isExpanded && (
-          <div className="pt-4 border-t border-border-app-soft">
-            <p className="text-xs text-text-soft text-center">
-              Click <ChevronDown className="inline w-3 h-3" /> above to view component breakdown
-            </p>
+        {/* Health Components - Always visible */}
+        <div className="space-y-4 pt-6 border-t border-border-app-soft">
+          <div className="text-xs font-medium text-muted-foreground">
+            📊 Health Components
           </div>
-        )}
 
-        {/* Expanded Content */}
-        {isExpanded && (
-          <div className="space-y-4 pt-6 border-t border-border-app-soft animate-in slide-in-from-top-2 duration-300">
-            <div className="text-xs font-medium text-muted-foreground">
-              📊 Health Components
-            </div>
+          {/* Component Bars */}
+          <div className="space-y-2">
+            {Object.entries(healthData.components).map(([key, component]) => (
+              <ComponentBar
+                key={key}
+                component={component}
+              />
+            ))}
+          </div>
 
-            {/* Component Bars */}
-            <div className="space-y-2">
-              {Object.entries(healthData.components).map(([key, component]) => (
-                <ComponentBar
-                  key={key}
-                  component={component}
-                />
-              ))}
-            </div>
+          {/* Top Issues - Expandable */}
+          {isExpanded && healthData.recommendations.length > 0 && (
+            <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
 
-            {/* Top Issues */}
-            {healthData.recommendations.length > 0 && (
-              <div className="space-y-2">
-                <div className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-                  💡 Top Issues
-                  <span className="px-1.5 py-0.5 text-[10px] bg-destructive/10 text-destructive rounded">
-                    {healthData.recommendations.length}
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  {healthData.recommendations.slice(0, 3).map(rec => (
-                    <IssueItem key={rec.id} recommendation={rec} />
-                  ))}
-                </div>
+              <div className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+                💡 Top Issues
+                <span className="px-1.5 py-0.5 text-[10px] bg-destructive/10 text-destructive rounded">
+                  {healthData.recommendations.length}
+                </span>
               </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-2 pt-2">
-              <button className="flex-1 px-3 py-2 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors">
-                Full Report
-              </button>
-              <button className="flex-1 px-3 py-2 text-xs border border-border rounded hover:bg-muted transition-colors">
-                Recommendations
-              </button>
+              <div className="space-y-1">
+                {healthData.recommendations.slice(0, 3).map(rec => (
+                  <IssueItem key={rec.id} recommendation={rec} />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Toggle Button */}
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full py-2 text-xs text-text-soft hover:text-text-main border border-border-app-soft rounded hover:bg-muted transition-colors flex items-center justify-center gap-2"
+          >
+            {isExpanded ? (
+              <>
+                <ChevronUp className="w-3 h-3" />
+                Hide Details
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-3 h-3" />
+                Show Issues & Actions
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -313,15 +298,17 @@ function ComponentBar({ component }: ComponentBarProps) {
         />
       </div>
 
-      {/* Tooltip on hover */}
+      {/* Tooltip on hover - Fixed background */}
       <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10">
-        <div className="bg-popover border border-border rounded p-2 text-xs shadow-lg min-w-[200px]">
-          <div className="font-medium mb-1">{component.label}</div>
-          <div className="text-muted-foreground space-y-0.5">
+        <div className="bg-card border border-border rounded p-2 text-xs shadow-lg min-w-[200px] backdrop-blur-sm"
+          style={{ backgroundColor: 'var(--card)' }}
+        >
+          <div className="font-medium mb-1 text-text-main">{component.label}</div>
+          <div className="text-text-soft space-y-0.5">
             {Object.entries(component.details).map(([key, value]) => (
-              <div key={key} className="flex justify-between">
+              <div key={key} className="flex justify-between gap-4">
                 <span>{key}:</span>
-                <span className="font-medium">{String(value)}</span>
+                <span className="font-medium text-text-main">{String(value)}</span>
               </div>
             ))}
           </div>
