@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp, HeartPulse, CheckCircle2, Zap, Database, Cpu, Wifi } from 'lucide-react';
 import { InfoTooltip } from '@/components/common/InfoTooltip';
 import { calculateNetworkHealthV2, getHealthRating, getHealthColor, getHealthGradient } from '@/lib/network-health';
+import { NetworkHealthModal } from './NetworkHealthModal';
 import type { PNode } from '@/lib/types';
 import type { NetworkHealthScore } from '@/lib/network-health';
 
@@ -14,6 +15,7 @@ interface NetworkHealthCardV2Props {
 
 export function NetworkHealthCardV2({ nodes, className = '' }: NetworkHealthCardV2Props) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Calculate health score
   const healthData = useMemo(() => calculateNetworkHealthV2(nodes), [nodes]);
@@ -51,7 +53,19 @@ export function NetworkHealthCardV2({ nodes, className = '' }: NetworkHealthCard
   const sparklineData = [62, 64, 66, 68, 66, 65, healthData.overall];
 
   return (
-    <div className={`relative overflow-hidden p-6 transition-all duration-300 ${className}`}>
+    <>
+      <div 
+        className={`relative overflow-hidden p-6 transition-all duration-300 cursor-pointer group/card hover:shadow-xl hover:border-primary/50 ${className}`}
+        onClick={() => setIsModalOpen(true)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsModalOpen(true);
+          }
+        }}
+      >
       {/* Header - Match style of other cards */}
       <div className="flex items-start justify-between mb-6">
         <div>
@@ -181,7 +195,10 @@ export function NetworkHealthCardV2({ nodes, className = '' }: NetworkHealthCard
 
           {/* Toggle Button */}
           <button
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent modal from opening
+              setIsExpanded(!isExpanded);
+            }}
             className="w-full py-2 text-xs text-text-soft hover:text-text-main border border-border-app-soft rounded hover:bg-muted transition-colors flex items-center justify-center gap-2"
           >
             {isExpanded ? (
@@ -197,8 +214,20 @@ export function NetworkHealthCardV2({ nodes, className = '' }: NetworkHealthCard
             )}
           </button>
         </div>
+
+        {/* Click indicator */}
+        <div className="absolute bottom-4 right-4 opacity-0 group-hover/card:opacity-100 transition-all duration-300 group-hover/card:translate-x-1">
+          <ChevronDown className="w-5 h-5 text-primary rotate-[-90deg]" strokeWidth={2.5} />
+        </div>
       </div>
-    </div>
+
+      {/* Modal */}
+      <NetworkHealthModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        healthData={healthData}
+      />
+    </>
   );
 }
 
