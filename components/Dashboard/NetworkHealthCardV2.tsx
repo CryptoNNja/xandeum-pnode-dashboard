@@ -321,12 +321,25 @@ function ComponentBar({ component }: ComponentBarProps) {
         >
           <div className="font-medium mb-1 text-text-main">{component.label}</div>
           <div className="text-text-soft space-y-0.5">
-            {Object.entries(component.details).map(([key, value]) => (
-              <div key={key} className="flex justify-between gap-4">
-                <span>{key}:</span>
-                <span className="font-medium text-text-main">{String(value)}</span>
-              </div>
-            ))}
+            {Object.entries(component.details).map(([key, value]) => {
+              // Format value based on type
+              let displayValue: string;
+              if (typeof value === 'object' && value !== null) {
+                // For nested objects (like distribution), format nicely
+                displayValue = Object.entries(value)
+                  .map(([k, v]) => `${k}: ${v}`)
+                  .join(', ');
+              } else {
+                displayValue = String(value);
+              }
+              
+              return (
+                <div key={key} className="flex justify-between gap-4">
+                  <span className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                  <span className="font-medium text-text-main">{displayValue}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
