@@ -57,7 +57,7 @@ function calculateVersionConsensus(nodes: PNode[]): NetworkHealthComponent {
   // Find the most common version (consensus)
   const versions = new Map<string, number>();
   nodes.forEach(node => {
-    const version = node.stats?.version || 'unknown';
+    const version = node.version || 'unknown';
     versions.set(version, (versions.get(version) || 0) + 1);
   });
 
@@ -284,27 +284,27 @@ function calculateResourceEfficiency(nodes: PNode[]): NetworkHealthComponent {
  * Measures network connectivity and balance
  */
 function calculateNetworkConnectivity(nodes: PNode[]): NetworkHealthComponent {
-  // For now, base this on network_io and any connectivity indicators
+  // Base this on packets sent/received as network activity indicators
   let totalScore = 0;
   let nodesWithData = 0;
 
   nodes.forEach(node => {
-    const networkIn = node.stats?.network_in || 0;
-    const networkOut = node.stats?.network_out || 0;
+    const packetsSent = node.stats?.packets_sent || 0;
+    const packetsReceived = node.stats?.packets_received || 0;
     
     // Score based on having network activity
     let nodeScore = 50; // Base score for being reachable
 
-    if (networkIn > 0 || networkOut > 0) {
+    if (packetsSent > 0 || packetsReceived > 0) {
       nodeScore += 25; // Bonus for activity
 
       // Bonus for balanced I/O (not too skewed)
-      const total = networkIn + networkOut;
+      const total = packetsSent + packetsReceived;
       if (total > 0) {
-        const inRatio = networkIn / total;
-        if (inRatio >= 0.4 && inRatio <= 0.6) {
+        const sentRatio = packetsSent / total;
+        if (sentRatio >= 0.4 && sentRatio <= 0.6) {
           nodeScore += 25; // Well balanced
-        } else if (inRatio >= 0.3 && inRatio <= 0.7) {
+        } else if (sentRatio >= 0.3 && sentRatio <= 0.7) {
           nodeScore += 15; // Reasonably balanced
         } else {
           nodeScore += 5; // Skewed but has activity
@@ -325,7 +325,7 @@ function calculateNetworkConnectivity(nodes: PNode[]): NetworkHealthComponent {
     icon: '🌐',
     color: avgScore >= 80 ? '#10B981' : avgScore >= 60 ? '#F59E0B' : '#EF4444',
     details: {
-      activeNodes: nodes.filter(n => (n.stats?.network_in || 0) > 0 || (n.stats?.network_out || 0) > 0).length,
+      activeNodes: nodes.filter(n => (n.stats?.packets_sent || 0) > 0 || (n.stats?.packets_received || 0) > 0).length,
       totalNodes: nodes.length,
     }
   };
