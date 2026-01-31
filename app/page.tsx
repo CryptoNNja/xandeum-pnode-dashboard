@@ -413,18 +413,28 @@ export default function Page() {
   }, [pnodes]);
 
   // pnodes is already deduplicated by pubkey in usePnodeDashboard hook
-  // Calculate total storage committed (from ALL nodes, not just active)
+  // Calculate total storage committed (exclude stale nodes for consistency with storageCapacityStats)
   // Use storage_committed which comes from get-pods-with-stats API
   const totalStorageCommitted = useMemo(() => {
-    return pnodes.reduce((sum, p) => sum + (p.stats?.storage_committed ?? 0), 0);
+    return pnodes
+      .filter(p => p.status !== "stale") // ⚠️ Exclude stale nodes
+      .reduce((sum, p) => {
+        const committed = p.stats?.storage_committed ?? 0;
+        return sum + (Number.isFinite(committed) ? committed : 0);
+      }, 0);
   }, [pnodes]);
 
-  // Calculate total storage used (from ALL nodes with storage_used data)
+  // Calculate total storage used (exclude stale nodes for consistency with storageCapacityStats)
   // Use storage_used from get-pods-with-stats API
   // "Storage used" as reported by get-pods-with-stats (field: storage_used).
   // In practice this is currently very small (MBs) on the network.
   const totalStorageUsedPods = useMemo(() => {
-    return pnodes.reduce((sum, p) => sum + (p.stats?.storage_used ?? 0), 0);
+    return pnodes
+      .filter(p => p.status !== "stale") // ⚠️ Exclude stale nodes
+      .reduce((sum, p) => {
+        const storageUsed = p.stats?.storage_used ?? 0;
+        return sum + (Number.isFinite(storageUsed) ? storageUsed : 0);
+      }, 0);
   }, [pnodes]);
 
   // "Storage used" as reported by get-stats (field: total_bytes), summed over PUBLIC nodes.
