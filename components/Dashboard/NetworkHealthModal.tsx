@@ -1117,10 +1117,10 @@ function NodeRow({ node, onClick }: { node: any; onClick: () => void }) {
         {node.uptimeDays}d
       </div>
       <div className="col-span-2 text-xs text-text-soft">
-        {node.cpu.toFixed(1)}%
+        {node.cpu !== null ? node.cpu.toFixed(1) : 'N/A'}%
       </div>
       <div className="col-span-2 text-xs text-text-soft">
-        {node.ram.toFixed(1)}%
+        {node.ram !== null ? node.ram.toFixed(1) : 'N/A'}%
       </div>
       <div className="col-span-1 flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
         <TrendingUp className="w-4 h-4 text-primary" />
@@ -1171,11 +1171,15 @@ function NodeDetailModal({ node, onClose }: { node: any; onClose: () => void }) 
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
                 <div className="text-xs text-text-soft mb-1">CPU Usage</div>
-                <div className="text-xl font-bold text-text-main">{node.cpu.toFixed(1)}%</div>
+                <div className="text-xl font-bold text-text-main">
+                  {node.cpu !== null ? `${node.cpu.toFixed(1)}%` : 'N/A'}
+                </div>
               </div>
               <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
                 <div className="text-xs text-text-soft mb-1">RAM Usage</div>
-                <div className="text-xl font-bold text-text-main">{node.ram.toFixed(1)}%</div>
+                <div className="text-xl font-bold text-text-main">
+                  {node.ram !== null ? `${node.ram.toFixed(1)}%` : 'N/A'}
+                </div>
               </div>
               <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
                 <div className="text-xs text-text-soft mb-1">Uptime</div>
