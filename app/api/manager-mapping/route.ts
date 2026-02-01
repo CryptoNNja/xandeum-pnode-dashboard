@@ -1,26 +1,25 @@
 /**
  * Manager Mapping API
  * Returns the mapping data for client-side use
+ * 
+ * Data structure: pnode_registry.json
+ * - Flat registry object for O(1) lookups
+ * - Operator metadata for statistics
  */
 
 import { NextResponse } from 'next/server';
-import managersData from '@/config/managers_node_data.json';
+import registryData from '@/config/pnode_registry.json';
 
 export async function GET() {
   try {
-    // Build the mapping
-    const mapping: Record<string, string> = {};
-    
-    for (const manager of managersData.managers) {
-      for (const node of manager.nodes) {
-        mapping[node.pnode_pubkey] = manager.manager_address;
-      }
-    }
-    
+    // Return the flat mapping (no transformation needed - already optimized!)
     return NextResponse.json({
       success: true,
-      mapping,
-      stats: managersData.summary,
+      mapping: registryData.registry,
+      stats: {
+        total_managers: registryData.meta.total_operators,
+        total_pnode_pubkeys: registryData.meta.total_nodes,
+      },
     });
   } catch (error: any) {
     return NextResponse.json({
