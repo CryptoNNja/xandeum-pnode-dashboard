@@ -767,6 +767,22 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and updates.
 
 ---
 
+## 📊 Data Sources
+
+This dashboard displays **public blockchain data** from official sources:
+
+- **SeenNodes Registry**: Node operator mappings (https://seenodes.xandeum.com)
+  - Public on-chain data: node-operator associations
+  - Implementation: Custom optimized structure (see [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md))
+- **Xandeum RPC**: Real-time node statistics from public endpoints
+- **On-chain data**: All information is publicly verifiable on the Xandeum blockchain
+
+**Note**: The data structures and implementations in this codebase are our original work, optimized for performance and user experience. We derive our data from official public sources, as does any other dashboard in the Xandeum ecosystem.
+
+For detailed information about data collection and legal notices, see [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md).
+
+---
+
 ## 📄 License
 
 This project is licensed under the **MIT License** - see [LICENSE](LICENSE) for details.
