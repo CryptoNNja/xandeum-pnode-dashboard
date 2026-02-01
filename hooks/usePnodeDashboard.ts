@@ -770,11 +770,14 @@ export const usePnodeDashboard = (theme?: string) => {
   // Derived global states (always based on allPnodes)
   // Active nodes = public nodes that are currently online (not offline/stale)
   // ⚠️ IMPORTANT: Exclude 'stale' nodes from all KPI calculations
-  // Active nodes for network health: all public nodes (not just "online")
-  // This matches the snapshot calculation which includes all public nodes
-  // to provide a more stable and comprehensive health score
   const activeNodes = useMemo(() => 
-    allPnodes.filter((pnode) => pnode.node_type === "public"), 
+    allPnodes.filter((pnode) => pnode.node_type === "public" && pnode.status === "online"), 
+    [allPnodes]
+  );
+  
+  // All public nodes for network health (includes offline/stale for comprehensive health score)
+  const publicNodesForHealth = useMemo(() =>
+    allPnodes.filter((pnode) => pnode.node_type === "public"),
     [allPnodes]
   );
   const publicCount = activeNodes.length;

@@ -10,9 +10,9 @@ export async function GET(request: Request) {
     const days = daysParam ? parseInt(daysParam) : 30;
 
     // Validate days parameter
-    if (days < 1 || days > 90) {
+    if (!Number.isFinite(days) || days < 1 || days > 90) {
       return NextResponse.json(
-        { error: "Days parameter must be between 1 and 90" },
+        { error: "Days parameter must be a number between 1 and 90" },
         { status: 400 }
       );
     }
@@ -40,17 +40,25 @@ export async function GET(request: Request) {
       });
     }
 
-    // Extract distinct timestamps manually
-    const timestampSet = new Set<number>();
-    historyRecords.forEach(record => timestampSet.add(record.ts));
-    const timestamps = Array.from(timestampSet).sort((a, b) => a - b);
+    // Group records by timestamp in a single pass (O(n) instead of O(n²))
+    const recordsByTimestamp = new Map<number, typeof historyRecords>();
+    historyRecords.forEach(record => {
+      const ts = record.ts;
+      let recordsAtTs = recordsByTimestamp.get(ts);
+      if (!recordsAtTs) {
+        recordsAtTs = [];
+        recordsByTimestamp.set(ts, recordsAtTs);
+      }
+      recordsAtTs.push(record);
+    });
+
+    const timestamps = Array.from(recordsByTimestamp.keys()).sort((a, b) => a - b);
 
     // For each timestamp, calculate network health
     const historyData = timestamps.map(ts => {
-      // Filter records for this timestamp
-      const nodesAtTimestamp = historyRecords
-        .filter(record => record.ts === ts)
-        .map(record => {
+      // Get pre-grouped records for this timestamp
+      const recordsAtTimestamp = recordsByTimestamp.get(ts) ?? [];
+      const nodesAtTimestamp = recordsAtTimestamp.map(record => {
           const stats: PNodeStats = {
             cpu_percent: record.cpu_percent ?? 0,
             ram_used: record.ram_used ?? 0,

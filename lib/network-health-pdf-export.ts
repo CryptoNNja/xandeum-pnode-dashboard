@@ -92,7 +92,7 @@ export async function exportNetworkHealthToPDF(healthData: NetworkHealthScore) {
   currentY += 10;
 
   const components = Object.entries(healthData.components);
-  components.forEach(([key, component]) => {
+  components.forEach(([, component]) => {
     // Component name
     addText(component.label, margin, currentY, { size: 11, style: 'bold' });
     

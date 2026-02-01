@@ -74,7 +74,7 @@ export function NetworkHealthModal({ isOpen, onClose, healthData }: NetworkHealt
     const csvData = [];
     csvData.push(['Component', 'Score', 'Weight', 'Color']);
     
-    Object.entries(healthData.components).forEach(([key, component]) => {
+    Object.entries(healthData.components).forEach(([, component]) => {
       csvData.push([
         component.label,
         component.score.toString(),
@@ -94,6 +94,9 @@ export function NetworkHealthModal({ isOpen, onClose, healthData }: NetworkHealt
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    // Cleanup object URL
+    URL.revokeObjectURL(url);
     
     setShowExportMenu(false);
   };
@@ -896,27 +899,60 @@ function NodesTab() {
 
   useEffect(() => {
     fetch('/api/pnodes')
-      .then(res => res.json())
-      .then(data => {
-        if (data.nodes) {
-          const nodesWithScores = data.nodes.map((node: any) => {
-            const cpu = node.stats?.cpu_percent || 0;
-            const ram = node.stats?.ram_used && node.stats?.ram_total 
-              ? (node.stats.ram_used / node.stats.ram_total) * 100 
-              : 0;
-            const uptime = node.stats?.uptime || 0;
-            
-            const cpuScore = Math.max(0, 100 - cpu);
-            const ramScore = Math.max(0, 100 - ram);
-            const uptimeScore = Math.min(100, (uptime / 2592000) * 100);
-            const nodeScore = Math.round((cpuScore + ramScore + uptimeScore) / 3);
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`Failed to fetch nodes: ${res.status} ${res.statusText}`);
+        }
+        return res.json();
+      })
+      .then(result => {
+        const nodesData = result?.data;
+        if (Array.isArray(nodesData)) {
+          const nodesWithScores = nodesData.map((node: any) => {
+            const rawCpu = node.stats?.cpu_percent;
+            const hasCpu = typeof rawCpu === 'number';
+            const cpu = hasCpu ? rawCpu : null;
+
+            const hasRam =
+              typeof node.stats?.ram_used === 'number' &&
+              typeof node.stats?.ram_total === 'number' &&
+              node.stats.ram_total > 0;
+            const ram = hasRam
+              ? (node.stats.ram_used / node.stats.ram_total) * 100
+              : null;
+
+            const rawUptime = node.stats?.uptime;
+            const hasUptime = typeof rawUptime === 'number' && rawUptime > 0;
+            const uptime = hasUptime ? rawUptime : 0;
+
+            const scores: number[] = [];
+
+            if (hasCpu && cpu !== null) {
+              const cpuScore = Math.max(0, 100 - cpu);
+              scores.push(cpuScore);
+            }
+
+            if (hasRam && ram !== null) {
+              const ramScore = Math.max(0, 100 - ram);
+              scores.push(ramScore);
+            }
+
+            if (hasUptime) {
+              const uptimeScore = Math.min(100, (uptime / 2592000) * 100);
+              scores.push(uptimeScore);
+            }
+
+            const nodeScore =
+              scores.length > 0
+                ? Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length)
+                : 0;
 
             return {
               ...node,
               healthScore: nodeScore,
               cpu,
               ram,
-              uptimeDays: Math.floor(uptime / 86400),
+              uptimeDays: hasUptime ? Math.floor(uptime / 86400) : 0,
             };
           });
           setNodes(nodesWithScores);
@@ -1376,6 +1412,9 @@ function WhatIfSimulator({ healthData }: { healthData: NetworkHealthScore }) {
             const improvement = improvements[key as keyof typeof improvements] || 0;
             const newScore = Math.min(100, component.score + improvement);
             
+            const maxImprovement = Math.min(50, 100 - component.score);
+            const isMaxed = maxImprovement === 0;
+            
             return (
               <div key={key} className="bg-background/50 rounded-lg p-2.5 border border-border/50">
                 <div className="flex items-center justify-between mb-1.5">
@@ -1396,24 +1435,30 @@ function WhatIfSimulator({ healthData }: { healthData: NetworkHealthScore }) {
                   </div>
                 </div>
                 
-                <input
-                  type="range"
-                  min="0"
-                  max={Math.min(50, 100 - component.score)}
-                  value={improvement}
-                  onChange={(e) => setImprovements({
-                    ...improvements,
-                    [key]: parseInt(e.target.value)
-                  })}
-                  className="w-full h-1.5 rounded-lg appearance-none cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to right, ${component.color} 0%, ${component.color} ${(improvement / Math.min(50, 100 - component.score)) * 100}%, #E5E7EB ${(improvement / Math.min(50, 100 - component.score)) * 100}%, #E5E7EB 100%)`
-                  }}
-                />
+                {isMaxed ? (
+                  <div className="w-full h-1.5 rounded-lg bg-green-500/20 flex items-center justify-center">
+                    <span className="text-[9px] text-green-600 font-semibold">Already at maximum</span>
+                  </div>
+                ) : (
+                  <input
+                    type="range"
+                    min="0"
+                    max={maxImprovement}
+                    value={improvement}
+                    onChange={(e) => setImprovements({
+                      ...improvements,
+                      [key]: parseInt(e.target.value)
+                    })}
+                    className="w-full h-1.5 rounded-lg appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, ${component.color} 0%, ${component.color} ${(improvement / maxImprovement) * 100}%, #E5E7EB ${(improvement / maxImprovement) * 100}%, #E5E7EB 100%)`
+                    }}
+                  />
+                )}
                 
                 <div className="flex justify-between mt-0.5">
                   <span className="text-[9px] text-text-soft">0</span>
-                  <span className="text-[9px] text-text-soft">+{Math.min(50, 100 - component.score)}</span>
+                  <span className="text-[9px] text-text-soft">+{maxImprovement}</span>
                 </div>
               </div>
             );

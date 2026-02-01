@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp, HeartPulse, CheckCircle2, Zap, Database, Cpu, Wifi } from 'lucide-react';
 import { InfoTooltip } from '@/components/common/InfoTooltip';
-import { calculateNetworkHealthV2, getHealthRating, getHealthColor, getHealthGradient } from '@/lib/network-health';
+import { calculateNetworkHealthV2, getHealthColor } from '@/lib/network-health';
 import { NetworkHealthModal } from './NetworkHealthModal';
 import type { PNode } from '@/lib/types';
 import type { NetworkHealthScore } from '@/lib/network-health';
@@ -414,11 +414,6 @@ interface IssueItemProps {
 }
 
 function IssueItem({ recommendation }: IssueItemProps) {
-  const severityColors = {
-    critical: 'text-red-500',
-    warning: 'text-yellow-500',
-    info: 'text-blue-500',
-  };
 
   const severityIcons = {
     critical: '🔴',
