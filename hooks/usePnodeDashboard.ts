@@ -774,6 +774,12 @@ export const usePnodeDashboard = (theme?: string) => {
     allPnodes.filter((pnode) => pnode.node_type === "public" && pnode.status === "online"), 
     [allPnodes]
   );
+  
+  // All public nodes for network health (includes offline/stale for comprehensive health score)
+  const publicNodesForHealth = useMemo(() =>
+    allPnodes.filter((pnode) => pnode.node_type === "public"),
+    [allPnodes]
+  );
   const publicCount = activeNodes.length;
   const privateCount = useMemo(() => allPnodes.filter((pnode) => pnode.node_type === "private" && pnode.status !== "stale").length, [allPnodes]);
   

@@ -33,6 +33,7 @@ import { CpuDistributionModal } from "./CpuDistributionModal";
 import { StorageAnalyticsModal } from "./StorageAnalyticsModal";
 import { DataDistributionModal } from "./DataDistributionModal";
 import { NetworkCoverageModal } from "./NetworkCoverageModal";
+import { NetworkHealthCardV2 } from "./NetworkHealthCardV2";
 import TopPerformersChart from "@/components/TopPerformersChart";
 import { FlagsCarousel } from "./FlagsCarousel";
 import { PacketsAnimation } from "./PacketsAnimation";
@@ -1207,135 +1208,11 @@ export const KpiCards = ({
             </div>
           </div>
 
-          {/* Network Health Card */}
-          <div 
-            className="kpi-card relative overflow-hidden p-6 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-accent-primary/10 hover:border-accent-primary/50 hover:scale-[1.02] group"
-            onClick={() => setIsHealthModalOpen(true)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setIsHealthModalOpen(true);
-              }
-            }}
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs uppercase tracking-[0.35em] text-text-soft">
-                    Network Health
-                  </p>
-                  <InfoTooltip content="Overall network reliability score. A healthy pNode network ensures Xandeum can scale Solana's state without bottlenecks. Click to view detailed health distribution." />
-                </div>
-                <p className="text-sm text-text-faint">Overall network score</p>
-              </div>
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
-                style={{ background: hexToRgba("#10B981", 0.12) }}
-              >
-                <HeartPulse
-                  className="w-5 h-5"
-                  strokeWidth={2.3}
-                  style={{ color: "#10B981" }}
-                />
-              </div>
-            </div>
-            <div className="flex items-end justify-between gap-6 mt-6">
-              <div>
-                <div className="flex items-baseline gap-2">
-                  <p
-                    className="text-4xl font-bold tracking-tight"
-                    style={{ color: "#10B981" }}
-                  >
-                    {networkHealthInsights.score}
-                  </p>
-                  <span className="text-lg text-text-soft font-semibold">/100</span>
-                </div>
-                <div className="mt-4 flex flex-col gap-1">
-                   <div className="flex items-center gap-4 text-xs uppercase tracking-widest text-text-soft">
-                    <span
-                      className="flex items-center gap-2 font-semibold"
-                      style={{ color: networkHealthInsights.trendColor }}
-                    >
-                      <span>{networkHealthInsights.trendIcon}</span>
-                      <span className="font-mono">
-                        {networkHealthInsights.deltaYesterday !== null
-                          ? (networkHealthInsights.deltaYesterday > 0
-                            ? `+${networkHealthInsights.deltaYesterday}`
-                            : networkHealthInsights.deltaYesterday)
-                          : "—"}
-                      </span>
-                    </span>
-                    <span>vs yesterday</span>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs uppercase tracking-widest text-text-soft">
-                    <span
-                      className="flex items-center gap-2 font-semibold"
-                      style={{ color: networkHealthInsights.trendColorWeek }}
-                    >
-                      <span>{networkHealthInsights.trendIconWeek}</span>
-                      <span className="font-mono">
-                        {networkHealthInsights.deltaLastWeek !== null
-                          ? (networkHealthInsights.deltaLastWeek > 0
-                            ? `+${networkHealthInsights.deltaLastWeek}`
-                            : networkHealthInsights.deltaLastWeek)
-                          : "—"}
-                      </span>
-                    </span>
-                    <span>vs last week</span>
-                  </div>
-                </div>
-              </div>
-              <svg
-                width={networkHealthInsights.svgWidth}
-                height={networkHealthInsights.svgHeight}
-                viewBox={`0 0 ${networkHealthInsights.svgWidth} ${networkHealthInsights.svgHeight}`}
-                className="shrink-0"
-              >
-                <polygon
-                  fill="#10B981"
-                  points={networkHealthInsights.sparklineAreaPoints}
-                  opacity={0.25}
-                />
-                <polyline
-                  fill="none"
-                  stroke="#10B981"
-                  strokeWidth={2.5}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  points={networkHealthInsights.sparklinePoints}
-                />
-              </svg>
-            </div>
-            <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-text-soft">
-              <span className="inline-flex items-center gap-2 px-2 py-2 rounded-full border border-border-app-soft">
-                <UptimeIcon
-                  className="w-3.5 h-3.5"
-                  strokeWidth={2.2}
-                  style={{ color: "#10B981" }}
-                />
-                <span
-                  className="font-semibold"
-                  style={{ color: "#10B981" }}
-                >
-                  {networkUptimeStats.badge}
-                </span>
-              </span>
-              <span className="font-mono text-text-main">
-                {networkUptimeStats.percent.toFixed(1)}%
-              </span>
-              <span>
-                {networkUptimeStats.publicOnline}/{networkUptimeStats.publicTotal}{" "}
-                public online
-              </span>
-            </div>
-
-            {/* Click indicator */}
-            <div className="absolute bottom-4 right-4 opacity-30 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1">
-              <ChevronRight className="w-5 h-5 text-accent-primary" strokeWidth={2.5} />
-            </div>
-          </div>
+          {/* Network Health Card V2 - Compact & Premium */}
+          <NetworkHealthCardV2 
+            nodes={pnodes}
+            className="kpi-card"
+          />
 
           {/* Avg CPU Usage Card */}
           <div 
